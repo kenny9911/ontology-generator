@@ -1,0 +1,5984 @@
+{
+  "id": "ontology:insurance-claims-underwriting",
+  "uuid": "a1b2c3d4e5f60718293a4b5c6d7e8f90",
+  "name": "Insurance Claims & Underwriting",
+  "nameZh": "保险理赔与核保",
+  "domain": "insurance_claims_underwriting",
+  "version": 1,
+  "schemaVersion": 1,
+  "status": "draft",
+  "sourceDocuments": [
+    {
+      "id": "doc:claims-underwriting-sop",
+      "uuid": "0f1e2d3c4b5a69788776655443322110",
+      "name": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+      "kind": "doc",
+      "mimeType": "text/markdown",
+      "sizeBytes": 11778,
+      "parsedRef": "parsed_sop_clm_uw_014",
+      "contentHash": "sha256:11d2c3b4a5968778695a4b3c2d1e0f00aa11bb22cc33dd44ee55ff6677889900"
+    },
+    {
+      "id": "doc:claims-underwriting-business-rules",
+      "uuid": "1a2b3c4d5e6f70819283a4b5c6d7e8f0",
+      "name": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+      "kind": "doc",
+      "mimeType": "text/markdown",
+      "sizeBytes": 4275,
+      "parsedRef": "parsed_pol_clm_uw_rules_062",
+      "contentHash": "sha256:22e3d4c5b6a7980918273645546372819aabbccddeeff00112233445566778899"
+    },
+    {
+      "id": "doc:claims-underwriting-systems-data",
+      "uuid": "2b3c4d5e6f7081920a1b2c3d4e5f6071",
+      "name": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+      "kind": "doc",
+      "mimeType": "text/markdown",
+      "sizeBytes": 7293,
+      "parsedRef": "parsed_arc_clm_uw_data_062",
+      "contentHash": "sha256:33f4e5d6c7b8a90192837465564738291bbccddeeff0011223344556677889900"
+    }
+  ],
+  "objects": [
+    {
+      "id": "objectType:applicant",
+      "uuid": "10000000000000000000000000000001",
+      "name": "Applicant",
+      "nameZh": "投保申请人",
+      "description": "A prospective insured submitting a commercial property risk for underwriting.",
+      "descriptionZh": "提交商业财产风险进行核保的潜在被保险人。",
+      "attributes": [
+        {
+          "name": "applicant_id",
+          "nameZh": "申请人编号",
+          "type": "uuid",
+          "required": true,
+          "keyRole": "pk"
+        },
+        {
+          "name": "legal_name",
+          "nameZh": "法定名称",
+          "type": "string",
+          "required": true,
+          "keyRole": "none"
+        },
+        {
+          "name": "industry_code",
+          "nameZh": "行业代码",
+          "type": "string",
+          "required": false,
+          "keyRole": "none",
+          "description": "NAICS industry code."
+        },
+        {
+          "name": "prior_loss_count_36m",
+          "nameZh": "过去36个月理赔次数",
+          "type": "integer",
+          "required": false,
+          "keyRole": "none",
+          "description": "Drives [BR-16] decline rule."
+        }
+      ],
+      "relationshipIds": [
+        "rel:applicant-submits-submission",
+        "rel:applicant-holds-policy"
+      ],
+      "display": {
+        "emoji": "🧾",
+        "color": "#2563eb"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "### 2.1 Applicant (PolicyCenter)",
+          "quoteVerified": true,
+          "confidence": 0.96,
+          "section": "§2.1"
+        },
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "`prior_loss_count_36m` | integer | drives `[BR-16]`",
+          "quoteVerified": true,
+          "confidence": 0.92,
+          "section": "§2.1"
+        }
+      ],
+      "confidence": 0.96,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:submission",
+      "uuid": "10000000000000000000000000000002",
+      "name": "Submission",
+      "nameZh": "投保申请",
+      "description": "A broker-originated application package for a commercial property risk, cleared and assessed before quoting.",
+      "descriptionZh": "由经纪人发起的商业财产风险申请包，在报价前需完成查重与风险评估。",
+      "attributes": [
+        {
+          "name": "submission_id",
+          "nameZh": "投保申请编号",
+          "type": "uuid",
+          "required": true,
+          "keyRole": "pk"
+        },
+        {
+          "name": "applicant_id",
+          "nameZh": "申请人编号",
+          "type": "reference",
+          "required": true,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:applicant"
+        },
+        {
+          "name": "total_insured_value",
+          "nameZh": "保险总价值",
+          "type": "decimal",
+          "required": false,
+          "keyRole": "none",
+          "description": "Drives [BR-02] facultative reinsurance threshold."
+        },
+        {
+          "name": "cat_zone_tier",
+          "nameZh": "巨灾区域等级",
+          "type": "enum",
+          "required": false,
+          "keyRole": "none",
+          "enumValues": [
+            "Tier1",
+            "Tier2",
+            "Tier3"
+          ],
+          "description": "Drives [BR-03] referral."
+        },
+        {
+          "name": "cleared",
+          "nameZh": "已查重",
+          "type": "boolean",
+          "required": true,
+          "keyRole": "none",
+          "description": "Duplicate-clearance flag per [BR-01]."
+        },
+        {
+          "name": "status",
+          "nameZh": "状态",
+          "type": "enum",
+          "required": true,
+          "keyRole": "none",
+          "enumValues": [
+            "New",
+            "Cleared",
+            "Referred",
+            "Quoted",
+            "Bound",
+            "Declined"
+          ]
+        }
+      ],
+      "relationshipIds": [
+        "rel:applicant-submits-submission",
+        "rel:submission-yields-quote",
+        "rel:submission-has-riskassessment"
+      ],
+      "display": {
+        "emoji": "📨",
+        "color": "#7c3aed"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "### 2.2 Submission (PolicyCenter)",
+          "quoteVerified": true,
+          "confidence": 0.96,
+          "section": "§2.2"
+        },
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "produces a new `Submission` record in `Cleared` = false state and links it to an `Applicant`.",
+          "quoteVerified": true,
+          "confidence": 0.93,
+          "section": "§3 A1"
+        }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:risk-assessment",
+      "uuid": "10000000000000000000000000000003",
+      "name": "RiskAssessment",
+      "nameZh": "风险评估",
+      "description": "The underwriter's evaluation of a submission producing a risk score and proposed coverage list.",
+      "descriptionZh": "核保人对投保申请的评估，产出风险评分及拟议承保险别清单。",
+      "attributes": [
+        {
+          "name": "risk_assessment_id",
+          "nameZh": "风险评估编号",
+          "type": "uuid",
+          "required": true,
+          "keyRole": "pk"
+        },
+        {
+          "name": "submission_id",
+          "nameZh": "投保申请编号",
+          "type": "reference",
+          "required": true,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:submission"
+        },
+        {
+          "name": "risk_score",
+          "nameZh": "风险评分",
+          "type": "decimal",
+          "required": false,
+          "keyRole": "none"
+        },
+        {
+          "name": "referral_flagged",
+          "nameZh": "已标记转交",
+          "type": "boolean",
+          "required": false,
+          "keyRole": "none",
+          "description": "True when an eligibility threshold under [BR-02]/[BR-03] is hit."
+        }
+      ],
+      "relationshipIds": [
+        "rel:submission-has-riskassessment"
+      ],
+      "display": {
+        "emoji": "📊",
+        "color": "#0891b2"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "produces a `RiskAssessment` with a risk score and proposed `Coverage` list.",
+          "quoteVerified": true,
+          "confidence": 0.92,
+          "section": "§3 A2"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:quote",
+      "uuid": "10000000000000000000000000000004",
+      "name": "Quote",
+      "nameZh": "报价",
+      "description": "A priced offer of coverage with line-item premiums, deductibles, and limits, valid for a fixed window.",
+      "descriptionZh": "含分项保费、免赔额与限额的承保报价，具固定有效期。",
+      "attributes": [
+        {
+          "name": "quote_id",
+          "nameZh": "报价编号",
+          "type": "uuid",
+          "required": true,
+          "keyRole": "pk"
+        },
+        {
+          "name": "submission_id",
+          "nameZh": "投保申请编号",
+          "type": "reference",
+          "required": true,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:submission"
+        },
+        {
+          "name": "quoted_premium",
+          "nameZh": "报价保费",
+          "type": "money",
+          "required": true,
+          "keyRole": "none"
+        },
+        {
+          "name": "issued_date",
+          "nameZh": "出具日期",
+          "type": "date",
+          "required": true,
+          "keyRole": "none",
+          "description": "Drives [BR-14] 60-day validity."
+        },
+        {
+          "name": "expiry_date",
+          "nameZh": "失效日期",
+          "type": "date",
+          "required": true,
+          "keyRole": "none"
+        }
+      ],
+      "relationshipIds": [
+        "rel:submission-yields-quote",
+        "rel:quote-binds-policy"
+      ],
+      "display": {
+        "emoji": "💲",
+        "color": "#16a34a"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "### 2.3 Quote (PolicyCenter)",
+          "quoteVerified": true,
+          "confidence": 0.96,
+          "section": "§2.3"
+        },
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "produces a `Quote` with line-item premiums, deductibles, and limits.",
+          "quoteVerified": true,
+          "confidence": 0.92,
+          "section": "§3 A4"
+        }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:policy",
+      "uuid": "10000000000000000000000000000005",
+      "name": "Policy",
+      "nameZh": "保单",
+      "description": "A bound commercial property insurance contract with an effective and expiry date, materializing coverages and premium.",
+      "descriptionZh": "已承保的商业财产保险合同，具生效与失效日期，并落实各险别与保费。",
+      "attributes": [
+        {
+          "name": "policy_id",
+          "nameZh": "保单编号",
+          "type": "uuid",
+          "required": true,
+          "keyRole": "pk"
+        },
+        {
+          "name": "policy_number",
+          "nameZh": "保单号",
+          "type": "string",
+          "required": true,
+          "keyRole": "none",
+          "description": "Business key, unique."
+        },
+        {
+          "name": "applicant_id",
+          "nameZh": "申请人编号",
+          "type": "reference",
+          "required": true,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:applicant"
+        },
+        {
+          "name": "effective_date",
+          "nameZh": "生效日期",
+          "type": "date",
+          "required": true,
+          "keyRole": "none",
+          "description": "Drives [BR-07], [BR-08]."
+        },
+        {
+          "name": "expiry_date",
+          "nameZh": "失效日期",
+          "type": "date",
+          "required": true,
+          "keyRole": "none",
+          "description": "Drives [BR-08]."
+        },
+        {
+          "name": "status",
+          "nameZh": "状态",
+          "type": "enum",
+          "required": true,
+          "keyRole": "none",
+          "enumValues": [
+            "Bound",
+            "Issued",
+            "InForce",
+            "Cancelled",
+            "Expired"
+          ]
+        }
+      ],
+      "relationshipIds": [
+        "rel:quote-binds-policy",
+        "rel:applicant-holds-policy",
+        "rel:policy-has-coverage",
+        "rel:policy-has-premium",
+        "rel:claim-against-policy"
+      ],
+      "display": {
+        "emoji": "📜",
+        "color": "#1d4ed8"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "### 2.4 Policy (PolicyCenter)",
+          "quoteVerified": true,
+          "confidence": 0.96,
+          "section": "§2.4"
+        },
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "produces a `Policy` in `Bound` status with an effective date and expiry date",
+          "quoteVerified": true,
+          "confidence": 0.93,
+          "section": "§3 A5"
+        }
+      ],
+      "confidence": 0.96,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:coverage",
+      "uuid": "10000000000000000000000000000006",
+      "name": "Coverage",
+      "nameZh": "承保险别",
+      "description": "A peril-specific grant of cover on a policy with a limit and deductible.",
+      "descriptionZh": "保单上针对特定危险的承保，含限额与免赔额。",
+      "attributes": [
+        {
+          "name": "coverage_id",
+          "nameZh": "险别编号",
+          "type": "uuid",
+          "required": true,
+          "keyRole": "pk"
+        },
+        {
+          "name": "policy_id",
+          "nameZh": "保单编号",
+          "type": "reference",
+          "required": true,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:policy"
+        },
+        {
+          "name": "peril",
+          "nameZh": "承保危险",
+          "type": "enum",
+          "required": true,
+          "keyRole": "none",
+          "enumValues": [
+            "Fire",
+            "Wind",
+            "Flood",
+            "Theft",
+            "BusinessInterruption"
+          ]
+        },
+        {
+          "name": "limit",
+          "nameZh": "限额",
+          "type": "money",
+          "required": true,
+          "keyRole": "none"
+        },
+        {
+          "name": "deductible",
+          "nameZh": "免赔额",
+          "type": "money",
+          "required": true,
+          "keyRole": "none",
+          "description": "Drives [BR-15] $5,000 minimum."
+        }
+      ],
+      "relationshipIds": [
+        "rel:policy-has-coverage",
+        "rel:exposure-covers-coverage"
+      ],
+      "display": {
+        "emoji": "🛡️",
+        "color": "#0d9488"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "### 2.5 Coverage (PolicyCenter)",
+          "quoteVerified": true,
+          "confidence": 0.96,
+          "section": "§2.5"
+        }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:premium",
+      "uuid": "10000000000000000000000000000007",
+      "name": "Premium",
+      "nameZh": "保费",
+      "description": "The annual amount charged for a bound policy, computed by RatingEngine subject to a minimum-premium floor.",
+      "descriptionZh": "已承保保单的年度收费，由费率引擎计算并受最低保费下限约束。",
+      "attributes": [
+        {
+          "name": "premium_id",
+          "nameZh": "保费编号",
+          "type": "uuid",
+          "required": true,
+          "keyRole": "pk"
+        },
+        {
+          "name": "policy_id",
+          "nameZh": "保单编号",
+          "type": "reference",
+          "required": true,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:policy"
+        },
+        {
+          "name": "annual_amount",
+          "nameZh": "年度金额",
+          "type": "money",
+          "required": true,
+          "keyRole": "none",
+          "description": "Drives [BR-06] $2,500 minimum."
+        }
+      ],
+      "relationshipIds": [
+        "rel:policy-has-premium"
+      ],
+      "display": {
+        "emoji": "💰",
+        "color": "#059669"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "### 2.6 Premium (PolicyCenter / RatingEngine)",
+          "quoteVerified": true,
+          "confidence": 0.96,
+          "section": "§2.6"
+        }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:claim",
+      "uuid": "10000000000000000000000000000008",
+      "name": "Claim",
+      "nameZh": "理赔案件",
+      "description": "A reported loss against a policy, opened at First Notice of Loss and resolved through adjudication and settlement.",
+      "descriptionZh": "针对保单报告的损失，于首次报损时立案，经理算与结案处理。",
+      "attributes": [
+        {
+          "name": "claim_id",
+          "nameZh": "案件编号",
+          "type": "uuid",
+          "required": true,
+          "keyRole": "pk"
+        },
+        {
+          "name": "claim_number",
+          "nameZh": "案件号",
+          "type": "string",
+          "required": true,
+          "keyRole": "none",
+          "description": "Business key, unique."
+        },
+        {
+          "name": "policy_number",
+          "nameZh": "保单号",
+          "type": "reference",
+          "required": true,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:policy",
+          "description": "FK to Policy.policy_number."
+        },
+        {
+          "name": "date_of_loss",
+          "nameZh": "出险日期",
+          "type": "date",
+          "required": true,
+          "keyRole": "none",
+          "description": "Drives [BR-08]."
+        },
+        {
+          "name": "fnol_timestamp",
+          "nameZh": "报案时间戳",
+          "type": "datetime",
+          "required": true,
+          "keyRole": "none",
+          "description": "Drives [BR-09] 48h clock."
+        },
+        {
+          "name": "estimated_incurred",
+          "nameZh": "预估已发生损失",
+          "type": "money",
+          "required": false,
+          "keyRole": "none",
+          "description": "Drives [BR-12]."
+        },
+        {
+          "name": "status",
+          "nameZh": "状态",
+          "type": "enum",
+          "required": true,
+          "keyRole": "none",
+          "enumValues": [
+            "Open",
+            "Assigned",
+            "InReview",
+            "Settled",
+            "Closed",
+            "Stale"
+          ]
+        }
+      ],
+      "relationshipIds": [
+        "rel:claim-against-policy",
+        "rel:claim-has-exposure",
+        "rel:adjuster-assigned-claim",
+        "rel:claim-has-recovery"
+      ],
+      "display": {
+        "emoji": "📂",
+        "color": "#dc2626"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "### 2.7 Claim (ClaimCenter)",
+          "quoteVerified": true,
+          "confidence": 0.96,
+          "section": "§2.7"
+        },
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "produces a new `Claim` linked to the matched `Policy`, and opens at least one `Exposure` per affected `Coverage`.",
+          "quoteVerified": true,
+          "confidence": 0.93,
+          "section": "§4 B1"
+        }
+      ],
+      "confidence": 0.96,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:exposure",
+      "uuid": "10000000000000000000000000000009",
+      "name": "Exposure",
+      "nameZh": "赔付项",
+      "description": "A claim's exposure to loss under a single coverage, carrying a coverage decision, reserve, and payment.",
+      "descriptionZh": "理赔案件在单一险别下的损失敞口，承载承保决定、准备金与赔款。",
+      "attributes": [
+        {
+          "name": "exposure_id",
+          "nameZh": "赔付项编号",
+          "type": "uuid",
+          "required": true,
+          "keyRole": "pk"
+        },
+        {
+          "name": "claim_id",
+          "nameZh": "案件编号",
+          "type": "reference",
+          "required": true,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:claim"
+        },
+        {
+          "name": "coverage_id",
+          "nameZh": "险别编号",
+          "type": "reference",
+          "required": true,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:coverage"
+        },
+        {
+          "name": "coverage_decision",
+          "nameZh": "承保决定",
+          "type": "enum",
+          "required": true,
+          "keyRole": "none",
+          "enumValues": [
+            "InForce",
+            "OutOfForce",
+            "NeedsReview",
+            "CoverageDenied"
+          ],
+          "description": "Drives [BR-17]."
+        },
+        {
+          "name": "status",
+          "nameZh": "状态",
+          "type": "enum",
+          "required": true,
+          "keyRole": "none",
+          "enumValues": [
+            "Open",
+            "Reserved",
+            "Paying",
+            "Closed"
+          ],
+          "description": "Drives [BR-13]."
+        }
+      ],
+      "relationshipIds": [
+        "rel:claim-has-exposure",
+        "rel:exposure-covers-coverage",
+        "rel:exposure-has-reserve",
+        "rel:exposure-receives-payment"
+      ],
+      "display": {
+        "emoji": "🎯",
+        "color": "#ea580c"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "### 2.8 Exposure (ClaimCenter)",
+          "quoteVerified": true,
+          "confidence": 0.96,
+          "section": "§2.8"
+        }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:reserve",
+      "uuid": "1000000000000000000000000000000a",
+      "name": "Reserve",
+      "nameZh": "准备金",
+      "description": "The estimated outstanding liability set aside on an open exposure, reviewed periodically and decremented on payment.",
+      "descriptionZh": "为未结赔付项预留的预估未决负债，需定期复核并在赔付时冲减。",
+      "attributes": [
+        {
+          "name": "reserve_id",
+          "nameZh": "准备金编号",
+          "type": "uuid",
+          "required": true,
+          "keyRole": "pk"
+        },
+        {
+          "name": "exposure_id",
+          "nameZh": "赔付项编号",
+          "type": "reference",
+          "required": true,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:exposure"
+        },
+        {
+          "name": "amount",
+          "nameZh": "金额",
+          "type": "money",
+          "required": true,
+          "keyRole": "none",
+          "description": "Drives [BR-11] $250k approval."
+        },
+        {
+          "name": "last_reviewed_date",
+          "nameZh": "最近复核日期",
+          "type": "date",
+          "required": false,
+          "keyRole": "none",
+          "description": "Drives [BR-10] 90-day review."
+        },
+        {
+          "name": "approved_by",
+          "nameZh": "批准人",
+          "type": "uuid",
+          "required": false,
+          "keyRole": "none",
+          "description": "User id; nullable."
+        }
+      ],
+      "relationshipIds": [
+        "rel:exposure-has-reserve"
+      ],
+      "display": {
+        "emoji": "🏦",
+        "color": "#b45309"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "### 2.9 Reserve (ClaimCenter)",
+          "quoteVerified": true,
+          "confidence": 0.96,
+          "section": "§2.9"
+        }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:claim-payment",
+      "uuid": "1000000000000000000000000000000b",
+      "name": "ClaimPayment",
+      "nameZh": "理赔赔款",
+      "description": "A disbursement against an exposure, subject to adjuster/supervisor authority limits and approval.",
+      "descriptionZh": "针对赔付项的赔款支付，受理算员/主管授权限额及审批约束。",
+      "attributes": [
+        {
+          "name": "payment_id",
+          "nameZh": "赔款编号",
+          "type": "uuid",
+          "required": true,
+          "keyRole": "pk"
+        },
+        {
+          "name": "exposure_id",
+          "nameZh": "赔付项编号",
+          "type": "reference",
+          "required": true,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:exposure"
+        },
+        {
+          "name": "amount",
+          "nameZh": "金额",
+          "type": "money",
+          "required": true,
+          "keyRole": "none",
+          "description": "Drives [BR-04], [BR-05]."
+        },
+        {
+          "name": "authorized_by",
+          "nameZh": "授权人",
+          "type": "uuid",
+          "required": false,
+          "keyRole": "none",
+          "description": "User id."
+        },
+        {
+          "name": "payment_status",
+          "nameZh": "支付状态",
+          "type": "enum",
+          "required": true,
+          "keyRole": "none",
+          "enumValues": [
+            "Requested",
+            "Authorized",
+            "Issued",
+            "Voided"
+          ]
+        }
+      ],
+      "relationshipIds": [
+        "rel:exposure-receives-payment"
+      ],
+      "display": {
+        "emoji": "💸",
+        "color": "#be123c"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "### 2.10 ClaimPayment (ClaimCenter → BillingCenter)",
+          "quoteVerified": true,
+          "confidence": 0.96,
+          "section": "§2.10"
+        }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:adjuster",
+      "uuid": "1000000000000000000000000000000c",
+      "name": "Adjuster",
+      "nameZh": "理算员",
+      "description": "A claims handler assigned to manage a claim and its exposures within a payment authority limit.",
+      "descriptionZh": "受指派管理理赔案件及其赔付项的理算人员，具支付授权限额。",
+      "attributes": [
+        {
+          "name": "adjuster_id",
+          "nameZh": "理算员编号",
+          "type": "uuid",
+          "required": true,
+          "keyRole": "pk"
+        },
+        {
+          "name": "name",
+          "nameZh": "姓名",
+          "type": "string",
+          "required": true,
+          "keyRole": "none"
+        },
+        {
+          "name": "authority_limit",
+          "nameZh": "授权限额",
+          "type": "money",
+          "required": true,
+          "keyRole": "none",
+          "description": "Default 25000 per [BR-04]."
+        },
+        {
+          "name": "seniority",
+          "nameZh": "资历",
+          "type": "enum",
+          "required": true,
+          "keyRole": "none",
+          "enumValues": [
+            "Junior",
+            "Standard",
+            "Senior"
+          ],
+          "description": "Drives [BR-12]."
+        }
+      ],
+      "relationshipIds": [
+        "rel:adjuster-assigned-claim"
+      ],
+      "display": {
+        "emoji": "👤",
+        "color": "#9333ea"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "### 2.11 Adjuster (ClaimCenter)",
+          "quoteVerified": true,
+          "confidence": 0.96,
+          "section": "§2.11"
+        }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:recovery",
+      "uuid": "1000000000000000000000000000000d",
+      "name": "Recovery",
+      "nameZh": "追偿",
+      "description": "A subrogation recovery pursued against an identified liable third party after a claim is closed.",
+      "descriptionZh": "理赔结案后针对已识别责任第三方进行的代位求偿追偿记录。",
+      "attributes": [
+        {
+          "name": "recovery_id",
+          "nameZh": "追偿编号",
+          "type": "uuid",
+          "required": true,
+          "keyRole": "pk"
+        },
+        {
+          "name": "claim_id",
+          "nameZh": "案件编号",
+          "type": "reference",
+          "required": true,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:claim"
+        },
+        {
+          "name": "liable_party",
+          "nameZh": "责任方",
+          "type": "string",
+          "required": true,
+          "keyRole": "none",
+          "description": "Drives [BR-19]."
+        },
+        {
+          "name": "recovered_amount",
+          "nameZh": "追回金额",
+          "type": "money",
+          "required": false,
+          "keyRole": "none"
+        }
+      ],
+      "relationshipIds": [
+        "rel:claim-has-recovery"
+      ],
+      "display": {
+        "emoji": "↩️",
+        "color": "#0369a1"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "### 2.12 Recovery (ClaimCenter)",
+          "quoteVerified": true,
+          "confidence": 0.96,
+          "section": "§2.12"
+        }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    }
+  ],
+  "rules": [
+    {
+      "id": "rule:br-01-submission-clearance",
+      "uuid": "30000000000000000000000000000001",
+      "title": "Duplicate clearance within 2 business days",
+      "titleZh": "2个工作日内查重",
+      "statement": {
+        "en": "Every Submission shall be cleared against existing Policy and Submission records for the same Applicant within 2 business days of receipt, and a duplicate submission may not proceed to risk assessment.",
+        "zh": "每份投保申请须在收到后2个工作日内，针对同一申请人的现有保单与投保申请记录完成查重，重复申请不得进入风险评估。"
+      },
+      "formal": "Submission.cleared = true required within 2 business days of receipt ∧ duplicate(Submission) → ¬proceedToRiskAssessment",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "submission.cleared == true && !submission.is_duplicate",
+        "bindings": [
+          {
+            "var": "submission",
+            "objectTypeId": "objectType:submission"
+          }
+        ]
+      },
+      "kind": "validation",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:submission"
+      ],
+      "appliesToAttributes": [
+        "objectType:submission.cleared"
+      ],
+      "trigger": {
+        "description": "on SubmissionReceived, before risk assessment",
+        "onEventTypeId": "event:submission.received"
+      },
+      "groupId": "ruleGroup:underwriting-eligibility",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-business-rules",
+          "documentName": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+          "snippet": "**[BR-01]** Every `Submission` shall be cleared against existing `Policy` and `Submission` records for the same `Applicant` within **2 business days** of receipt, and a duplicate submission may not proceed to risk assessment.",
+          "quoteVerified": true,
+          "confidence": 0.95,
+          "section": "§2 BR-01",
+          "sentenceRefs": [
+            1
+          ]
+        }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:br-02-tiv-facultative-reinsurance",
+      "uuid": "30000000000000000000000000000002",
+      "title": "TIV over $50M needs facultative reinsurance",
+      "titleZh": "保险总价值超5000万需临分再保",
+      "statement": {
+        "en": "A Submission for a single insured location with a Total Insured Value exceeding $50,000,000 may not be quoted without a documented facultative reinsurance arrangement on file.",
+        "zh": "单一被保险地点保险总价值超过5000万美元的投保申请，在未存档已确认临时分保安排前不得报价。"
+      },
+      "formal": "Submission.total_insured_value > 50000000 → requires(facultativeReinsuranceOnFile) before Quote",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "submission.total_insured_value <= 50000000 || submission.facultative_reinsurance_on_file == true",
+        "bindings": [
+          {
+            "var": "submission",
+            "objectTypeId": "objectType:submission"
+          }
+        ]
+      },
+      "kind": "constraint",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:submission"
+      ],
+      "appliesToAttributes": [
+        "objectType:submission.total_insured_value"
+      ],
+      "trigger": {
+        "description": "before GenerateQuote"
+      },
+      "groupId": "ruleGroup:underwriting-eligibility",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-business-rules",
+          "documentName": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+          "snippet": "**[BR-02]** A `Submission` for a single insured location with a Total Insured Value exceeding **$50,000,000** may not be quoted without a documented facultative reinsurance arrangement on file.",
+          "quoteVerified": true,
+          "confidence": 0.94,
+          "section": "§2 BR-02",
+          "sentenceRefs": [
+            1
+          ]
+        }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:br-03-referral-threshold",
+      "uuid": "30000000000000000000000000000003",
+      "title": "Tier-1 cat zone or limit over $10M referral",
+      "titleZh": "一级巨灾区或限额超1000万需转交",
+      "statement": {
+        "en": "A Submission whose property is located in a Tier-1 catastrophe-exposed zone, or whose proposed limit exceeds $10,000,000, is required to be referred to an Underwriting Manager for approval before a Quote is issued.",
+        "zh": "财产位于一级巨灾暴露区域，或拟议限额超过1000万美元的投保申请，须在出具报价前转交核保经理审批。"
+      },
+      "formal": "(Submission.cat_zone_tier = Tier1 ∨ Coverage.limit > 10000000) → requires(UWM approval) before Quote",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "!(submission.cat_zone_tier == 'Tier1' || submission.proposed_limit > 10000000) || submission.referral_approved == true",
+        "bindings": [
+          {
+            "var": "submission",
+            "objectTypeId": "objectType:submission"
+          }
+        ]
+      },
+      "kind": "authorization",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:submission",
+        "objectType:risk-assessment"
+      ],
+      "appliesToAttributes": [
+        "objectType:submission.cat_zone_tier"
+      ],
+      "trigger": {
+        "description": "on AssessRisk, raises ReferralRaised",
+        "onEventTypeId": "event:underwriting.referral-raised"
+      },
+      "groupId": "ruleGroup:underwriting-eligibility",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-business-rules",
+          "documentName": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+          "snippet": "**[BR-03]** A `Submission` whose property is located in a Tier-1 catastrophe-exposed zone, or whose proposed limit exceeds **$10,000,000**, is required to be referred to an Underwriting Manager for approval before a `Quote` is issued.",
+          "quoteVerified": true,
+          "confidence": 0.94,
+          "section": "§2 BR-03",
+          "sentenceRefs": [
+            1
+          ]
+        }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:br-06-minimum-premium",
+      "uuid": "30000000000000000000000000000004",
+      "title": "Minimum annual premium $2,500",
+      "titleZh": "最低年度保费2500美元",
+      "statement": {
+        "en": "A bound Policy must carry an annual Premium of at least the minimum-premium floor of $2,500, regardless of computed rate.",
+        "zh": "已承保的保单必须承载至少2500美元最低保费下限的年度保费，无论计算费率如何。"
+      },
+      "formal": "Policy.status = Bound → Premium.annual_amount >= 2500",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "premium.annual_amount >= 2500",
+        "bindings": [
+          {
+            "var": "premium",
+            "objectTypeId": "objectType:premium"
+          }
+        ]
+      },
+      "kind": "constraint",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:premium",
+        "objectType:policy"
+      ],
+      "appliesToAttributes": [
+        "objectType:premium.annual_amount"
+      ],
+      "trigger": {
+        "description": "on GenerateQuote / BindPolicy"
+      },
+      "groupId": "ruleGroup:pricing-binding",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-business-rules",
+          "documentName": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+          "snippet": "**[BR-06]** A bound `Policy` must carry an annual `Premium` of at least the minimum-premium floor of **$2,500**, regardless of computed rate.",
+          "quoteVerified": true,
+          "confidence": 0.95,
+          "section": "§2 BR-06",
+          "sentenceRefs": [
+            1
+          ]
+        }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:br-07-binding-effective-date-window",
+      "uuid": "30000000000000000000000000000005",
+      "title": "Backdating / forward-dating window",
+      "titleZh": "追溯与提前生效窗口",
+      "statement": {
+        "en": "A Policy may not be bound with an effective date more than 30 days in the past, and may not be bound with an effective date in the future beyond 90 days.",
+        "zh": "保单的生效日期不得早于过去30天，也不得晚于未来90天。"
+      },
+      "formal": "BindPolicy → (today - Policy.effective_date <= 30 days) ∧ (Policy.effective_date - today <= 90 days)",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "policy.effective_date >= today - duration('720h') && policy.effective_date <= today + duration('2160h')",
+        "bindings": [
+          {
+            "var": "policy",
+            "objectTypeId": "objectType:policy"
+          }
+        ]
+      },
+      "kind": "temporal",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:policy"
+      ],
+      "appliesToAttributes": [
+        "objectType:policy.effective_date"
+      ],
+      "trigger": {
+        "description": "on BindPolicy"
+      },
+      "groupId": "ruleGroup:pricing-binding",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-business-rules",
+          "documentName": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+          "snippet": "**[BR-07]** A `Policy` may not be bound with an effective date more than **30 days** in the past, and may not be bound with an effective date in the future beyond **90 days**.",
+          "quoteVerified": true,
+          "confidence": 0.95,
+          "section": "§2 BR-07",
+          "sentenceRefs": [
+            1
+          ]
+        }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:br-14-quote-validity",
+      "uuid": "30000000000000000000000000000006",
+      "title": "Quote valid 60 days",
+      "titleZh": "报价有效期60天",
+      "statement": {
+        "en": "A Quote is valid for 60 days from issuance, and a Quote that has expired may not be bound without re-rating.",
+        "zh": "报价自出具起60天内有效，已过期的报价未经重新核费不得用于承保。"
+      },
+      "formal": "(today - Quote.issued_date > 60 days) → ¬bindable(Quote) ∨ requires(re-rating)",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "quote.issued_date >= today - duration('1440h') || quote.re_rated == true",
+        "bindings": [
+          {
+            "var": "quote",
+            "objectTypeId": "objectType:quote"
+          }
+        ]
+      },
+      "kind": "temporal",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:quote"
+      ],
+      "appliesToAttributes": [
+        "objectType:quote.issued_date"
+      ],
+      "trigger": {
+        "description": "on BindPolicy"
+      },
+      "groupId": "ruleGroup:pricing-binding",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-business-rules",
+          "documentName": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+          "snippet": "**[BR-14]** A `Quote` is valid for **60 days** from issuance, and a `Quote` that has expired may not be bound without re-rating.",
+          "quoteVerified": true,
+          "confidence": 0.94,
+          "section": "§2 BR-14",
+          "sentenceRefs": [
+            1
+          ]
+        }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:br-15-deductible-minimum",
+      "uuid": "30000000000000000000000000000007",
+      "title": "Deductible minimum $5,000",
+      "titleZh": "免赔额最低5000美元",
+      "statement": {
+        "en": "A Coverage deductible may not be set below the underwriting-guideline minimum of $5,000 for any commercial property peril.",
+        "zh": "任何商业财产危险的承保险别免赔额不得低于核保指引最低5000美元。"
+      },
+      "formal": "Coverage.deductible >= 5000",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "coverage.deductible >= 5000",
+        "bindings": [
+          {
+            "var": "coverage",
+            "objectTypeId": "objectType:coverage"
+          }
+        ]
+      },
+      "kind": "constraint",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:coverage"
+      ],
+      "appliesToAttributes": [
+        "objectType:coverage.deductible"
+      ],
+      "trigger": {
+        "description": "on GenerateQuote / BindPolicy"
+      },
+      "groupId": "ruleGroup:pricing-binding",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-business-rules",
+          "documentName": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+          "snippet": "**[BR-15]** A `Coverage` deductible may not be set below the underwriting-guideline minimum of **$5,000** for any commercial property peril.",
+          "quoteVerified": true,
+          "confidence": 0.94,
+          "section": "§2 BR-15",
+          "sentenceRefs": [
+            1
+          ]
+        }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:br-16-applicant-loss-history-decline",
+      "uuid": "30000000000000000000000000000008",
+      "title": "Decline on 2+ total losses in 36m",
+      "titleZh": "36个月内2次以上全损则拒保",
+      "statement": {
+        "en": "An Applicant with two or more total-loss claims in the prior 36 months shall be declined unless an Underwriting Manager records a written exception.",
+        "zh": "过去36个月内有两次或以上全损理赔的申请人应予拒保，除非核保经理记录书面例外。"
+      },
+      "formal": "Applicant.prior_loss_count_36m >= 2 → decline(Submission) ∨ UWM.writtenException",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "applicant.prior_loss_count_36m < 2 || submission.uwm_exception == true",
+        "bindings": [
+          {
+            "var": "applicant",
+            "objectTypeId": "objectType:applicant"
+          },
+          {
+            "var": "submission",
+            "objectTypeId": "objectType:submission"
+          }
+        ]
+      },
+      "kind": "authorization",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:applicant",
+        "objectType:submission"
+      ],
+      "appliesToAttributes": [
+        "objectType:applicant.prior_loss_count_36m"
+      ],
+      "trigger": {
+        "description": "on AssessRisk"
+      },
+      "groupId": "ruleGroup:underwriting-eligibility",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-business-rules",
+          "documentName": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+          "snippet": "**[BR-16]** An `Applicant` with two or more total-loss claims in the prior **36 months** shall be declined unless an Underwriting Manager records a written exception.",
+          "quoteVerified": true,
+          "confidence": 0.93,
+          "section": "§2 BR-16",
+          "sentenceRefs": [
+            1
+          ]
+        }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:br-08-coverage-in-force-dates",
+      "uuid": "30000000000000000000000000000009",
+      "title": "No coverage outside policy period",
+      "titleZh": "保险期间外不予承保",
+      "statement": {
+        "en": "No Coverage applies to a loss whose date of loss precedes the Policy effective date or follows the Policy expiry date.",
+        "zh": "出险日期早于保单生效日期或晚于保单失效日期的损失，不适用任何承保。"
+      },
+      "formal": "(Claim.date_of_loss < Policy.effective_date ∨ Claim.date_of_loss > Policy.expiry_date) → ¬coverageApplies",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "claim.date_of_loss >= policy.effective_date && claim.date_of_loss <= policy.expiry_date",
+        "bindings": [
+          {
+            "var": "claim",
+            "objectTypeId": "objectType:claim"
+          },
+          {
+            "var": "policy",
+            "objectTypeId": "objectType:policy"
+          }
+        ]
+      },
+      "kind": "validation",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:claim",
+        "objectType:policy",
+        "objectType:coverage"
+      ],
+      "appliesToAttributes": [
+        "objectType:claim.date_of_loss",
+        "objectType:policy.effective_date",
+        "objectType:policy.expiry_date"
+      ],
+      "trigger": {
+        "description": "on VerifyCoverage",
+        "onEventTypeId": "event:fnol.recorded"
+      },
+      "groupId": "ruleGroup:coverage-verification",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-business-rules",
+          "documentName": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+          "snippet": "**[BR-08]** No `Coverage` applies to a loss whose date of loss precedes the `Policy` effective date or follows the `Policy` expiry date.",
+          "quoteVerified": true,
+          "confidence": 0.95,
+          "section": "§3 BR-08",
+          "sentenceRefs": [
+            1
+          ]
+        }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:br-09-reserve-within-48h",
+      "uuid": "3000000000000000000000000000000a",
+      "title": "Reserve set within 48 hours of FNOL",
+      "titleZh": "报案后48小时内设立准备金",
+      "statement": {
+        "en": "A Reserve must be set within 48 hours of First Notice of Loss on every open Exposure.",
+        "zh": "每个未结赔付项必须在首次报损后48小时内设立准备金。"
+      },
+      "formal": "Exposure.status = Open → Reserve set within 48h of Claim.fnol_timestamp",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "reserve.set_timestamp <= claim.fnol_timestamp + duration('48h')",
+        "bindings": [
+          {
+            "var": "reserve",
+            "objectTypeId": "objectType:reserve"
+          },
+          {
+            "var": "claim",
+            "objectTypeId": "objectType:claim"
+          }
+        ]
+      },
+      "kind": "temporal",
+      "severity": "warn",
+      "appliesToObjectTypeIds": [
+        "objectType:reserve",
+        "objectType:exposure",
+        "objectType:claim"
+      ],
+      "appliesToAttributes": [
+        "objectType:claim.fnol_timestamp"
+      ],
+      "trigger": {
+        "description": "on ExposureOpened",
+        "onEventTypeId": "event:exposure.opened"
+      },
+      "groupId": "ruleGroup:reserving",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-business-rules",
+          "documentName": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+          "snippet": "**[BR-09]** A `Reserve` must be set within **48 hours** of First Notice of Loss on every open `Exposure`.",
+          "quoteVerified": true,
+          "confidence": 0.94,
+          "section": "§3 BR-09",
+          "sentenceRefs": [
+            1
+          ]
+        }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:br-10-reserve-review-90d",
+      "uuid": "3000000000000000000000000000000b",
+      "title": "Reserve reviewed every 90 days",
+      "titleZh": "准备金每90天复核",
+      "statement": {
+        "en": "Every open Exposure is required to have its Reserve reviewed for adequacy at least every 90 days.",
+        "zh": "每个未结赔付项须至少每90天对其准备金充足性进行一次复核。"
+      },
+      "formal": "Exposure.status = Open → (today - Reserve.last_reviewed_date) <= 90 days",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "today - reserve.last_reviewed_date <= duration('2160h')",
+        "bindings": [
+          {
+            "var": "reserve",
+            "objectTypeId": "objectType:reserve"
+          }
+        ]
+      },
+      "kind": "temporal",
+      "severity": "warn",
+      "appliesToObjectTypeIds": [
+        "objectType:reserve",
+        "objectType:exposure"
+      ],
+      "appliesToAttributes": [
+        "objectType:reserve.last_reviewed_date"
+      ],
+      "trigger": {
+        "description": "on ReserveReviewDue",
+        "onEventTypeId": "event:reserve.review-due"
+      },
+      "groupId": "ruleGroup:reserving",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-business-rules",
+          "documentName": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+          "snippet": "**[BR-10]** Every open `Exposure` is required to have its `Reserve` reviewed for adequacy at least every **90 days**.",
+          "quoteVerified": true,
+          "confidence": 0.94,
+          "section": "§3 BR-10",
+          "sentenceRefs": [
+            1
+          ]
+        }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:br-04-adjuster-payment-authority",
+      "uuid": "3000000000000000000000000000000c",
+      "title": "Adjuster payment authority $25,000",
+      "titleZh": "理算员赔付授权2.5万美元",
+      "statement": {
+        "en": "A ClaimPayment may not exceed the assigned Adjuster's authority limit of $25,000 per payment.",
+        "zh": "单笔理赔赔款不得超过指派理算员2.5万美元的授权限额。"
+      },
+      "formal": "ClaimPayment.amount <= Adjuster.authority_limit (25000)",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "payment.amount <= adjuster.authority_limit",
+        "bindings": [
+          {
+            "var": "payment",
+            "objectTypeId": "objectType:claim-payment"
+          },
+          {
+            "var": "adjuster",
+            "objectTypeId": "objectType:adjuster"
+          }
+        ]
+      },
+      "kind": "authorization",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:claim-payment",
+        "objectType:adjuster"
+      ],
+      "appliesToAttributes": [
+        "objectType:claim-payment.amount",
+        "objectType:adjuster.authority_limit"
+      ],
+      "trigger": {
+        "description": "on IssueClaimPayment"
+      },
+      "groupId": "ruleGroup:payment-authority",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-business-rules",
+          "documentName": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+          "snippet": "**[BR-04]** A `ClaimPayment` may not exceed the assigned `Adjuster`'s authority limit of **$25,000** per payment.",
+          "quoteVerified": true,
+          "confidence": 0.95,
+          "section": "§3 BR-04",
+          "sentenceRefs": [
+            1
+          ]
+        }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:br-05-payment-escalation",
+      "uuid": "3000000000000000000000000000000d",
+      "title": "Supervisor / Manager payment escalation",
+      "titleZh": "主管/经理赔付升级审批",
+      "statement": {
+        "en": "A ClaimPayment above the Adjuster authority limit must be approved by a Claims Supervisor, and a ClaimPayment above the Supervisor limit of $100,000 shall be escalated to the Claims Manager.",
+        "zh": "超过理算员授权限额的赔款须经理赔主管批准，超过主管10万美元限额的赔款应升级至理赔经理。"
+      },
+      "formal": "ClaimPayment.amount > 25000 → requires(Supervisor approval); ClaimPayment.amount > 100000 → requires(Claims Manager approval)",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "payment.amount <= 25000 || (payment.amount <= 100000 && payment.supervisor_approved) || payment.manager_approved",
+        "bindings": [
+          {
+            "var": "payment",
+            "objectTypeId": "objectType:claim-payment"
+          }
+        ]
+      },
+      "kind": "authorization",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:claim-payment",
+        "objectType:adjuster"
+      ],
+      "appliesToAttributes": [
+        "objectType:claim-payment.amount"
+      ],
+      "trigger": {
+        "description": "on IssueClaimPayment, raises PaymentAuthorizationRequested",
+        "onEventTypeId": "event:payment.authorization-requested"
+      },
+      "groupId": "ruleGroup:payment-authority",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-business-rules",
+          "documentName": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+          "snippet": "**[BR-05]** A `ClaimPayment` above the `Adjuster` authority limit must be approved by a Claims Supervisor, and a `ClaimPayment` above the Supervisor limit of **$100,000** shall be escalated to the Claims Manager.",
+          "quoteVerified": true,
+          "confidence": 0.94,
+          "section": "§3 BR-05",
+          "sentenceRefs": [
+            1
+          ]
+        }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:br-11-large-loss-reserve-approval",
+      "uuid": "3000000000000000000000000000000e",
+      "title": "Reserve >= $250,000 needs manager approval",
+      "titleZh": "准备金达25万美元需经理批准",
+      "statement": {
+        "en": "A Reserve set at or above $250,000 on any single Exposure is required to receive Claims Manager approval before it is posted.",
+        "zh": "任一赔付项上设立的达到或超过25万美元的准备金，须在入账前获得理赔经理批准。"
+      },
+      "formal": "Reserve.amount >= 250000 → requires(Claims Manager approval) before post",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "reserve.amount < 250000 || reserve.approved_by != null",
+        "bindings": [
+          {
+            "var": "reserve",
+            "objectTypeId": "objectType:reserve"
+          }
+        ]
+      },
+      "kind": "authorization",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:reserve"
+      ],
+      "appliesToAttributes": [
+        "objectType:reserve.amount",
+        "objectType:reserve.approved_by"
+      ],
+      "trigger": {
+        "description": "on SetReserve, raises ReserveApprovalRequested",
+        "onEventTypeId": "event:reserve.approval-requested"
+      },
+      "groupId": "ruleGroup:reserving",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-business-rules",
+          "documentName": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+          "snippet": "**[BR-11]** A `Reserve` set at or above **$250,000** on any single `Exposure` is required to receive Claims Manager approval before it is posted.",
+          "quoteVerified": true,
+          "confidence": 0.95,
+          "section": "§3 BR-11",
+          "sentenceRefs": [
+            1
+          ]
+        }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:br-12-senior-adjuster-assignment",
+      "uuid": "3000000000000000000000000000000f",
+      "title": "Large loss to senior adjuster in 24h",
+      "titleZh": "大额损失24小时内指派资深理算员",
+      "statement": {
+        "en": "A Claim with an estimated total incurred loss at or above $500,000 must be assigned to a senior Adjuster within 24 hours of coverage confirmation.",
+        "zh": "预估已发生损失总额达到或超过50万美元的理赔案件，须在承保确认后24小时内指派给资深理算员。"
+      },
+      "formal": "Claim.estimated_incurred >= 500000 → assign(senior Adjuster) within 24h of CoverageConfirmed",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "claim.estimated_incurred < 500000 || (adjuster.seniority == 'Senior' && claim.assigned_within_24h)",
+        "bindings": [
+          {
+            "var": "claim",
+            "objectTypeId": "objectType:claim"
+          },
+          {
+            "var": "adjuster",
+            "objectTypeId": "objectType:adjuster"
+          }
+        ]
+      },
+      "kind": "temporal",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:claim",
+        "objectType:adjuster"
+      ],
+      "appliesToAttributes": [
+        "objectType:claim.estimated_incurred",
+        "objectType:adjuster.seniority"
+      ],
+      "trigger": {
+        "description": "on CoverageConfirmed, before AssignAdjuster completes",
+        "onEventTypeId": "event:coverage.confirmed"
+      },
+      "groupId": "ruleGroup:claim-handling",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-business-rules",
+          "documentName": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+          "snippet": "**[BR-12]** A `Claim` with an estimated total incurred loss at or above **$500,000** must be assigned to a senior `Adjuster` within **24 hours** of coverage confirmation.",
+          "quoteVerified": true,
+          "confidence": 0.94,
+          "section": "§3 BR-12",
+          "sentenceRefs": [
+            1
+          ]
+        }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:br-13-no-close-with-reserve",
+      "uuid": "30000000000000000000000000000010",
+      "title": "No exposure closure with open reserve",
+      "titleZh": "有准备金余额不得关闭赔付项",
+      "statement": {
+        "en": "An Exposure may not be closed while any Reserve balance remains greater than zero on that Exposure.",
+        "zh": "只要该赔付项上仍存在大于零的准备金余额，便不得关闭该赔付项。"
+      },
+      "formal": "Exposure.status = Closed → Reserve.amount = 0",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "exposure.status != 'Closed' || reserve.amount == 0",
+        "bindings": [
+          {
+            "var": "exposure",
+            "objectTypeId": "objectType:exposure"
+          },
+          {
+            "var": "reserve",
+            "objectTypeId": "objectType:reserve"
+          }
+        ]
+      },
+      "kind": "state_transition",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:exposure",
+        "objectType:reserve"
+      ],
+      "appliesToAttributes": [
+        "objectType:exposure.status",
+        "objectType:reserve.amount"
+      ],
+      "trigger": {
+        "description": "on CloseExposure",
+        "onEventTypeId": "event:payment.issued"
+      },
+      "groupId": "ruleGroup:claim-handling",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-business-rules",
+          "documentName": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+          "snippet": "**[BR-13]** An `Exposure` may not be closed while any `Reserve` balance remains greater than zero on that `Exposure`.",
+          "quoteVerified": true,
+          "confidence": 0.95,
+          "section": "§3 BR-13",
+          "sentenceRefs": [
+            1
+          ]
+        }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:br-17-no-payment-out-of-force",
+      "uuid": "30000000000000000000000000000011",
+      "title": "No payment when coverage out of force / denied",
+      "titleZh": "承保失效或被拒时不得赔付",
+      "statement": {
+        "en": "A ClaimPayment may not be issued on an Exposure whose coverage decision is OutOfForce or CoverageDenied.",
+        "zh": "承保决定为失效或被拒的赔付项不得签发理赔赔款。"
+      },
+      "formal": "Exposure.coverage_decision ∈ {OutOfForce, CoverageDenied} → ¬issue(ClaimPayment)",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "exposure.coverage_decision != 'OutOfForce' && exposure.coverage_decision != 'CoverageDenied'",
+        "bindings": [
+          {
+            "var": "exposure",
+            "objectTypeId": "objectType:exposure"
+          }
+        ]
+      },
+      "kind": "validation",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:exposure",
+        "objectType:claim-payment"
+      ],
+      "appliesToAttributes": [
+        "objectType:exposure.coverage_decision"
+      ],
+      "trigger": {
+        "description": "on IssueClaimPayment"
+      },
+      "groupId": "ruleGroup:claim-handling",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-business-rules",
+          "documentName": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+          "snippet": "**[BR-17]** A `ClaimPayment` may not be issued on an `Exposure` whose coverage decision is `OutOfForce` or `CoverageDenied`.",
+          "quoteVerified": true,
+          "confidence": 0.94,
+          "section": "§3 BR-17",
+          "sentenceRefs": [
+            1
+          ]
+        }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:br-18-stale-claim-flag",
+      "uuid": "30000000000000000000000000000012",
+      "title": "Flag stale claim after 30 days inactivity",
+      "titleZh": "30天无活动则标记为陈旧案件",
+      "statement": {
+        "en": "A Claim that has had no adjuster activity for 30 consecutive days must be flagged as stale and routed to the Claims Supervisor for review.",
+        "zh": "连续30天无理算员活动的理赔案件须被标记为陈旧并转交理赔主管复核。"
+      },
+      "formal": "(today - Claim.last_activity_date) >= 30 days → Claim.status = Stale ∧ route(Supervisor)",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "today - claim.last_activity_date < duration('720h') || claim.status == 'Stale'",
+        "bindings": [
+          {
+            "var": "claim",
+            "objectTypeId": "objectType:claim"
+          }
+        ]
+      },
+      "kind": "temporal",
+      "severity": "warn",
+      "appliesToObjectTypeIds": [
+        "objectType:claim"
+      ],
+      "appliesToAttributes": [
+        "objectType:claim.status"
+      ],
+      "trigger": {
+        "description": "scheduled inactivity scan"
+      },
+      "groupId": "ruleGroup:claim-handling",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-business-rules",
+          "documentName": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+          "snippet": "**[BR-18]** A `Claim` that has had no adjuster activity for **30 consecutive days** must be flagged as stale and routed to the Claims Supervisor for review.",
+          "quoteVerified": true,
+          "confidence": 0.92,
+          "section": "§3 BR-18",
+          "sentenceRefs": [
+            1
+          ]
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:br-19-recovery-preconditions",
+      "uuid": "30000000000000000000000000000013",
+      "title": "Recovery only on closed claim with liable party",
+      "titleZh": "仅对已结案且有责任方的案件追偿",
+      "statement": {
+        "en": "A Recovery may only be opened on a Claim that is closed and carries an identified liable third party.",
+        "zh": "追偿仅可针对已结案且具有已识别责任第三方的理赔案件开立。"
+      },
+      "formal": "open(Recovery) → Claim.status = Closed ∧ Recovery.liable_party != null",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "claim.status == 'Closed' && recovery.liable_party != ''",
+        "bindings": [
+          {
+            "var": "claim",
+            "objectTypeId": "objectType:claim"
+          },
+          {
+            "var": "recovery",
+            "objectTypeId": "objectType:recovery"
+          }
+        ]
+      },
+      "kind": "validation",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:recovery",
+        "objectType:claim"
+      ],
+      "appliesToAttributes": [
+        "objectType:recovery.liable_party",
+        "objectType:claim.status"
+      ],
+      "trigger": {
+        "description": "on OpenSubrogation",
+        "onEventTypeId": "event:claim.closed"
+      },
+      "groupId": "ruleGroup:recovery-audit",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-business-rules",
+          "documentName": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+          "snippet": "**[BR-19]** A `Recovery` may only be opened on a `Claim` that is closed and carries an identified liable third party.",
+          "quoteVerified": true,
+          "confidence": 0.94,
+          "section": "§4 BR-19",
+          "sentenceRefs": [
+            1
+          ]
+        }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:br-20-immutable-audit-trail",
+      "uuid": "30000000000000000000000000000014",
+      "title": "Immutable audit of payments and reserve changes",
+      "titleZh": "赔款与准备金变更不可篡改的审计",
+      "statement": {
+        "en": "Every ClaimPayment and every Reserve change shall be recorded with the acting user, timestamp, and prior value, and such audit records may not be altered or deleted.",
+        "zh": "每笔理赔赔款与每次准备金变更须记录操作用户、时间戳与变更前值，且此类审计记录不得被修改或删除。"
+      },
+      "formal": "∀ change(ClaimPayment ∨ Reserve) → audit{user, timestamp, priorValue} ∧ immutable(audit)",
+      "kind": "constraint",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:claim-payment",
+        "objectType:reserve"
+      ],
+      "trigger": {
+        "description": "on any ClaimPayment or Reserve write"
+      },
+      "groupId": "ruleGroup:recovery-audit",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-business-rules",
+          "documentName": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+          "snippet": "**[BR-20]** Every `ClaimPayment` and every `Reserve` change shall be recorded with the acting user, timestamp, and prior value, and such audit records may not be altered or deleted.",
+          "quoteVerified": true,
+          "confidence": 0.93,
+          "section": "§4 BR-20",
+          "sentenceRefs": [
+            1
+          ]
+        }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    }
+  ],
+  "actions": [
+    {
+      "id": "action:record-submission",
+      "uuid": "40000000000000000000000000000001",
+      "name": "RecordSubmission",
+      "nameZh": "登记投保申请",
+      "description": "Record a broker application package as a new Submission linked to an Applicant.",
+      "descriptionZh": "将经纪人申请包登记为关联到申请人的新投保申请。",
+      "inputs": [
+        {
+          "name": "application_package",
+          "type": "json",
+          "required": true,
+          "description": "ACORD form + loss runs."
+        },
+        {
+          "name": "applicant",
+          "objectTypeId": "objectType:applicant",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "name": "submission",
+          "objectTypeId": "objectType:submission",
+          "required": true
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Receive the broker's application package (ACORD form + loss runs).",
+            "zh": "接收经纪人申请包（ACORD表单+历史损失记录）。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:applicant"
+          ]
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Create a Submission in Cleared = false and link it to the Applicant.",
+            "zh": "创建Cleared=false状态的投保申请并关联申请人。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:submission"
+          ]
+        }
+      ],
+      "preconditions": [],
+      "triggeredByEventIds": [
+        "event:submission.received"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:submission.cleared",
+          "on": "success"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "db_write",
+          "description": "Insert Submission record in PolicyCenter.",
+          "objectTypeId": "objectType:submission"
+        }
+      ],
+      "actor": {
+        "role": "Broker",
+        "roleZh": "经纪人",
+        "kind": "human"
+      },
+      "permissions": [
+        "submission:create"
+      ],
+      "agent": {
+        "toolName": "record_submission",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "application_package": {
+              "type": "object"
+            },
+            "applicant": {
+              "type": "object",
+              "$objectTypeId": "objectType:applicant"
+            }
+          },
+          "required": [
+            "application_package",
+            "applicant"
+          ]
+        },
+        "toolDescription": "Record a broker submission and run duplicate clearance.",
+        "execution": "function",
+        "integration": "PolicyCenter"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "**Action (`RecordSubmission`):** consumes the broker's application package (ACORD form + loss runs); produces a new `Submission` record in `Cleared` = false state and links it to an `Applicant`.",
+          "quoteVerified": true,
+          "confidence": 0.93,
+          "section": "§3 A1"
+        }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:assess-risk",
+      "uuid": "40000000000000000000000000000002",
+      "name": "AssessRisk",
+      "nameZh": "风险评估",
+      "description": "Evaluate a cleared submission and produce a risk assessment with proposed coverages, flagging referrals.",
+      "descriptionZh": "评估已查重的投保申请，产出含拟议险别的风险评估，并标记需转交项。",
+      "inputs": [
+        {
+          "name": "submission",
+          "objectTypeId": "objectType:submission",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "name": "risk_assessment",
+          "objectTypeId": "objectType:risk-assessment",
+          "required": true
+        },
+        {
+          "name": "proposed_coverages",
+          "objectTypeId": "objectType:coverage",
+          "required": false,
+          "isArray": true,
+          "cardinality": "many"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Consume the Submission plus loss-run history and property characteristics.",
+            "zh": "采用投保申请及历史损失记录与财产特征。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:submission"
+          ]
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Produce a RiskAssessment with a risk score and proposed Coverage list.",
+            "zh": "产出含风险评分与拟议险别清单的风险评估。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:risk-assessment"
+          ]
+        },
+        {
+          "order": 3,
+          "text": {
+            "en": "Flag for referral when an eligibility threshold is hit.",
+            "zh": "命中资格阈值时标记为需转交。"
+          },
+          "guardRuleId": "rule:br-03-referral-threshold"
+        }
+      ],
+      "preconditions": [
+        {
+          "ruleId": "rule:br-01-submission-clearance",
+          "severity": "block"
+        },
+        {
+          "ruleId": "rule:br-02-tiv-facultative-reinsurance",
+          "severity": "block"
+        },
+        {
+          "ruleId": "rule:br-16-applicant-loss-history-decline",
+          "severity": "block"
+        }
+      ],
+      "triggeredByEventIds": [
+        "event:submission.cleared"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:underwriting.referral-raised",
+          "on": "success",
+          "condition": "submission.cat_zone_tier == 'Tier1' || submission.proposed_limit > 10000000"
+        },
+        {
+          "eventTypeId": "event:underwriting.risk-assessed",
+          "on": "success",
+          "condition": "!(submission.cat_zone_tier == 'Tier1' || submission.proposed_limit > 10000000)"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "db_write",
+          "description": "Insert RiskAssessment.",
+          "objectTypeId": "objectType:risk-assessment"
+        }
+      ],
+      "actor": {
+        "role": "Underwriter",
+        "roleZh": "核保人",
+        "kind": "agent"
+      },
+      "permissions": [
+        "submission:assess"
+      ],
+      "agent": {
+        "toolName": "assess_risk",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "submission": {
+              "type": "object",
+              "$objectTypeId": "objectType:submission"
+            }
+          },
+          "required": [
+            "submission"
+          ]
+        },
+        "toolDescription": "Score a submission and propose coverages; flag referrals per BR-03.",
+        "execution": "llm_tool",
+        "integration": "PolicyCenter"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "**Action (`AssessRisk`):** consumes the `Submission` plus loss-run history and property characteristics; produces a `RiskAssessment` with a risk score and proposed `Coverage` list.",
+          "quoteVerified": true,
+          "confidence": 0.92,
+          "section": "§3 A2"
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:approve-referral",
+      "uuid": "40000000000000000000000000000003",
+      "name": "ApproveReferral",
+      "nameZh": "审批转交",
+      "description": "Underwriting Manager decision on a referred submission, producing an Approval.",
+      "descriptionZh": "核保经理对转交的投保申请作出决定并产生批准记录。",
+      "inputs": [
+        {
+          "name": "risk_assessment",
+          "objectTypeId": "objectType:risk-assessment",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "name": "approval_decision",
+          "type": "enum",
+          "required": true,
+          "description": "Approved or Declined."
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Review the RiskAssessment for the referred Submission.",
+            "zh": "复核转交投保申请的风险评估。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:risk-assessment"
+          ]
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Produce an Approval (Approved / Declined) attached to the Submission.",
+            "zh": "产出附于投保申请的批准记录（批准/拒绝）。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:submission"
+          ]
+        }
+      ],
+      "preconditions": [
+        {
+          "ruleId": "rule:br-03-referral-threshold",
+          "severity": "block"
+        }
+      ],
+      "triggeredByEventIds": [
+        "event:underwriting.referral-raised"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:underwriting.referral-approved",
+          "on": "success",
+          "condition": "decision == 'Approved'"
+        },
+        {
+          "eventTypeId": "event:underwriting.submission-declined",
+          "on": "success",
+          "condition": "decision == 'Declined'"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "state_change",
+          "description": "Submission.status := Referred → Quoted/Declined.",
+          "objectTypeId": "objectType:submission"
+        }
+      ],
+      "actor": {
+        "role": "Underwriting Manager",
+        "roleZh": "核保经理",
+        "kind": "human"
+      },
+      "permissions": [
+        "referral:approve"
+      ],
+      "agent": {
+        "toolName": "approve_referral",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "risk_assessment": {
+              "type": "object",
+              "$objectTypeId": "objectType:risk-assessment"
+            }
+          },
+          "required": [
+            "risk_assessment"
+          ]
+        },
+        "toolDescription": "Record a UW Manager approval or decline on a referred submission.",
+        "execution": "human_task",
+        "integration": "PolicyCenter"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "**Action (`ApproveReferral`):** consumes the `RiskAssessment`; produces an `Approval` record (Approved / Declined) attached to the `Submission`.",
+          "quoteVerified": true,
+          "confidence": 0.9,
+          "section": "§3 A3"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:generate-quote",
+      "uuid": "40000000000000000000000000000004",
+      "name": "GenerateQuote",
+      "nameZh": "生成报价",
+      "description": "Compute premium via RatingEngine and produce a Quote with line-item premiums, deductibles, and limits.",
+      "descriptionZh": "通过费率引擎计算保费并产出含分项保费、免赔额与限额的报价。",
+      "inputs": [
+        {
+          "name": "risk_assessment",
+          "objectTypeId": "objectType:risk-assessment",
+          "required": true
+        },
+        {
+          "name": "coverage_selections",
+          "objectTypeId": "objectType:coverage",
+          "required": true,
+          "isArray": true,
+          "cardinality": "many"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "quote",
+          "objectTypeId": "objectType:quote",
+          "required": true
+        },
+        {
+          "name": "premium",
+          "objectTypeId": "objectType:premium",
+          "required": true
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Consume the approved RiskAssessment and Coverage selections.",
+            "zh": "采用已批准的风险评估与险别选择。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:risk-assessment",
+            "objectType:coverage"
+          ]
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Call RatingEngine to compute Premium, applying the minimum-premium floor.",
+            "zh": "调用费率引擎计算保费并应用最低保费下限。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:premium"
+          ],
+          "guardRuleId": "rule:br-06-minimum-premium"
+        },
+        {
+          "order": 3,
+          "text": {
+            "en": "Produce a Quote with line-item premiums, deductibles, and limits.",
+            "zh": "产出含分项保费、免赔额与限额的报价。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:quote"
+          ],
+          "guardRuleId": "rule:br-15-deductible-minimum"
+        }
+      ],
+      "preconditions": [
+        {
+          "ruleId": "rule:br-06-minimum-premium",
+          "severity": "block"
+        },
+        {
+          "ruleId": "rule:br-15-deductible-minimum",
+          "severity": "block"
+        }
+      ],
+      "triggeredByEventIds": [
+        "event:underwriting.risk-assessed",
+        "event:underwriting.referral-approved"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:quote.issued",
+          "on": "success"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "external_call",
+          "description": "Synchronous REST to RatingEngine to compute Premium."
+        },
+        {
+          "kind": "db_write",
+          "description": "Insert Quote + Premium.",
+          "objectTypeId": "objectType:quote"
+        }
+      ],
+      "actor": {
+        "role": "Underwriter",
+        "roleZh": "核保人",
+        "kind": "agent"
+      },
+      "permissions": [
+        "quote:generate"
+      ],
+      "agent": {
+        "toolName": "generate_quote",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "risk_assessment": {
+              "type": "object",
+              "$objectTypeId": "objectType:risk-assessment"
+            },
+            "coverage_selections": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "$objectTypeId": "objectType:coverage"
+              }
+            }
+          },
+          "required": [
+            "risk_assessment",
+            "coverage_selections"
+          ]
+        },
+        "toolDescription": "Rate and produce a Quote with premiums, deductibles, and limits.",
+        "execution": "function",
+        "integration": "RatingEngine"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "**Action (`GenerateQuote`):** consumes the approved `RiskAssessment` and `Coverage` selections; calls RatingEngine to compute `Premium`; produces a `Quote` with line-item premiums, deductibles, and limits.",
+          "quoteVerified": true,
+          "confidence": 0.92,
+          "section": "§3 A4"
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:bind-policy",
+      "uuid": "40000000000000000000000000000005",
+      "name": "BindPolicy",
+      "nameZh": "承保保单",
+      "description": "Bind an accepted Quote into a Policy in Bound status, materializing coverages and premium.",
+      "descriptionZh": "将已接受的报价承保为Bound状态的保单，落实各险别与保费。",
+      "inputs": [
+        {
+          "name": "quote",
+          "objectTypeId": "objectType:quote",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "name": "policy",
+          "objectTypeId": "objectType:policy",
+          "required": true
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Consume an accepted Quote and validate the effective-date window and quote validity.",
+            "zh": "采用已接受的报价并校验生效日期窗口与报价有效期。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:quote"
+          ],
+          "guardRuleId": "rule:br-07-binding-effective-date-window"
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Produce a Policy in Bound status with effective and expiry dates, materializing Coverage and bound Premium.",
+            "zh": "产出Bound状态、具生效与失效日期的保单，并落实险别与已承保保费。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:policy",
+            "objectType:coverage",
+            "objectType:premium"
+          ]
+        }
+      ],
+      "preconditions": [
+        {
+          "ruleId": "rule:br-07-binding-effective-date-window",
+          "severity": "block"
+        },
+        {
+          "ruleId": "rule:br-14-quote-validity",
+          "severity": "block"
+        }
+      ],
+      "triggeredByEventIds": [
+        "event:quote.accepted"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:policy.bound",
+          "on": "success"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "state_change",
+          "description": "Policy.status := Bound.",
+          "objectTypeId": "objectType:policy"
+        },
+        {
+          "kind": "db_write",
+          "description": "Materialize Coverage and bound Premium.",
+          "objectTypeId": "objectType:coverage"
+        }
+      ],
+      "actor": {
+        "role": "Underwriter",
+        "roleZh": "核保人",
+        "kind": "agent"
+      },
+      "permissions": [
+        "policy:bind"
+      ],
+      "agent": {
+        "toolName": "bind_policy",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "quote": {
+              "type": "object",
+              "$objectTypeId": "objectType:quote"
+            }
+          },
+          "required": [
+            "quote"
+          ]
+        },
+        "toolDescription": "Bind an accepted, valid quote into a Policy.",
+        "execution": "function",
+        "integration": "PolicyCenter"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "**Action (`BindPolicy`):** consumes an accepted `Quote`; produces a `Policy` in `Bound` status with an effective date and expiry date, materializing each `Coverage` and the bound `Premium`.",
+          "quoteVerified": true,
+          "confidence": 0.93,
+          "section": "§3 A5"
+        }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:issue-policy-documents",
+      "uuid": "40000000000000000000000000000006",
+      "name": "IssuePolicyDocuments",
+      "nameZh": "出具保单文件",
+      "description": "Generate declarations page and policy wording as a PolicyDocument stored in DocVault.",
+      "descriptionZh": "生成声明页与保单条款作为存入DocVault的保单文件。",
+      "inputs": [
+        {
+          "name": "policy",
+          "objectTypeId": "objectType:policy",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "name": "policy_document",
+          "type": "reference",
+          "required": true,
+          "description": "PolicyDocument in DocVault."
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Consume the bound Policy.",
+            "zh": "采用已承保的保单。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:policy"
+          ]
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Produce the declarations page and policy wording in DocVault.",
+            "zh": "在DocVault中生成声明页与保单条款。"
+          }
+        }
+      ],
+      "preconditions": [],
+      "triggeredByEventIds": [
+        "event:policy.bound"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:policy.issued",
+          "on": "success"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "external_call",
+          "description": "Async upload of PolicyDocument to DocVault."
+        }
+      ],
+      "actor": {
+        "role": "PolicyCenter",
+        "roleZh": "保单系统",
+        "kind": "system"
+      },
+      "permissions": [
+        "policy:issue-docs"
+      ],
+      "agent": {
+        "toolName": "issue_policy_documents",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "policy": {
+              "type": "object",
+              "$objectTypeId": "objectType:policy"
+            }
+          },
+          "required": [
+            "policy"
+          ]
+        },
+        "toolDescription": "Generate and store policy documents in DocVault.",
+        "execution": "function",
+        "integration": "DocVault"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "**Action (`IssuePolicyDocuments`):** consumes the bound `Policy`; produces the declarations page and policy wording as a `PolicyDocument` stored in DocVault.",
+          "quoteVerified": true,
+          "confidence": 0.9,
+          "section": "§3 A6"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:record-fnol",
+      "uuid": "40000000000000000000000000000007",
+      "name": "RecordFNOL",
+      "nameZh": "登记报案",
+      "description": "Record First Notice of Loss, creating a Claim linked to the matched Policy and opening exposures.",
+      "descriptionZh": "登记首次报损，创建关联到匹配保单的理赔案件并开立赔付项。",
+      "inputs": [
+        {
+          "name": "loss_details",
+          "type": "json",
+          "required": true,
+          "description": "Date of loss, cause, claimant."
+        }
+      ],
+      "outputs": [
+        {
+          "name": "claim",
+          "objectTypeId": "objectType:claim",
+          "required": true
+        },
+        {
+          "name": "exposures",
+          "objectTypeId": "objectType:exposure",
+          "required": true,
+          "isArray": true,
+          "cardinality": "many"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Consume the reported loss details (date of loss, cause, claimant).",
+            "zh": "采用报告的损失详情（出险日期、原因、索赔人）。"
+          }
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Create a Claim linked to the matched Policy.",
+            "zh": "创建关联到匹配保单的理赔案件。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:claim"
+          ]
+        },
+        {
+          "order": 3,
+          "text": {
+            "en": "Open at least one Exposure per affected Coverage.",
+            "zh": "为每个受影响险别开立至少一个赔付项。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:exposure"
+          ]
+        }
+      ],
+      "preconditions": [],
+      "triggeredByEventIds": [
+        "event:loss.reported"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:fnol.recorded",
+          "on": "success"
+        },
+        {
+          "eventTypeId": "event:exposure.opened",
+          "on": "success"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "db_write",
+          "description": "Insert Claim and one Exposure per Coverage.",
+          "objectTypeId": "objectType:claim"
+        }
+      ],
+      "actor": {
+        "role": "Claims Intake Agent",
+        "roleZh": "理赔受理专员",
+        "kind": "human"
+      },
+      "permissions": [
+        "claim:create"
+      ],
+      "agent": {
+        "toolName": "record_fnol",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "loss_details": {
+              "type": "object"
+            }
+          },
+          "required": [
+            "loss_details"
+          ]
+        },
+        "toolDescription": "Record FNOL, create a Claim, and open exposures per coverage.",
+        "execution": "function",
+        "integration": "ClaimCenter"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "**Action (`RecordFNOL`):** consumes the reported loss details (date of loss, cause, claimant); produces a new `Claim` linked to the matched `Policy`, and opens at least one `Exposure` per affected `Coverage`.",
+          "quoteVerified": true,
+          "confidence": 0.93,
+          "section": "§4 B1"
+        }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:verify-coverage",
+      "uuid": "40000000000000000000000000000008",
+      "name": "VerifyCoverage",
+      "nameZh": "核实承保",
+      "description": "Determine whether coverage was in force at the date of loss against the linked policy.",
+      "descriptionZh": "依据关联保单判定出险日期是否在保险期间内。",
+      "inputs": [
+        {
+          "name": "claim",
+          "objectTypeId": "objectType:claim",
+          "required": true
+        },
+        {
+          "name": "policy",
+          "objectTypeId": "objectType:policy",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "name": "coverage_decision",
+          "type": "enum",
+          "required": true,
+          "description": "InForce / OutOfForce / NeedsReview."
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Consume the Claim date of loss and the linked Policy effective/expiry dates and Coverage terms.",
+            "zh": "采用案件出险日期及关联保单的生效/失效日期与险别条款。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:claim",
+            "objectType:policy",
+            "objectType:coverage"
+          ]
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Produce a coverage decision applying BR-08 in-force date check.",
+            "zh": "应用BR-08在保日期检查产出承保决定。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:exposure"
+          ],
+          "guardRuleId": "rule:br-08-coverage-in-force-dates"
+        }
+      ],
+      "preconditions": [
+        {
+          "ruleId": "rule:br-08-coverage-in-force-dates",
+          "severity": "block"
+        }
+      ],
+      "triggeredByEventIds": [
+        "event:fnol.recorded"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:coverage.confirmed",
+          "on": "success",
+          "condition": "decision == 'InForce'"
+        },
+        {
+          "eventTypeId": "event:coverage.denied",
+          "on": "success",
+          "condition": "decision == 'OutOfForce'"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "state_change",
+          "description": "Exposure.coverage_decision set.",
+          "objectTypeId": "objectType:exposure"
+        }
+      ],
+      "actor": {
+        "role": "ClaimCenter",
+        "roleZh": "理赔系统",
+        "kind": "system"
+      },
+      "permissions": [
+        "coverage:verify"
+      ],
+      "agent": {
+        "toolName": "verify_coverage",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "claim": {
+              "type": "object",
+              "$objectTypeId": "objectType:claim"
+            },
+            "policy": {
+              "type": "object",
+              "$objectTypeId": "objectType:policy"
+            }
+          },
+          "required": [
+            "claim",
+            "policy"
+          ]
+        },
+        "toolDescription": "Verify whether coverage was in force at the date of loss.",
+        "execution": "function",
+        "integration": "ClaimCenter"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "**Action (`VerifyCoverage`):** consumes the `Claim` date of loss and the linked `Policy` effective/expiry dates and `Coverage` terms; produces a coverage decision (`InForce` / `OutOfForce` / `NeedsReview`).",
+          "quoteVerified": true,
+          "confidence": 0.92,
+          "section": "§4 B2"
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:assign-adjuster",
+      "uuid": "40000000000000000000000000000009",
+      "name": "AssignAdjuster",
+      "nameZh": "指派理算员",
+      "description": "Assign an adjuster to a claim and its open exposures, routing severe losses to senior adjusters.",
+      "descriptionZh": "为理赔案件及其未结赔付项指派理算员，重大损失分配给资深理算员。",
+      "inputs": [
+        {
+          "name": "claim",
+          "objectTypeId": "objectType:claim",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "name": "adjuster",
+          "objectTypeId": "objectType:adjuster",
+          "required": true
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Consume the Claim severity and line of business.",
+            "zh": "采用案件严重程度与业务线。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:claim"
+          ]
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Produce an Adjuster assignment on the Claim and its open Exposures; route severe losses to senior adjusters.",
+            "zh": "在案件及其未结赔付项上产生理算员指派；重大损失分配给资深理算员。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:claim",
+            "objectType:exposure"
+          ],
+          "guardRuleId": "rule:br-12-senior-adjuster-assignment"
+        }
+      ],
+      "preconditions": [
+        {
+          "ruleId": "rule:br-12-senior-adjuster-assignment",
+          "severity": "block"
+        }
+      ],
+      "triggeredByEventIds": [
+        "event:coverage.confirmed"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:claim.assigned",
+          "on": "success"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "state_change",
+          "description": "Claim.status := Assigned.",
+          "objectTypeId": "objectType:claim"
+        }
+      ],
+      "actor": {
+        "role": "ClaimCenter",
+        "roleZh": "理赔系统",
+        "kind": "system"
+      },
+      "permissions": [
+        "claim:assign"
+      ],
+      "agent": {
+        "toolName": "assign_adjuster",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "claim": {
+              "type": "object",
+              "$objectTypeId": "objectType:claim"
+            }
+          },
+          "required": [
+            "claim"
+          ]
+        },
+        "toolDescription": "Assign an adjuster by severity and line of business.",
+        "execution": "function",
+        "integration": "ClaimCenter"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "**Action (`AssignAdjuster`):** consumes the `Claim` severity and line of business; produces an `Adjuster` assignment on the `Claim` and its open `Exposure`s.",
+          "quoteVerified": true,
+          "confidence": 0.91,
+          "section": "§4 B3"
+        }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:set-reserve",
+      "uuid": "4000000000000000000000000000000a",
+      "name": "SetReserve",
+      "nameZh": "设立准备金",
+      "description": "Set an initial reserve amount on each open exposure, escalating large-loss reserves for approval.",
+      "descriptionZh": "为每个未结赔付项设立初始准备金，大额损失准备金升级审批。",
+      "inputs": [
+        {
+          "name": "exposure",
+          "objectTypeId": "objectType:exposure",
+          "required": true
+        },
+        {
+          "name": "loss_estimate",
+          "type": "money",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "name": "reserve",
+          "objectTypeId": "objectType:reserve",
+          "required": true
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Consume the Adjuster's loss estimate.",
+            "zh": "采用理算员的损失估算。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:exposure"
+          ]
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Produce a Reserve amount on each open Exposure within 48 hours of FNOL.",
+            "zh": "在报案后48小时内为每个未结赔付项产出准备金。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:reserve"
+          ],
+          "guardRuleId": "rule:br-09-reserve-within-48h"
+        },
+        {
+          "order": 3,
+          "text": {
+            "en": "Escalate reserves at or above $250,000 for Claims Manager approval.",
+            "zh": "达到或超过25万美元的准备金升级至理赔经理审批。"
+          },
+          "guardRuleId": "rule:br-11-large-loss-reserve-approval"
+        }
+      ],
+      "preconditions": [
+        {
+          "ruleId": "rule:br-11-large-loss-reserve-approval",
+          "severity": "block"
+        },
+        {
+          "ruleId": "rule:br-09-reserve-within-48h",
+          "severity": "warn"
+        }
+      ],
+      "triggeredByEventIds": [
+        "event:exposure.opened"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:reserve.set",
+          "on": "success"
+        },
+        {
+          "eventTypeId": "event:reserve.approval-requested",
+          "on": "success",
+          "condition": "reserve.amount >= 250000"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "db_write",
+          "description": "Insert Reserve; audit prior value per BR-20.",
+          "objectTypeId": "objectType:reserve"
+        }
+      ],
+      "actor": {
+        "role": "Adjuster",
+        "roleZh": "理算员",
+        "kind": "agent"
+      },
+      "permissions": [
+        "reserve:set"
+      ],
+      "agent": {
+        "toolName": "set_reserve",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "exposure": {
+              "type": "object",
+              "$objectTypeId": "objectType:exposure"
+            },
+            "loss_estimate": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "exposure",
+            "loss_estimate"
+          ]
+        },
+        "toolDescription": "Set an initial reserve on an exposure; escalate large losses.",
+        "execution": "function",
+        "integration": "ClaimCenter"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "**Action (`SetReserve`):** consumes the Adjuster's loss estimate; produces a `Reserve` amount on each open `Exposure`. Must occur within **48 hours** of FNOL",
+          "quoteVerified": true,
+          "confidence": 0.92,
+          "section": "§4 B4"
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:adjust-claim",
+      "uuid": "4000000000000000000000000000000b",
+      "name": "AdjustClaim",
+      "nameZh": "理算案件",
+      "description": "Investigate and adjust an exposure, producing updated reserves and a recommended settlement amount.",
+      "descriptionZh": "调查并理算赔付项，产出更新的准备金与建议结算金额。",
+      "inputs": [
+        {
+          "name": "claim",
+          "objectTypeId": "objectType:claim",
+          "required": true
+        },
+        {
+          "name": "claim_documents",
+          "type": "reference",
+          "required": false,
+          "isArray": true,
+          "cardinality": "many",
+          "description": "Supporting ClaimDocuments."
+        }
+      ],
+      "outputs": [
+        {
+          "name": "reserve",
+          "objectTypeId": "objectType:reserve",
+          "required": true
+        },
+        {
+          "name": "recommended_settlement",
+          "type": "money",
+          "required": true
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Consume investigation findings, estimates, and supporting ClaimDocuments.",
+            "zh": "采用调查结论、估算与支持性理赔文件。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:claim",
+            "objectType:exposure"
+          ]
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Produce updated Reserve values (versioned for audit) per Exposure.",
+            "zh": "为每个赔付项产出更新且版本化用于审计的准备金。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:reserve"
+          ],
+          "guardRuleId": "rule:br-20-immutable-audit-trail"
+        },
+        {
+          "order": 3,
+          "text": {
+            "en": "Produce a recommended settlement amount per Exposure.",
+            "zh": "为每个赔付项产出建议结算金额。"
+          }
+        }
+      ],
+      "preconditions": [
+        {
+          "ruleId": "rule:br-20-immutable-audit-trail",
+          "severity": "block"
+        }
+      ],
+      "triggeredByEventIds": [
+        "event:claim.assigned"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:reserve.adjusted",
+          "on": "success"
+        },
+        {
+          "eventTypeId": "event:settlement.recommended",
+          "on": "success"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "db_write",
+          "description": "Versioned Reserve update.",
+          "objectTypeId": "objectType:reserve"
+        }
+      ],
+      "actor": {
+        "role": "Adjuster",
+        "roleZh": "理算员",
+        "kind": "agent"
+      },
+      "permissions": [
+        "claim:adjust"
+      ],
+      "agent": {
+        "toolName": "adjust_claim",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "claim": {
+              "type": "object",
+              "$objectTypeId": "objectType:claim"
+            }
+          },
+          "required": [
+            "claim"
+          ]
+        },
+        "toolDescription": "Investigate, update reserves, and recommend a settlement.",
+        "execution": "llm_tool",
+        "integration": "ClaimCenter"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "**Action (`AdjustClaim`):** consumes investigation findings, estimates, and supporting `ClaimDocument`s; produces updated `Reserve` values and a recommended settlement amount per `Exposure`.",
+          "quoteVerified": true,
+          "confidence": 0.91,
+          "section": "§4 B5"
+        }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:issue-claim-payment",
+      "uuid": "4000000000000000000000000000000c",
+      "name": "IssueClaimPayment",
+      "nameZh": "签发理赔赔款",
+      "description": "Authorize and issue a claim payment, decrementing the reserve, subject to authority limits.",
+      "descriptionZh": "在授权限额约束下授权并签发理赔赔款，并冲减准备金。",
+      "inputs": [
+        {
+          "name": "exposure",
+          "objectTypeId": "objectType:exposure",
+          "required": true
+        },
+        {
+          "name": "settlement_amount",
+          "type": "money",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "name": "claim_payment",
+          "objectTypeId": "objectType:claim-payment",
+          "required": true
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Verify the exposure coverage decision permits payment.",
+            "zh": "确认赔付项承保决定允许赔付。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:exposure"
+          ],
+          "guardRuleId": "rule:br-17-no-payment-out-of-force"
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Check authority: payments above $25,000 need Supervisor, above $100,000 need Claims Manager.",
+            "zh": "检查授权：超过2.5万美元需主管，超过10万美元需理赔经理。"
+          },
+          "guardRuleId": "rule:br-05-payment-escalation"
+        },
+        {
+          "order": 3,
+          "text": {
+            "en": "Produce a ClaimPayment and decrement the Reserve on the paying Exposure.",
+            "zh": "产出理赔赔款并冲减赔付项上的准备金。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:claim-payment",
+            "objectType:reserve"
+          ]
+        }
+      ],
+      "preconditions": [
+        {
+          "ruleId": "rule:br-04-adjuster-payment-authority",
+          "severity": "block"
+        },
+        {
+          "ruleId": "rule:br-05-payment-escalation",
+          "severity": "block"
+        },
+        {
+          "ruleId": "rule:br-17-no-payment-out-of-force",
+          "severity": "block"
+        }
+      ],
+      "triggeredByEventIds": [
+        "event:settlement.recommended"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:payment.authorization-requested",
+          "on": "success",
+          "condition": "payment.amount > 25000"
+        },
+        {
+          "eventTypeId": "event:payment.issued",
+          "on": "success"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "payment",
+          "description": "Disburse ClaimPayment via BillingCenter/Treasury."
+        },
+        {
+          "kind": "state_change",
+          "description": "Decrement Reserve on paying Exposure.",
+          "objectTypeId": "objectType:reserve"
+        }
+      ],
+      "actor": {
+        "role": "Adjuster",
+        "roleZh": "理算员",
+        "kind": "agent"
+      },
+      "permissions": [
+        "payment:issue"
+      ],
+      "agent": {
+        "toolName": "issue_claim_payment",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "exposure": {
+              "type": "object",
+              "$objectTypeId": "objectType:exposure"
+            },
+            "settlement_amount": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "exposure",
+            "settlement_amount"
+          ]
+        },
+        "toolDescription": "Authorize and issue a claim payment within authority limits.",
+        "execution": "function",
+        "integration": "BillingCenter"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "**Action (`IssueClaimPayment`):** consumes the approved settlement amount; produces a `ClaimPayment` and decrements the `Reserve` on the paying `Exposure`. A `ClaimPayment` above the Adjuster's **$25,000** authority requires a Supervisor `Approval`",
+          "quoteVerified": true,
+          "confidence": 0.92,
+          "section": "§4 B6"
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:close-exposure",
+      "uuid": "4000000000000000000000000000000d",
+      "name": "CloseExposure",
+      "nameZh": "关闭赔付项",
+      "description": "Close a fully-paid exposure (reserve zeroed); close the claim when all exposures are closed.",
+      "descriptionZh": "关闭已全额赔付的赔付项（准备金归零）；当所有赔付项关闭时关闭案件。",
+      "inputs": [
+        {
+          "name": "exposure",
+          "objectTypeId": "objectType:exposure",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "name": "exposure",
+          "objectTypeId": "objectType:exposure",
+          "required": true
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Consume the fully-paid Exposure; block while any Reserve balance remains.",
+            "zh": "采用已全额赔付的赔付项；存在准备金余额时阻止关闭。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:exposure",
+            "objectType:reserve"
+          ],
+          "guardRuleId": "rule:br-13-no-close-with-reserve"
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Produce a closed Exposure (Reserve zeroed); close the Claim when all Exposures are closed.",
+            "zh": "产出已关闭的赔付项（准备金归零）；当全部赔付项关闭时关闭案件。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:exposure",
+            "objectType:claim"
+          ]
+        }
+      ],
+      "preconditions": [
+        {
+          "ruleId": "rule:br-13-no-close-with-reserve",
+          "severity": "block"
+        }
+      ],
+      "triggeredByEventIds": [
+        "event:payment.issued"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:exposure.closed",
+          "on": "success"
+        },
+        {
+          "eventTypeId": "event:claim.closed",
+          "on": "success",
+          "condition": "claim.all_exposures_closed"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "state_change",
+          "description": "Exposure.status := Closed; Claim.status := Closed when last.",
+          "objectTypeId": "objectType:exposure"
+        }
+      ],
+      "actor": {
+        "role": "Adjuster",
+        "roleZh": "理算员",
+        "kind": "agent"
+      },
+      "permissions": [
+        "exposure:close"
+      ],
+      "agent": {
+        "toolName": "close_exposure",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "exposure": {
+              "type": "object",
+              "$objectTypeId": "objectType:exposure"
+            }
+          },
+          "required": [
+            "exposure"
+          ]
+        },
+        "toolDescription": "Close a fully-paid exposure and the claim when all are closed.",
+        "execution": "function",
+        "integration": "ClaimCenter"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "**Action (`CloseExposure`):** consumes the fully-paid `Exposure`; produces a closed `Exposure` (Reserve zeroed). When all Exposures on a `Claim` are closed, the `Claim` is closed.",
+          "quoteVerified": true,
+          "confidence": 0.92,
+          "section": "§4 B7"
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:review-reserve",
+      "uuid": "4000000000000000000000000000000e",
+      "name": "ReviewReserve",
+      "nameZh": "复核准备金",
+      "description": "Periodically review reserve adequacy on an open exposure, confirming or revising the reserve.",
+      "descriptionZh": "定期复核未结赔付项的准备金充足性，确认或修订准备金。",
+      "inputs": [
+        {
+          "name": "exposure",
+          "objectTypeId": "objectType:exposure",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "name": "reserve",
+          "objectTypeId": "objectType:reserve",
+          "required": true
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Consume the open Exposure and elapsed time.",
+            "zh": "采用未结赔付项与已过时间。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:exposure",
+            "objectType:reserve"
+          ]
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Produce a confirmed or revised Reserve; every open Exposure reviewed at least every 90 days.",
+            "zh": "产出确认或修订的准备金；每个未结赔付项至少每90天复核。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:reserve"
+          ],
+          "guardRuleId": "rule:br-10-reserve-review-90d"
+        }
+      ],
+      "preconditions": [
+        {
+          "ruleId": "rule:br-10-reserve-review-90d",
+          "severity": "warn"
+        }
+      ],
+      "triggeredByEventIds": [
+        "event:reserve.review-due"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:reserve.adjusted",
+          "on": "success",
+          "condition": "reserve.revised"
+        },
+        {
+          "eventTypeId": "event:reserve.confirmed",
+          "on": "success",
+          "condition": "!reserve.revised"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "db_write",
+          "description": "Update Reserve.last_reviewed_date (versioned).",
+          "objectTypeId": "objectType:reserve"
+        }
+      ],
+      "actor": {
+        "role": "Adjuster",
+        "roleZh": "理算员",
+        "kind": "agent"
+      },
+      "permissions": [
+        "reserve:review"
+      ],
+      "agent": {
+        "toolName": "review_reserve",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "exposure": {
+              "type": "object",
+              "$objectTypeId": "objectType:exposure"
+            }
+          },
+          "required": [
+            "exposure"
+          ]
+        },
+        "toolDescription": "Review and confirm/revise reserve adequacy on an exposure.",
+        "execution": "llm_tool",
+        "integration": "ClaimCenter"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "**Action (`ReviewReserve`):** consumes the open `Exposure` and elapsed time; produces a confirmed or revised `Reserve`. Every open `Exposure` must be reviewed at least every **90 days**",
+          "quoteVerified": true,
+          "confidence": 0.91,
+          "section": "§5 C1"
+        }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:open-subrogation",
+      "uuid": "4000000000000000000000000000000f",
+      "name": "OpenSubrogation",
+      "nameZh": "开立代位求偿",
+      "description": "Open a recovery against an identified liable third party on a settled, closed claim.",
+      "descriptionZh": "对已结案且有已识别责任第三方的案件开立追偿。",
+      "inputs": [
+        {
+          "name": "claim",
+          "objectTypeId": "objectType:claim",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "name": "recovery",
+          "objectTypeId": "objectType:recovery",
+          "required": true
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Consume a settled Claim with identified third-party liability.",
+            "zh": "采用已结案且具第三方责任的案件。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:claim"
+          ],
+          "guardRuleId": "rule:br-19-recovery-preconditions"
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Produce a Recovery record targeting the liable party.",
+            "zh": "产出针对责任方的追偿记录。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:recovery"
+          ]
+        }
+      ],
+      "preconditions": [
+        {
+          "ruleId": "rule:br-19-recovery-preconditions",
+          "severity": "block"
+        }
+      ],
+      "triggeredByEventIds": [
+        "event:claim.closed"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:subrogation.opened",
+          "on": "success"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "db_write",
+          "description": "Insert Recovery record.",
+          "objectTypeId": "objectType:recovery"
+        }
+      ],
+      "actor": {
+        "role": "Subrogation Specialist",
+        "roleZh": "代位求偿专员",
+        "kind": "human"
+      },
+      "permissions": [
+        "recovery:open"
+      ],
+      "agent": {
+        "toolName": "open_subrogation",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "claim": {
+              "type": "object",
+              "$objectTypeId": "objectType:claim"
+            }
+          },
+          "required": [
+            "claim"
+          ]
+        },
+        "toolDescription": "Open a subrogation recovery on a closed claim with a liable party.",
+        "execution": "human_task",
+        "integration": "ClaimCenter"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "**Action (`OpenSubrogation`):** consumes a settled `Claim` with identified third-party liability; produces a `Recovery` record targeting the liable party.",
+          "quoteVerified": true,
+          "confidence": 0.9,
+          "section": "§6 D1"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:record-recovery",
+      "uuid": "40000000000000000000000000000010",
+      "name": "RecordRecovery",
+      "nameZh": "登记追偿入账",
+      "description": "Record funds received from the liable party and offset net incurred loss on the claim.",
+      "descriptionZh": "登记从责任方收到的款项并冲抵案件净已发生损失。",
+      "inputs": [
+        {
+          "name": "recovery",
+          "objectTypeId": "objectType:recovery",
+          "required": true
+        },
+        {
+          "name": "funds_received",
+          "type": "money",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "name": "recovery",
+          "objectTypeId": "objectType:recovery",
+          "required": true
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Consume funds received from the liable party.",
+            "zh": "采用从责任方收到的款项。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:recovery"
+          ]
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Produce an updated Recovery amount and offset net incurred loss on the Claim.",
+            "zh": "产出更新的追偿金额并冲抵案件净已发生损失。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:recovery",
+            "objectType:claim"
+          ]
+        }
+      ],
+      "preconditions": [],
+      "triggeredByEventIds": [
+        "event:recovery.received"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:recovery.recorded",
+          "on": "success"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "db_write",
+          "description": "Update Recovery and Claim net incurred loss.",
+          "objectTypeId": "objectType:recovery"
+        }
+      ],
+      "actor": {
+        "role": "Subrogation Specialist",
+        "roleZh": "代位求偿专员",
+        "kind": "human"
+      },
+      "permissions": [
+        "recovery:record"
+      ],
+      "agent": {
+        "toolName": "record_recovery",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "recovery": {
+              "type": "object",
+              "$objectTypeId": "objectType:recovery"
+            },
+            "funds_received": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "recovery",
+            "funds_received"
+          ]
+        },
+        "toolDescription": "Record recovery receipt and offset claim net incurred loss.",
+        "execution": "function",
+        "integration": "BillingCenter"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "**Action (`RecordRecovery`):** consumes funds received from the liable party; produces an updated `Recovery` amount and offsets net incurred loss on the `Claim`.",
+          "quoteVerified": true,
+          "confidence": 0.9,
+          "section": "§6 D2"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    }
+  ],
+  "events": [
+    {
+      "id": "event:submission.received",
+      "uuid": "50000000000000000000000000000001",
+      "name": "submission.received",
+      "nameZh": "投保申请已收到",
+      "description": "A broker submission has been received in PolicyCenter.",
+      "descriptionZh": "PolicyCenter已收到经纪人投保申请。",
+      "payload": [
+        {
+          "name": "submission",
+          "type": "reference",
+          "objectTypeId": "objectType:submission",
+          "required": true,
+          "description": "Submission id."
+        }
+      ],
+      "producedByActionIds": [],
+      "consumedByActionIds": [
+        "action:record-submission"
+      ],
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "**SubmissionReceived** | PolicyCenter | PolicyCenter (clearance) | `submission_id`",
+          "quoteVerified": true,
+          "confidence": 0.94,
+          "section": "§4"
+        }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:submission.cleared",
+      "uuid": "50000000000000000000000000000002",
+      "name": "submission.cleared",
+      "nameZh": "投保申请已查重",
+      "description": "Duplicate clearance completed for a submission per BR-01.",
+      "descriptionZh": "按BR-01完成投保申请查重。",
+      "payload": [
+        {
+          "name": "submission",
+          "type": "reference",
+          "objectTypeId": "objectType:submission",
+          "required": true,
+          "description": "Submission id."
+        }
+      ],
+      "producedByActionIds": [
+        "action:record-submission"
+      ],
+      "consumedByActionIds": [
+        "action:assess-risk"
+      ],
+      "sources": [],
+      "confidence": 0.85,
+      "provenance": "inferred",
+      "derivedFrom": [
+        "action:record-submission",
+        "rule:br-01-submission-clearance"
+      ],
+      "reviewState": "pending"
+    },
+    {
+      "id": "event:underwriting.referral-raised",
+      "uuid": "50000000000000000000000000000003",
+      "name": "underwriting.referral-raised",
+      "nameZh": "已触发核保转交",
+      "description": "A submission hit a referral threshold and requires UW Manager approval.",
+      "descriptionZh": "投保申请命中转交阈值，需核保经理审批。",
+      "payload": [
+        {
+          "name": "submission",
+          "type": "reference",
+          "objectTypeId": "objectType:submission",
+          "required": true,
+          "description": "Submission id."
+        },
+        {
+          "name": "risk_assessment",
+          "type": "reference",
+          "objectTypeId": "objectType:risk-assessment",
+          "required": true,
+          "description": "Risk assessment id."
+        }
+      ],
+      "producedByActionIds": [
+        "action:assess-risk"
+      ],
+      "consumedByActionIds": [
+        "action:approve-referral"
+      ],
+      "sources": [],
+      "confidence": 0.85,
+      "provenance": "inferred",
+      "derivedFrom": [
+        "action:assess-risk",
+        "rule:br-03-referral-threshold"
+      ],
+      "reviewState": "pending"
+    },
+    {
+      "id": "event:underwriting.risk-assessed",
+      "uuid": "50000000000000000000000000000004",
+      "name": "underwriting.risk-assessed",
+      "nameZh": "风险已评估",
+      "description": "A submission has been risk-assessed without a referral.",
+      "descriptionZh": "投保申请已完成风险评估且无需转交。",
+      "payload": [
+        {
+          "name": "risk_assessment",
+          "type": "reference",
+          "objectTypeId": "objectType:risk-assessment",
+          "required": true,
+          "description": "Risk assessment id."
+        }
+      ],
+      "producedByActionIds": [
+        "action:assess-risk"
+      ],
+      "consumedByActionIds": [
+        "action:generate-quote"
+      ],
+      "sources": [],
+      "confidence": 0.85,
+      "provenance": "inferred",
+      "derivedFrom": [
+        "action:assess-risk"
+      ],
+      "reviewState": "pending"
+    },
+    {
+      "id": "event:underwriting.referral-approved",
+      "uuid": "50000000000000000000000000000005",
+      "name": "underwriting.referral-approved",
+      "nameZh": "转交已批准",
+      "description": "A UW Manager approved a referred submission.",
+      "descriptionZh": "核保经理已批准转交的投保申请。",
+      "payload": [
+        {
+          "name": "submission",
+          "type": "reference",
+          "objectTypeId": "objectType:submission",
+          "required": true,
+          "description": "Submission id."
+        }
+      ],
+      "producedByActionIds": [
+        "action:approve-referral"
+      ],
+      "consumedByActionIds": [
+        "action:generate-quote"
+      ],
+      "sources": [],
+      "confidence": 0.84,
+      "provenance": "inferred",
+      "derivedFrom": [
+        "action:approve-referral"
+      ],
+      "reviewState": "pending"
+    },
+    {
+      "id": "event:underwriting.submission-declined",
+      "uuid": "50000000000000000000000000000006",
+      "name": "underwriting.submission-declined",
+      "nameZh": "投保申请已拒绝",
+      "description": "A submission was declined at referral.",
+      "descriptionZh": "投保申请在转交环节被拒绝。",
+      "payload": [
+        {
+          "name": "submission",
+          "type": "reference",
+          "objectTypeId": "objectType:submission",
+          "required": true,
+          "description": "Submission id."
+        }
+      ],
+      "producedByActionIds": [
+        "action:approve-referral"
+      ],
+      "consumedByActionIds": [],
+      "sources": [],
+      "confidence": 0.83,
+      "provenance": "inferred",
+      "derivedFrom": [
+        "action:approve-referral"
+      ],
+      "reviewState": "pending"
+    },
+    {
+      "id": "event:quote.issued",
+      "uuid": "50000000000000000000000000000007",
+      "name": "quote.issued",
+      "nameZh": "报价已出具",
+      "description": "A quote has been issued with line-item premiums.",
+      "descriptionZh": "已出具含分项保费的报价。",
+      "payload": [
+        {
+          "name": "quote",
+          "type": "reference",
+          "objectTypeId": "objectType:quote",
+          "required": true,
+          "description": "Quote id."
+        },
+        {
+          "name": "premium",
+          "type": "reference",
+          "objectTypeId": "objectType:premium",
+          "required": true,
+          "description": "Premium id."
+        }
+      ],
+      "producedByActionIds": [
+        "action:generate-quote"
+      ],
+      "consumedByActionIds": [],
+      "sources": [],
+      "confidence": 0.85,
+      "provenance": "inferred",
+      "derivedFrom": [
+        "action:generate-quote"
+      ],
+      "reviewState": "pending"
+    },
+    {
+      "id": "event:quote.accepted",
+      "uuid": "50000000000000000000000000000008",
+      "name": "quote.accepted",
+      "nameZh": "报价已接受",
+      "description": "The insured accepted a quote, enabling binding.",
+      "descriptionZh": "被保险人已接受报价，可进行承保。",
+      "payload": [
+        {
+          "name": "quote",
+          "type": "reference",
+          "objectTypeId": "objectType:quote",
+          "required": true,
+          "description": "Quote id."
+        }
+      ],
+      "producedByActionIds": [],
+      "consumedByActionIds": [
+        "action:bind-policy"
+      ],
+      "sources": [],
+      "confidence": 0.82,
+      "provenance": "inferred",
+      "derivedFrom": [
+        "action:bind-policy"
+      ],
+      "reviewState": "pending"
+    },
+    {
+      "id": "event:policy.bound",
+      "uuid": "50000000000000000000000000000009",
+      "name": "policy.bound",
+      "nameZh": "保单已承保",
+      "description": "A policy has been bound; consumed by BillingCenter to raise the first invoice.",
+      "descriptionZh": "保单已承保；由BillingCenter消费以开具首期发票。",
+      "payload": [
+        {
+          "name": "policy",
+          "type": "reference",
+          "objectTypeId": "objectType:policy",
+          "required": true,
+          "description": "Policy id."
+        },
+        {
+          "name": "premium",
+          "type": "reference",
+          "objectTypeId": "objectType:premium",
+          "required": true,
+          "description": "Premium id."
+        }
+      ],
+      "producedByActionIds": [
+        "action:bind-policy"
+      ],
+      "consumedByActionIds": [
+        "action:issue-policy-documents"
+      ],
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "**PolicyBound** | PolicyCenter | BillingCenter | `policy_id`, `premium_id`",
+          "quoteVerified": true,
+          "confidence": 0.94,
+          "section": "§4"
+        }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:policy.issued",
+      "uuid": "5000000000000000000000000000000a",
+      "name": "policy.issued",
+      "nameZh": "保单已签发",
+      "description": "Policy documents issued and stored in DocVault.",
+      "descriptionZh": "保单文件已签发并存入DocVault。",
+      "payload": [
+        {
+          "name": "policy",
+          "type": "reference",
+          "objectTypeId": "objectType:policy",
+          "required": true,
+          "description": "Policy id."
+        }
+      ],
+      "producedByActionIds": [
+        "action:issue-policy-documents"
+      ],
+      "consumedByActionIds": [],
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "**PolicyIssued** | PolicyCenter | DocVault | `policy_id`",
+          "quoteVerified": true,
+          "confidence": 0.93,
+          "section": "§4"
+        }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:loss.reported",
+      "uuid": "5000000000000000000000000000000b",
+      "name": "loss.reported",
+      "nameZh": "损失已报告",
+      "description": "A loss has been reported, triggering FNOL recording.",
+      "descriptionZh": "已报告损失，触发报案登记。",
+      "payload": [
+        {
+          "name": "policy_number",
+          "type": "string",
+          "required": true,
+          "description": "Policy business key."
+        },
+        {
+          "name": "date_of_loss",
+          "type": "date",
+          "required": true
+        }
+      ],
+      "producedByActionIds": [],
+      "consumedByActionIds": [
+        "action:record-fnol"
+      ],
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "**LossReported** | ClaimCenter | ClaimCenter | `policy_number`, `date_of_loss`",
+          "quoteVerified": true,
+          "confidence": 0.93,
+          "section": "§4"
+        }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:fnol.recorded",
+      "uuid": "5000000000000000000000000000000c",
+      "name": "fnol.recorded",
+      "nameZh": "报案已登记",
+      "description": "FNOL recorded; a claim has been opened.",
+      "descriptionZh": "报案已登记；理赔案件已立案。",
+      "payload": [
+        {
+          "name": "claim",
+          "type": "reference",
+          "objectTypeId": "objectType:claim",
+          "required": true,
+          "description": "Claim id."
+        }
+      ],
+      "producedByActionIds": [
+        "action:record-fnol"
+      ],
+      "consumedByActionIds": [
+        "action:verify-coverage"
+      ],
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "**FNOLRecorded** | ClaimCenter | ClaimCenter (coverage) | `claim_id`",
+          "quoteVerified": true,
+          "confidence": 0.93,
+          "section": "§4"
+        }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:exposure.opened",
+      "uuid": "5000000000000000000000000000000d",
+      "name": "exposure.opened",
+      "nameZh": "赔付项已开立",
+      "description": "An exposure has been opened for an affected coverage.",
+      "descriptionZh": "已为受影响险别开立赔付项。",
+      "payload": [
+        {
+          "name": "exposure",
+          "type": "reference",
+          "objectTypeId": "objectType:exposure",
+          "required": true,
+          "description": "Exposure id."
+        },
+        {
+          "name": "coverage",
+          "type": "reference",
+          "objectTypeId": "objectType:coverage",
+          "required": true,
+          "description": "Coverage id."
+        }
+      ],
+      "producedByActionIds": [
+        "action:record-fnol"
+      ],
+      "consumedByActionIds": [
+        "action:set-reserve"
+      ],
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "**ExposureOpened** | ClaimCenter | ClaimCenter (reserving) | `exposure_id`, `coverage_id`",
+          "quoteVerified": true,
+          "confidence": 0.93,
+          "section": "§4"
+        }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:coverage.confirmed",
+      "uuid": "5000000000000000000000000000000e",
+      "name": "coverage.confirmed",
+      "nameZh": "承保已确认",
+      "description": "Coverage confirmed in force for a claim.",
+      "descriptionZh": "已确认理赔案件承保有效。",
+      "payload": [
+        {
+          "name": "claim",
+          "type": "reference",
+          "objectTypeId": "objectType:claim",
+          "required": true,
+          "description": "Claim id."
+        },
+        {
+          "name": "decision",
+          "type": "string",
+          "required": true,
+          "description": "Coverage decision."
+        }
+      ],
+      "producedByActionIds": [
+        "action:verify-coverage"
+      ],
+      "consumedByActionIds": [
+        "action:assign-adjuster"
+      ],
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "**CoverageConfirmed** | ClaimCenter (via I3) | ClaimCenter (assignment) | `claim_id`, decision",
+          "quoteVerified": true,
+          "confidence": 0.92,
+          "section": "§4"
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:coverage.denied",
+      "uuid": "5000000000000000000000000000000f",
+      "name": "coverage.denied",
+      "nameZh": "承保已拒绝",
+      "description": "Coverage denied for a claim (loss outside policy period).",
+      "descriptionZh": "理赔案件承保被拒（出险在保险期间外）。",
+      "payload": [
+        {
+          "name": "claim",
+          "type": "reference",
+          "objectTypeId": "objectType:claim",
+          "required": true,
+          "description": "Claim id."
+        }
+      ],
+      "producedByActionIds": [
+        "action:verify-coverage"
+      ],
+      "consumedByActionIds": [],
+      "sources": [],
+      "confidence": 0.82,
+      "provenance": "inferred",
+      "derivedFrom": [
+        "action:verify-coverage",
+        "rule:br-08-coverage-in-force-dates"
+      ],
+      "reviewState": "pending"
+    },
+    {
+      "id": "event:claim.assigned",
+      "uuid": "50000000000000000000000000000010",
+      "name": "claim.assigned",
+      "nameZh": "案件已指派",
+      "description": "An adjuster has been assigned to a claim.",
+      "descriptionZh": "已为理赔案件指派理算员。",
+      "payload": [
+        {
+          "name": "claim",
+          "type": "reference",
+          "objectTypeId": "objectType:claim",
+          "required": true,
+          "description": "Claim id."
+        },
+        {
+          "name": "adjuster",
+          "type": "reference",
+          "objectTypeId": "objectType:adjuster",
+          "required": true,
+          "description": "Adjuster id."
+        }
+      ],
+      "producedByActionIds": [
+        "action:assign-adjuster"
+      ],
+      "consumedByActionIds": [
+        "action:adjust-claim"
+      ],
+      "sources": [],
+      "confidence": 0.84,
+      "provenance": "inferred",
+      "derivedFrom": [
+        "action:assign-adjuster"
+      ],
+      "reviewState": "pending"
+    },
+    {
+      "id": "event:reserve.set",
+      "uuid": "50000000000000000000000000000011",
+      "name": "reserve.set",
+      "nameZh": "准备金已设立",
+      "description": "A reserve has been set on an exposure.",
+      "descriptionZh": "已在赔付项上设立准备金。",
+      "payload": [
+        {
+          "name": "reserve",
+          "type": "reference",
+          "objectTypeId": "objectType:reserve",
+          "required": true,
+          "description": "Reserve id."
+        },
+        {
+          "name": "amount",
+          "type": "money",
+          "required": true
+        }
+      ],
+      "producedByActionIds": [
+        "action:set-reserve"
+      ],
+      "consumedByActionIds": [],
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "**ReserveSet** | ClaimCenter | ClaimCenter, BillingCenter | `reserve_id`, `amount`",
+          "quoteVerified": true,
+          "confidence": 0.92,
+          "section": "§4"
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:reserve.approval-requested",
+      "uuid": "50000000000000000000000000000012",
+      "name": "reserve.approval-requested",
+      "nameZh": "准备金审批已请求",
+      "description": "A large-loss reserve (>= $250,000) awaits Claims Manager approval.",
+      "descriptionZh": "大额损失准备金（>=25万美元）待理赔经理审批。",
+      "payload": [
+        {
+          "name": "reserve",
+          "type": "reference",
+          "objectTypeId": "objectType:reserve",
+          "required": true,
+          "description": "Reserve id."
+        },
+        {
+          "name": "amount",
+          "type": "money",
+          "required": true
+        }
+      ],
+      "producedByActionIds": [
+        "action:set-reserve"
+      ],
+      "consumedByActionIds": [],
+      "sources": [],
+      "confidence": 0.83,
+      "provenance": "inferred",
+      "derivedFrom": [
+        "action:set-reserve",
+        "rule:br-11-large-loss-reserve-approval"
+      ],
+      "reviewState": "pending"
+    },
+    {
+      "id": "event:reserve.adjusted",
+      "uuid": "50000000000000000000000000000013",
+      "name": "reserve.adjusted",
+      "nameZh": "准备金已调整",
+      "description": "A reserve value has changed (adjustment or review revision).",
+      "descriptionZh": "准备金金额已变更（理算调整或复核修订）。",
+      "payload": [
+        {
+          "name": "reserve",
+          "type": "reference",
+          "objectTypeId": "objectType:reserve",
+          "required": true,
+          "description": "Reserve id."
+        },
+        {
+          "name": "prior_value",
+          "type": "money",
+          "required": false
+        }
+      ],
+      "producedByActionIds": [
+        "action:adjust-claim",
+        "action:review-reserve"
+      ],
+      "consumedByActionIds": [],
+      "sources": [],
+      "confidence": 0.82,
+      "provenance": "inferred",
+      "derivedFrom": [
+        "action:adjust-claim",
+        "action:review-reserve"
+      ],
+      "reviewState": "pending"
+    },
+    {
+      "id": "event:reserve.confirmed",
+      "uuid": "50000000000000000000000000000014",
+      "name": "reserve.confirmed",
+      "nameZh": "准备金已确认",
+      "description": "A periodic reserve review confirmed adequacy without change.",
+      "descriptionZh": "定期准备金复核确认充足且未变更。",
+      "payload": [
+        {
+          "name": "reserve",
+          "type": "reference",
+          "objectTypeId": "objectType:reserve",
+          "required": true,
+          "description": "Reserve id."
+        }
+      ],
+      "producedByActionIds": [
+        "action:review-reserve"
+      ],
+      "consumedByActionIds": [],
+      "sources": [],
+      "confidence": 0.81,
+      "provenance": "inferred",
+      "derivedFrom": [
+        "action:review-reserve"
+      ],
+      "reviewState": "pending"
+    },
+    {
+      "id": "event:settlement.recommended",
+      "uuid": "50000000000000000000000000000015",
+      "name": "settlement.recommended",
+      "nameZh": "结算已建议",
+      "description": "A recommended settlement amount has been produced for an exposure.",
+      "descriptionZh": "已为赔付项产出建议结算金额。",
+      "payload": [
+        {
+          "name": "exposure",
+          "type": "reference",
+          "objectTypeId": "objectType:exposure",
+          "required": true,
+          "description": "Exposure id."
+        },
+        {
+          "name": "recommended_amount",
+          "type": "money",
+          "required": true
+        }
+      ],
+      "producedByActionIds": [
+        "action:adjust-claim"
+      ],
+      "consumedByActionIds": [
+        "action:issue-claim-payment"
+      ],
+      "sources": [],
+      "confidence": 0.82,
+      "provenance": "inferred",
+      "derivedFrom": [
+        "action:adjust-claim"
+      ],
+      "reviewState": "pending"
+    },
+    {
+      "id": "event:payment.authorization-requested",
+      "uuid": "50000000000000000000000000000016",
+      "name": "payment.authorization-requested",
+      "nameZh": "赔付授权已请求",
+      "description": "A claim payment above authority awaits supervisor/manager approval.",
+      "descriptionZh": "超授权的理赔赔款待主管/经理审批。",
+      "payload": [
+        {
+          "name": "payment",
+          "type": "reference",
+          "objectTypeId": "objectType:claim-payment",
+          "required": true,
+          "description": "Payment id."
+        },
+        {
+          "name": "amount",
+          "type": "money",
+          "required": true
+        }
+      ],
+      "producedByActionIds": [
+        "action:issue-claim-payment"
+      ],
+      "consumedByActionIds": [],
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "**PaymentAuthorizationRequested** | ClaimCenter | ClaimCenter (supervisor queue) | `payment_id`, `amount`",
+          "quoteVerified": true,
+          "confidence": 0.92,
+          "section": "§4"
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:payment.issued",
+      "uuid": "50000000000000000000000000000017",
+      "name": "payment.issued",
+      "nameZh": "赔款已签发",
+      "description": "A claim payment has been disbursed.",
+      "descriptionZh": "理赔赔款已支付。",
+      "payload": [
+        {
+          "name": "payment",
+          "type": "reference",
+          "objectTypeId": "objectType:claim-payment",
+          "required": true,
+          "description": "Payment id."
+        }
+      ],
+      "producedByActionIds": [
+        "action:issue-claim-payment"
+      ],
+      "consumedByActionIds": [
+        "action:close-exposure"
+      ],
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "**PaymentIssued** | BillingCenter | ClaimCenter | `payment_id`",
+          "quoteVerified": true,
+          "confidence": 0.93,
+          "section": "§4"
+        }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:exposure.closed",
+      "uuid": "50000000000000000000000000000018",
+      "name": "exposure.closed",
+      "nameZh": "赔付项已关闭",
+      "description": "A fully-paid exposure has been closed with reserve zeroed.",
+      "descriptionZh": "已全额赔付的赔付项已关闭且准备金归零。",
+      "payload": [
+        {
+          "name": "exposure",
+          "type": "reference",
+          "objectTypeId": "objectType:exposure",
+          "required": true,
+          "description": "Exposure id."
+        }
+      ],
+      "producedByActionIds": [
+        "action:close-exposure"
+      ],
+      "consumedByActionIds": [],
+      "sources": [],
+      "confidence": 0.83,
+      "provenance": "inferred",
+      "derivedFrom": [
+        "action:close-exposure"
+      ],
+      "reviewState": "pending"
+    },
+    {
+      "id": "event:claim.closed",
+      "uuid": "50000000000000000000000000000019",
+      "name": "claim.closed",
+      "nameZh": "案件已结案",
+      "description": "All exposures on a claim are closed; consumed by subrogation.",
+      "descriptionZh": "案件全部赔付项已关闭；由代位求偿消费。",
+      "payload": [
+        {
+          "name": "claim",
+          "type": "reference",
+          "objectTypeId": "objectType:claim",
+          "required": true,
+          "description": "Claim id."
+        }
+      ],
+      "producedByActionIds": [
+        "action:close-exposure"
+      ],
+      "consumedByActionIds": [
+        "action:open-subrogation"
+      ],
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "**ClaimClosed** | ClaimCenter | ClaimCenter (subrogation) | `claim_id`",
+          "quoteVerified": true,
+          "confidence": 0.93,
+          "section": "§4"
+        }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:reserve.review-due",
+      "uuid": "5000000000000000000000000000001a",
+      "name": "reserve.review-due",
+      "nameZh": "准备金复核到期",
+      "description": "A scheduled reserve adequacy review is due (>= 90 days since last review).",
+      "descriptionZh": "计划的准备金充足性复核已到期（距上次复核>=90天）。",
+      "payload": [
+        {
+          "name": "exposure",
+          "type": "reference",
+          "objectTypeId": "objectType:exposure",
+          "required": true,
+          "description": "Exposure id."
+        }
+      ],
+      "producedByActionIds": [],
+      "consumedByActionIds": [
+        "action:review-reserve"
+      ],
+      "sources": [],
+      "confidence": 0.8,
+      "provenance": "inferred",
+      "derivedFrom": [
+        "action:review-reserve",
+        "rule:br-10-reserve-review-90d"
+      ],
+      "reviewState": "pending"
+    },
+    {
+      "id": "event:subrogation.opened",
+      "uuid": "5000000000000000000000000000001b",
+      "name": "subrogation.opened",
+      "nameZh": "代位求偿已开立",
+      "description": "A subrogation recovery has been opened against a liable party.",
+      "descriptionZh": "已针对责任方开立代位求偿。",
+      "payload": [
+        {
+          "name": "recovery",
+          "type": "reference",
+          "objectTypeId": "objectType:recovery",
+          "required": true,
+          "description": "Recovery id."
+        }
+      ],
+      "producedByActionIds": [
+        "action:open-subrogation"
+      ],
+      "consumedByActionIds": [],
+      "sources": [],
+      "confidence": 0.82,
+      "provenance": "inferred",
+      "derivedFrom": [
+        "action:open-subrogation"
+      ],
+      "reviewState": "pending"
+    },
+    {
+      "id": "event:recovery.received",
+      "uuid": "5000000000000000000000000000001c",
+      "name": "recovery.received",
+      "nameZh": "追偿款已收到",
+      "description": "Funds have been received from the liable party.",
+      "descriptionZh": "已收到责任方款项。",
+      "payload": [
+        {
+          "name": "recovery",
+          "type": "reference",
+          "objectTypeId": "objectType:recovery",
+          "required": true,
+          "description": "Recovery id."
+        },
+        {
+          "name": "recovered_amount",
+          "type": "money",
+          "required": true
+        }
+      ],
+      "producedByActionIds": [],
+      "consumedByActionIds": [
+        "action:record-recovery"
+      ],
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "**RecoveryReceived** | BillingCenter | ClaimCenter | `recovery_id`, `recovered_amount`",
+          "quoteVerified": true,
+          "confidence": 0.92,
+          "section": "§4"
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:recovery.recorded",
+      "uuid": "5000000000000000000000000000001d",
+      "name": "recovery.recorded",
+      "nameZh": "追偿已入账",
+      "description": "A recovery receipt has been recorded and offset against the claim.",
+      "descriptionZh": "追偿款入账并已冲抵案件损失。",
+      "payload": [
+        {
+          "name": "recovery",
+          "type": "reference",
+          "objectTypeId": "objectType:recovery",
+          "required": true,
+          "description": "Recovery id."
+        }
+      ],
+      "producedByActionIds": [
+        "action:record-recovery"
+      ],
+      "consumedByActionIds": [],
+      "sources": [],
+      "confidence": 0.81,
+      "provenance": "inferred",
+      "derivedFrom": [
+        "action:record-recovery"
+      ],
+      "reviewState": "pending"
+    }
+  ],
+  "processes": [
+    {
+      "id": "process:submission-to-bind",
+      "uuid": "60000000000000000000000000000001",
+      "name": {
+        "en": "Submission to Bind",
+        "zh": "投保到承保"
+      },
+      "description": "Underwriting workflow from broker submission through risk evaluation, quote, and policy binding.",
+      "actors": [
+        {
+          "role": "Broker",
+          "roleZh": "经纪人",
+          "kind": "human"
+        },
+        {
+          "role": "Underwriter",
+          "roleZh": "核保人",
+          "kind": "agent"
+        },
+        {
+          "role": "Underwriting Manager",
+          "roleZh": "核保经理",
+          "kind": "human"
+        },
+        {
+          "role": "PolicyCenter",
+          "roleZh": "保单系统",
+          "kind": "system"
+        }
+      ],
+      "objectTypeIds": [
+        "objectType:applicant",
+        "objectType:submission",
+        "objectType:risk-assessment",
+        "objectType:quote",
+        "objectType:policy",
+        "objectType:coverage",
+        "objectType:premium"
+      ],
+      "steps": [
+        {
+          "id": "s1",
+          "actionTypeId": "action:record-submission",
+          "order": 1,
+          "actorRole": "Broker",
+          "next": [
+            {
+              "toStepId": "s2",
+              "onEventTypeId": "event:submission.cleared",
+              "label": {
+                "en": "cleared",
+                "zh": "已查重"
+              }
+            }
+          ]
+        },
+        {
+          "id": "s2",
+          "actionTypeId": "action:assess-risk",
+          "order": 2,
+          "actorRole": "Underwriter",
+          "next": [
+            {
+              "toStepId": "s3",
+              "onEventTypeId": "event:underwriting.referral-raised",
+              "condition": "submission.cat_zone_tier == 'Tier1' || submission.proposed_limit > 10000000",
+              "label": {
+                "en": "referral raised",
+                "zh": "已触发转交"
+              }
+            },
+            {
+              "toStepId": "s4",
+              "onEventTypeId": "event:underwriting.risk-assessed",
+              "label": {
+                "en": "no referral",
+                "zh": "无需转交"
+              }
+            }
+          ]
+        },
+        {
+          "id": "s3",
+          "actionTypeId": "action:approve-referral",
+          "order": 3,
+          "actorRole": "Underwriting Manager",
+          "next": [
+            {
+              "toStepId": "s4",
+              "onEventTypeId": "event:underwriting.referral-approved",
+              "label": {
+                "en": "approved",
+                "zh": "已批准"
+              }
+            }
+          ]
+        },
+        {
+          "id": "s4",
+          "actionTypeId": "action:generate-quote",
+          "order": 4,
+          "actorRole": "Underwriter",
+          "next": [
+            {
+              "toStepId": "s5",
+              "onEventTypeId": "event:quote.accepted",
+              "label": {
+                "en": "quote accepted",
+                "zh": "报价已接受"
+              }
+            }
+          ]
+        },
+        {
+          "id": "s5",
+          "actionTypeId": "action:bind-policy",
+          "order": 5,
+          "actorRole": "Underwriter",
+          "next": [
+            {
+              "toStepId": "s6",
+              "onEventTypeId": "event:policy.bound",
+              "label": {
+                "en": "bound",
+                "zh": "已承保"
+              }
+            }
+          ]
+        },
+        {
+          "id": "s6",
+          "actionTypeId": "action:issue-policy-documents",
+          "order": 6,
+          "actorRole": "PolicyCenter",
+          "next": []
+        }
+      ],
+      "triggers": [
+        {
+          "kind": "event",
+          "eventTypeId": "event:submission.received",
+          "description": "New broker submission received."
+        }
+      ],
+      "orchestration": {
+        "strategy": "event_driven",
+        "agentOrchestrated": true,
+        "agentRoles": [
+          {
+            "role": "Underwriter",
+            "promptProfile": "underwriting-agent"
+          }
+        ],
+        "onFailure": "escalate"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "**Process A — Submission to Bind / 投保到承保** — the underwriting workflow from receipt of a broker submission through risk evaluation, quote, and binding of a **Policy**.",
+          "quoteVerified": true,
+          "confidence": 0.93,
+          "section": "§1"
+        }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "process:fnol-to-settlement",
+      "uuid": "60000000000000000000000000000002",
+      "name": {
+        "en": "FNOL to Settlement",
+        "zh": "报案到结案"
+      },
+      "description": "Claims workflow from First Notice of Loss through coverage verification, reserving, adjudication, and payment.",
+      "actors": [
+        {
+          "role": "Claims Intake Agent",
+          "roleZh": "理赔受理专员",
+          "kind": "human"
+        },
+        {
+          "role": "ClaimCenter",
+          "roleZh": "理赔系统",
+          "kind": "system"
+        },
+        {
+          "role": "Adjuster",
+          "roleZh": "理算员",
+          "kind": "agent"
+        },
+        {
+          "role": "Claims Supervisor",
+          "roleZh": "理赔主管",
+          "kind": "human"
+        }
+      ],
+      "objectTypeIds": [
+        "objectType:claim",
+        "objectType:policy",
+        "objectType:coverage",
+        "objectType:exposure",
+        "objectType:reserve",
+        "objectType:claim-payment",
+        "objectType:adjuster"
+      ],
+      "steps": [
+        {
+          "id": "s1",
+          "actionTypeId": "action:record-fnol",
+          "order": 1,
+          "actorRole": "Claims Intake Agent",
+          "next": [
+            {
+              "toStepId": "s2",
+              "onEventTypeId": "event:fnol.recorded",
+              "label": {
+                "en": "FNOL recorded",
+                "zh": "报案已登记"
+              }
+            }
+          ]
+        },
+        {
+          "id": "s2",
+          "actionTypeId": "action:verify-coverage",
+          "order": 2,
+          "actorRole": "ClaimCenter",
+          "next": [
+            {
+              "toStepId": "s3",
+              "onEventTypeId": "event:coverage.confirmed",
+              "condition": "decision == 'InForce'",
+              "label": {
+                "en": "in force",
+                "zh": "承保有效"
+              }
+            }
+          ]
+        },
+        {
+          "id": "s3",
+          "actionTypeId": "action:assign-adjuster",
+          "order": 3,
+          "actorRole": "ClaimCenter",
+          "next": [
+            {
+              "toStepId": "s4",
+              "onEventTypeId": "event:exposure.opened",
+              "label": {
+                "en": "reserve exposures",
+                "zh": "为赔付项提取准备金"
+              }
+            }
+          ]
+        },
+        {
+          "id": "s4",
+          "actionTypeId": "action:set-reserve",
+          "order": 4,
+          "actorRole": "Adjuster",
+          "next": [
+            {
+              "toStepId": "s5",
+              "onEventTypeId": "event:claim.assigned",
+              "label": {
+                "en": "begin adjusting",
+                "zh": "开始理算"
+              }
+            }
+          ]
+        },
+        {
+          "id": "s5",
+          "actionTypeId": "action:adjust-claim",
+          "order": 5,
+          "actorRole": "Adjuster",
+          "next": [
+            {
+              "toStepId": "s6",
+              "onEventTypeId": "event:settlement.recommended",
+              "label": {
+                "en": "settlement recommended",
+                "zh": "已建议结算"
+              }
+            }
+          ]
+        },
+        {
+          "id": "s6",
+          "actionTypeId": "action:issue-claim-payment",
+          "order": 6,
+          "actorRole": "Adjuster",
+          "next": [
+            {
+              "toStepId": "s7",
+              "onEventTypeId": "event:payment.issued",
+              "label": {
+                "en": "payment issued",
+                "zh": "赔款已签发"
+              }
+            }
+          ]
+        },
+        {
+          "id": "s7",
+          "actionTypeId": "action:close-exposure",
+          "order": 7,
+          "actorRole": "Adjuster",
+          "next": []
+        }
+      ],
+      "triggers": [
+        {
+          "kind": "event",
+          "eventTypeId": "event:loss.reported",
+          "description": "A loss is reported."
+        }
+      ],
+      "orchestration": {
+        "strategy": "event_driven",
+        "agentOrchestrated": true,
+        "agentRoles": [
+          {
+            "role": "Adjuster",
+            "promptProfile": "adjuster-agent"
+          }
+        ],
+        "onFailure": "escalate"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "**Process B — FNOL to Settlement / 报案到结案** — the claims workflow from First Notice of Loss (FNOL) through coverage verification, reserving, adjudication, and **ClaimPayment**.",
+          "quoteVerified": true,
+          "confidence": 0.93,
+          "section": "§1"
+        }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "process:reserve-review",
+      "uuid": "60000000000000000000000000000003",
+      "name": {
+        "en": "Reserve Review",
+        "zh": "准备金复核"
+      },
+      "description": "Periodic re-evaluation of reserve adequacy on every open exposure, at least every 90 days.",
+      "actors": [
+        {
+          "role": "ClaimCenter",
+          "roleZh": "理赔系统",
+          "kind": "system"
+        },
+        {
+          "role": "Adjuster",
+          "roleZh": "理算员",
+          "kind": "agent"
+        }
+      ],
+      "objectTypeIds": [
+        "objectType:exposure",
+        "objectType:reserve",
+        "objectType:claim"
+      ],
+      "steps": [
+        {
+          "id": "s1",
+          "actionTypeId": "action:review-reserve",
+          "order": 1,
+          "actorRole": "Adjuster",
+          "next": []
+        }
+      ],
+      "triggers": [
+        {
+          "kind": "event",
+          "eventTypeId": "event:reserve.review-due",
+          "description": "Reserve adequacy review due per BR-10."
+        },
+        {
+          "kind": "schedule",
+          "schedule": "0 0 * * *",
+          "description": "Daily scan for exposures due review within 90 days."
+        }
+      ],
+      "orchestration": {
+        "strategy": "event_driven",
+        "agentOrchestrated": true,
+        "agentRoles": [
+          {
+            "role": "Adjuster",
+            "promptProfile": "adjuster-agent"
+          }
+        ],
+        "onFailure": "halt"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "**Process C — Reserve Review / 准备金复核** — the periodic re-evaluation of **Reserve** adequacy on every open **Exposure**.",
+          "quoteVerified": true,
+          "confidence": 0.92,
+          "section": "§1"
+        }
+      ],
+      "confidence": 0.89,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "process:subrogation-recovery",
+      "uuid": "60000000000000000000000000000004",
+      "name": {
+        "en": "Subrogation & Recovery",
+        "zh": "代位求偿与追偿"
+      },
+      "description": "Pursuit of third-party recovery after settlement on a closed claim with identified liability.",
+      "actors": [
+        {
+          "role": "Subrogation Specialist",
+          "roleZh": "代位求偿专员",
+          "kind": "human"
+        },
+        {
+          "role": "BillingCenter",
+          "roleZh": "账务系统",
+          "kind": "system"
+        }
+      ],
+      "objectTypeIds": [
+        "objectType:claim",
+        "objectType:recovery",
+        "objectType:exposure"
+      ],
+      "steps": [
+        {
+          "id": "s1",
+          "actionTypeId": "action:open-subrogation",
+          "order": 1,
+          "actorRole": "Subrogation Specialist",
+          "next": [
+            {
+              "toStepId": "s2",
+              "onEventTypeId": "event:recovery.received",
+              "label": {
+                "en": "funds received",
+                "zh": "已收到款项"
+              }
+            }
+          ]
+        },
+        {
+          "id": "s2",
+          "actionTypeId": "action:record-recovery",
+          "order": 2,
+          "actorRole": "Subrogation Specialist",
+          "next": []
+        }
+      ],
+      "triggers": [
+        {
+          "kind": "event",
+          "eventTypeId": "event:claim.closed",
+          "description": "Closed claim flagged for subrogation per BR-19."
+        }
+      ],
+      "orchestration": {
+        "strategy": "sequential",
+        "agentOrchestrated": false,
+        "onFailure": "escalate"
+      },
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "**Process D — Subrogation & Recovery / 代位求偿与追偿** — pursuit of third-party recovery after settlement.",
+          "quoteVerified": true,
+          "confidence": 0.9,
+          "section": "§1"
+        }
+      ],
+      "confidence": 0.88,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    }
+  ],
+  "relationships": [
+    {
+      "id": "rel:applicant-submits-submission",
+      "uuid": "20000000000000000000000000000001",
+      "name": "submits",
+      "nameZh": "提交",
+      "label": {
+        "en": "submits → Submission",
+        "zh": "提交 → 投保申请"
+      },
+      "sourceObjectTypeId": "objectType:applicant",
+      "targetObjectTypeId": "objectType:submission",
+      "cardinality": "one_to_many",
+      "viaAttribute": "applicant_id",
+      "description": "An applicant submits one or more submissions.",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "produces a new `Submission` record in `Cleared` = false state and links it to an `Applicant`.",
+          "quoteVerified": true,
+          "confidence": 0.9,
+          "section": "§3 A1"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:submission-has-riskassessment",
+      "uuid": "20000000000000000000000000000002",
+      "name": "assessed_by",
+      "nameZh": "经评估为",
+      "label": {
+        "en": "assessed_by → RiskAssessment",
+        "zh": "经评估为 → 风险评估"
+      },
+      "sourceObjectTypeId": "objectType:submission",
+      "targetObjectTypeId": "objectType:risk-assessment",
+      "cardinality": "one_to_one",
+      "viaAttribute": "submission_id",
+      "description": "A submission is evaluated by a risk assessment.",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "consumes the `Submission` plus loss-run history and property characteristics; produces a `RiskAssessment`",
+          "quoteVerified": true,
+          "confidence": 0.88,
+          "section": "§3 A2"
+        }
+      ],
+      "confidence": 0.88,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:submission-yields-quote",
+      "uuid": "20000000000000000000000000000003",
+      "name": "yields",
+      "nameZh": "产出",
+      "label": {
+        "en": "yields → Quote",
+        "zh": "产出 → 报价"
+      },
+      "sourceObjectTypeId": "objectType:submission",
+      "targetObjectTypeId": "objectType:quote",
+      "cardinality": "one_to_many",
+      "viaAttribute": "submission_id",
+      "description": "A submission yields one or more quotes.",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "`submission_id` | UUID | **FK → Submission**",
+          "quoteVerified": true,
+          "confidence": 0.92,
+          "section": "§2.3"
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:quote-binds-policy",
+      "uuid": "20000000000000000000000000000004",
+      "name": "binds_to",
+      "nameZh": "承保为",
+      "label": {
+        "en": "binds_to → Policy",
+        "zh": "承保为 → 保单"
+      },
+      "sourceObjectTypeId": "objectType:quote",
+      "targetObjectTypeId": "objectType:policy",
+      "cardinality": "one_to_one",
+      "description": "An accepted quote binds to a policy.",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "consumes an accepted `Quote`; produces a `Policy` in `Bound` status",
+          "quoteVerified": true,
+          "confidence": 0.9,
+          "section": "§3 A5"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:applicant-holds-policy",
+      "uuid": "20000000000000000000000000000005",
+      "name": "holds",
+      "nameZh": "持有",
+      "label": {
+        "en": "holds → Policy",
+        "zh": "持有 → 保单"
+      },
+      "sourceObjectTypeId": "objectType:applicant",
+      "targetObjectTypeId": "objectType:policy",
+      "cardinality": "one_to_many",
+      "viaAttribute": "applicant_id",
+      "description": "An applicant holds one or more policies.",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "`applicant_id` | UUID | **FK → Applicant**",
+          "quoteVerified": true,
+          "confidence": 0.91,
+          "section": "§2.4"
+        }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:policy-has-coverage",
+      "uuid": "20000000000000000000000000000006",
+      "name": "contains",
+      "nameZh": "包含",
+      "label": {
+        "en": "contains → Coverage",
+        "zh": "包含 → 承保险别"
+      },
+      "sourceObjectTypeId": "objectType:policy",
+      "targetObjectTypeId": "objectType:coverage",
+      "cardinality": "one_to_many",
+      "viaAttribute": "policy_id",
+      "description": "A policy contains one or more coverages.",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "`policy_id` | UUID | **FK → Policy**",
+          "quoteVerified": true,
+          "confidence": 0.93,
+          "section": "§2.5"
+        }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:policy-has-premium",
+      "uuid": "20000000000000000000000000000007",
+      "name": "priced_by",
+      "nameZh": "定价为",
+      "label": {
+        "en": "priced_by → Premium",
+        "zh": "定价为 → 保费"
+      },
+      "sourceObjectTypeId": "objectType:policy",
+      "targetObjectTypeId": "objectType:premium",
+      "cardinality": "one_to_one",
+      "viaAttribute": "policy_id",
+      "description": "A policy carries one premium.",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "`policy_id` | UUID | **FK → Policy**",
+          "quoteVerified": true,
+          "confidence": 0.92,
+          "section": "§2.6"
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:claim-against-policy",
+      "uuid": "20000000000000000000000000000008",
+      "name": "filed_against",
+      "nameZh": "针对",
+      "label": {
+        "en": "filed_against → Policy",
+        "zh": "针对 → 保单"
+      },
+      "sourceObjectTypeId": "objectType:claim",
+      "targetObjectTypeId": "objectType:policy",
+      "cardinality": "many_to_one",
+      "viaAttribute": "policy_number",
+      "description": "A claim is filed against a policy.",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "produces a new `Claim` linked to the matched `Policy`",
+          "quoteVerified": true,
+          "confidence": 0.92,
+          "section": "§4 B1"
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:claim-has-exposure",
+      "uuid": "20000000000000000000000000000009",
+      "name": "comprises",
+      "nameZh": "包含",
+      "label": {
+        "en": "comprises → Exposure",
+        "zh": "包含 → 赔付项"
+      },
+      "sourceObjectTypeId": "objectType:claim",
+      "targetObjectTypeId": "objectType:exposure",
+      "cardinality": "one_to_many",
+      "viaAttribute": "claim_id",
+      "description": "A claim comprises one or more exposures.",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "opens at least one `Exposure` per affected `Coverage`.",
+          "quoteVerified": true,
+          "confidence": 0.92,
+          "section": "§4 B1"
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:exposure-covers-coverage",
+      "uuid": "2000000000000000000000000000000a",
+      "name": "covers",
+      "nameZh": "对应",
+      "label": {
+        "en": "covers → Coverage",
+        "zh": "对应 → 承保险别"
+      },
+      "sourceObjectTypeId": "objectType:exposure",
+      "targetObjectTypeId": "objectType:coverage",
+      "cardinality": "many_to_one",
+      "viaAttribute": "coverage_id",
+      "description": "An exposure corresponds to a single coverage.",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "`coverage_id` | UUID | **FK → Coverage**",
+          "quoteVerified": true,
+          "confidence": 0.91,
+          "section": "§2.8"
+        }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:exposure-has-reserve",
+      "uuid": "2000000000000000000000000000000b",
+      "name": "reserves",
+      "nameZh": "提取准备金",
+      "label": {
+        "en": "reserves → Reserve",
+        "zh": "提取准备金 → 准备金"
+      },
+      "sourceObjectTypeId": "objectType:exposure",
+      "targetObjectTypeId": "objectType:reserve",
+      "cardinality": "one_to_one",
+      "viaAttribute": "exposure_id",
+      "description": "An exposure carries a reserve.",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "`exposure_id` | UUID | **FK → Exposure**",
+          "quoteVerified": true,
+          "confidence": 0.92,
+          "section": "§2.9"
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:exposure-receives-payment",
+      "uuid": "2000000000000000000000000000000c",
+      "name": "pays",
+      "nameZh": "赔付",
+      "label": {
+        "en": "pays → ClaimPayment",
+        "zh": "赔付 → 理赔赔款"
+      },
+      "sourceObjectTypeId": "objectType:exposure",
+      "targetObjectTypeId": "objectType:claim-payment",
+      "cardinality": "one_to_many",
+      "viaAttribute": "exposure_id",
+      "description": "An exposure receives one or more claim payments.",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-systems-data",
+          "documentName": "Systems & Data Reference (ARC-CLM-UW-DATA-062)",
+          "snippet": "`exposure_id` | UUID | **FK → Exposure**",
+          "quoteVerified": true,
+          "confidence": 0.92,
+          "section": "§2.10"
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:adjuster-assigned-claim",
+      "uuid": "2000000000000000000000000000000d",
+      "name": "handles",
+      "nameZh": "处理",
+      "label": {
+        "en": "handles → Claim",
+        "zh": "处理 → 理赔案件"
+      },
+      "sourceObjectTypeId": "objectType:adjuster",
+      "targetObjectTypeId": "objectType:claim",
+      "cardinality": "one_to_many",
+      "description": "An adjuster handles one or more assigned claims.",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "produces an `Adjuster` assignment on the `Claim` and its open `Exposure`s.",
+          "quoteVerified": true,
+          "confidence": 0.9,
+          "section": "§4 B3"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:claim-has-recovery",
+      "uuid": "2000000000000000000000000000000e",
+      "name": "recovers_via",
+      "nameZh": "追偿",
+      "label": {
+        "en": "recovers_via → Recovery",
+        "zh": "追偿 → 追偿"
+      },
+      "sourceObjectTypeId": "objectType:claim",
+      "targetObjectTypeId": "objectType:recovery",
+      "cardinality": "one_to_many",
+      "viaAttribute": "claim_id",
+      "description": "A closed claim may pursue one or more recoveries.",
+      "sources": [
+        {
+          "documentId": "doc:claims-underwriting-sop",
+          "documentName": "Standard Operating Procedure — Claims & Underwriting Operations (SOP-CLM-UW-014)",
+          "snippet": "produces a `Recovery` record targeting the liable party.",
+          "quoteVerified": true,
+          "confidence": 0.89,
+          "section": "§6 D1"
+        }
+      ],
+      "confidence": 0.89,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    }
+  ],
+  "ruleGroups": [
+    {
+      "id": "ruleGroup:underwriting-eligibility",
+      "title": {
+        "en": "Underwriting Eligibility",
+        "zh": "核保资格"
+      },
+      "ruleIds": [
+        "rule:br-01-submission-clearance",
+        "rule:br-02-tiv-facultative-reinsurance",
+        "rule:br-03-referral-threshold",
+        "rule:br-16-applicant-loss-history-decline"
+      ],
+      "rationale": "Clearance, referral, reinsurance, and decline gates before quoting."
+    },
+    {
+      "id": "ruleGroup:pricing-binding",
+      "title": {
+        "en": "Pricing & Binding",
+        "zh": "定价与承保"
+      },
+      "ruleIds": [
+        "rule:br-06-minimum-premium",
+        "rule:br-07-binding-effective-date-window",
+        "rule:br-14-quote-validity",
+        "rule:br-15-deductible-minimum"
+      ],
+      "rationale": "Premium floor, deductible floor, quote validity, and effective-date window at quote/bind."
+    },
+    {
+      "id": "ruleGroup:coverage-verification",
+      "title": {
+        "en": "Coverage Verification",
+        "zh": "承保核实"
+      },
+      "ruleIds": [
+        "rule:br-08-coverage-in-force-dates"
+      ],
+      "rationale": "In-force date checks at FNOL."
+    },
+    {
+      "id": "ruleGroup:reserving",
+      "title": {
+        "en": "Reserving",
+        "zh": "准备金"
+      },
+      "ruleIds": [
+        "rule:br-09-reserve-within-48h",
+        "rule:br-10-reserve-review-90d",
+        "rule:br-11-large-loss-reserve-approval"
+      ],
+      "rationale": "Reserve timing, periodic review, and large-loss approval."
+    },
+    {
+      "id": "ruleGroup:payment-authority",
+      "title": {
+        "en": "Payment Authority",
+        "zh": "赔付授权"
+      },
+      "ruleIds": [
+        "rule:br-04-adjuster-payment-authority",
+        "rule:br-05-payment-escalation"
+      ],
+      "rationale": "Adjuster/supervisor/manager payment authority ladder."
+    },
+    {
+      "id": "ruleGroup:claim-handling",
+      "title": {
+        "en": "Claim Handling",
+        "zh": "理赔处理"
+      },
+      "ruleIds": [
+        "rule:br-12-senior-adjuster-assignment",
+        "rule:br-13-no-close-with-reserve",
+        "rule:br-17-no-payment-out-of-force",
+        "rule:br-18-stale-claim-flag"
+      ],
+      "rationale": "Assignment, closure, payment eligibility, and stale-claim handling."
+    },
+    {
+      "id": "ruleGroup:recovery-audit",
+      "title": {
+        "en": "Recovery & Audit",
+        "zh": "追偿与审计"
+      },
+      "ruleIds": [
+        "rule:br-19-recovery-preconditions",
+        "rule:br-20-immutable-audit-trail"
+      ],
+      "rationale": "Subrogation preconditions and immutable audit trail."
+    }
+  ],
+  "confidence": 0.909,
+  "metadata": {
+    "createdAt": "2026-05-29T00:00:00.000Z",
+    "updatedAt": "2026-05-29T00:00:00.000Z",
+    "generation": {
+      "model": "claude-opus-4-8[1m]",
+      "provider": "anthropic",
+      "runId": "run_insurance_claims_underwriting_v1",
+      "durationMs": 0
+    },
+    "stats": {
+      "objects": 13,
+      "relationships": 14,
+      "rules": 20,
+      "ruleGroups": 7,
+      "actions": 16,
+      "events": 29,
+      "processes": 4,
+      "sourceDocuments": 3,
+      "nodesTotal": 96
+    },
+    "history": [
+      {
+        "version": 1,
+        "at": "2026-05-29T00:00:00.000Z",
+        "note": "Initial 5-stage extraction from SOP, business rules, and systems-data reference.",
+        "delta": {
+          "added": 96,
+          "changed": 0,
+          "removed": 0
+        }
+      }
+    ],
+    "danglingRefs": [],
+    "stageCritiques": {
+      "objects": "13 object types extracted from the systems-data entity tables and SOP; all FKs resolve to in-ontology objects.",
+      "rules": "20 rules mined sentence-by-sentence from BR-01..BR-20, grouped into 7 rule groups; all carry sentence-level citations.",
+      "actions": "16 actions extracted from SOP steps A1-A6, B1-B7, C1, D1-D2 with typed IO, preconditions, triggeredBy/emits, and agent bindings.",
+      "events": "29 events; 12 extracted from the systems-data event table, the rest inferred from action emits/triggers with derivedFrom. producedBy/consumedBy are the exact inverse of actions.",
+      "processes": "4 processes (A-D) with event-driven step graphs; branches on referral and coverage decisions."
+    }
+  }
+}

@@ -1,0 +1,22 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+.vercel/
+
+# local runtime data (file store)
+.data/
+
+# env
+.env
+.env.local
+.env.*.local
+
+# scratch / duplicates
+public/temp/
+
+# logs & os
+*.log
+npm-debug.log*
+.DS_Store

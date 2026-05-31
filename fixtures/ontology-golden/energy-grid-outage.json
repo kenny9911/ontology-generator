@@ -1,0 +1,2559 @@
+{
+  "id": "ontology:energy-grid-outage",
+  "uuid": "a1b2c3d4e5f60718293a4b5c6d7e8f90",
+  "name": "NorthGrid Electric Asset & Outage Operations",
+  "nameZh": "NorthGrid 电网资产与停电运营",
+  "domain": "energy_grid_outage",
+  "version": 1,
+  "schemaVersion": 1,
+  "status": "draft",
+  "sourceDocuments": [
+    {
+      "id": "doc:grid-outage-sop",
+      "uuid": "0f1e2d3c4b5a69788796a5b4c3d2e1f0",
+      "name": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)",
+      "kind": "doc",
+      "mimeType": "text/markdown",
+      "parsedRef": "parsed_grid_sop",
+      "contentHash": "sha256:sop014v42"
+    },
+    {
+      "id": "doc:grid-business-rules-policy",
+      "uuid": "1a2b3c4d5e6f70819203a4b5c6d7e8f1",
+      "name": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
+      "kind": "doc",
+      "mimeType": "text/markdown",
+      "parsedRef": "parsed_grid_rules",
+      "contentHash": "sha256:pol009v31"
+    },
+    {
+      "id": "doc:grid-systems-and-data",
+      "uuid": "2b3c4d5e6f7081920314a5b6c7d8e9f2",
+      "name": "Grid Operations Systems of Record & Data Reference (REF-GRID-SYS-003 v2.4)",
+      "kind": "doc",
+      "mimeType": "text/markdown",
+      "parsedRef": "parsed_grid_systems",
+      "contentHash": "sha256:ref003v24"
+    }
+  ],
+  "objects": [
+    {
+      "id": "objectType:substation",
+      "uuid": "3c4d5e6f708192031425b6c7d8e9f0a3",
+      "name": "Substation",
+      "nameZh": "变电站",
+      "description": "A facility that transforms and switches voltage; parent of one or more Feeders. System of record: GIS.",
+      "descriptionZh": "变换和切换电压的设施；一个或多个馈线的父级。记录系统：GIS。",
+      "attributes": [
+        { "name": "substation_id", "nameZh": "变电站编号", "type": "string", "required": true, "keyRole": "pk", "description": "Primary key." },
+        { "name": "name", "nameZh": "名称", "type": "string", "required": false, "keyRole": "none" },
+        { "name": "voltage_class_kv", "nameZh": "电压等级千伏", "type": "integer", "required": false, "keyRole": "none", "description": "e.g., 12, 69, 138 kV." },
+        { "name": "region", "nameZh": "区域", "type": "string", "required": false, "keyRole": "none" }
+      ],
+      "relationshipIds": ["rel:substation-parents-feeder"],
+      "display": { "emoji": "🏭", "color": "#6b7280" },
+      "sources": [
+        { "documentId": "doc:grid-systems-and-data", "documentName": "Grid Operations Systems of Record & Data Reference (REF-GRID-SYS-003 v2.4)", "snippet": "`Substation` — owner: GIS", "section": "§3.1", "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:feeder",
+      "uuid": "4d5e6f70819203142536c7d8e9f0a1b4",
+      "name": "Feeder",
+      "nameZh": "馈线",
+      "description": "A distribution circuit energized from a Substation, serving many ServicePoints. System of record: GIS.",
+      "descriptionZh": "由变电站供电的配电线路，为多个供电点供电。记录系统：GIS。",
+      "attributes": [
+        { "name": "feeder_id", "nameZh": "馈线编号", "type": "string", "required": true, "keyRole": "pk", "description": "Primary key." },
+        { "name": "substation_id", "nameZh": "变电站编号", "type": "reference", "required": true, "keyRole": "fk", "refObjectTypeId": "objectType:substation", "description": "Foreign key to Substation." },
+        { "name": "voltage_class", "nameZh": "电压等级", "type": "enum", "required": true, "keyRole": "none", "enumValues": ["distribution", "high-voltage"], "description": "Drives Rules R-11, R-12." },
+        { "name": "vegetation_cycle_months", "nameZh": "植被周期月数", "type": "integer", "required": false, "keyRole": "none", "description": "Clearance cycle." },
+        { "name": "last_clearance_date", "nameZh": "上次清理日期", "type": "date", "required": false, "keyRole": "none" },
+        { "name": "wildfire_risk_zone", "nameZh": "野火风险区", "type": "boolean", "required": false, "keyRole": "none", "description": "Drives Rule R-12." }
+      ],
+      "relationshipIds": ["rel:feeder-serves-servicepoint"],
+      "display": { "emoji": "⚡", "color": "#f59e0b" },
+      "sources": [
+        { "documentId": "doc:grid-systems-and-data", "documentName": "Grid Operations Systems of Record & Data Reference (REF-GRID-SYS-003 v2.4)", "snippet": "`Feeder` — owner: GIS", "section": "§3.2", "quoteVerified": true },
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "A distribution circuit energized from a `Substation`, serving many `ServicePoint`s.", "section": "§2", "quoteVerified": true }
+      ],
+      "confidence": 0.96,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:service-point",
+      "uuid": "5e6f7081920314253647d8e9f0a1b2c5",
+      "name": "ServicePoint",
+      "nameZh": "供电点",
+      "description": "A metered delivery point mapped to one Customer and one Feeder. System of record: GIS with telemetry via AMI.",
+      "descriptionZh": "映射到一个客户和一条馈线的计量交付点。记录系统：GIS，遥测通过 AMI。",
+      "attributes": [
+        { "name": "service_point_id", "nameZh": "供电点编号", "type": "string", "required": true, "keyRole": "pk", "description": "Primary key." },
+        { "name": "feeder_id", "nameZh": "馈线编号", "type": "reference", "required": true, "keyRole": "fk", "refObjectTypeId": "objectType:feeder", "description": "Foreign key to Feeder (exactly one, Rule R-18)." },
+        { "name": "customer_id", "nameZh": "客户编号", "type": "reference", "required": true, "keyRole": "fk", "refObjectTypeId": "objectType:customer", "description": "Foreign key to Customer (exactly one, Rule R-18)." },
+        { "name": "meter_id", "nameZh": "电表编号", "type": "string", "required": false, "keyRole": "none", "description": "AMI device identifier." },
+        { "name": "critical_infrastructure", "nameZh": "关键基础设施", "type": "boolean", "required": false, "keyRole": "none", "description": "Drives Rule R-15." }
+      ],
+      "relationshipIds": ["rel:servicepoint-belongs-to-customer"],
+      "display": { "emoji": "🔌", "color": "#10b981" },
+      "sources": [
+        { "documentId": "doc:grid-systems-and-data", "documentName": "Grid Operations Systems of Record & Data Reference (REF-GRID-SYS-003 v2.4)", "snippet": "`ServicePoint` — owner: GIS (telemetry via AMI)", "section": "§3.3", "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:customer",
+      "uuid": "6f708192031425364758e9f0a1b2c3d6",
+      "name": "Customer",
+      "nameZh": "客户",
+      "description": "The billed account associated with a ServicePoint, including notification flags. System of record: CIS.",
+      "descriptionZh": "与供电点关联的计费账户，包含通知标志。记录系统：CIS。",
+      "attributes": [
+        { "name": "customer_id", "nameZh": "客户编号", "type": "string", "required": true, "keyRole": "pk", "description": "Primary key." },
+        { "name": "account_name", "nameZh": "账户名称", "type": "string", "required": false, "keyRole": "none" },
+        { "name": "life_support_flag", "nameZh": "生命维持依赖标志", "type": "boolean", "required": false, "keyRole": "none", "description": "Drives Rules R-14, R-19." },
+        { "name": "notification_contact", "nameZh": "通知联系方式", "type": "string", "required": false, "keyRole": "none", "description": "Phone/email." }
+      ],
+      "display": { "emoji": "👤", "color": "#3b82f6" },
+      "sources": [
+        { "documentId": "doc:grid-systems-and-data", "documentName": "Grid Operations Systems of Record & Data Reference (REF-GRID-SYS-003 v2.4)", "snippet": "`Customer` — owner: CIS", "section": "§3.4", "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:asset",
+      "uuid": "708192031425364758690a1b2c3d4e7f",
+      "name": "Asset",
+      "nameZh": "资产",
+      "description": "Any physical grid component (transformer, breaker, conductor span, recloser) with a unique Asset Tag. System of record: Maximo.",
+      "descriptionZh": "任何具有唯一资产标签的物理电网组件（变压器、断路器、导线档、重合器）。记录系统：Maximo。",
+      "attributes": [
+        { "name": "asset_tag", "nameZh": "资产标签", "type": "string", "required": true, "keyRole": "pk", "description": "Primary key." },
+        { "name": "asset_class", "nameZh": "资产等级", "type": "enum", "required": true, "keyRole": "none", "enumValues": ["transmission", "distribution"], "description": "Drives Rules R-01, R-03." },
+        { "name": "safety_classified", "nameZh": "安全分类", "type": "boolean", "required": false, "keyRole": "none", "description": "Drives Rule R-05." },
+        { "name": "condition_score", "nameZh": "状态评分", "type": "integer", "required": false, "keyRole": "none", "description": "0–100 health scale. Drives Rule R-04." },
+        { "name": "inspection_interval_months", "nameZh": "巡检间隔月数", "type": "integer", "required": false, "keyRole": "none", "description": "Rated interval." },
+        { "name": "last_inspection_date", "nameZh": "上次巡检日期", "type": "date", "required": false, "keyRole": "none" },
+        { "name": "feeder_id", "nameZh": "馈线编号", "type": "reference", "required": false, "keyRole": "fk", "refObjectTypeId": "objectType:feeder", "description": "Foreign key to Feeder (where applicable)." }
+      ],
+      "relationshipIds": ["rel:asset-mounted-on-feeder"],
+      "display": { "emoji": "🔩", "color": "#8b5cf6" },
+      "sources": [
+        { "documentId": "doc:grid-systems-and-data", "documentName": "Grid Operations Systems of Record & Data Reference (REF-GRID-SYS-003 v2.4)", "snippet": "`Asset` — owner: Maximo", "section": "§3.5", "quoteVerified": true },
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "Any physical grid component (transformer, breaker, conductor span, recloser) with a unique Asset Tag.", "section": "§2", "quoteVerified": true }
+      ],
+      "confidence": 0.96,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:inspection",
+      "uuid": "8192031425364758697a0b1c2d3e4f80",
+      "name": "Inspection",
+      "nameZh": "巡检",
+      "description": "A scheduled or ad-hoc condition assessment of an Asset, producing a pass/fail result. System of record: Maximo.",
+      "descriptionZh": "对资产的计划或临时状态评估，产生通过/不通过结果。记录系统：Maximo。",
+      "attributes": [
+        { "name": "inspection_id", "nameZh": "巡检编号", "type": "string", "required": true, "keyRole": "pk", "description": "Primary key." },
+        { "name": "asset_tag", "nameZh": "资产标签", "type": "reference", "required": true, "keyRole": "fk", "refObjectTypeId": "objectType:asset", "description": "Foreign key to Asset." },
+        { "name": "due_date", "nameZh": "到期日", "type": "date", "required": false, "keyRole": "none" },
+        { "name": "completed_date", "nameZh": "完成日期", "type": "date", "required": false, "keyRole": "none", "description": "Nullable until done." },
+        { "name": "result", "nameZh": "结果", "type": "enum", "required": false, "keyRole": "none", "enumValues": ["pass", "fail"], "description": "Drives Rule R-02." }
+      ],
+      "relationshipIds": ["rel:inspection-assesses-asset"],
+      "display": { "emoji": "🔍", "color": "#0ea5e9" },
+      "sources": [
+        { "documentId": "doc:grid-systems-and-data", "documentName": "Grid Operations Systems of Record & Data Reference (REF-GRID-SYS-003 v2.4)", "snippet": "`Inspection` — owner: Maximo", "section": "§3.6", "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:maintenance-work-order",
+      "uuid": "9203142536475869708b1c2d3e4f5081",
+      "name": "MaintenanceWorkOrder",
+      "nameZh": "维护工单",
+      "description": "A unit of corrective or preventive field work against an Asset. System of record: Maximo.",
+      "descriptionZh": "针对资产的纠正性或预防性现场工作单元。记录系统：Maximo。",
+      "attributes": [
+        { "name": "work_order_id", "nameZh": "工单编号", "type": "string", "required": true, "keyRole": "pk", "description": "Primary key." },
+        { "name": "asset_tag", "nameZh": "资产标签", "type": "reference", "required": true, "keyRole": "fk", "refObjectTypeId": "objectType:asset", "description": "Foreign key to Asset." },
+        { "name": "outage_event_id", "nameZh": "停电事件编号", "type": "reference", "required": false, "keyRole": "fk", "refObjectTypeId": "objectType:outage-event", "description": "Foreign key to OutageEvent (nullable, Rule R-17)." },
+        { "name": "priority", "nameZh": "优先级", "type": "enum", "required": false, "keyRole": "none", "enumValues": ["emergency", "high", "normal"] },
+        { "name": "estimated_cost", "nameZh": "预估成本", "type": "decimal", "required": false, "keyRole": "none", "description": "Drives Rule R-06." },
+        { "name": "status", "nameZh": "状态", "type": "enum", "required": false, "keyRole": "none", "enumValues": ["raised", "approved", "in-progress", "closed"] },
+        { "name": "second_engineer_approval", "nameZh": "第二工程师批准", "type": "boolean", "required": false, "keyRole": "none", "description": "Drives Rule R-05." }
+      ],
+      "relationshipIds": ["rel:workorder-targets-asset", "rel:workorder-references-outage"],
+      "display": { "emoji": "📝", "color": "#ef4444" },
+      "sources": [
+        { "documentId": "doc:grid-systems-and-data", "documentName": "Grid Operations Systems of Record & Data Reference (REF-GRID-SYS-003 v2.4)", "snippet": "`MaintenanceWorkOrder` — owner: Maximo", "section": "§3.7", "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:crew",
+      "uuid": "a03142536475869708c1b2d3e4f50912",
+      "name": "Crew",
+      "nameZh": "作业班组",
+      "description": "A field workforce unit assigned to restore outages or execute work orders. System of record: Maximo (Workforce).",
+      "descriptionZh": "被指派恢复停电或执行工单的现场作业班组单元。记录系统：Maximo（劳动力）。",
+      "attributes": [
+        { "name": "crew_id", "nameZh": "班组编号", "type": "string", "required": true, "keyRole": "pk", "description": "Primary key." },
+        { "name": "qualification", "nameZh": "资质", "type": "enum", "required": false, "keyRole": "none", "enumValues": ["line", "substation", "vegetation"] },
+        { "name": "availability", "nameZh": "可用状态", "type": "enum", "required": false, "keyRole": "none", "enumValues": ["available", "dispatched", "off-shift"] }
+      ],
+      "display": { "emoji": "👷", "color": "#f97316" },
+      "sources": [
+        { "documentId": "doc:grid-systems-and-data", "documentName": "Grid Operations Systems of Record & Data Reference (REF-GRID-SYS-003 v2.4)", "snippet": "`Crew` — owner: Maximo (Workforce)", "section": "§3.8", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:outage-event",
+      "uuid": "b13142536475869708d1c2e3f4051923",
+      "name": "OutageEvent",
+      "nameZh": "停电事件",
+      "description": "A recorded loss of supply affecting one or more ServicePoints, with a detection timestamp and lifecycle state. System of record: OMS.",
+      "descriptionZh": "影响一个或多个供电点的已记录供电损失，带有检测时间戳和生命周期状态。记录系统：OMS。",
+      "attributes": [
+        { "name": "outage_event_id", "nameZh": "停电事件编号", "type": "string", "required": true, "keyRole": "pk", "description": "Primary key." },
+        { "name": "feeder_id", "nameZh": "馈线编号", "type": "reference", "required": true, "keyRole": "fk", "refObjectTypeId": "objectType:feeder", "description": "Foreign key to Feeder." },
+        { "name": "detection_timestamp", "nameZh": "检测时间戳", "type": "datetime", "required": true, "keyRole": "none", "description": "Starts reporting clock, Rule R-07." },
+        { "name": "restoration_timestamp", "nameZh": "复电时间戳", "type": "datetime", "required": false, "keyRole": "none", "description": "Nullable." },
+        { "name": "affected_service_point_count", "nameZh": "受影响供电点数", "type": "integer", "required": false, "keyRole": "none", "description": "Drives Rules R-07, R-09." },
+        { "name": "cause_code", "nameZh": "原因代码", "type": "string", "required": false, "keyRole": "none", "description": "Required before close, Rule R-20." },
+        { "name": "state", "nameZh": "状态", "type": "enum", "required": true, "keyRole": "none", "enumValues": ["Detected", "Confirmed", "RepairInProgress", "Restored", "Closed"] }
+      ],
+      "relationshipIds": ["rel:outage-affects-servicepoint", "rel:outage-occurs-on-feeder"],
+      "display": { "emoji": "🔴", "color": "#dc2626" },
+      "sources": [
+        { "documentId": "doc:grid-systems-and-data", "documentName": "Grid Operations Systems of Record & Data Reference (REF-GRID-SYS-003 v2.4)", "snippet": "`OutageEvent` — owner: OMS", "section": "§3.9", "quoteVerified": true },
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "A recorded loss of supply affecting one or more `ServicePoint`s, with a detection timestamp and lifecycle state.", "section": "§2", "quoteVerified": true }
+      ],
+      "confidence": 0.97,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:regulatory-report",
+      "uuid": "c23142536475869708e1d2f3041a2934",
+      "name": "RegulatoryReport",
+      "nameZh": "监管报告",
+      "description": "A filing submitted to the PUC for a reportable OutageEvent. System of record: RegFiling Portal.",
+      "descriptionZh": "针对可报告停电事件提交给 PUC 的备案。记录系统：RegFiling Portal。",
+      "attributes": [
+        { "name": "report_id", "nameZh": "报告编号", "type": "string", "required": true, "keyRole": "pk", "description": "Primary key." },
+        { "name": "outage_event_id", "nameZh": "停电事件编号", "type": "reference", "required": true, "keyRole": "fk", "refObjectTypeId": "objectType:outage-event", "description": "Foreign key to OutageEvent." },
+        { "name": "filing_deadline", "nameZh": "备案截止时间", "type": "datetime", "required": false, "keyRole": "none", "description": "Computed from detection_timestamp, Rule R-07." },
+        { "name": "submitted_timestamp", "nameZh": "提交时间戳", "type": "datetime", "required": false, "keyRole": "none", "description": "Nullable." },
+        { "name": "director_approval", "nameZh": "总监批准", "type": "boolean", "required": false, "keyRole": "none", "description": "Drives Rule R-09." },
+        { "name": "portal_confirmation_id", "nameZh": "门户确认编号", "type": "string", "required": false, "keyRole": "none", "description": "Set on acceptance." }
+      ],
+      "relationshipIds": ["rel:report-files-for-outage"],
+      "display": { "emoji": "📄", "color": "#7c3aed" },
+      "sources": [
+        { "documentId": "doc:grid-systems-and-data", "documentName": "Grid Operations Systems of Record & Data Reference (REF-GRID-SYS-003 v2.4)", "snippet": "`RegulatoryReport` — owner: RegFiling Portal", "section": "§3.10", "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    }
+  ],
+  "relationships": [
+    {
+      "id": "rel:substation-parents-feeder",
+      "uuid": "d3314253647586970f1e2031425a3945",
+      "name": "parents",
+      "nameZh": "为父级",
+      "label": { "en": "Substation parents Feeder", "zh": "变电站为馈线父级" },
+      "sourceObjectTypeId": "objectType:substation",
+      "targetObjectTypeId": "objectType:feeder",
+      "cardinality": "one_to_many",
+      "viaAttribute": "substation_id",
+      "description": "A Substation is parent of one or more Feeders.",
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "A facility that transforms and switches voltage; parent of one or more `Feeder`s.", "section": "§2", "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:feeder-serves-servicepoint",
+      "uuid": "e4314253647586970a1f203142563956",
+      "name": "serves",
+      "nameZh": "供电",
+      "label": { "en": "Feeder serves ServicePoint", "zh": "馈线为供电点供电" },
+      "sourceObjectTypeId": "objectType:feeder",
+      "targetObjectTypeId": "objectType:service-point",
+      "cardinality": "one_to_many",
+      "viaAttribute": "feeder_id",
+      "description": "A Feeder serves many ServicePoints; each ServicePoint maps to exactly one Feeder (Rule R-18).",
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "A distribution circuit energized from a `Substation`, serving many `ServicePoint`s.", "section": "§2", "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:servicepoint-belongs-to-customer",
+      "uuid": "f53142536475869708b1023142563967",
+      "name": "belongs_to",
+      "nameZh": "归属于",
+      "label": { "en": "ServicePoint belongs to Customer", "zh": "供电点归属于客户" },
+      "sourceObjectTypeId": "objectType:service-point",
+      "targetObjectTypeId": "objectType:customer",
+      "cardinality": "many_to_one",
+      "viaAttribute": "customer_id",
+      "description": "A ServicePoint is mapped to exactly one Customer (Rule R-18).",
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "A metered delivery point mapped to one `Customer` and one `Feeder`.", "section": "§2", "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:asset-mounted-on-feeder",
+      "uuid": "06243142536475869c1023142563978a",
+      "name": "mounted_on",
+      "nameZh": "安装于",
+      "label": { "en": "Asset mounted on Feeder", "zh": "资产安装于馈线" },
+      "sourceObjectTypeId": "objectType:asset",
+      "targetObjectTypeId": "objectType:feeder",
+      "cardinality": "many_to_one",
+      "viaAttribute": "feeder_id",
+      "description": "An Asset is associated with a Feeder where applicable.",
+      "sources": [
+        { "documentId": "doc:grid-systems-and-data", "documentName": "Grid Operations Systems of Record & Data Reference (REF-GRID-SYS-003 v2.4)", "snippet": "`feederId` | string | **Foreign key** → `Feeder` (where applicable)", "section": "§3.5", "quoteVerified": true }
+      ],
+      "confidence": 0.88,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:inspection-assesses-asset",
+      "uuid": "17243142536475869d1023142563989b",
+      "name": "assesses",
+      "nameZh": "评估",
+      "label": { "en": "Inspection assesses Asset", "zh": "巡检评估资产" },
+      "sourceObjectTypeId": "objectType:inspection",
+      "targetObjectTypeId": "objectType:asset",
+      "cardinality": "many_to_one",
+      "viaAttribute": "asset_tag",
+      "description": "An Inspection assesses the condition of one Asset.",
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "A scheduled or ad-hoc condition assessment of an `Asset`, producing a pass/fail result.", "section": "§2", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:workorder-targets-asset",
+      "uuid": "2824314253647586901023142563990c",
+      "name": "targets",
+      "nameZh": "针对",
+      "label": { "en": "MaintenanceWorkOrder targets Asset", "zh": "维护工单针对资产" },
+      "sourceObjectTypeId": "objectType:maintenance-work-order",
+      "targetObjectTypeId": "objectType:asset",
+      "cardinality": "many_to_one",
+      "viaAttribute": "asset_tag",
+      "description": "A MaintenanceWorkOrder is corrective or preventive work against an Asset.",
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "A unit of corrective or preventive field work against an `Asset`.", "section": "§2", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:workorder-references-outage",
+      "uuid": "3924314253647586911023142564001d",
+      "name": "references",
+      "nameZh": "关联",
+      "label": { "en": "MaintenanceWorkOrder references OutageEvent", "zh": "维护工单关联停电事件" },
+      "sourceObjectTypeId": "objectType:maintenance-work-order",
+      "targetObjectTypeId": "objectType:outage-event",
+      "cardinality": "many_to_one",
+      "viaAttribute": "outage_event_id",
+      "description": "An emergency MaintenanceWorkOrder created from an active OutageEvent must reference the parent OutageEvent (Rule R-17).",
+      "sources": [
+        { "documentId": "doc:grid-business-rules-policy", "documentName": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)", "snippet": "An emergency `MaintenanceWorkOrder` created from an active `OutageEvent` must reference both the parent `OutageEvent` and the faulted `Asset`.", "section": "§6, R-17", "quoteVerified": true }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:outage-affects-servicepoint",
+      "uuid": "4a24314253647586921023142564012e",
+      "name": "affects",
+      "nameZh": "影响",
+      "label": { "en": "OutageEvent affects ServicePoint", "zh": "停电事件影响供电点" },
+      "sourceObjectTypeId": "objectType:outage-event",
+      "targetObjectTypeId": "objectType:service-point",
+      "cardinality": "many_to_many",
+      "description": "An OutageEvent is a loss of supply affecting one or more ServicePoints.",
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "A recorded loss of supply affecting one or more `ServicePoint`s.", "section": "§2", "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:outage-occurs-on-feeder",
+      "uuid": "5b24314253647586931023142564023f",
+      "name": "occurs_on",
+      "nameZh": "发生于",
+      "label": { "en": "OutageEvent occurs on Feeder", "zh": "停电事件发生于馈线" },
+      "sourceObjectTypeId": "objectType:outage-event",
+      "targetObjectTypeId": "objectType:feeder",
+      "cardinality": "many_to_one",
+      "viaAttribute": "feeder_id",
+      "description": "An OutageEvent is keyed to the affected Feeder.",
+      "sources": [
+        { "documentId": "doc:grid-systems-and-data", "documentName": "Grid Operations Systems of Record & Data Reference (REF-GRID-SYS-003 v2.4)", "snippet": "`feederId` | string | **Foreign key** → `Feeder`", "section": "§3.9", "quoteVerified": true }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:report-files-for-outage",
+      "uuid": "6c243142536475869410231425640341",
+      "name": "files_for",
+      "nameZh": "为之备案",
+      "label": { "en": "RegulatoryReport files for OutageEvent", "zh": "监管报告为停电事件备案" },
+      "sourceObjectTypeId": "objectType:regulatory-report",
+      "targetObjectTypeId": "objectType:outage-event",
+      "cardinality": "one_to_one",
+      "viaAttribute": "outage_event_id",
+      "description": "A RegulatoryReport is a filing submitted to the PUC for a reportable OutageEvent.",
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "A filing submitted to the PUC for a reportable `OutageEvent`.", "section": "§2", "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    }
+  ],
+  "rules": [
+    {
+      "id": "rule:transmission-inspection-interval",
+      "uuid": "70143142536475869a1023142564045a",
+      "title": "Transmission inspection within rated interval",
+      "titleZh": "输电资产须在额定间隔内完成巡检",
+      "statement": {
+        "en": "A transmission-class Asset must have a completed Inspection within its rated inspection interval, and a missed interval shall automatically raise a priority MaintenanceWorkOrder.",
+        "zh": "输电级资产必须在其额定巡检间隔内完成巡检，间隔逾期将自动产生一份优先级维护工单。"
+      },
+      "formal": "Asset.assetClass = transmission → (Inspection.completedDate within Asset.inspectionIntervalMonths) ∧ (missed → raise priority MaintenanceWorkOrder)",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "asset.assetClass != 'transmission' || asset.lastInspectionDate >= now() - duration(asset.inspectionIntervalMonths)",
+        "bindings": [{ "var": "asset", "objectTypeId": "objectType:asset" }]
+      },
+      "kind": "temporal",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:asset", "objectType:inspection", "objectType:maintenance-work-order"],
+      "appliesToAttributes": ["objectType:asset.asset_class", "objectType:asset.inspection_interval_months"],
+      "trigger": { "description": "On inspection-interval timer or missed interval", "onEventTypeId": "event:inspection.interval-missed" },
+      "groupId": "ruleGroup:inspection-asset",
+      "sources": [
+        { "documentId": "doc:grid-business-rules-policy", "documentName": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)", "snippet": "A transmission-class `Asset` must have a completed `Inspection` within its rated inspection interval, and a missed interval shall automatically raise a priority `MaintenanceWorkOrder`.", "section": "§2, R-01", "sentenceRefs": [1], "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:failed-inspection-raises-wo-24h",
+      "uuid": "71243142536475869b1023142564056b",
+      "title": "Failed inspection raises corrective WO within 24h",
+      "titleZh": "巡检不通过须在24小时内开纠正工单",
+      "statement": {
+        "en": "An Inspection that returns a fail result is required to generate a corrective MaintenanceWorkOrder within 24 hours of the inspection completion timestamp.",
+        "zh": "返回不通过结果的巡检须在巡检完成时间戳后24小时内生成一份纠正性维护工单。"
+      },
+      "formal": "Inspection.result = fail → MaintenanceWorkOrder created within 24h of Inspection.completedDate",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "inspection.result != 'fail' || workOrder.createdAt <= inspection.completedDate + duration('24h')",
+        "bindings": [
+          { "var": "inspection", "objectTypeId": "objectType:inspection" },
+          { "var": "workOrder", "objectTypeId": "objectType:maintenance-work-order" }
+        ]
+      },
+      "kind": "temporal",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:inspection", "objectType:maintenance-work-order"],
+      "appliesToAttributes": ["objectType:inspection.result", "objectType:inspection.completed_date"],
+      "trigger": { "description": "On Inspection result = fail", "onEventTypeId": "event:inspection.completed" },
+      "groupId": "ruleGroup:inspection-asset",
+      "sources": [
+        { "documentId": "doc:grid-business-rules-policy", "documentName": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)", "snippet": "An `Inspection` that returns a fail result is required to generate a corrective `MaintenanceWorkOrder` within 24 hours of the inspection completion timestamp.", "section": "§2, R-02", "sentenceRefs": [2], "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:inspection-cadence-by-class",
+      "uuid": "72343142536475869c1023142564067c",
+      "title": "Inspection cadence by asset class",
+      "titleZh": "按资产等级的巡检周期",
+      "statement": {
+        "en": "A distribution-class Asset must be inspected at least once every 36 months, and a transmission-class Asset at least once every 12 months.",
+        "zh": "配电级资产必须至少每36个月巡检一次，输电级资产必须至少每12个月巡检一次。"
+      },
+      "formal": "(Asset.assetClass = distribution → interval ≤ 36 months) ∧ (Asset.assetClass = transmission → interval ≤ 12 months)",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "(asset.assetClass == 'distribution' && asset.inspectionIntervalMonths <= 36) || (asset.assetClass == 'transmission' && asset.inspectionIntervalMonths <= 12)",
+        "bindings": [{ "var": "asset", "objectTypeId": "objectType:asset" }]
+      },
+      "kind": "constraint",
+      "severity": "warn",
+      "appliesToObjectTypeIds": ["objectType:asset"],
+      "appliesToAttributes": ["objectType:asset.asset_class", "objectType:asset.inspection_interval_months"],
+      "trigger": { "description": "On inspection scheduling" },
+      "groupId": "ruleGroup:inspection-asset",
+      "sources": [
+        { "documentId": "doc:grid-business-rules-policy", "documentName": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)", "snippet": "A distribution-class `Asset` must be inspected at least once every 36 months, and a transmission-class `Asset` at least once every 12 months.", "section": "§2, R-03", "sentenceRefs": [3], "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:low-condition-score-service-limit",
+      "uuid": "73443142536475869d1023142564078d",
+      "title": "Low condition score in-service limit",
+      "titleZh": "低状态评分的在役期限",
+      "statement": {
+        "en": "An Asset whose condition score falls below 40 on the 0–100 health scale shall not remain in service beyond 30 days without an approved MaintenanceWorkOrder on file.",
+        "zh": "在0–100健康评分中状态评分低于40的资产，若无已批准的维护工单存档，不得在役超过30天。"
+      },
+      "formal": "Asset.conditionScore < 40 → (days_in_service ≤ 30 ∨ ∃ approved MaintenanceWorkOrder)",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "asset.conditionScore >= 40 || daysInService <= 30 || hasApprovedWorkOrder",
+        "bindings": [{ "var": "asset", "objectTypeId": "objectType:asset" }]
+      },
+      "kind": "constraint",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:asset", "objectType:maintenance-work-order"],
+      "appliesToAttributes": ["objectType:asset.condition_score"],
+      "groupId": "ruleGroup:inspection-asset",
+      "sources": [
+        { "documentId": "doc:grid-business-rules-policy", "documentName": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)", "snippet": "An `Asset` whose condition score falls below 40 on the 0–100 health scale shall not remain in service beyond 30 days without an approved `MaintenanceWorkOrder` on file.", "section": "§2, R-04", "sentenceRefs": [4], "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:safety-asset-second-engineer-close",
+      "uuid": "74543142536475869e1023142564089e",
+      "title": "Safety-classified asset close requires second engineer",
+      "titleZh": "安全分类资产关闭须第二工程师批准",
+      "statement": {
+        "en": "A MaintenanceWorkOrder against a safety-classified Asset may not be closed without a second qualified engineer's approval recorded in Maximo.",
+        "zh": "针对安全分类资产的维护工单，未在Maximo中记录第二名合格工程师的批准，不得关闭。"
+      },
+      "formal": "Asset.safetyClassified = true ∧ MaintenanceWorkOrder.status → closed → MaintenanceWorkOrder.secondEngineerApproval = true",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "!asset.safetyClassified || workOrder.status != 'closed' || workOrder.secondEngineerApproval == true",
+        "bindings": [
+          { "var": "asset", "objectTypeId": "objectType:asset" },
+          { "var": "workOrder", "objectTypeId": "objectType:maintenance-work-order" }
+        ]
+      },
+      "kind": "authorization",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:maintenance-work-order", "objectType:asset"],
+      "appliesToAttributes": ["objectType:asset.safety_classified", "objectType:maintenance-work-order.second_engineer_approval"],
+      "trigger": { "description": "On MaintenanceWorkOrder close attempt", "onEventTypeId": "event:maintenance-work-order.closed" },
+      "groupId": "ruleGroup:work-order-lifecycle",
+      "sources": [
+        { "documentId": "doc:grid-business-rules-policy", "documentName": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)", "snippet": "A `MaintenanceWorkOrder` against a safety-classified `Asset` may not be closed without a second qualified engineer's approval recorded in Maximo.", "section": "§3, R-05", "sentenceRefs": [5], "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:high-cost-wo-asset-manager-approval",
+      "uuid": "75643142536475869f102314256409af",
+      "title": "High-cost WO requires Asset Manager approval",
+      "titleZh": "高成本工单须资产经理批准",
+      "statement": {
+        "en": "A MaintenanceWorkOrder with an estimated cost above $250,000 is required to obtain Asset Manager approval before crew assignment.",
+        "zh": "预估成本超过25万美元的维护工单，在派工前须取得资产经理的批准。"
+      },
+      "formal": "MaintenanceWorkOrder.estimatedCost > 250000 → AssetManager approval before crew assignment",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "workOrder.estimatedCost <= 250000 || workOrder.assetManagerApproved == true",
+        "bindings": [{ "var": "workOrder", "objectTypeId": "objectType:maintenance-work-order" }]
+      },
+      "kind": "authorization",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:maintenance-work-order"],
+      "appliesToAttributes": ["objectType:maintenance-work-order.estimated_cost"],
+      "trigger": { "description": "Before crew assignment on approval", "onEventTypeId": "event:maintenance-work-order.raised" },
+      "groupId": "ruleGroup:work-order-lifecycle",
+      "sources": [
+        { "documentId": "doc:grid-business-rules-policy", "documentName": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)", "snippet": "A `MaintenanceWorkOrder` with an estimated cost above $250,000 is required to obtain Asset Manager approval before crew assignment.", "section": "§3, R-06", "sentenceRefs": [6], "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:outage-reportable-threshold-1h",
+      "uuid": "766431425364758601102314256410b0",
+      "title": "Report outage over 50,000 ServicePoints within 1 hour",
+      "titleZh": "超5万供电点停电须1小时内上报",
+      "statement": {
+        "en": "An OutageEvent affecting more than 50,000 ServicePoints must be reported to the regulator within 1 hour of its detection timestamp.",
+        "zh": "影响超过50,000个供电点的停电事件，须在其检测时间戳后1小时内向监管机构上报。"
+      },
+      "formal": "OutageEvent.affectedServicePointCount > 50000 → RegulatoryReport submitted ≤ detectionTimestamp + 1h",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "outage.affectedServicePointCount <= 50000 || report.submittedTimestamp <= outage.detectionTimestamp + duration('1h')",
+        "bindings": [
+          { "var": "outage", "objectTypeId": "objectType:outage-event" },
+          { "var": "report", "objectTypeId": "objectType:regulatory-report" }
+        ]
+      },
+      "kind": "temporal",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:outage-event", "objectType:regulatory-report", "objectType:service-point"],
+      "appliesToAttributes": ["objectType:outage-event.affected_service_point_count", "objectType:outage-event.detection_timestamp"],
+      "trigger": { "description": "On OutageConfirmed; starts the regulatory reporting clock", "onEventTypeId": "event:outage.confirmed" },
+      "groupId": "ruleGroup:outage-reporting",
+      "sources": [
+        { "documentId": "doc:grid-business-rules-policy", "documentName": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)", "snippet": "An `OutageEvent` affecting more than 50,000 `ServicePoint`s must be reported to the regulator within 1 hour of its detection timestamp.", "section": "§4, R-07", "sentenceRefs": [7], "quoteVerified": true }
+      ],
+      "confidence": 0.96,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:report-deadline-escalation",
+      "uuid": "77743142536475860210231425641cd1",
+      "title": "Missed filing deadline escalates to Director",
+      "titleZh": "错过备案截止时间升级至总监",
+      "statement": {
+        "en": "A RegulatoryReport that is not submitted before its computed filing deadline shall escalate automatically to the Director of Compliance.",
+        "zh": "未在其计算出的备案截止时间前提交的监管报告，应自动升级至合规总监。"
+      },
+      "formal": "RegulatoryReport.submittedTimestamp = null ∧ now() > RegulatoryReport.filingDeadline → escalate to Director of Compliance",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "report.submittedTimestamp != null || now() <= report.filingDeadline || report.escalatedToDirector == true",
+        "bindings": [{ "var": "report", "objectTypeId": "objectType:regulatory-report" }]
+      },
+      "kind": "temporal",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:regulatory-report"],
+      "appliesToAttributes": ["objectType:regulatory-report.filing_deadline", "objectType:regulatory-report.submitted_timestamp"],
+      "trigger": { "description": "On filing deadline lapse", "onEventTypeId": "event:regulatory.deadline-breached" },
+      "groupId": "ruleGroup:outage-reporting",
+      "sources": [
+        { "documentId": "doc:grid-business-rules-policy", "documentName": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)", "snippet": "A `RegulatoryReport` that is not submitted before its computed filing deadline shall escalate automatically to the Director of Compliance.", "section": "§4, R-08", "sentenceRefs": [8], "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:major-event-director-approval",
+      "uuid": "78843142536475860310231425642de2",
+      "title": "Major event filing requires Director approval",
+      "titleZh": "重大事件备案须总监批准",
+      "statement": {
+        "en": "A RegulatoryReport for a major event affecting more than 100,000 ServicePoints may not be submitted without the Director of Compliance's recorded approval.",
+        "zh": "影响超过100,000个供电点的重大事件的监管报告，未经合规总监记录在案的批准，不得提交。"
+      },
+      "formal": "OutageEvent.affectedServicePointCount > 100000 → RegulatoryReport.directorApproval = true before submit",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "outage.affectedServicePointCount <= 100000 || report.directorApproval == true",
+        "bindings": [
+          { "var": "outage", "objectTypeId": "objectType:outage-event" },
+          { "var": "report", "objectTypeId": "objectType:regulatory-report" }
+        ]
+      },
+      "kind": "authorization",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:regulatory-report", "objectType:outage-event", "objectType:service-point"],
+      "appliesToAttributes": ["objectType:regulatory-report.director_approval", "objectType:outage-event.affected_service_point_count"],
+      "trigger": { "description": "On RegulatoryReport submission for major events", "onEventTypeId": "event:regulatory-report.compiled" },
+      "groupId": "ruleGroup:outage-reporting",
+      "sources": [
+        { "documentId": "doc:grid-business-rules-policy", "documentName": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)", "snippet": "A `RegulatoryReport` for a major event affecting more than 100,000 `ServicePoint`s may not be submitted without the Director of Compliance's recorded approval.", "section": "§4, R-09", "sentenceRefs": [9], "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:long-outage-root-cause-narrative",
+      "uuid": "79943142536475860410231425643ef3",
+      "title": "Long outage requires root-cause narrative",
+      "titleZh": "长时间停电须含根因叙述",
+      "statement": {
+        "en": "An OutageEvent with a restoration duration exceeding 24 hours is required to include a root-cause narrative in its RegulatoryReport.",
+        "zh": "复电持续时间超过24小时的停电事件，须在其监管报告中包含根因叙述。"
+      },
+      "formal": "(OutageEvent.restorationTimestamp − OutageEvent.detectionTimestamp) > 24h → RegulatoryReport.rootCauseNarrative present",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "outage.restorationTimestamp - outage.detectionTimestamp <= duration('24h') || report.rootCauseNarrative != ''",
+        "bindings": [
+          { "var": "outage", "objectTypeId": "objectType:outage-event" },
+          { "var": "report", "objectTypeId": "objectType:regulatory-report" }
+        ]
+      },
+      "kind": "validation",
+      "severity": "warn",
+      "appliesToObjectTypeIds": ["objectType:outage-event", "objectType:regulatory-report"],
+      "appliesToAttributes": ["objectType:outage-event.detection_timestamp", "objectType:outage-event.restoration_timestamp"],
+      "trigger": { "description": "On RegulatoryReport compilation" },
+      "groupId": "ruleGroup:outage-reporting",
+      "sources": [
+        { "documentId": "doc:grid-business-rules-policy", "documentName": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)", "snippet": "An `OutageEvent` with a restoration duration exceeding 24 hours is required to include a root-cause narrative in its `RegulatoryReport`.", "section": "§4, R-10", "sentenceRefs": [10], "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:vegetation-cycle-no-lapse-without-variance",
+      "uuid": "7aa43142536475860510231425644004",
+      "title": "Vegetation cycle may not lapse without variance",
+      "titleZh": "植被清理周期未获变更不得逾期",
+      "statement": {
+        "en": "Vegetation clearance on a high-voltage Feeder may not lapse beyond its assigned clearance cycle without a documented variance approved by the Asset Manager.",
+        "zh": "高压馈线的植被清理不得超过其指定的清理周期，除非有经资产经理批准的书面变更。"
+      },
+      "formal": "Feeder.voltageClass = high-voltage ∧ (now() − Feeder.lastClearanceDate) > Feeder.vegetationCycleMonths → ∃ AssetManager-approved variance",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "feeder.voltageClass != 'high-voltage' || now() - feeder.lastClearanceDate <= duration(feeder.vegetationCycleMonths) || hasApprovedVariance",
+        "bindings": [{ "var": "feeder", "objectTypeId": "objectType:feeder" }]
+      },
+      "kind": "temporal",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:feeder", "objectType:maintenance-work-order"],
+      "appliesToAttributes": ["objectType:feeder.voltage_class", "objectType:feeder.last_clearance_date", "objectType:feeder.vegetation_cycle_months"],
+      "trigger": { "description": "On vegetation cycle lapse", "onEventTypeId": "event:vegetation.cycle-lapsed" },
+      "groupId": "ruleGroup:vegetation-management",
+      "sources": [
+        { "documentId": "doc:grid-business-rules-policy", "documentName": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)", "snippet": "Vegetation clearance on a high-voltage `Feeder` may not lapse beyond its assigned clearance cycle without a documented variance approved by the Asset Manager.", "section": "§5, R-11", "sentenceRefs": [11], "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:vegetation-cycle-max-months",
+      "uuid": "7bb43142536475860610231425645115",
+      "title": "Vegetation cycle maximum by zone",
+      "titleZh": "按区域的植被周期上限",
+      "statement": {
+        "en": "A high-voltage Feeder must be cleared on a cycle no longer than 48 months, and a Feeder traversing a designated wildfire-risk zone must be cleared on a cycle no longer than 24 months.",
+        "zh": "高压馈线的清理周期不得超过48个月，穿越指定野火风险区的馈线清理周期不得超过24个月。"
+      },
+      "formal": "(Feeder.voltageClass = high-voltage → cycle ≤ 48 months) ∧ (Feeder.wildfireRiskZone = true → cycle ≤ 24 months)",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "(feeder.voltageClass != 'high-voltage' || feeder.vegetationCycleMonths <= 48) && (!feeder.wildfireRiskZone || feeder.vegetationCycleMonths <= 24)",
+        "bindings": [{ "var": "feeder", "objectTypeId": "objectType:feeder" }]
+      },
+      "kind": "constraint",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:feeder"],
+      "appliesToAttributes": ["objectType:feeder.voltage_class", "objectType:feeder.wildfire_risk_zone", "objectType:feeder.vegetation_cycle_months"],
+      "groupId": "ruleGroup:vegetation-management",
+      "sources": [
+        { "documentId": "doc:grid-business-rules-policy", "documentName": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)", "snippet": "A high-voltage `Feeder` must be cleared on a cycle no longer than 48 months, and a `Feeder` traversing a designated wildfire-risk zone must be cleared on a cycle no longer than 24 months.", "section": "§5, R-12", "sentenceRefs": [12], "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:no-close-until-all-restored",
+      "uuid": "7cc43142536475860710231425646226",
+      "title": "No close until all ServicePoints AMI-confirmed",
+      "titleZh": "全部供电点AMI确认前不得关闭",
+      "statement": {
+        "en": "An OutageEvent may not be advanced to the Closed state until every affected ServicePoint has returned an AMI power-restored confirmation.",
+        "zh": "在每个受影响供电点返回AMI复电确认之前，停电事件不得推进至已关闭状态。"
+      },
+      "formal": "OutageEvent.state → Closed → ∀ affected ServicePoint: AMI power-restored confirmation received",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "outage.state != 'Closed' || allServicePointsConfirmedRestored",
+        "bindings": [{ "var": "outage", "objectTypeId": "objectType:outage-event" }]
+      },
+      "kind": "state_transition",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:outage-event", "objectType:service-point"],
+      "appliesToAttributes": ["objectType:outage-event.state"],
+      "trigger": { "description": "On OutageEvent transition Restored → Closed", "onEventTypeId": "event:outage.restored" },
+      "groupId": "ruleGroup:outage-lifecycle-dispatch",
+      "sources": [
+        { "documentId": "doc:grid-business-rules-policy", "documentName": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)", "snippet": "An `OutageEvent` may not be advanced to the `Closed` state until every affected `ServicePoint` has returned an AMI power-restored confirmation.", "section": "§6, R-13", "sentenceRefs": [13], "quoteVerified": true }
+      ],
+      "confidence": 0.96,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:critical-care-dispatch-2h",
+      "uuid": "7dd43142536475860810231425647337",
+      "title": "Critical-care customer dispatch within 2 hours",
+      "titleZh": "重症护理客户须2小时内派工",
+      "statement": {
+        "en": "A Crew must be dispatched to any confirmed OutageEvent affecting a critical-care Customer within 2 hours of the outage confirmation timestamp.",
+        "zh": "对任何影响重症护理客户的已确认停电事件，须在停电确认时间戳后2小时内派出作业班组。"
+      },
+      "formal": "OutageEvent.state = Confirmed ∧ affects critical-care Customer → CrewDispatched ≤ confirmationTimestamp + 2h",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "!affectsCriticalCareCustomer || crewDispatchedAt <= outage.confirmationTimestamp + duration('2h')",
+        "bindings": [
+          { "var": "outage", "objectTypeId": "objectType:outage-event" },
+          { "var": "customer", "objectTypeId": "objectType:customer" }
+        ]
+      },
+      "kind": "temporal",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:outage-event", "objectType:crew", "objectType:customer"],
+      "appliesToAttributes": ["objectType:customer.life_support_flag"],
+      "trigger": { "description": "On OutageConfirmed for critical-care customers", "onEventTypeId": "event:outage.confirmed" },
+      "groupId": "ruleGroup:outage-lifecycle-dispatch",
+      "sources": [
+        { "documentId": "doc:grid-business-rules-policy", "documentName": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)", "snippet": "A `Crew` must be dispatched to any confirmed `OutageEvent` affecting a critical-care `Customer` within 2 hours of the outage confirmation timestamp.", "section": "§6, R-14", "sentenceRefs": [14], "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:critical-infrastructure-highest-priority",
+      "uuid": "7ee43142536475860910231425648448",
+      "title": "Critical-infrastructure highest restoration priority",
+      "titleZh": "关键基础设施最高复电优先级",
+      "statement": {
+        "en": "An OutageEvent affecting a critical-infrastructure ServicePoint (hospital, water plant, emergency services) shall be assigned the highest restoration priority regardless of the affected ServicePoint count.",
+        "zh": "影响关键基础设施供电点（医院、水厂、应急服务）的停电事件，无论受影响供电点数量多少，均应被赋予最高复电优先级。"
+      },
+      "formal": "ServicePoint.criticalInfrastructure = true → OutageEvent.restorationPriority = highest",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "!servicePoint.criticalInfrastructure || outage.restorationPriority == 'highest'",
+        "bindings": [
+          { "var": "servicePoint", "objectTypeId": "objectType:service-point" },
+          { "var": "outage", "objectTypeId": "objectType:outage-event" }
+        ]
+      },
+      "kind": "derivation",
+      "severity": "warn",
+      "appliesToObjectTypeIds": ["objectType:outage-event", "objectType:service-point"],
+      "appliesToAttributes": ["objectType:service-point.critical_infrastructure"],
+      "trigger": { "description": "On OutageConfirmed scoping" },
+      "groupId": "ruleGroup:outage-lifecycle-dispatch",
+      "sources": [
+        { "documentId": "doc:grid-business-rules-policy", "documentName": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)", "snippet": "An `OutageEvent` affecting a critical-infrastructure `ServicePoint` (hospital, water plant, emergency services) shall be assigned the highest restoration priority regardless of the affected `ServicePoint` count.", "section": "§6, R-15", "sentenceRefs": [15], "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:no-switching-until-upstream-open",
+      "uuid": "7ff43142536475860a10231425649559",
+      "title": "No switching until upstream device confirmed open",
+      "titleZh": "上游设备确认断开前不得操作开关",
+      "statement": {
+        "en": "A Crew may not perform switching on a Feeder until the upstream Substation device state is confirmed open in SCADA.",
+        "zh": "在SCADA中确认上游变电站设备状态为断开之前，作业班组不得在馈线上进行开关操作。"
+      },
+      "formal": "Crew switching on Feeder → upstream Substation device state = open (confirmed in SCADA)",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "!crew.performingSwitching || upstreamDeviceStateOpen == true",
+        "bindings": [
+          { "var": "crew", "objectTypeId": "objectType:crew" },
+          { "var": "feeder", "objectTypeId": "objectType:feeder" }
+        ]
+      },
+      "kind": "authorization",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:crew", "objectType:feeder", "objectType:substation"],
+      "trigger": { "description": "Before switching during restoration; may be waived by Shift Supervisor for public safety" },
+      "groupId": "ruleGroup:outage-lifecycle-dispatch",
+      "sources": [
+        { "documentId": "doc:grid-business-rules-policy", "documentName": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)", "snippet": "A `Crew` may not perform switching on a `Feeder` until the upstream `Substation` device state is confirmed open in SCADA.", "section": "§6, R-16", "sentenceRefs": [16], "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:emergency-wo-references-outage-and-asset",
+      "uuid": "80043142536475860b1023142564a66a",
+      "title": "Emergency WO references outage and faulted asset",
+      "titleZh": "紧急工单须关联停电与故障资产",
+      "statement": {
+        "en": "An emergency MaintenanceWorkOrder created from an active OutageEvent must reference both the parent OutageEvent and the faulted Asset.",
+        "zh": "从活动停电事件创建的紧急维护工单，须同时关联父级停电事件和故障资产。"
+      },
+      "formal": "MaintenanceWorkOrder.priority = emergency ∧ from active OutageEvent → MaintenanceWorkOrder.outageEventId ≠ null ∧ MaintenanceWorkOrder.assetTag ≠ null",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "workOrder.priority != 'emergency' || (workOrder.outageEventId != null && workOrder.assetTag != null)",
+        "bindings": [{ "var": "workOrder", "objectTypeId": "objectType:maintenance-work-order" }]
+      },
+      "kind": "validation",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:maintenance-work-order", "objectType:outage-event", "objectType:asset"],
+      "appliesToAttributes": ["objectType:maintenance-work-order.outage_event_id", "objectType:maintenance-work-order.asset_tag", "objectType:maintenance-work-order.priority"],
+      "trigger": { "description": "On emergency MaintenanceWorkOrder creation during dispatch", "onEventTypeId": "event:crew.dispatched" },
+      "groupId": "ruleGroup:outage-lifecycle-dispatch",
+      "sources": [
+        { "documentId": "doc:grid-business-rules-policy", "documentName": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)", "snippet": "An emergency `MaintenanceWorkOrder` created from an active `OutageEvent` must reference both the parent `OutageEvent` and the faulted `Asset`.", "section": "§6, R-17", "sentenceRefs": [17], "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:servicepoint-single-feeder-single-customer",
+      "uuid": "81143142536475860c1023142564b77b",
+      "title": "ServicePoint maps to exactly one Feeder and Customer",
+      "titleZh": "供电点须精确映射一条馈线一个客户",
+      "statement": {
+        "en": "Every ServicePoint must be mapped to exactly one Feeder and exactly one Customer in the network model.",
+        "zh": "在网络模型中，每个供电点须精确映射到一条馈线和一个客户。"
+      },
+      "formal": "∀ ServicePoint: |ServicePoint.feeder| = 1 ∧ |ServicePoint.customer| = 1",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "servicePoint.feederId != null && servicePoint.customerId != null",
+        "bindings": [{ "var": "servicePoint", "objectTypeId": "objectType:service-point" }]
+      },
+      "kind": "constraint",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:service-point", "objectType:feeder", "objectType:customer"],
+      "appliesToAttributes": ["objectType:service-point.feeder_id", "objectType:service-point.customer_id"],
+      "trigger": { "description": "Enforced at the GIS sync boundary" },
+      "groupId": "ruleGroup:data-notification",
+      "sources": [
+        { "documentId": "doc:grid-business-rules-policy", "documentName": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)", "snippet": "Every `ServicePoint` must be mapped to exactly one `Feeder` and exactly one `Customer` in the network model.", "section": "§7, R-18", "sentenceRefs": [18], "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:life-support-planned-outage-notice-48h",
+      "uuid": "82243142536475860d1023142564c88c",
+      "title": "Life-support customer 48h planned outage notice",
+      "titleZh": "生命维持客户须提前48小时通知计划停电",
+      "statement": {
+        "en": "A Customer flagged as life-support-dependent shall be notified of any planned OutageEvent affecting their ServicePoint at least 48 hours in advance.",
+        "zh": "被标记为生命维持依赖的客户，须在任何影响其供电点的计划停电事件至少48小时前获得通知。"
+      },
+      "formal": "Customer.lifeSupportFlag = true ∧ planned OutageEvent affects Customer.ServicePoint → notification ≥ 48h in advance",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "!customer.lifeSupportFlag || !plannedOutage || notificationLeadTime >= duration('48h')",
+        "bindings": [
+          { "var": "customer", "objectTypeId": "objectType:customer" },
+          { "var": "outage", "objectTypeId": "objectType:outage-event" }
+        ]
+      },
+      "kind": "temporal",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:customer", "objectType:outage-event", "objectType:service-point"],
+      "appliesToAttributes": ["objectType:customer.life_support_flag"],
+      "trigger": { "description": "Before a planned OutageEvent affecting a life-support customer" },
+      "groupId": "ruleGroup:data-notification",
+      "sources": [
+        { "documentId": "doc:grid-business-rules-policy", "documentName": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)", "snippet": "A `Customer` flagged as life-support-dependent shall be notified of any planned `OutageEvent` affecting their `ServicePoint` at least 48 hours in advance.", "section": "§7, R-19", "sentenceRefs": [19], "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:cause-code-before-close",
+      "uuid": "83343142536475860e1023142564d99d",
+      "title": "Cause code required before close",
+      "titleZh": "关闭前须记录原因代码",
+      "statement": {
+        "en": "An OutageEvent cause code is required to be recorded before the OutageEvent may transition from Restored to Closed.",
+        "zh": "在停电事件可从已复电状态转换为已关闭状态之前，须先记录停电事件原因代码。"
+      },
+      "formal": "OutageEvent.state: Restored → Closed → OutageEvent.causeCode ≠ null",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "outage.state != 'Closed' || outage.causeCode != null",
+        "bindings": [{ "var": "outage", "objectTypeId": "objectType:outage-event" }]
+      },
+      "kind": "state_transition",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:outage-event"],
+      "appliesToAttributes": ["objectType:outage-event.cause_code", "objectType:outage-event.state"],
+      "trigger": { "description": "On OutageEvent transition Restored → Closed", "onEventTypeId": "event:outage.restored" },
+      "groupId": "ruleGroup:outage-lifecycle-dispatch",
+      "sources": [
+        { "documentId": "doc:grid-business-rules-policy", "documentName": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)", "snippet": "An `OutageEvent` cause code is required to be recorded before the `OutageEvent` may transition from `Restored` to `Closed`.", "section": "§7, R-20", "sentenceRefs": [20], "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:variance-max-90-days",
+      "uuid": "84443142536475860f1023142564eaae",
+      "title": "Vegetation variance limited to 90 days",
+      "titleZh": "植被变更最长90天",
+      "statement": {
+        "en": "A documented variance under Rule R-11 must specify the affected Feeder, the reason, and an expiry date, and may not exceed 90 days.",
+        "zh": "依据R-11规则的书面变更须指明受影响的馈线、原因和到期日，且不得超过90天。"
+      },
+      "formal": "Variance(R-11) → (Feeder specified ∧ reason ∧ expiryDate) ∧ duration ≤ 90 days",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "variance.feederId != null && variance.reason != '' && variance.expiryDate != null && variance.durationDays <= 90",
+        "bindings": [{ "var": "feeder", "objectTypeId": "objectType:feeder" }]
+      },
+      "kind": "constraint",
+      "severity": "warn",
+      "appliesToObjectTypeIds": ["objectType:feeder"],
+      "trigger": { "description": "On documented variance under R-11" },
+      "groupId": "ruleGroup:vegetation-management",
+      "sources": [
+        { "documentId": "doc:grid-business-rules-policy", "documentName": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)", "snippet": "A documented variance under Rule R-11 must specify the affected `Feeder`, the reason, and an expiry date, and may not exceed 90 days.", "section": "§8 Exceptions & Variances", "sentenceRefs": [21], "quoteVerified": true }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    }
+  ],
+  "ruleGroups": [
+    {
+      "id": "ruleGroup:inspection-asset",
+      "title": { "en": "Inspection & Asset Rules", "zh": "巡检与资产规则" },
+      "ruleIds": ["rule:transmission-inspection-interval", "rule:failed-inspection-raises-wo-24h", "rule:inspection-cadence-by-class", "rule:low-condition-score-service-limit"],
+      "rationale": "Rules governing asset inspection cadence, fail handling, and in-service condition limits (POL-GRID-COMP-009 §2)."
+    },
+    {
+      "id": "ruleGroup:work-order-lifecycle",
+      "title": { "en": "Maintenance Work Order Rules", "zh": "维护工单规则" },
+      "ruleIds": ["rule:safety-asset-second-engineer-close", "rule:high-cost-wo-asset-manager-approval"],
+      "rationale": "Approval gates on the MaintenanceWorkOrder lifecycle (POL-GRID-COMP-009 §3)."
+    },
+    {
+      "id": "ruleGroup:outage-reporting",
+      "title": { "en": "Outage Reporting Rules", "zh": "停电报告规则" },
+      "ruleIds": ["rule:outage-reportable-threshold-1h", "rule:report-deadline-escalation", "rule:major-event-director-approval", "rule:long-outage-root-cause-narrative"],
+      "rationale": "PUC regulatory filing thresholds, deadlines, and approvals (POL-GRID-COMP-009 §4)."
+    },
+    {
+      "id": "ruleGroup:vegetation-management",
+      "title": { "en": "Vegetation Management Rules", "zh": "植被管理规则" },
+      "ruleIds": ["rule:vegetation-cycle-no-lapse-without-variance", "rule:vegetation-cycle-max-months", "rule:variance-max-90-days"],
+      "rationale": "Vegetation clearance cycle limits and variance handling (POL-GRID-COMP-009 §5, §8)."
+    },
+    {
+      "id": "ruleGroup:outage-lifecycle-dispatch",
+      "title": { "en": "Outage Lifecycle & Dispatch Rules", "zh": "停电生命周期与派工规则" },
+      "ruleIds": ["rule:no-close-until-all-restored", "rule:critical-care-dispatch-2h", "rule:critical-infrastructure-highest-priority", "rule:no-switching-until-upstream-open", "rule:emergency-wo-references-outage-and-asset", "rule:cause-code-before-close"],
+      "rationale": "Outage state transitions, crew dispatch SLAs, switching safety, and close preconditions (POL-GRID-COMP-009 §6)."
+    },
+    {
+      "id": "ruleGroup:data-notification",
+      "title": { "en": "Data & Customer Notification Rules", "zh": "数据与客户通知规则" },
+      "ruleIds": ["rule:servicepoint-single-feeder-single-customer", "rule:life-support-planned-outage-notice-48h"],
+      "rationale": "Network-model cardinality and customer notification obligations (POL-GRID-COMP-009 §7)."
+    }
+  ],
+  "actions": [
+    {
+      "id": "action:detect-outage",
+      "uuid": "90043142536475860112314256450abc",
+      "name": "DetectOutage",
+      "nameZh": "检测停电",
+      "description": "Consume last-gasp meter signals and SCADA breaker-open telemetry; produce a candidate OutageEvent record in OMS with state Detected and a detectionTimestamp.",
+      "descriptionZh": "消费末次喘息电表信号和SCADA断路器断开遥测；在OMS中产生状态为Detected且带检测时间戳的候选停电事件记录。",
+      "inputs": [
+        { "name": "service_point", "objectTypeId": "objectType:service-point", "required": true, "cardinality": "many", "isArray": true, "description": "Dark meters / service points." },
+        { "name": "feeder", "objectTypeId": "objectType:feeder", "required": true, "description": "Affected feeder." }
+      ],
+      "outputs": [
+        { "name": "outage_event", "objectTypeId": "objectType:outage-event", "required": true, "description": "Candidate OutageEvent in state Detected." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Consume last-gasp meter signals (AMI) and SCADA breaker-open telemetry.", "zh": "消费末次喘息电表信号（AMI）和SCADA断路器断开遥测。" }, "readsObjectTypeIds": ["objectType:service-point", "objectType:feeder"] },
+        { "order": 2, "text": { "en": "Create candidate OutageEvent in OMS with state Detected and a detectionTimestamp.", "zh": "在OMS中创建状态为Detected且带检测时间戳的候选停电事件。" }, "writesObjectTypeIds": ["objectType:outage-event"] }
+      ],
+      "preconditions": [],
+      "triggeredByEventIds": ["event:meter.last-gasp-received", "event:breaker.tripped"],
+      "emitsEvents": [{ "eventTypeId": "event:outage.detected", "on": "success" }],
+      "sideEffects": [{ "kind": "db_write", "description": "Create OutageEvent record (state Detected)", "objectTypeId": "objectType:outage-event" }],
+      "actor": { "role": "AMI Head-End / SCADA", "roleZh": "AMI主站/SCADA", "kind": "system" },
+      "permissions": ["outage:detect"],
+      "agent": {
+        "toolName": "detect_outage",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "service_point_ids": { "type": "array", "items": { "type": "string" }, "description": "Dark service point ids.", "$objectTypeId": "objectType:service-point" },
+            "feeder_id": { "type": "string", "description": "Affected feeder id.", "$objectTypeId": "objectType:feeder" }
+          },
+          "required": ["service_point_ids", "feeder_id"]
+        },
+        "toolDescription": "Detect loss of supply from AMI last-gasp and SCADA telemetry and open a candidate OutageEvent.",
+        "promptHints": ["Only open one OutageEvent per upstream device prediction.", "Always set detectionTimestamp in UTC."],
+        "execution": "function",
+        "integration": "OMS"
+      },
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "`DetectOutage` — consumes last-gasp meter signals and SCADA breaker-open telemetry; produces a candidate `OutageEvent` record in OMS with state `Detected` and a `detectionTimestamp`.", "section": "§3, Step 1.1", "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:scope-outage",
+      "uuid": "91143142536475860212314256451bcd",
+      "name": "ScopeOutage",
+      "nameZh": "确定停电范围",
+      "description": "Consume the network topology from GIS and the set of dark meters; produce the predicted upstream device and the affected ServicePoint count, then advance the OutageEvent to state Confirmed.",
+      "descriptionZh": "消费GIS网络拓扑和暗表集合；产生预测的上游设备和受影响供电点数量，然后将停电事件推进至Confirmed状态。",
+      "inputs": [
+        { "name": "outage_event", "objectTypeId": "objectType:outage-event", "required": true, "description": "Detected OutageEvent." },
+        { "name": "feeder", "objectTypeId": "objectType:feeder", "required": true },
+        { "name": "substation", "objectTypeId": "objectType:substation", "required": true },
+        { "name": "service_point", "objectTypeId": "objectType:service-point", "required": true, "cardinality": "many", "isArray": true }
+      ],
+      "outputs": [
+        { "name": "outage_event", "objectTypeId": "objectType:outage-event", "required": true, "description": "Confirmed OutageEvent with affectedServicePointCount." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Consume GIS topology (Substation → Feeder → ServicePoint) and the set of dark meters.", "zh": "消费GIS拓扑（变电站→馈线→供电点）和暗表集合。" }, "readsObjectTypeIds": ["objectType:substation", "objectType:feeder", "objectType:service-point"] },
+        { "order": 2, "text": { "en": "Predict upstream device and compute affected ServicePoint count.", "zh": "预测上游设备并计算受影响供电点数量。" }, "writesObjectTypeIds": ["objectType:outage-event"] },
+        { "order": 3, "text": { "en": "Assign highest restoration priority if any affected ServicePoint is critical infrastructure.", "zh": "若任一受影响供电点为关键基础设施，则赋予最高复电优先级。" }, "guardRuleId": "rule:critical-infrastructure-highest-priority", "readsObjectTypeIds": ["objectType:service-point"] },
+        { "order": 4, "text": { "en": "Advance the OutageEvent to state Confirmed.", "zh": "将停电事件推进至Confirmed状态。" }, "writesObjectTypeIds": ["objectType:outage-event"] }
+      ],
+      "preconditions": [{ "ruleId": "rule:critical-infrastructure-highest-priority", "severity": "warn" }],
+      "triggeredByEventIds": ["event:outage.detected"],
+      "emitsEvents": [{ "eventTypeId": "event:outage.confirmed", "on": "success" }],
+      "sideEffects": [{ "kind": "state_change", "description": "OutageEvent.state := Confirmed; set affectedServicePointCount", "objectTypeId": "objectType:outage-event" }],
+      "actor": { "role": "DOC Operator", "roleZh": "配电运营中心操作员", "kind": "human" },
+      "permissions": ["outage:scope"],
+      "agent": {
+        "toolName": "scope_outage",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "outage_event_id": { "type": "string", "$objectTypeId": "objectType:outage-event" },
+            "dark_service_point_ids": { "type": "array", "items": { "type": "string" }, "$objectTypeId": "objectType:service-point" }
+          },
+          "required": ["outage_event_id", "dark_service_point_ids"]
+        },
+        "toolDescription": "Predict the faulted upstream device and the affected ServicePoint count, then confirm the outage.",
+        "promptHints": ["Derive affected count strictly via Feeder → ServicePoint traversal, never invent counts."],
+        "execution": "llm_tool",
+        "integration": "OMS"
+      },
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "`ScopeOutage` — consumes the network topology from GIS (Substation → Feeder → ServicePoint) and the set of dark meters; produces the predicted upstream device and the **affected `ServicePoint` count**, then advances the `OutageEvent` to state `Confirmed`.", "section": "§3, Step 1.2", "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:evaluate-reportability",
+      "uuid": "92243142536475860312314256452cde",
+      "name": "EvaluateReportability",
+      "nameZh": "评估可报告性",
+      "description": "Consume affectedServicePointCount and detectionTimestamp; apply the regulatory threshold (Rule R-07); produce a reportable flag and a reporting clock start time when the threshold is met.",
+      "descriptionZh": "消费受影响供电点数量和检测时间戳；应用监管阈值（R-07规则）；当达到阈值时产生可报告标志和报告时钟起始时间。",
+      "inputs": [
+        { "name": "outage_event", "objectTypeId": "objectType:outage-event", "required": true }
+      ],
+      "outputs": [
+        { "name": "outage_event", "objectTypeId": "objectType:outage-event", "required": true, "description": "OutageEvent with reportable flag." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Read affectedServicePointCount and detectionTimestamp.", "zh": "读取受影响供电点数量和检测时间戳。" }, "readsObjectTypeIds": ["objectType:outage-event"] },
+        { "order": 2, "text": { "en": "Apply the regulatory threshold (Rule R-07): reportable if over 50,000 ServicePoints.", "zh": "应用监管阈值（R-07规则）：超过50,000个供电点即为可报告。" }, "guardRuleId": "rule:outage-reportable-threshold-1h" },
+        { "order": 3, "text": { "en": "If reportable, start the reporting clock from the detection timestamp.", "zh": "若可报告，从检测时间戳起启动报告时钟。" }, "writesObjectTypeIds": ["objectType:outage-event"] }
+      ],
+      "preconditions": [{ "ruleId": "rule:outage-reportable-threshold-1h", "severity": "block" }],
+      "triggeredByEventIds": ["event:outage.confirmed"],
+      "emitsEvents": [
+        { "eventTypeId": "event:reportability.determined", "on": "always" },
+        { "eventTypeId": "event:regulatory.clock-started", "on": "success", "condition": "outage.affectedServicePointCount > 50000" }
+      ],
+      "sideEffects": [{ "kind": "state_change", "description": "Set reportable flag and reporting clock start", "objectTypeId": "objectType:outage-event" }],
+      "actor": { "role": "OMS Compliance module", "roleZh": "OMS合规模块", "kind": "system" },
+      "permissions": ["outage:evaluate-reportability"],
+      "agent": {
+        "toolName": "evaluate_reportability",
+        "parameterSchema": {
+          "type": "object",
+          "properties": { "outage_event_id": { "type": "string", "$objectTypeId": "objectType:outage-event" } },
+          "required": ["outage_event_id"]
+        },
+        "toolDescription": "Apply the PUC reportability threshold and start the regulatory clock when met.",
+        "promptHints": ["Threshold per Rule R-07: more than 50,000 ServicePoints within 1 hour of detection."],
+        "execution": "function",
+        "integration": "OMS"
+      },
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "`EvaluateReportability` — consumes `affectedServicePointCount` and `detectionTimestamp`; applies the regulatory threshold (see POL-GRID-COMP-009, Rule R-07); produces a `reportable` flag and a **reporting clock** start time when the threshold is met.", "section": "§3, Step 1.3", "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:dispatch-crew",
+      "uuid": "93343142536475860412314256453def",
+      "name": "DispatchCrew",
+      "nameZh": "派遣班组",
+      "description": "Consume the confirmed outage scope and crew availability; produce a Crew assignment and, where field repair is needed, an emergency MaintenanceWorkOrder linked to the OutageEvent and the suspected Asset.",
+      "descriptionZh": "消费已确认的停电范围和班组可用性；产生班组指派，并在需要现场维修时产生与停电事件和疑似资产关联的紧急维护工单。",
+      "inputs": [
+        { "name": "outage_event", "objectTypeId": "objectType:outage-event", "required": true },
+        { "name": "crew", "objectTypeId": "objectType:crew", "required": true }
+      ],
+      "outputs": [
+        { "name": "crew", "objectTypeId": "objectType:crew", "required": true, "description": "Dispatched crew." },
+        { "name": "work_order", "objectTypeId": "objectType:maintenance-work-order", "required": false, "description": "Emergency MaintenanceWorkOrder, where field repair is needed." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Read confirmed outage scope and crew availability.", "zh": "读取已确认的停电范围和班组可用性。" }, "readsObjectTypeIds": ["objectType:outage-event", "objectType:crew"] },
+        { "order": 2, "text": { "en": "Dispatch crew within 2 hours when a critical-care Customer is affected.", "zh": "当影响重症护理客户时，须在2小时内派遣班组。" }, "guardRuleId": "rule:critical-care-dispatch-2h", "writesObjectTypeIds": ["objectType:crew"] },
+        { "order": 3, "text": { "en": "Where field repair is needed, create an emergency MaintenanceWorkOrder referencing the OutageEvent and the suspected Asset.", "zh": "在需要现场维修时，创建一份关联停电事件和疑似资产的紧急维护工单。" }, "guardRuleId": "rule:emergency-wo-references-outage-and-asset", "writesObjectTypeIds": ["objectType:maintenance-work-order"] }
+      ],
+      "preconditions": [
+        { "ruleId": "rule:critical-care-dispatch-2h", "severity": "block" },
+        { "ruleId": "rule:emergency-wo-references-outage-and-asset", "severity": "block" }
+      ],
+      "triggeredByEventIds": ["event:outage.confirmed"],
+      "emitsEvents": [{ "eventTypeId": "event:crew.dispatched", "on": "success" }],
+      "sideEffects": [
+        { "kind": "state_change", "description": "Crew.availability := dispatched", "objectTypeId": "objectType:crew" },
+        { "kind": "db_write", "description": "Create emergency MaintenanceWorkOrder when field repair needed", "objectTypeId": "objectType:maintenance-work-order" }
+      ],
+      "actor": { "role": "DOC Dispatcher", "roleZh": "配电运营中心派工员", "kind": "human" },
+      "permissions": ["crew:dispatch"],
+      "agent": {
+        "toolName": "dispatch_crew",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "outage_event_id": { "type": "string", "$objectTypeId": "objectType:outage-event" },
+            "crew_id": { "type": "string", "$objectTypeId": "objectType:crew" },
+            "suspected_asset_tag": { "type": "string", "$objectTypeId": "objectType:asset" }
+          },
+          "required": ["outage_event_id", "crew_id"]
+        },
+        "toolDescription": "Assign a crew to a confirmed outage and raise an emergency work order where repair is needed.",
+        "promptHints": ["Honor the 2-hour SLA for critical-care customers (R-14).", "Emergency WO must reference both OutageEvent and faulted Asset (R-17)."],
+        "execution": "human_task",
+        "integration": "Maximo"
+      },
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "`DispatchCrew` — consumes the confirmed outage scope and crew availability; produces a `Crew` assignment and, where field repair is needed, an emergency `MaintenanceWorkOrder` linked to the `OutageEvent` and the suspected `Asset`.", "section": "§3, Step 1.4", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:log-field-finding",
+      "uuid": "94443142536475860512314256454ef0",
+      "name": "LogFieldFinding",
+      "nameZh": "记录现场发现",
+      "description": "Consume the crew's on-site assessment; produce an updated MaintenanceWorkOrder with diagnosed cause and the confirmed faulted Asset, and advance the OutageEvent to state RepairInProgress.",
+      "descriptionZh": "消费班组现场评估；产生带诊断原因和已确认故障资产的更新维护工单，并将停电事件推进至RepairInProgress状态。",
+      "inputs": [
+        { "name": "work_order", "objectTypeId": "objectType:maintenance-work-order", "required": true },
+        { "name": "outage_event", "objectTypeId": "objectType:outage-event", "required": true }
+      ],
+      "outputs": [
+        { "name": "work_order", "objectTypeId": "objectType:maintenance-work-order", "required": true, "description": "Updated WO with diagnosed cause." },
+        { "name": "asset", "objectTypeId": "objectType:asset", "required": true, "description": "Confirmed faulted Asset." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Consume the crew's on-site assessment via Maximo mobile.", "zh": "通过Maximo移动端消费班组现场评估。" }, "readsObjectTypeIds": ["objectType:maintenance-work-order"] },
+        { "order": 2, "text": { "en": "Update the MaintenanceWorkOrder with diagnosed cause and confirmed faulted Asset.", "zh": "用诊断原因和已确认故障资产更新维护工单。" }, "writesObjectTypeIds": ["objectType:maintenance-work-order", "objectType:asset"] },
+        { "order": 3, "text": { "en": "Advance the OutageEvent to state RepairInProgress.", "zh": "将停电事件推进至RepairInProgress状态。" }, "writesObjectTypeIds": ["objectType:outage-event"] }
+      ],
+      "preconditions": [],
+      "triggeredByEventIds": ["event:crew.dispatched"],
+      "emitsEvents": [
+        { "eventTypeId": "event:field-finding.logged", "on": "success" },
+        { "eventTypeId": "event:asset.defect-identified", "on": "success", "condition": "previouslyUnknownDefectiveAssetFound" }
+      ],
+      "sideEffects": [
+        { "kind": "state_change", "description": "OutageEvent.state := RepairInProgress", "objectTypeId": "objectType:outage-event" },
+        { "kind": "db_write", "description": "Update MaintenanceWorkOrder with cause and faulted asset", "objectTypeId": "objectType:maintenance-work-order" }
+      ],
+      "actor": { "role": "Field Crew", "roleZh": "现场班组", "kind": "human" },
+      "permissions": ["workorder:update"],
+      "agent": {
+        "toolName": "log_field_finding",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "work_order_id": { "type": "string", "$objectTypeId": "objectType:maintenance-work-order" },
+            "outage_event_id": { "type": "string", "$objectTypeId": "objectType:outage-event" },
+            "faulted_asset_tag": { "type": "string", "$objectTypeId": "objectType:asset" },
+            "diagnosed_cause": { "type": "string" }
+          },
+          "required": ["work_order_id", "outage_event_id", "faulted_asset_tag"]
+        },
+        "toolDescription": "Record the on-site assessment, diagnose the cause, and confirm the faulted asset.",
+        "execution": "human_task",
+        "integration": "Maximo"
+      },
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "`LogFieldFinding` — consumes the crew's on-site assessment; produces an updated `MaintenanceWorkOrder` with diagnosed cause and the confirmed faulted `Asset`, and advances the `OutageEvent` to state `RepairInProgress`.", "section": "§3, Step 1.5", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:restore-supply",
+      "uuid": "95543142536475860612314256455f01",
+      "name": "RestoreSupply",
+      "nameZh": "恢复供电",
+      "description": "Consume the completed switching/repair; produce re-energization, an OutageEvent state of Restored, a restorationTimestamp, and a computed outage duration.",
+      "descriptionZh": "消费已完成的开关操作/维修；产生重新带电、Restored状态的停电事件、复电时间戳和计算出的停电持续时间。",
+      "inputs": [
+        { "name": "outage_event", "objectTypeId": "objectType:outage-event", "required": true },
+        { "name": "feeder", "objectTypeId": "objectType:feeder", "required": true },
+        { "name": "service_point", "objectTypeId": "objectType:service-point", "required": true, "cardinality": "many", "isArray": true }
+      ],
+      "outputs": [
+        { "name": "outage_event", "objectTypeId": "objectType:outage-event", "required": true, "description": "OutageEvent in state Restored with restorationTimestamp." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Confirm the upstream Substation device state is open in SCADA before switching.", "zh": "在操作开关前确认SCADA中上游变电站设备状态为断开。" }, "guardRuleId": "rule:no-switching-until-upstream-open", "readsObjectTypeIds": ["objectType:substation", "objectType:feeder"] },
+        { "order": 2, "text": { "en": "Execute completed switching/repair and re-energize.", "zh": "执行已完成的开关操作/维修并重新带电。" }, "writesObjectTypeIds": ["objectType:feeder", "objectType:service-point"] },
+        { "order": 3, "text": { "en": "Set OutageEvent state Restored, record restorationTimestamp, and compute outage duration.", "zh": "设置停电事件状态为Restored，记录复电时间戳并计算停电持续时间。" }, "writesObjectTypeIds": ["objectType:outage-event"] }
+      ],
+      "preconditions": [{ "ruleId": "rule:no-switching-until-upstream-open", "severity": "block" }],
+      "triggeredByEventIds": ["event:field-finding.logged"],
+      "emitsEvents": [
+        { "eventTypeId": "event:supply.restored", "on": "success" },
+        { "eventTypeId": "event:outage.restored", "on": "success" }
+      ],
+      "sideEffects": [{ "kind": "state_change", "description": "OutageEvent.state := Restored; set restorationTimestamp", "objectTypeId": "objectType:outage-event" }],
+      "actor": { "role": "Field Crew", "roleZh": "现场班组", "kind": "human" },
+      "permissions": ["supply:restore"],
+      "agent": {
+        "toolName": "restore_supply",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "outage_event_id": { "type": "string", "$objectTypeId": "objectType:outage-event" },
+            "feeder_id": { "type": "string", "$objectTypeId": "objectType:feeder" }
+          },
+          "required": ["outage_event_id", "feeder_id"]
+        },
+        "toolDescription": "Re-energize the feeder after switching/repair and mark the outage Restored.",
+        "promptHints": ["Never switch until upstream device is confirmed open in SCADA (R-16) unless a Shift Supervisor waiver is logged."],
+        "execution": "human_task",
+        "integration": "OMS"
+      },
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "`RestoreSupply` — consumes the completed switching/repair; produces re-energization, an `OutageEvent` state of `Restored`, a `restorationTimestamp`, and a computed outage duration.", "section": "§3, Step 1.6", "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:close-outage",
+      "uuid": "96643142536475860712314256456012",
+      "name": "CloseOutage",
+      "nameZh": "关闭停电",
+      "description": "Consume AMI 'power restored' confirmations for all affected ServicePoints; produce a closed OutageEvent (state Closed) and trigger finalization of the linked MaintenanceWorkOrder.",
+      "descriptionZh": "消费所有受影响供电点的AMI“已复电”确认；产生已关闭的停电事件（状态Closed）并触发关联维护工单的收尾。",
+      "inputs": [
+        { "name": "outage_event", "objectTypeId": "objectType:outage-event", "required": true },
+        { "name": "service_point", "objectTypeId": "objectType:service-point", "required": true, "cardinality": "many", "isArray": true }
+      ],
+      "outputs": [
+        { "name": "outage_event", "objectTypeId": "objectType:outage-event", "required": true, "description": "Closed OutageEvent." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Confirm every affected ServicePoint returned an AMI power-restored confirmation.", "zh": "确认每个受影响供电点都返回了AMI复电确认。" }, "guardRuleId": "rule:no-close-until-all-restored", "readsObjectTypeIds": ["objectType:service-point"] },
+        { "order": 2, "text": { "en": "Verify the OutageEvent cause code is recorded before close.", "zh": "在关闭前核实已记录停电事件原因代码。" }, "guardRuleId": "rule:cause-code-before-close", "readsObjectTypeIds": ["objectType:outage-event"] },
+        { "order": 3, "text": { "en": "Set OutageEvent state Closed and trigger finalization of the linked MaintenanceWorkOrder.", "zh": "设置停电事件状态为Closed并触发关联维护工单的收尾。" }, "writesObjectTypeIds": ["objectType:outage-event"] }
+      ],
+      "preconditions": [
+        { "ruleId": "rule:no-close-until-all-restored", "severity": "block" },
+        { "ruleId": "rule:cause-code-before-close", "severity": "block" }
+      ],
+      "triggeredByEventIds": ["event:outage.restored"],
+      "emitsEvents": [{ "eventTypeId": "event:outage.closed", "on": "success" }],
+      "sideEffects": [{ "kind": "state_change", "description": "OutageEvent.state := Closed", "objectTypeId": "objectType:outage-event" }],
+      "actor": { "role": "OMS / DOC Operator", "roleZh": "OMS/配电运营中心操作员", "kind": "system" },
+      "permissions": ["outage:close"],
+      "agent": {
+        "toolName": "close_outage",
+        "parameterSchema": {
+          "type": "object",
+          "properties": { "outage_event_id": { "type": "string", "$objectTypeId": "objectType:outage-event" } },
+          "required": ["outage_event_id"]
+        },
+        "toolDescription": "Close an outage once all ServicePoints are AMI-confirmed live and a cause code is recorded.",
+        "promptHints": ["Block close until all ServicePoints confirmed (R-13) and cause code present (R-20)."],
+        "execution": "function",
+        "integration": "OMS"
+      },
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "`CloseOutage` — consumes AMI \"power restored\" confirmations for all affected `ServicePoint`s; produces a closed `OutageEvent` (state `Closed`) and triggers finalization of the linked `MaintenanceWorkOrder`.", "section": "§3, Step 1.7", "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:open-regulatory-report",
+      "uuid": "97743142536475860812314256457123",
+      "name": "OpenRegulatoryReport",
+      "nameZh": "开立监管报告",
+      "description": "Consume the reportable OutageEvent and its scope; produce a draft RegulatoryReport with the filing deadline computed from RegulatoryClockStarted (Rule R-07).",
+      "descriptionZh": "消费可报告停电事件及其范围；产生草稿监管报告，其备案截止时间从RegulatoryClockStarted计算（R-07规则）。",
+      "inputs": [
+        { "name": "outage_event", "objectTypeId": "objectType:outage-event", "required": true }
+      ],
+      "outputs": [
+        { "name": "regulatory_report", "objectTypeId": "objectType:regulatory-report", "required": true, "description": "Draft RegulatoryReport with filing deadline." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Read the reportable OutageEvent and its scope.", "zh": "读取可报告停电事件及其范围。" }, "readsObjectTypeIds": ["objectType:outage-event"] },
+        { "order": 2, "text": { "en": "Create a draft RegulatoryReport and compute the filing deadline from the regulatory clock (within 1 hour for events over 50,000 ServicePoints).", "zh": "创建草稿监管报告并从监管时钟计算备案截止时间（超过50,000个供电点的事件须在1小时内）。" }, "guardRuleId": "rule:outage-reportable-threshold-1h", "writesObjectTypeIds": ["objectType:regulatory-report"] }
+      ],
+      "preconditions": [{ "ruleId": "rule:outage-reportable-threshold-1h", "severity": "block" }],
+      "triggeredByEventIds": ["event:regulatory.clock-started"],
+      "emitsEvents": [{ "eventTypeId": "event:regulatory-report.opened", "on": "success" }],
+      "sideEffects": [{ "kind": "db_write", "description": "Create draft RegulatoryReport with filingDeadline", "objectTypeId": "objectType:regulatory-report" }],
+      "actor": { "role": "Regulatory Analyst", "roleZh": "监管分析师", "kind": "human" },
+      "permissions": ["report:open"],
+      "agent": {
+        "toolName": "open_regulatory_report",
+        "parameterSchema": {
+          "type": "object",
+          "properties": { "outage_event_id": { "type": "string", "$objectTypeId": "objectType:outage-event" } },
+          "required": ["outage_event_id"]
+        },
+        "toolDescription": "Open a draft PUC RegulatoryReport and compute its filing deadline from the regulatory clock.",
+        "execution": "human_task",
+        "integration": "RegFiling Portal"
+      },
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "`OpenRegulatoryReport` — consumes the reportable `OutageEvent` and its scope; produces a draft `RegulatoryReport` with the **filing deadline** computed from `RegulatoryClockStarted`", "section": "§4, Step 2.1", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:compile-regulatory-report",
+      "uuid": "98843142536475860912314256458234",
+      "name": "CompileRegulatoryReport",
+      "nameZh": "编制监管报告",
+      "description": "Consume affected-customer counts (ServicePoint → Customer), cause code, and estimated restoration time; produce a validated RegulatoryReport ready for submission.",
+      "descriptionZh": "消费受影响客户数量（供电点→客户）、原因代码和预计复电时间；产生准备好提交的已校验监管报告。",
+      "inputs": [
+        { "name": "regulatory_report", "objectTypeId": "objectType:regulatory-report", "required": true },
+        { "name": "outage_event", "objectTypeId": "objectType:outage-event", "required": true },
+        { "name": "customer", "objectTypeId": "objectType:customer", "required": true, "cardinality": "many", "isArray": true },
+        { "name": "service_point", "objectTypeId": "objectType:service-point", "required": true, "cardinality": "many", "isArray": true }
+      ],
+      "outputs": [
+        { "name": "regulatory_report", "objectTypeId": "objectType:regulatory-report", "required": true, "description": "Validated RegulatoryReport." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Derive affected-customer counts strictly via OutageEvent → Feeder → ServicePoint → Customer.", "zh": "严格通过停电事件→馈线→供电点→客户路径推导受影响客户数量。" }, "readsObjectTypeIds": ["objectType:service-point", "objectType:customer"] },
+        { "order": 2, "text": { "en": "Include cause code and estimated restoration time; add a root-cause narrative if restoration exceeded 24 hours.", "zh": "包含原因代码和预计复电时间；若复电超过24小时则附加根因叙述。" }, "guardRuleId": "rule:long-outage-root-cause-narrative", "readsObjectTypeIds": ["objectType:outage-event"], "writesObjectTypeIds": ["objectType:regulatory-report"] },
+        { "order": 3, "text": { "en": "Validate the RegulatoryReport for submission.", "zh": "校验监管报告以便提交。" }, "writesObjectTypeIds": ["objectType:regulatory-report"] }
+      ],
+      "preconditions": [{ "ruleId": "rule:long-outage-root-cause-narrative", "severity": "warn" }],
+      "triggeredByEventIds": ["event:regulatory-report.opened"],
+      "emitsEvents": [{ "eventTypeId": "event:regulatory-report.compiled", "on": "success" }],
+      "sideEffects": [{ "kind": "db_write", "description": "Validate and populate RegulatoryReport", "objectTypeId": "objectType:regulatory-report" }],
+      "actor": { "role": "Regulatory Analyst", "roleZh": "监管分析师", "kind": "human" },
+      "permissions": ["report:compile"],
+      "agent": {
+        "toolName": "compile_regulatory_report",
+        "parameterSchema": {
+          "type": "object",
+          "properties": { "report_id": { "type": "string", "$objectTypeId": "objectType:regulatory-report" } },
+          "required": ["report_id"]
+        },
+        "toolDescription": "Populate and validate the RegulatoryReport with affected-customer counts derived from the network model.",
+        "promptHints": ["Affected-customer count MUST come from OutageEvent → Feeder → ServicePoint → Customer; never invent counts.", "Add root-cause narrative when outage duration exceeds 24h (R-10)."],
+        "execution": "llm_tool",
+        "integration": "RegFiling Portal"
+      },
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "`CompileRegulatoryReport` — consumes affected-customer counts (ServicePoint → Customer), cause code, and estimated restoration time; produces a validated `RegulatoryReport` ready for submission.", "section": "§4, Step 2.2", "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:submit-regulatory-report",
+      "uuid": "99943142536475860a12314256459345",
+      "name": "SubmitRegulatoryReport",
+      "nameZh": "提交监管报告",
+      "description": "Consume the validated report; produce a submitted RegulatoryReport with a portal confirmation ID, stopping the reporting clock. Major events require Director of Compliance approval (Rule R-09).",
+      "descriptionZh": "消费已校验报告；产生带门户确认编号的已提交监管报告，停止报告时钟。重大事件须经合规总监批准（R-09规则）。",
+      "inputs": [
+        { "name": "regulatory_report", "objectTypeId": "objectType:regulatory-report", "required": true },
+        { "name": "outage_event", "objectTypeId": "objectType:outage-event", "required": true }
+      ],
+      "outputs": [
+        { "name": "regulatory_report", "objectTypeId": "objectType:regulatory-report", "required": true, "description": "Submitted RegulatoryReport with portalConfirmationId." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "For major events affecting over 100,000 ServicePoints, obtain Director of Compliance approval.", "zh": "对影响超过100,000个供电点的重大事件，取得合规总监批准。" }, "guardRuleId": "rule:major-event-director-approval", "readsObjectTypeIds": ["objectType:regulatory-report", "objectType:outage-event"] },
+        { "order": 2, "text": { "en": "Submit the validated report via the RegFiling Portal and record the portal confirmation ID, stopping the reporting clock.", "zh": "通过RegFiling门户提交已校验报告并记录门户确认编号，停止报告时钟。" }, "guardRuleId": "rule:report-deadline-escalation", "writesObjectTypeIds": ["objectType:regulatory-report"] }
+      ],
+      "preconditions": [
+        { "ruleId": "rule:major-event-director-approval", "severity": "block" },
+        { "ruleId": "rule:report-deadline-escalation", "severity": "block" }
+      ],
+      "triggeredByEventIds": ["event:regulatory-report.compiled"],
+      "emitsEvents": [
+        { "eventTypeId": "event:regulatory-report.submitted", "on": "success" },
+        { "eventTypeId": "event:regulatory-report.accepted", "on": "success", "condition": "portalAccepted" },
+        { "eventTypeId": "event:regulatory.deadline-breached", "on": "failure", "condition": "now() > report.filingDeadline" }
+      ],
+      "sideEffects": [
+        { "kind": "external_call", "description": "Submit RegulatoryReport to PUC via RegFiling Portal", "objectTypeId": "objectType:regulatory-report" }
+      ],
+      "actor": { "role": "Regulatory Analyst", "roleZh": "监管分析师", "kind": "human" },
+      "permissions": ["report:submit"],
+      "agent": {
+        "toolName": "submit_regulatory_report",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "report_id": { "type": "string", "$objectTypeId": "objectType:regulatory-report" },
+            "director_approval": { "type": "boolean" }
+          },
+          "required": ["report_id"]
+        },
+        "toolDescription": "Submit the validated RegulatoryReport to the PUC portal and capture the confirmation ID.",
+        "promptHints": ["Block submission of major events (>100,000 ServicePoints) without Director approval (R-09).", "Escalate to Director of Compliance if the deadline lapses (R-08)."],
+        "execution": "human_task",
+        "integration": "RegFiling Portal"
+      },
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "`SubmitRegulatoryReport` — consumes the validated report; produces a submitted `RegulatoryReport` with a portal confirmation ID, stopping the reporting clock.", "section": "§4, Step 2.3", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:schedule-inspection",
+      "uuid": "a0043142536475860b1231425645a456",
+      "name": "ScheduleInspection",
+      "nameZh": "排定巡检",
+      "description": "Consume each Asset's rated inspection interval and last completed date; produce a scheduled Inspection record with a due date.",
+      "descriptionZh": "消费每个资产的额定巡检间隔和上次完成日期；产生带到期日的已排定巡检记录。",
+      "inputs": [
+        { "name": "asset", "objectTypeId": "objectType:asset", "required": true }
+      ],
+      "outputs": [
+        { "name": "inspection", "objectTypeId": "objectType:inspection", "required": true, "description": "Scheduled Inspection with due date." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Read the Asset's rated inspection interval and last completed date.", "zh": "读取资产的额定巡检间隔和上次完成日期。" }, "readsObjectTypeIds": ["objectType:asset"] },
+        { "order": 2, "text": { "en": "Compute the due date honoring class cadence (distribution ≤ 36 months, transmission ≤ 12 months) and create the Inspection.", "zh": "按等级周期（配电≤36个月，输电≤12个月）计算到期日并创建巡检。" }, "guardRuleId": "rule:inspection-cadence-by-class", "writesObjectTypeIds": ["objectType:inspection"] }
+      ],
+      "preconditions": [
+        { "ruleId": "rule:inspection-cadence-by-class", "severity": "warn" },
+        { "ruleId": "rule:transmission-inspection-interval", "severity": "block" }
+      ],
+      "triggeredByEventIds": ["event:inspection.interval-elapsed"],
+      "emitsEvents": [{ "eventTypeId": "event:inspection.scheduled", "on": "success" }],
+      "sideEffects": [{ "kind": "db_write", "description": "Create scheduled Inspection with dueDate", "objectTypeId": "objectType:inspection" }],
+      "actor": { "role": "Maximo PM Scheduler", "roleZh": "Maximo预防性维护排程器", "kind": "system" },
+      "permissions": ["inspection:schedule"],
+      "agent": {
+        "toolName": "schedule_inspection",
+        "parameterSchema": {
+          "type": "object",
+          "properties": { "asset_tag": { "type": "string", "$objectTypeId": "objectType:asset" } },
+          "required": ["asset_tag"]
+        },
+        "toolDescription": "Schedule the next inspection for an asset based on its rated interval and class cadence.",
+        "promptHints": ["Honor class cadence: distribution ≤ 36 months, transmission ≤ 12 months (R-03)."],
+        "execution": "function",
+        "integration": "Maximo"
+      },
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "`ScheduleInspection` — consumes each `Asset`'s rated inspection interval and last completed date; produces a scheduled `Inspection` record with a due date.", "section": "§5, Step 3.1", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:record-inspection-result",
+      "uuid": "a1143142536475860c1231425645b567",
+      "name": "RecordInspectionResult",
+      "nameZh": "记录巡检结果",
+      "description": "Consume the inspector's condition assessment; produce a completed Inspection with a pass/fail result and a recorded completion date against the Asset.",
+      "descriptionZh": "消费检查员的状态评估；产生带通过/不通过结果和已记录完成日期的已完成巡检，并记入资产。",
+      "inputs": [
+        { "name": "inspection", "objectTypeId": "objectType:inspection", "required": true },
+        { "name": "asset", "objectTypeId": "objectType:asset", "required": true }
+      ],
+      "outputs": [
+        { "name": "inspection", "objectTypeId": "objectType:inspection", "required": true, "description": "Completed Inspection with pass/fail result." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Consume the inspector's condition assessment via Maximo mobile.", "zh": "通过Maximo移动端消费检查员的状态评估。" }, "readsObjectTypeIds": ["objectType:inspection", "objectType:asset"] },
+        { "order": 2, "text": { "en": "Record the pass/fail result and completion date against the Asset.", "zh": "记录通过/不通过结果和完成日期，并记入资产。" }, "writesObjectTypeIds": ["objectType:inspection", "objectType:asset"] }
+      ],
+      "preconditions": [],
+      "triggeredByEventIds": ["event:inspection.scheduled"],
+      "emitsEvents": [
+        { "eventTypeId": "event:inspection.completed", "on": "success" },
+        { "eventTypeId": "event:asset.defect-identified", "on": "success", "condition": "inspection.result == 'fail'" }
+      ],
+      "sideEffects": [{ "kind": "db_write", "description": "Complete Inspection with result and completedDate", "objectTypeId": "objectType:inspection" }],
+      "actor": { "role": "Inspector", "roleZh": "检查员", "kind": "human" },
+      "permissions": ["inspection:record"],
+      "agent": {
+        "toolName": "record_inspection_result",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "inspection_id": { "type": "string", "$objectTypeId": "objectType:inspection" },
+            "result": { "type": "string", "enum": ["pass", "fail"] }
+          },
+          "required": ["inspection_id", "result"]
+        },
+        "toolDescription": "Record the inspection pass/fail result and completion date against the asset.",
+        "execution": "human_task",
+        "integration": "Maximo"
+      },
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "`RecordInspectionResult` — consumes the inspector's condition assessment; produces a completed `Inspection` with a pass/fail result and a recorded completion date against the `Asset`.", "section": "§5, Step 3.2", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:raise-maintenance-work-order",
+      "uuid": "a2243142536475860d1231425645c678",
+      "name": "RaiseMaintenanceWorkOrder",
+      "nameZh": "开立维护工单",
+      "description": "Consume a failed Inspection or a missed inspection interval; produce a MaintenanceWorkOrder with a priority derived from asset class (transmission assets auto-raise priority per Rule R-01).",
+      "descriptionZh": "消费不通过的巡检或逾期的巡检间隔；产生优先级由资产等级推导的维护工单（输电资产按R-01规则自动提升优先级）。",
+      "inputs": [
+        { "name": "inspection", "objectTypeId": "objectType:inspection", "required": false },
+        { "name": "asset", "objectTypeId": "objectType:asset", "required": true }
+      ],
+      "outputs": [
+        { "name": "work_order", "objectTypeId": "objectType:maintenance-work-order", "required": true, "description": "Raised MaintenanceWorkOrder with derived priority." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Read the failed Inspection or missed inspection interval and the Asset class.", "zh": "读取不通过的巡检或逾期的巡检间隔以及资产等级。" }, "readsObjectTypeIds": ["objectType:inspection", "objectType:asset"] },
+        { "order": 2, "text": { "en": "Generate the corrective MaintenanceWorkOrder within 24 hours of a failed inspection.", "zh": "在巡检不通过后24小时内生成纠正性维护工单。" }, "guardRuleId": "rule:failed-inspection-raises-wo-24h", "writesObjectTypeIds": ["objectType:maintenance-work-order"] },
+        { "order": 3, "text": { "en": "Auto-raise priority for transmission-class assets.", "zh": "对输电级资产自动提升优先级。" }, "guardRuleId": "rule:transmission-inspection-interval", "writesObjectTypeIds": ["objectType:maintenance-work-order"] }
+      ],
+      "preconditions": [
+        { "ruleId": "rule:failed-inspection-raises-wo-24h", "severity": "block" },
+        { "ruleId": "rule:transmission-inspection-interval", "severity": "block" }
+      ],
+      "triggeredByEventIds": ["event:asset.defect-identified", "event:inspection.interval-missed"],
+      "emitsEvents": [{ "eventTypeId": "event:maintenance-work-order.raised", "on": "success" }],
+      "sideEffects": [{ "kind": "db_write", "description": "Create MaintenanceWorkOrder with derived priority", "objectTypeId": "objectType:maintenance-work-order" }],
+      "actor": { "role": "Maintenance Planner", "roleZh": "维护计划员", "kind": "human" },
+      "permissions": ["workorder:raise"],
+      "agent": {
+        "toolName": "raise_maintenance_work_order",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "asset_tag": { "type": "string", "$objectTypeId": "objectType:asset" },
+            "inspection_id": { "type": "string", "$objectTypeId": "objectType:inspection" }
+          },
+          "required": ["asset_tag"]
+        },
+        "toolDescription": "Raise a corrective work order from a failed inspection or missed interval, deriving priority from asset class.",
+        "promptHints": ["Corrective WO within 24h of a fail (R-02).", "Transmission assets auto-raise priority (R-01)."],
+        "execution": "function",
+        "integration": "Maximo"
+      },
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "`RaiseMaintenanceWorkOrder` — consumes a failed `Inspection` or a missed inspection interval; produces a `MaintenanceWorkOrder` with a priority derived from asset class (transmission assets auto-raise priority per Rule R-01).", "section": "§5, Step 3.3", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:approve-maintenance-work-order",
+      "uuid": "a3343142536475860e1231425645d789",
+      "name": "ApproveMaintenanceWorkOrder",
+      "nameZh": "批准维护工单",
+      "description": "Consume the raised work order; produce an approved, scheduled, and crew-assigned MaintenanceWorkOrder. Asset Manager approves high-cost or safety-classified work (Rule R-05, R-06).",
+      "descriptionZh": "消费已开立工单；产生已批准、已排定且已派工的维护工单。资产经理批准高成本或安全分类工作（R-05、R-06规则）。",
+      "inputs": [
+        { "name": "work_order", "objectTypeId": "objectType:maintenance-work-order", "required": true },
+        { "name": "crew", "objectTypeId": "objectType:crew", "required": true },
+        { "name": "asset", "objectTypeId": "objectType:asset", "required": true }
+      ],
+      "outputs": [
+        { "name": "work_order", "objectTypeId": "objectType:maintenance-work-order", "required": true, "description": "Approved, scheduled, crew-assigned MaintenanceWorkOrder." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Read the raised MaintenanceWorkOrder.", "zh": "读取已开立的维护工单。" }, "readsObjectTypeIds": ["objectType:maintenance-work-order"] },
+        { "order": 2, "text": { "en": "Obtain Asset Manager approval when estimated cost exceeds $250,000 before crew assignment.", "zh": "当预估成本超过25万美元时，在派工前取得资产经理批准。" }, "guardRuleId": "rule:high-cost-wo-asset-manager-approval", "writesObjectTypeIds": ["objectType:maintenance-work-order"] },
+        { "order": 3, "text": { "en": "Approve, schedule, and assign a crew.", "zh": "批准、排定并指派班组。" }, "writesObjectTypeIds": ["objectType:maintenance-work-order", "objectType:crew"] }
+      ],
+      "preconditions": [{ "ruleId": "rule:high-cost-wo-asset-manager-approval", "severity": "block" }],
+      "triggeredByEventIds": ["event:maintenance-work-order.raised"],
+      "emitsEvents": [{ "eventTypeId": "event:maintenance-work-order.approved", "on": "success" }],
+      "sideEffects": [{ "kind": "state_change", "description": "MaintenanceWorkOrder.status := approved; assign crew", "objectTypeId": "objectType:maintenance-work-order" }],
+      "actor": { "role": "Maintenance Planner / Asset Manager", "roleZh": "维护计划员/资产经理", "kind": "human" },
+      "permissions": ["workorder:approve"],
+      "agent": {
+        "toolName": "approve_maintenance_work_order",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "work_order_id": { "type": "string", "$objectTypeId": "objectType:maintenance-work-order" },
+            "crew_id": { "type": "string", "$objectTypeId": "objectType:crew" }
+          },
+          "required": ["work_order_id", "crew_id"]
+        },
+        "toolDescription": "Approve, schedule, and assign a crew to a raised work order.",
+        "promptHints": ["Require Asset Manager approval above $250,000 before crew assignment (R-06)."],
+        "execution": "human_task",
+        "integration": "Maximo"
+      },
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "`ApproveMaintenanceWorkOrder` — consumes the raised work order; produces an approved, scheduled, and crew-assigned `MaintenanceWorkOrder`.", "section": "§5, Step 3.4", "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:complete-maintenance-work-order",
+      "uuid": "a4443142536475860f1231425645e89a",
+      "name": "CompleteMaintenanceWorkOrder",
+      "nameZh": "完成维护工单",
+      "description": "Consume the completed field repair; produce a closed MaintenanceWorkOrder, update the Asset condition record, and reset the inspection clock if the work cleared the defect.",
+      "descriptionZh": "消费已完成的现场维修；产生已关闭的维护工单，更新资产状态记录，若工作清除了缺陷则重置巡检时钟。",
+      "inputs": [
+        { "name": "work_order", "objectTypeId": "objectType:maintenance-work-order", "required": true },
+        { "name": "asset", "objectTypeId": "objectType:asset", "required": true }
+      ],
+      "outputs": [
+        { "name": "work_order", "objectTypeId": "objectType:maintenance-work-order", "required": true, "description": "Closed MaintenanceWorkOrder." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Consume the completed field repair via Maximo mobile.", "zh": "通过Maximo移动端消费已完成的现场维修。" }, "readsObjectTypeIds": ["objectType:maintenance-work-order"] },
+        { "order": 2, "text": { "en": "Require a second qualified engineer's approval before closing work on a safety-classified Asset.", "zh": "对安全分类资产，关闭工作前须取得第二名合格工程师的批准。" }, "guardRuleId": "rule:safety-asset-second-engineer-close", "readsObjectTypeIds": ["objectType:asset"] },
+        { "order": 3, "text": { "en": "Close the MaintenanceWorkOrder, update the Asset condition record, and reset the inspection clock if the defect was cleared.", "zh": "关闭维护工单，更新资产状态记录，若缺陷已清除则重置巡检时钟。" }, "writesObjectTypeIds": ["objectType:maintenance-work-order", "objectType:asset"] }
+      ],
+      "preconditions": [{ "ruleId": "rule:safety-asset-second-engineer-close", "severity": "block" }],
+      "triggeredByEventIds": ["event:maintenance-work-order.approved"],
+      "emitsEvents": [{ "eventTypeId": "event:maintenance-work-order.closed", "on": "success" }],
+      "sideEffects": [
+        { "kind": "state_change", "description": "MaintenanceWorkOrder.status := closed", "objectTypeId": "objectType:maintenance-work-order" },
+        { "kind": "db_write", "description": "Update Asset condition record and reset inspection clock", "objectTypeId": "objectType:asset" }
+      ],
+      "actor": { "role": "Field Crew", "roleZh": "现场班组", "kind": "human" },
+      "permissions": ["workorder:close"],
+      "agent": {
+        "toolName": "complete_maintenance_work_order",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "work_order_id": { "type": "string", "$objectTypeId": "objectType:maintenance-work-order" },
+            "second_engineer_approval": { "type": "boolean" }
+          },
+          "required": ["work_order_id"]
+        },
+        "toolDescription": "Close a completed work order, update asset condition, and reset the inspection clock.",
+        "promptHints": ["Block close on safety-classified assets without a second engineer's approval (R-05)."],
+        "execution": "human_task",
+        "integration": "Maximo"
+      },
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "`CompleteMaintenanceWorkOrder` — consumes the completed field repair; produces a closed `MaintenanceWorkOrder`, updates the `Asset` condition record, and resets the inspection clock if the work cleared the defect.", "section": "§5, Step 3.5", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:schedule-vegetation-clearance",
+      "uuid": "a5543142536475860112314256460abc",
+      "name": "ScheduleVegetationClearance",
+      "nameZh": "排定植被清理",
+      "description": "Consume the feeder's clearance cycle and last-completed date and produce a vegetation MaintenanceWorkOrder.",
+      "descriptionZh": "消费馈线的清理周期和上次完成日期，产生一份植被维护工单。",
+      "inputs": [
+        { "name": "feeder", "objectTypeId": "objectType:feeder", "required": true }
+      ],
+      "outputs": [
+        { "name": "work_order", "objectTypeId": "objectType:maintenance-work-order", "required": true, "description": "Vegetation MaintenanceWorkOrder." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Read the high-voltage Feeder's clearance cycle and last-completed date.", "zh": "读取高压馈线的清理周期和上次完成日期。" }, "readsObjectTypeIds": ["objectType:feeder"] },
+        { "order": 2, "text": { "en": "Verify the cycle does not exceed the zone maximum (48 months; 24 months in wildfire-risk zones) and create a vegetation MaintenanceWorkOrder.", "zh": "核实周期未超过区域上限（48个月；野火风险区24个月）并创建一份植被维护工单。" }, "guardRuleId": "rule:vegetation-cycle-max-months", "writesObjectTypeIds": ["objectType:maintenance-work-order"] }
+      ],
+      "preconditions": [
+        { "ruleId": "rule:vegetation-cycle-max-months", "severity": "block" },
+        { "ruleId": "rule:vegetation-cycle-no-lapse-without-variance", "severity": "block" }
+      ],
+      "triggeredByEventIds": ["event:vegetation.cycle-lapsed"],
+      "emitsEvents": [{ "eventTypeId": "event:maintenance-work-order.raised", "on": "success" }],
+      "sideEffects": [{ "kind": "db_write", "description": "Create vegetation MaintenanceWorkOrder", "objectTypeId": "objectType:maintenance-work-order" }],
+      "actor": { "role": "Vegetation Program", "roleZh": "植被管理项目", "kind": "system" },
+      "permissions": ["vegetation:schedule"],
+      "agent": {
+        "toolName": "schedule_vegetation_clearance",
+        "parameterSchema": {
+          "type": "object",
+          "properties": { "feeder_id": { "type": "string", "$objectTypeId": "objectType:feeder" } },
+          "required": ["feeder_id"]
+        },
+        "toolDescription": "Schedule vegetation clearance on a high-voltage feeder per its cycle and raise a vegetation work order.",
+        "promptHints": ["Max cycle 48 months; 24 months in wildfire-risk zones (R-12).", "No lapse without an Asset-Manager-approved variance (R-11)."],
+        "execution": "function",
+        "integration": "Maximo"
+      },
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "The action `ScheduleVegetationClearance` consumes the feeder's clearance cycle and last-completed date and produces a vegetation `MaintenanceWorkOrder`.", "section": "§7 Process P4", "quoteVerified": true }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    }
+  ],
+  "events": [
+    {
+      "id": "event:meter.last-gasp-received",
+      "uuid": "b0043142536475860112314256470001",
+      "name": "meter.last-gasp-received",
+      "nameZh": "电表末次喘息已接收",
+      "description": "AMI last-gasp signal received from a meter, indicating loss of supply at a ServicePoint.",
+      "descriptionZh": "从电表接收到AMI末次喘息信号，表明某供电点失去供电。",
+      "payload": [
+        { "name": "service_point_id", "type": "reference", "objectTypeId": "objectType:service-point", "required": true, "description": "Service point reporting last-gasp." },
+        { "name": "timestamp", "type": "datetime", "required": true }
+      ],
+      "producedByActionIds": [],
+      "consumedByActionIds": ["action:detect-outage"],
+      "sources": [
+        { "documentId": "doc:grid-systems-and-data", "documentName": "Grid Operations Systems of Record & Data Reference (REF-GRID-SYS-003 v2.4)", "snippet": "`MeterLastGaspReceived` | AMI Head-End | OMS | `servicePointId`, timestamp", "section": "§5", "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:breaker.tripped",
+      "uuid": "b1143142536475860112314256470012",
+      "name": "breaker.tripped",
+      "nameZh": "断路器已跳闸",
+      "description": "SCADA breaker-open telemetry indicating a trip on the grid.",
+      "descriptionZh": "SCADA断路器断开遥测，表明电网发生跳闸。",
+      "payload": [
+        { "name": "feeder_id", "type": "reference", "objectTypeId": "objectType:feeder", "required": true },
+        { "name": "timestamp", "type": "datetime", "required": true }
+      ],
+      "producedByActionIds": [],
+      "consumedByActionIds": ["action:detect-outage"],
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "**Triggering event:** `MeterLastGaspReceived` (from AMI) or `BreakerTripped` (from SCADA).", "section": "§3, Step 1.1", "quoteVerified": true }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:outage.detected",
+      "uuid": "b2243142536475860112314256470023",
+      "name": "outage.detected",
+      "nameZh": "停电已检测",
+      "description": "OMS has opened a candidate OutageEvent in state Detected.",
+      "descriptionZh": "OMS已开立状态为Detected的候选停电事件。",
+      "payload": [
+        { "name": "outage_event_id", "type": "reference", "objectTypeId": "objectType:outage-event", "required": true },
+        { "name": "feeder_id", "type": "reference", "objectTypeId": "objectType:feeder", "required": true }
+      ],
+      "producedByActionIds": ["action:detect-outage"],
+      "consumedByActionIds": ["action:scope-outage"],
+      "sources": [
+        { "documentId": "doc:grid-systems-and-data", "documentName": "Grid Operations Systems of Record & Data Reference (REF-GRID-SYS-003 v2.4)", "snippet": "`OutageDetected` | OMS | OMS prediction, DOC console | `outageEventId`, `feederId`", "section": "§5", "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:outage.confirmed",
+      "uuid": "b3343142536475860112314256470034",
+      "name": "outage.confirmed",
+      "nameZh": "停电已确认",
+      "description": "OMS has confirmed the outage and computed the affected ServicePoint count.",
+      "descriptionZh": "OMS已确认停电并计算出受影响供电点数量。",
+      "payload": [
+        { "name": "outage_event_id", "type": "reference", "objectTypeId": "objectType:outage-event", "required": true },
+        { "name": "affected_service_point_count", "type": "integer", "required": true }
+      ],
+      "producedByActionIds": ["action:scope-outage"],
+      "consumedByActionIds": ["action:evaluate-reportability", "action:dispatch-crew"],
+      "sources": [
+        { "documentId": "doc:grid-systems-and-data", "documentName": "Grid Operations Systems of Record & Data Reference (REF-GRID-SYS-003 v2.4)", "snippet": "`OutageConfirmed` | OMS | Maximo, OMS Compliance | `affectedServicePointCount`", "section": "§5", "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:reportability.determined",
+      "uuid": "b4443142536475860112314256470045",
+      "name": "reportability.determined",
+      "nameZh": "可报告性已判定",
+      "description": "OMS Compliance has determined whether the outage is reportable to the regulator.",
+      "descriptionZh": "OMS合规模块已判定停电是否需向监管机构上报。",
+      "payload": [
+        { "name": "outage_event_id", "type": "reference", "objectTypeId": "objectType:outage-event", "required": true },
+        { "name": "reportable", "type": "boolean", "required": true }
+      ],
+      "producedByActionIds": ["action:evaluate-reportability"],
+      "consumedByActionIds": [],
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "**Resulting event:** `ReportabilityDetermined`; if reportable, also emits `RegulatoryClockStarted` which initiates Process P2", "section": "§3, Step 1.3", "quoteVerified": true }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:regulatory.clock-started",
+      "uuid": "b5543142536475860112314256470056",
+      "name": "regulatory.clock-started",
+      "nameZh": "监管时钟已启动",
+      "description": "The regulatory reporting clock has started for a reportable outage; initiates Process P2.",
+      "descriptionZh": "可报告停电的监管报告时钟已启动；启动流程P2。",
+      "payload": [
+        { "name": "outage_event_id", "type": "reference", "objectTypeId": "objectType:outage-event", "required": true },
+        { "name": "filing_deadline", "type": "datetime", "required": true }
+      ],
+      "producedByActionIds": ["action:evaluate-reportability"],
+      "consumedByActionIds": ["action:open-regulatory-report"],
+      "sources": [
+        { "documentId": "doc:grid-systems-and-data", "documentName": "Grid Operations Systems of Record & Data Reference (REF-GRID-SYS-003 v2.4)", "snippet": "`RegulatoryClockStarted` | OMS Compliance | RegFiling workflow | `outageEventId`, `filingDeadline`", "section": "§5", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:crew.dispatched",
+      "uuid": "b6643142536475860112314256470067",
+      "name": "crew.dispatched",
+      "nameZh": "班组已派遣",
+      "description": "A Crew has been dispatched to a confirmed outage.",
+      "descriptionZh": "已向已确认停电派遣作业班组。",
+      "payload": [
+        { "name": "crew_id", "type": "reference", "objectTypeId": "objectType:crew", "required": true },
+        { "name": "outage_event_id", "type": "reference", "objectTypeId": "objectType:outage-event", "required": true }
+      ],
+      "producedByActionIds": ["action:dispatch-crew"],
+      "consumedByActionIds": ["action:log-field-finding"],
+      "sources": [
+        { "documentId": "doc:grid-systems-and-data", "documentName": "Grid Operations Systems of Record & Data Reference (REF-GRID-SYS-003 v2.4)", "snippet": "`CrewDispatched` | Maximo Workforce | OMS, DOC console | `crewId`, `outageEventId`", "section": "§5", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:field-finding.logged",
+      "uuid": "b7743142536475860112314256470078",
+      "name": "field-finding.logged",
+      "nameZh": "现场发现已记录",
+      "description": "A crew has logged its field finding with a diagnosed cause and faulted asset.",
+      "descriptionZh": "班组已记录现场发现，含诊断原因和故障资产。",
+      "payload": [
+        { "name": "work_order_id", "type": "reference", "objectTypeId": "objectType:maintenance-work-order", "required": true },
+        { "name": "outage_event_id", "type": "reference", "objectTypeId": "objectType:outage-event", "required": true }
+      ],
+      "producedByActionIds": ["action:log-field-finding"],
+      "consumedByActionIds": ["action:restore-supply"],
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "**Resulting event:** `FieldFindingLogged`; if a previously unknown defective asset is found, also emits `AssetDefectIdentified`.", "section": "§3, Step 1.5", "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:asset.defect-identified",
+      "uuid": "b8843142536475860112314256470089",
+      "name": "asset.defect-identified",
+      "nameZh": "资产缺陷已识别",
+      "description": "A defective asset has been identified, either during outage field work or a failed inspection.",
+      "descriptionZh": "已识别出有缺陷的资产，可能来自停电现场作业或不通过的巡检。",
+      "payload": [
+        { "name": "asset_tag", "type": "reference", "objectTypeId": "objectType:asset", "required": true }
+      ],
+      "producedByActionIds": ["action:log-field-finding", "action:record-inspection-result"],
+      "consumedByActionIds": ["action:raise-maintenance-work-order"],
+      "sources": [
+        { "documentId": "doc:grid-systems-and-data", "documentName": "Grid Operations Systems of Record & Data Reference (REF-GRID-SYS-003 v2.4)", "snippet": "`AssetDefectIdentified` | Maximo / OMS | Maximo PM | `assetTag`", "section": "§5", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:supply.restored",
+      "uuid": "b9943142536475860112314256470090",
+      "name": "supply.restored",
+      "nameZh": "供电已恢复",
+      "description": "Supply has been restored to an affected ServicePoint, confirmed via AMI.",
+      "descriptionZh": "已恢复对受影响供电点的供电，经AMI确认。",
+      "payload": [
+        { "name": "service_point_id", "type": "reference", "objectTypeId": "objectType:service-point", "required": true }
+      ],
+      "producedByActionIds": ["action:restore-supply"],
+      "consumedByActionIds": [],
+      "sources": [
+        { "documentId": "doc:grid-systems-and-data", "documentName": "Grid Operations Systems of Record & Data Reference (REF-GRID-SYS-003 v2.4)", "snippet": "`SupplyRestored` | OMS (via AMI confirm) | CIS, DOC console | `servicePointId`", "section": "§5", "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:outage.restored",
+      "uuid": "ba043142536475860112314256470101",
+      "name": "outage.restored",
+      "nameZh": "停电已复电",
+      "description": "The OutageEvent has been advanced to state Restored with a restorationTimestamp.",
+      "descriptionZh": "停电事件已推进至Restored状态并带有复电时间戳。",
+      "payload": [
+        { "name": "outage_event_id", "type": "reference", "objectTypeId": "objectType:outage-event", "required": true },
+        { "name": "restoration_timestamp", "type": "datetime", "required": true }
+      ],
+      "producedByActionIds": ["action:restore-supply"],
+      "consumedByActionIds": ["action:close-outage"],
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "**Resulting event:** `SupplyRestored` (per `ServicePoint`) and `OutageRestored` (for the event).", "section": "§3, Step 1.6", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:outage.closed",
+      "uuid": "bb143142536475860112314256470112",
+      "name": "outage.closed",
+      "nameZh": "停电已关闭",
+      "description": "The OutageEvent has been closed after all ServicePoints confirmed live and a cause code recorded.",
+      "descriptionZh": "在所有供电点确认带电且已记录原因代码后，停电事件已关闭。",
+      "payload": [
+        { "name": "outage_event_id", "type": "reference", "objectTypeId": "objectType:outage-event", "required": true },
+        { "name": "duration", "type": "integer", "required": false, "description": "Outage duration." }
+      ],
+      "producedByActionIds": ["action:close-outage"],
+      "consumedByActionIds": [],
+      "sources": [
+        { "documentId": "doc:grid-systems-and-data", "documentName": "Grid Operations Systems of Record & Data Reference (REF-GRID-SYS-003 v2.4)", "snippet": "`OutageClosed` | OMS | Maximo, analytics | `outageEventId`, duration", "section": "§5", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:regulatory-report.opened",
+      "uuid": "bc243142536475860112314256470123",
+      "name": "regulatory-report.opened",
+      "nameZh": "监管报告已开立",
+      "description": "A draft RegulatoryReport has been opened with a computed filing deadline.",
+      "descriptionZh": "已开立带计算备案截止时间的草稿监管报告。",
+      "payload": [
+        { "name": "report_id", "type": "reference", "objectTypeId": "objectType:regulatory-report", "required": true }
+      ],
+      "producedByActionIds": ["action:open-regulatory-report"],
+      "consumedByActionIds": ["action:compile-regulatory-report"],
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "**Resulting event:** `RegulatoryReportOpened`.", "section": "§4, Step 2.1", "quoteVerified": true }
+      ],
+      "confidence": 0.9,
+      "provenance": "inferred",
+      "derivedFrom": ["action:open-regulatory-report"],
+      "reviewState": "pending"
+    },
+    {
+      "id": "event:regulatory-report.compiled",
+      "uuid": "bd343142536475860112314256470134",
+      "name": "regulatory-report.compiled",
+      "nameZh": "监管报告已编制",
+      "description": "The RegulatoryReport has been compiled and validated, ready for submission.",
+      "descriptionZh": "监管报告已编制并校验，准备好提交。",
+      "payload": [
+        { "name": "report_id", "type": "reference", "objectTypeId": "objectType:regulatory-report", "required": true }
+      ],
+      "producedByActionIds": ["action:compile-regulatory-report"],
+      "consumedByActionIds": ["action:submit-regulatory-report"],
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "**Resulting event:** `RegulatoryReportCompiled`.", "section": "§4, Step 2.2", "quoteVerified": true }
+      ],
+      "confidence": 0.9,
+      "provenance": "inferred",
+      "derivedFrom": ["action:compile-regulatory-report"],
+      "reviewState": "pending"
+    },
+    {
+      "id": "event:regulatory-report.submitted",
+      "uuid": "be443142536475860112314256470145",
+      "name": "regulatory-report.submitted",
+      "nameZh": "监管报告已提交",
+      "description": "The RegulatoryReport has been submitted to the PUC portal with a confirmation ID.",
+      "descriptionZh": "监管报告已带确认编号提交至PUC门户。",
+      "payload": [
+        { "name": "report_id", "type": "reference", "objectTypeId": "objectType:regulatory-report", "required": true },
+        { "name": "portal_confirmation_id", "type": "string", "required": false }
+      ],
+      "producedByActionIds": ["action:submit-regulatory-report"],
+      "consumedByActionIds": [],
+      "sources": [
+        { "documentId": "doc:grid-systems-and-data", "documentName": "Grid Operations Systems of Record & Data Reference (REF-GRID-SYS-003 v2.4)", "snippet": "`RegulatoryReportSubmitted` | RegFiling Portal | OMS Compliance | `reportId`, `portalConfirmationId`", "section": "§5", "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:regulatory-report.accepted",
+      "uuid": "bf543142536475860112314256470156",
+      "name": "regulatory-report.accepted",
+      "nameZh": "监管报告已受理",
+      "description": "The PUC portal has accepted the submitted RegulatoryReport.",
+      "descriptionZh": "PUC门户已受理已提交的监管报告。",
+      "payload": [
+        { "name": "report_id", "type": "reference", "objectTypeId": "objectType:regulatory-report", "required": true }
+      ],
+      "producedByActionIds": ["action:submit-regulatory-report"],
+      "consumedByActionIds": [],
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "**Resulting event:** `RegulatoryReportSubmitted`; on portal acceptance, `RegulatoryReportAccepted`.", "section": "§4, Step 2.3", "quoteVerified": true }
+      ],
+      "confidence": 0.9,
+      "provenance": "inferred",
+      "derivedFrom": ["action:submit-regulatory-report"],
+      "reviewState": "pending"
+    },
+    {
+      "id": "event:regulatory.deadline-breached",
+      "uuid": "c0643142536475860112314256470167",
+      "name": "regulatory.deadline-breached",
+      "nameZh": "监管截止时间已逾期",
+      "description": "The filing deadline passed without a submitted RegulatoryReport; escalates to the Director of Compliance.",
+      "descriptionZh": "备案截止时间在监管报告提交前逾期；升级至合规总监。",
+      "payload": [
+        { "name": "outage_event_id", "type": "reference", "objectTypeId": "objectType:outage-event", "required": true }
+      ],
+      "producedByActionIds": ["action:submit-regulatory-report"],
+      "consumedByActionIds": [],
+      "sources": [
+        { "documentId": "doc:grid-systems-and-data", "documentName": "Grid Operations Systems of Record & Data Reference (REF-GRID-SYS-003 v2.4)", "snippet": "`RegulatoryDeadlineBreached` | OMS Compliance | Director of Compliance | `outageEventId`", "section": "§5", "quoteVerified": true }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:inspection.interval-elapsed",
+      "uuid": "c1743142536475860112314256470178",
+      "name": "inspection.interval-elapsed",
+      "nameZh": "巡检间隔已到期",
+      "description": "An asset's rated inspection interval timer has elapsed (or asset commissioning), triggering scheduling.",
+      "descriptionZh": "资产的额定巡检间隔定时器已到期（或资产投运），触发排程。",
+      "payload": [
+        { "name": "asset_tag", "type": "reference", "objectTypeId": "objectType:asset", "required": true }
+      ],
+      "producedByActionIds": [],
+      "consumedByActionIds": ["action:schedule-inspection"],
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "**Triggering event:** `InspectionIntervalElapsed` (timer) or asset commissioning.", "section": "§5, Step 3.1", "quoteVerified": true }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:inspection.scheduled",
+      "uuid": "c2843142536475860112314256470189",
+      "name": "inspection.scheduled",
+      "nameZh": "巡检已排定",
+      "description": "An Inspection has been scheduled with a due date.",
+      "descriptionZh": "已排定带到期日的巡检。",
+      "payload": [
+        { "name": "inspection_id", "type": "reference", "objectTypeId": "objectType:inspection", "required": true }
+      ],
+      "producedByActionIds": ["action:schedule-inspection"],
+      "consumedByActionIds": ["action:record-inspection-result"],
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "**Resulting event:** `InspectionScheduled`.", "section": "§5, Step 3.1", "quoteVerified": true }
+      ],
+      "confidence": 0.9,
+      "provenance": "inferred",
+      "derivedFrom": ["action:schedule-inspection"],
+      "reviewState": "pending"
+    },
+    {
+      "id": "event:inspection.completed",
+      "uuid": "c3943142536475860112314256470190",
+      "name": "inspection.completed",
+      "nameZh": "巡检已完成",
+      "description": "An Inspection has been completed with a pass/fail result.",
+      "descriptionZh": "巡检已完成并带有通过/不通过结果。",
+      "payload": [
+        { "name": "inspection_id", "type": "reference", "objectTypeId": "objectType:inspection", "required": true },
+        { "name": "result", "type": "enum", "required": true, "description": "pass | fail." }
+      ],
+      "producedByActionIds": ["action:record-inspection-result"],
+      "consumedByActionIds": [],
+      "sources": [
+        { "documentId": "doc:grid-systems-and-data", "documentName": "Grid Operations Systems of Record & Data Reference (REF-GRID-SYS-003 v2.4)", "snippet": "`InspectionCompleted` | Maximo | Maximo PM, analytics | `inspectionId`, `result`", "section": "§5", "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:inspection.interval-missed",
+      "uuid": "c4043142536475860112314256470201",
+      "name": "inspection.interval-missed",
+      "nameZh": "巡检间隔已错过",
+      "description": "A rated inspection interval was missed without a completed inspection, triggering a corrective work order.",
+      "descriptionZh": "额定巡检间隔在未完成巡检的情况下被错过，触发纠正性工单。",
+      "payload": [
+        { "name": "asset_tag", "type": "reference", "objectTypeId": "objectType:asset", "required": true }
+      ],
+      "producedByActionIds": [],
+      "consumedByActionIds": ["action:raise-maintenance-work-order"],
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "**Triggering event:** `AssetDefectIdentified` or `InspectionIntervalMissed`.", "section": "§5, Step 3.3", "quoteVerified": true }
+      ],
+      "confidence": 0.89,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:maintenance-work-order.raised",
+      "uuid": "c5143142536475860112314256470212",
+      "name": "maintenance-work-order.raised",
+      "nameZh": "维护工单已开立",
+      "description": "A MaintenanceWorkOrder has been raised with a derived priority.",
+      "descriptionZh": "已开立带推导优先级的维护工单。",
+      "payload": [
+        { "name": "work_order_id", "type": "reference", "objectTypeId": "objectType:maintenance-work-order", "required": true },
+        { "name": "priority", "type": "enum", "required": true, "description": "emergency | high | normal." }
+      ],
+      "producedByActionIds": ["action:raise-maintenance-work-order", "action:schedule-vegetation-clearance"],
+      "consumedByActionIds": ["action:approve-maintenance-work-order"],
+      "sources": [
+        { "documentId": "doc:grid-systems-and-data", "documentName": "Grid Operations Systems of Record & Data Reference (REF-GRID-SYS-003 v2.4)", "snippet": "`MaintenanceWorkOrderRaised` | Maximo | DOC console, planning | `workOrderId`, `priority`", "section": "§5", "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:maintenance-work-order.approved",
+      "uuid": "c6243142536475860112314256470223",
+      "name": "maintenance-work-order.approved",
+      "nameZh": "维护工单已批准",
+      "description": "A MaintenanceWorkOrder has been approved, scheduled, and crew-assigned.",
+      "descriptionZh": "维护工单已批准、排定并派工。",
+      "payload": [
+        { "name": "work_order_id", "type": "reference", "objectTypeId": "objectType:maintenance-work-order", "required": true }
+      ],
+      "producedByActionIds": ["action:approve-maintenance-work-order"],
+      "consumedByActionIds": ["action:complete-maintenance-work-order"],
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "**Resulting event:** `MaintenanceWorkOrderApproved`.", "section": "§5, Step 3.4", "quoteVerified": true }
+      ],
+      "confidence": 0.9,
+      "provenance": "inferred",
+      "derivedFrom": ["action:approve-maintenance-work-order"],
+      "reviewState": "pending"
+    },
+    {
+      "id": "event:maintenance-work-order.closed",
+      "uuid": "c7343142536475860112314256470234",
+      "name": "maintenance-work-order.closed",
+      "nameZh": "维护工单已关闭",
+      "description": "A MaintenanceWorkOrder has been closed and the asset condition record updated.",
+      "descriptionZh": "维护工单已关闭，资产状态记录已更新。",
+      "payload": [
+        { "name": "work_order_id", "type": "reference", "objectTypeId": "objectType:maintenance-work-order", "required": true }
+      ],
+      "producedByActionIds": ["action:complete-maintenance-work-order"],
+      "consumedByActionIds": [],
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "**Resulting event:** `MaintenanceWorkOrderClosed`.", "section": "§5, Step 3.5", "quoteVerified": true }
+      ],
+      "confidence": 0.9,
+      "provenance": "inferred",
+      "derivedFrom": ["action:complete-maintenance-work-order"],
+      "reviewState": "pending"
+    },
+    {
+      "id": "event:vegetation.cycle-lapsed",
+      "uuid": "c8443142536475860112314256470245",
+      "name": "vegetation.cycle-lapsed",
+      "nameZh": "植被周期已逾期",
+      "description": "A vegetation clearance cycle lapsed without completion or a documented variance on a high-voltage feeder.",
+      "descriptionZh": "高压馈线的植被清理周期在未完成或无书面变更的情况下逾期。",
+      "payload": [
+        { "name": "feeder_id", "type": "reference", "objectTypeId": "objectType:feeder", "required": true }
+      ],
+      "producedByActionIds": [],
+      "consumedByActionIds": ["action:schedule-vegetation-clearance"],
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "A cycle that lapses without completion or a documented variance emits `VegetationCycleLapsed` and is governed by Rules R-11 and R-12.", "section": "§7 Process P4", "quoteVerified": true }
+      ],
+      "confidence": 0.89,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    }
+  ],
+  "processes": [
+    {
+      "id": "process:detect-to-restore",
+      "uuid": "d0043142536475860112314256480001",
+      "name": { "en": "Detect to Restore", "zh": "检测到复电" },
+      "description": "From outage detection to verified restoration and closure (SOP Process P1).",
+      "actors": [
+        { "role": "AMI Head-End / SCADA", "roleZh": "AMI主站/SCADA", "kind": "system" },
+        { "role": "DOC Operator", "roleZh": "配电运营中心操作员", "kind": "human" },
+        { "role": "OMS Compliance module", "roleZh": "OMS合规模块", "kind": "system" },
+        { "role": "DOC Dispatcher", "roleZh": "配电运营中心派工员", "kind": "human" },
+        { "role": "Field Crew", "roleZh": "现场班组", "kind": "human" }
+      ],
+      "objectTypeIds": ["objectType:outage-event", "objectType:feeder", "objectType:substation", "objectType:service-point", "objectType:crew", "objectType:maintenance-work-order", "objectType:asset"],
+      "steps": [
+        { "id": "s1", "actionTypeId": "action:detect-outage", "order": 1, "actorRole": "AMI Head-End / SCADA", "next": [{ "toStepId": "s2", "onEventTypeId": "event:outage.detected" }] },
+        { "id": "s2", "actionTypeId": "action:scope-outage", "order": 2, "actorRole": "DOC Operator", "next": [
+          { "toStepId": "s3", "onEventTypeId": "event:outage.confirmed" },
+          { "toStepId": "s4", "onEventTypeId": "event:outage.confirmed" }
+        ] },
+        { "id": "s3", "actionTypeId": "action:evaluate-reportability", "order": 3, "actorRole": "OMS Compliance module", "next": [] },
+        { "id": "s4", "actionTypeId": "action:dispatch-crew", "order": 4, "actorRole": "DOC Dispatcher", "next": [{ "toStepId": "s5", "onEventTypeId": "event:crew.dispatched" }] },
+        { "id": "s5", "actionTypeId": "action:log-field-finding", "order": 5, "actorRole": "Field Crew", "next": [{ "toStepId": "s6", "onEventTypeId": "event:field-finding.logged" }] },
+        { "id": "s6", "actionTypeId": "action:restore-supply", "order": 6, "actorRole": "Field Crew", "next": [{ "toStepId": "s7", "onEventTypeId": "event:outage.restored" }] },
+        { "id": "s7", "actionTypeId": "action:close-outage", "order": 7, "actorRole": "DOC Operator", "next": [] }
+      ],
+      "triggers": [
+        { "kind": "event", "eventTypeId": "event:meter.last-gasp-received", "description": "AMI last-gasp meter signal." },
+        { "kind": "event", "eventTypeId": "event:breaker.tripped", "description": "SCADA breaker-open telemetry." }
+      ],
+      "orchestration": {
+        "strategy": "event_driven",
+        "agentOrchestrated": true,
+        "agentRoles": [
+          { "role": "DOC Operator", "promptProfile": "outage_scoping_operator" },
+          { "role": "OMS Compliance module", "promptProfile": "reportability_evaluator" }
+        ],
+        "onFailure": "escalate"
+      },
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "**P1 — Detect to Restore (检测到复电):** from outage detection to verified restoration.", "section": "§1", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "process:outage-regulatory-reporting",
+      "uuid": "d1143142536475860112314256480012",
+      "name": { "en": "Outage Regulatory Reporting", "zh": "停电监管报告" },
+      "description": "From reportability determination to accepted PUC filing (SOP Process P2). Runs in parallel with P1 restoration.",
+      "actors": [
+        { "role": "OMS Compliance module", "roleZh": "OMS合规模块", "kind": "system" },
+        { "role": "Regulatory Analyst", "roleZh": "监管分析师", "kind": "human" },
+        { "role": "Director of Compliance", "roleZh": "合规总监", "kind": "human" }
+      ],
+      "objectTypeIds": ["objectType:outage-event", "objectType:regulatory-report", "objectType:customer", "objectType:service-point"],
+      "steps": [
+        { "id": "s1", "actionTypeId": "action:open-regulatory-report", "order": 1, "actorRole": "Regulatory Analyst", "next": [{ "toStepId": "s2", "onEventTypeId": "event:regulatory-report.opened" }] },
+        { "id": "s2", "actionTypeId": "action:compile-regulatory-report", "order": 2, "actorRole": "Regulatory Analyst", "next": [{ "toStepId": "s3", "onEventTypeId": "event:regulatory-report.compiled" }] },
+        { "id": "s3", "actionTypeId": "action:submit-regulatory-report", "order": 3, "actorRole": "Regulatory Analyst", "next": [] }
+      ],
+      "triggers": [
+        { "kind": "event", "eventTypeId": "event:regulatory.clock-started", "description": "Regulatory reporting clock started for a reportable outage." }
+      ],
+      "orchestration": {
+        "strategy": "event_driven",
+        "agentOrchestrated": true,
+        "agentRoles": [
+          { "role": "Regulatory Analyst", "promptProfile": "regulatory_filing_analyst" }
+        ],
+        "onFailure": "escalate"
+      },
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "**P2 — Outage Regulatory Reporting (停电监管报告):** from reportability determination to accepted PUC filing.", "section": "§1", "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "process:inspect-to-maintain",
+      "uuid": "d2243142536475860112314256480023",
+      "name": { "en": "Inspect to Maintain", "zh": "巡检到维护" },
+      "description": "From scheduled Inspection to closed MaintenanceWorkOrder (SOP Process P3).",
+      "actors": [
+        { "role": "Maximo PM Scheduler", "roleZh": "Maximo预防性维护排程器", "kind": "system" },
+        { "role": "Inspector", "roleZh": "检查员", "kind": "human" },
+        { "role": "Maintenance Planner", "roleZh": "维护计划员", "kind": "human" },
+        { "role": "Asset Manager", "roleZh": "资产经理", "kind": "human" },
+        { "role": "Field Crew", "roleZh": "现场班组", "kind": "human" }
+      ],
+      "objectTypeIds": ["objectType:asset", "objectType:inspection", "objectType:maintenance-work-order", "objectType:crew"],
+      "steps": [
+        { "id": "s1", "actionTypeId": "action:schedule-inspection", "order": 1, "actorRole": "Maximo PM Scheduler", "next": [{ "toStepId": "s2", "onEventTypeId": "event:inspection.scheduled" }] },
+        { "id": "s2", "actionTypeId": "action:record-inspection-result", "order": 2, "actorRole": "Inspector", "next": [{ "toStepId": "s3", "onEventTypeId": "event:asset.defect-identified", "condition": "inspection.result == 'fail'", "label": { "en": "On inspection fail", "zh": "巡检不通过时" } }] },
+        { "id": "s3", "actionTypeId": "action:raise-maintenance-work-order", "order": 3, "actorRole": "Maintenance Planner", "next": [{ "toStepId": "s4", "onEventTypeId": "event:maintenance-work-order.raised" }] },
+        { "id": "s4", "actionTypeId": "action:approve-maintenance-work-order", "order": 4, "actorRole": "Asset Manager", "next": [{ "toStepId": "s5", "onEventTypeId": "event:maintenance-work-order.approved" }] },
+        { "id": "s5", "actionTypeId": "action:complete-maintenance-work-order", "order": 5, "actorRole": "Field Crew", "next": [] }
+      ],
+      "triggers": [
+        { "kind": "event", "eventTypeId": "event:inspection.interval-elapsed", "description": "Inspection interval timer elapsed or asset commissioning." }
+      ],
+      "orchestration": {
+        "strategy": "event_driven",
+        "agentOrchestrated": true,
+        "agentRoles": [
+          { "role": "Maintenance Planner", "promptProfile": "maintenance_planner" }
+        ],
+        "onFailure": "halt"
+      },
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "**P3 — Inspect to Maintain (巡检到维护):** from scheduled `Inspection` to closed `MaintenanceWorkOrder`.", "section": "§1", "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "process:vegetation-cycle-management",
+      "uuid": "d3343142536475860112314256480034",
+      "name": { "en": "Vegetation Cycle Management", "zh": "植被周期管理" },
+      "description": "Scheduled clearance on high-voltage feeders, raising and completing vegetation work orders (SOP Process P4).",
+      "actors": [
+        { "role": "Vegetation Program", "roleZh": "植被管理项目", "kind": "system" },
+        { "role": "Asset Manager", "roleZh": "资产经理", "kind": "human" },
+        { "role": "Maintenance Planner", "roleZh": "维护计划员", "kind": "human" },
+        { "role": "Field Crew", "roleZh": "现场班组", "kind": "human" }
+      ],
+      "objectTypeIds": ["objectType:feeder", "objectType:maintenance-work-order", "objectType:crew"],
+      "steps": [
+        { "id": "s1", "actionTypeId": "action:schedule-vegetation-clearance", "order": 1, "actorRole": "Vegetation Program", "next": [{ "toStepId": "s2", "onEventTypeId": "event:maintenance-work-order.raised" }] },
+        { "id": "s2", "actionTypeId": "action:approve-maintenance-work-order", "order": 2, "actorRole": "Maintenance Planner", "next": [{ "toStepId": "s3", "onEventTypeId": "event:maintenance-work-order.approved" }] },
+        { "id": "s3", "actionTypeId": "action:complete-maintenance-work-order", "order": 3, "actorRole": "Field Crew", "next": [] }
+      ],
+      "triggers": [
+        { "kind": "schedule", "schedule": "0 0 1 */1 *", "description": "Monthly check of feeder vegetation clearance cycles." },
+        { "kind": "event", "eventTypeId": "event:vegetation.cycle-lapsed", "description": "Clearance cycle lapsed without completion or variance." }
+      ],
+      "orchestration": {
+        "strategy": "event_driven",
+        "agentOrchestrated": false,
+        "onFailure": "escalate"
+      },
+      "sources": [
+        { "documentId": "doc:grid-outage-sop", "documentName": "Grid Outage Detection, Restoration & Inspection SOP (SOP-GRID-OPS-014 v4.2)", "snippet": "A fourth process, **P4 — Vegetation Cycle Management (植被周期管理)**, governs scheduled clearance on high-voltage feeders", "section": "§1, §7", "quoteVerified": true }
+      ],
+      "confidence": 0.88,
+      "provenance": "inferred",
+      "derivedFrom": ["action:schedule-vegetation-clearance", "action:approve-maintenance-work-order", "action:complete-maintenance-work-order"],
+      "reviewState": "pending"
+    }
+  ],
+  "confidence": 0.928,
+  "metadata": {
+    "createdAt": "2026-05-29T00:00:00.000Z",
+    "updatedAt": "2026-05-29T00:00:00.000Z",
+    "generation": {
+      "model": "openrouter/anthropic/claude-opus",
+      "provider": "openrouter",
+      "runId": "run_energy_grid_outage_001"
+    },
+    "stats": {
+      "objects": 10,
+      "relationships": 10,
+      "rules": 21,
+      "ruleGroups": 6,
+      "actions": 16,
+      "events": 25,
+      "processes": 4
+    },
+    "history": [],
+    "danglingRefs": [],
+    "stageCritiques": {}
+  }
+}

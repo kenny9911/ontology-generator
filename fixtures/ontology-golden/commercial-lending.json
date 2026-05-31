@@ -1,0 +1,2631 @@
+{
+  "id": "ontology:commercial-lending",
+  "uuid": "0a1b2c3d4e5f60718293a4b5c6d7e8f9",
+  "name": "Commercial Lending Origination & Covenant Monitoring",
+  "nameZh": "商业信贷受理与契约监测",
+  "domain": "commercial_lending",
+  "version": 1,
+  "schemaVersion": 1,
+  "status": "draft",
+  "sourceDocuments": [
+    {
+      "id": "doc:commercial-lending-sop",
+      "uuid": "11111111111111111111111111110001",
+      "name": "01-process-sop.md",
+      "kind": "doc",
+      "parsedRef": "parsed_cl_sop_v72",
+      "contentHash": "sha256:cl-sop-014-v72"
+    },
+    {
+      "id": "doc:commercial-lending-rules",
+      "uuid": "11111111111111111111111111110002",
+      "name": "02-business-rules-policy.md",
+      "kind": "doc",
+      "parsedRef": "parsed_cl_rules_v11",
+      "contentHash": "sha256:pol-cl-rules-09-v11"
+    },
+    {
+      "id": "doc:commercial-lending-systems-data",
+      "uuid": "11111111111111111111111111110003",
+      "name": "03-systems-and-data.md",
+      "kind": "doc",
+      "parsedRef": "parsed_cl_data_v34",
+      "contentHash": "sha256:arc-cl-data-05-v34"
+    }
+  ],
+  "objects": [
+    {
+      "id": "objectType:borrower",
+      "uuid": "20000000000000000000000000000001",
+      "name": "Borrower",
+      "nameZh": "借款人",
+      "description": "The commercial party that applies for and receives a secured loan facility; mastered in Oracle FLEXCUBE.",
+      "descriptionZh": "申请并取得有担保信贷额度的商业主体；以 Oracle FLEXCUBE 为主数据源。",
+      "attributes": [
+        { "name": "borrower_id", "type": "uuid", "required": true, "keyRole": "pk", "description": "Primary key issued by Oracle FLEXCUBE." },
+        { "name": "legal_name", "type": "string", "required": true, "keyRole": "none" },
+        { "name": "tax_id", "type": "string", "required": true, "keyRole": "none", "description": "Unique business identifier." },
+        { "name": "industry_code", "type": "enum", "required": false, "keyRole": "none", "enumValues": ["NAICS"], "description": "NAICS industry classification code." },
+        { "name": "watch_list_flag", "type": "boolean", "required": false, "keyRole": "none", "description": "Set by Rule R-14 when two or more breaches occur in a rolling 12-month period." },
+        { "name": "risk_rating_id", "type": "reference", "required": false, "keyRole": "fk", "refObjectTypeId": "objectType:risk-rating", "description": "FK to the borrower's current RiskRating." }
+      ],
+      "relationshipIds": ["rel:borrower-holds-facility", "rel:borrower-has-risk-rating"],
+      "display": { "emoji": "🏢", "color": "#1d4ed8" },
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`Borrower` is mastered in **Oracle FLEXCUBE** (`borrower_id`); nCino references it by `borrower_id` as a foreign key.", "section": "§1", "quoteVerified": true }
+      ],
+      "confidence": 0.97,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:loan-facility",
+      "uuid": "20000000000000000000000000000002",
+      "name": "LoanFacility",
+      "nameZh": "信贷额度",
+      "description": "A secured commercial loan facility (term loan, revolver, or committed line) originated in nCino and booked into Oracle FLEXCUBE.",
+      "descriptionZh": "由 nCino 受理并在 Oracle FLEXCUBE 入账的有担保商业信贷额度（定期贷款、循环贷款或承诺额度）。",
+      "attributes": [
+        { "name": "facility_id", "type": "uuid", "required": true, "keyRole": "pk", "description": "Primary key and cross-system correlation key." },
+        { "name": "flexcube_facility_no", "type": "string", "required": false, "keyRole": "none", "description": "FLEXCUBE booked identifier." },
+        { "name": "borrower_id", "type": "reference", "required": true, "keyRole": "fk", "refObjectTypeId": "objectType:borrower" },
+        { "name": "facility_type", "type": "enum", "required": true, "keyRole": "none", "enumValues": ["Term", "Revolver", "CommittedLine"] },
+        { "name": "committed_amount", "type": "money", "required": true, "keyRole": "none", "description": "Drives Rule R-01 approval authority." },
+        { "name": "outstanding_principal", "type": "money", "required": false, "keyRole": "none", "description": "Updated by DisburseFunds." },
+        { "name": "status", "type": "enum", "required": true, "keyRole": "none", "enumValues": ["Applied", "Approved", "Active", "Default", "Closed"] },
+        { "name": "ltv", "type": "decimal", "required": false, "keyRole": "none", "description": "Loan-to-value; constrained by Rule R-09." },
+        { "name": "conditions_met", "type": "boolean", "required": false, "keyRole": "none", "description": "Conditions-precedent satisfied; Rule R-04." }
+      ],
+      "relationshipIds": ["rel:facility-has-covenant", "rel:facility-secured-by-collateral", "rel:facility-has-repayment-schedule", "rel:facility-has-drawdown", "rel:facility-has-credit-memo"],
+      "display": { "emoji": "💰", "color": "#059669" },
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`LoanFacility` — *system of record: nCino (pipeline) → Oracle FLEXCUBE (booked)*", "section": "§2.2", "quoteVerified": true }
+      ],
+      "confidence": 0.98,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:covenant",
+      "uuid": "20000000000000000000000000000003",
+      "name": "Covenant",
+      "nameZh": "契约条款",
+      "description": "A financial covenant (DSCR, leverage, LTV, or minimum liquidity) bound to a LoanFacility and tested on a schedule by CovenantWatch.",
+      "descriptionZh": "绑定于信贷额度并由 CovenantWatch 按计划测试的财务契约（偿债保障比率、杠杆、贷款价值比或最低流动性）。",
+      "attributes": [
+        { "name": "covenant_id", "type": "uuid", "required": true, "keyRole": "pk" },
+        { "name": "facility_id", "type": "reference", "required": true, "keyRole": "fk", "refObjectTypeId": "objectType:loan-facility" },
+        { "name": "covenant_type", "type": "enum", "required": true, "keyRole": "none", "enumValues": ["DSCR", "Leverage", "LTV", "MinLiquidity"] },
+        { "name": "threshold_value", "type": "decimal", "required": true, "keyRole": "none", "description": "e.g., 1.25 (DSCR), 3.5 (Leverage)." },
+        { "name": "test_frequency", "type": "enum", "required": true, "keyRole": "none", "enumValues": ["Quarterly", "Annual"], "description": "Rule R-10." },
+        { "name": "test_result", "type": "enum", "required": false, "keyRole": "none", "enumValues": ["Compliant", "Breached", "NotYetTested"] },
+        { "name": "clause_reference", "type": "string", "required": false, "keyRole": "none", "description": "Loan-agreement section, e.g., §5.3(b)." }
+      ],
+      "relationshipIds": ["rel:covenant-waived-by-waiver-request"],
+      "display": { "emoji": "📋", "color": "#7c3aed" },
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`Covenant` — *system of record: CovenantWatch*", "section": "§2.3", "quoteVerified": true }
+      ],
+      "confidence": 0.97,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:collateral",
+      "uuid": "20000000000000000000000000000004",
+      "name": "Collateral",
+      "nameZh": "抵押物",
+      "description": "Security pledged against a LoanFacility, appraised for fair value and perfected by Loan Operations and Legal.",
+      "descriptionZh": "为信贷额度提供担保的抵押物，经评估确定公允价值并由贷款运营与法务完善担保权益。",
+      "attributes": [
+        { "name": "collateral_id", "type": "uuid", "required": true, "keyRole": "pk" },
+        { "name": "facility_id", "type": "reference", "required": true, "keyRole": "fk", "refObjectTypeId": "objectType:loan-facility" },
+        { "name": "collateral_type", "type": "enum", "required": true, "keyRole": "none", "enumValues": ["RealEstate", "Equipment", "Receivables", "Securities"] },
+        { "name": "fair_value", "type": "money", "required": true, "keyRole": "none", "description": "Drives LTV; Rule R-09." },
+        { "name": "appraisal_date", "type": "date", "required": false, "keyRole": "none", "description": "Rule R-19 re-appraisal." },
+        { "name": "perfection_status", "type": "enum", "required": true, "keyRole": "none", "enumValues": ["Unperfected", "Perfected"], "description": "Rule R-04." }
+      ],
+      "relationshipIds": [],
+      "display": { "emoji": "🏦", "color": "# d97706" },
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`Collateral` — *system of record: Oracle FLEXCUBE*", "section": "§2.4", "quoteVerified": true }
+      ],
+      "confidence": 0.96,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:repayment-schedule",
+      "uuid": "20000000000000000000000000000005",
+      "name": "RepaymentSchedule",
+      "nameZh": "还款计划",
+      "description": "The amortizing installment schedule generated for a booked LoanFacility in Oracle FLEXCUBE.",
+      "descriptionZh": "在 Oracle FLEXCUBE 中为已入账信贷额度生成的分期摊还还款计划。",
+      "attributes": [
+        { "name": "schedule_id", "type": "uuid", "required": true, "keyRole": "pk" },
+        { "name": "facility_id", "type": "reference", "required": true, "keyRole": "fk", "refObjectTypeId": "objectType:loan-facility" },
+        { "name": "installment_seq", "type": "integer", "required": true, "keyRole": "none" },
+        { "name": "due_date", "type": "date", "required": true, "keyRole": "none" },
+        { "name": "principal_due", "type": "money", "required": true, "keyRole": "none" },
+        { "name": "interest_due", "type": "money", "required": true, "keyRole": "none" }
+      ],
+      "relationshipIds": [],
+      "display": { "emoji": "🗓️", "color": "#0891b2" },
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`RepaymentSchedule` — *system of record: Oracle FLEXCUBE*", "section": "§2.5", "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:risk-rating",
+      "uuid": "20000000000000000000000000000006",
+      "name": "RiskRating",
+      "nameZh": "风险评级",
+      "description": "A 1-10 risk score (10 = highest risk) assigned to a Borrower, scored in Sageworks and assigned in nCino.",
+      "descriptionZh": "授予借款人的 1 至 10 级风险评分（10 为最高风险），在 Sageworks 评分、在 nCino 授予。",
+      "attributes": [
+        { "name": "risk_rating_id", "type": "uuid", "required": true, "keyRole": "pk" },
+        { "name": "borrower_id", "type": "reference", "required": true, "keyRole": "fk", "refObjectTypeId": "objectType:borrower" },
+        { "name": "value", "type": "integer", "required": true, "keyRole": "none", "description": "Scale 1-10; 10 = highest risk." },
+        { "name": "assigned_date", "type": "date", "required": true, "keyRole": "none" },
+        { "name": "next_review_date", "type": "date", "required": true, "keyRole": "none", "description": "Rules R-07, R-08." },
+        { "name": "version", "type": "integer", "required": true, "keyRole": "none", "description": "Incremented by RefreshRiskRating." }
+      ],
+      "relationshipIds": [],
+      "display": { "emoji": "📊", "color": "#dc2626" },
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`RiskRating` — *system of record: nCino (assigned), Sageworks (scored)*", "section": "§2.6", "quoteVerified": true }
+      ],
+      "confidence": 0.96,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:drawdown",
+      "uuid": "20000000000000000000000000000007",
+      "name": "Drawdown",
+      "nameZh": "支用",
+      "description": "A request to draw funds against an Active LoanFacility, cleared by eligibility check and disbursed by Loan Operations.",
+      "descriptionZh": "针对生效信贷额度的资金支用请求，经合规检查放行后由贷款运营拨付。",
+      "attributes": [
+        { "name": "drawdown_id", "type": "uuid", "required": true, "keyRole": "pk" },
+        { "name": "facility_id", "type": "reference", "required": true, "keyRole": "fk", "refObjectTypeId": "objectType:loan-facility" },
+        { "name": "amount", "type": "money", "required": true, "keyRole": "none", "description": "Rule R-06: may not exceed undrawn commitment." },
+        { "name": "request_date", "type": "date", "required": true, "keyRole": "none" },
+        { "name": "status", "type": "enum", "required": true, "keyRole": "none", "enumValues": ["Requested", "Cleared", "Funded", "Blocked"] }
+      ],
+      "relationshipIds": [],
+      "display": { "emoji": "💸", "color": "#16a34a" },
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`Drawdown` — *system of record: Oracle FLEXCUBE*", "section": "§2.7", "quoteVerified": true }
+      ],
+      "confidence": 0.96,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:credit-memo",
+      "uuid": "20000000000000000000000000000008",
+      "name": "CreditMemo",
+      "nameZh": "信贷审批备忘录",
+      "description": "The credit recommendation document carrying proposed terms, covenant definitions, and the approval decision; authored in nCino, stored in iManage.",
+      "descriptionZh": "载明建议条款、契约定义与审批决定的信贷推荐文件；在 nCino 撰写并存档于 iManage。",
+      "attributes": [
+        { "name": "memo_id", "type": "uuid", "required": true, "keyRole": "pk" },
+        { "name": "facility_id", "type": "reference", "required": true, "keyRole": "fk", "refObjectTypeId": "objectType:loan-facility" },
+        { "name": "recommended_terms", "type": "string", "required": false, "keyRole": "none" },
+        { "name": "decision", "type": "enum", "required": true, "keyRole": "none", "enumValues": ["Pending", "Approved", "Declined"] },
+        { "name": "approval_level", "type": "enum", "required": true, "keyRole": "none", "enumValues": ["CreditOfficer", "CreditCommittee"], "description": "Rules R-01, R-02." },
+        { "name": "doc_id", "type": "string", "required": false, "keyRole": "none", "description": "FK to iManage document." }
+      ],
+      "relationshipIds": [],
+      "display": { "emoji": "📝", "color": "#4f46e5" },
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`CreditMemo` — *system of record: nCino; document in iManage*", "section": "§2.8", "quoteVerified": true }
+      ],
+      "confidence": 0.96,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:waiver-request",
+      "uuid": "20000000000000000000000000000009",
+      "name": "WaiverRequest",
+      "nameZh": "豁免申请",
+      "description": "A request to waive a financial covenant breach, granted only by the Credit Committee with an expiry no later than the next scheduled test.",
+      "descriptionZh": "针对财务契约违约的豁免申请，仅由信贷委员会批准，且到期日不得晚于下一次预定测试。",
+      "attributes": [
+        { "name": "waiver_id", "type": "uuid", "required": true, "keyRole": "pk" },
+        { "name": "covenant_id", "type": "reference", "required": true, "keyRole": "fk", "refObjectTypeId": "objectType:covenant" },
+        { "name": "status", "type": "enum", "required": true, "keyRole": "none", "enumValues": ["Requested", "Granted", "Denied"], "description": "Rule R-05." },
+        { "name": "expiry_date", "type": "date", "required": false, "keyRole": "none", "description": "Rule R-15." }
+      ],
+      "relationshipIds": [],
+      "display": { "emoji": "✋", "color": "#ea580c" },
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`WaiverRequest` — *system of record: nCino; document in iManage*", "section": "§2.9", "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:margin-call-notice",
+      "uuid": "20000000000000000000000000000010",
+      "name": "MarginCallNotice",
+      "nameZh": "追加保证金通知",
+      "description": "A notice issued on an LTV covenant breach demanding cure of the collateral shortfall within a deadline.",
+      "descriptionZh": "在贷款价值比契约违约时发出的通知，要求在期限内补足抵押物缺口。",
+      "attributes": [
+        { "name": "margin_call_id", "type": "uuid", "required": true, "keyRole": "pk" },
+        { "name": "facility_id", "type": "reference", "required": true, "keyRole": "fk", "refObjectTypeId": "objectType:loan-facility" },
+        { "name": "collateral_id", "type": "reference", "required": true, "keyRole": "fk", "refObjectTypeId": "objectType:collateral" },
+        { "name": "shortfall_amount", "type": "money", "required": true, "keyRole": "none" },
+        { "name": "cure_deadline", "type": "date", "required": true, "keyRole": "none", "description": "Rule R-16: 10 business days." }
+      ],
+      "relationshipIds": [],
+      "display": { "emoji": "⚠️", "color": "#b91c1c" },
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`MarginCallNotice` — *system of record: Oracle FLEXCUBE; document in iManage*", "section": "§2.10", "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    }
+  ],
+  "relationships": [
+    {
+      "id": "rel:borrower-holds-facility",
+      "uuid": "30000000000000000000000000000001",
+      "name": "holds",
+      "nameZh": "持有",
+      "label": { "en": "Borrower holds LoanFacility", "zh": "借款人持有信贷额度" },
+      "sourceObjectTypeId": "objectType:borrower",
+      "targetObjectTypeId": "objectType:loan-facility",
+      "cardinality": "one_to_many",
+      "viaAttribute": "borrower_id",
+      "description": "A borrower may hold one or more loan facilities.",
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`borrower_id` | UUID | **FK → `Borrower`**", "section": "§2.2", "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:borrower-has-risk-rating",
+      "uuid": "30000000000000000000000000000002",
+      "name": "rated_by",
+      "nameZh": "评级为",
+      "label": { "en": "Borrower rated by RiskRating", "zh": "借款人的风险评级" },
+      "sourceObjectTypeId": "objectType:borrower",
+      "targetObjectTypeId": "objectType:risk-rating",
+      "cardinality": "one_to_many",
+      "viaAttribute": "risk_rating_id",
+      "description": "A borrower carries successive versions of a risk rating.",
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`risk_rating_id` | UUID | **FK → `RiskRating`**", "section": "§2.1", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:facility-has-covenant",
+      "uuid": "30000000000000000000000000000003",
+      "name": "bound_by",
+      "nameZh": "受约束于",
+      "label": { "en": "LoanFacility bound by Covenant", "zh": "信贷额度受契约约束" },
+      "sourceObjectTypeId": "objectType:loan-facility",
+      "targetObjectTypeId": "objectType:covenant",
+      "cardinality": "one_to_many",
+      "viaAttribute": "facility_id",
+      "description": "Every facility must have at least one financial covenant (Rule R-03).",
+      "sources": [
+        { "documentId": "doc:commercial-lending-rules", "documentName": "02-business-rules-policy.md", "snippet": "Every `LoanFacility` must have at least one financial `Covenant` defined in its `CreditMemo` before it may be submitted for credit decision.", "section": "R-03", "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:facility-secured-by-collateral",
+      "uuid": "30000000000000000000000000000004",
+      "name": "secured_by",
+      "nameZh": "担保于",
+      "label": { "en": "LoanFacility secured by Collateral", "zh": "信贷额度由抵押物担保" },
+      "sourceObjectTypeId": "objectType:loan-facility",
+      "targetObjectTypeId": "objectType:collateral",
+      "cardinality": "one_to_many",
+      "viaAttribute": "facility_id",
+      "description": "A facility may be secured by one or more collateral records.",
+      "sources": [
+        { "documentId": "doc:commercial-lending-sop", "documentName": "01-process-sop.md", "snippet": "creates one or more `Collateral` records linked to the `LoanFacility`; computes loan-to-value (LTV).", "section": "§3.4", "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:facility-has-repayment-schedule",
+      "uuid": "30000000000000000000000000000005",
+      "name": "amortized_by",
+      "nameZh": "摊还于",
+      "label": { "en": "LoanFacility amortized by RepaymentSchedule", "zh": "信贷额度按还款计划摊还" },
+      "sourceObjectTypeId": "objectType:loan-facility",
+      "targetObjectTypeId": "objectType:repayment-schedule",
+      "cardinality": "one_to_many",
+      "viaAttribute": "facility_id",
+      "description": "A booked facility generates an amortizing repayment schedule.",
+      "sources": [
+        { "documentId": "doc:commercial-lending-sop", "documentName": "01-process-sop.md", "snippet": "creates the canonical `LoanFacility` in FLEXCUBE; generates the `RepaymentSchedule`.", "section": "§3.7", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:facility-has-drawdown",
+      "uuid": "30000000000000000000000000000006",
+      "name": "drawn_via",
+      "nameZh": "支用于",
+      "label": { "en": "LoanFacility drawn via Drawdown", "zh": "信贷额度通过支用提取" },
+      "sourceObjectTypeId": "objectType:loan-facility",
+      "targetObjectTypeId": "objectType:drawdown",
+      "cardinality": "one_to_many",
+      "viaAttribute": "facility_id",
+      "description": "An active facility may be drawn down one or more times.",
+      "sources": [
+        { "documentId": "doc:commercial-lending-sop", "documentName": "01-process-sop.md", "snippet": "creates `Drawdown` (status `Requested`) against an `Active` `LoanFacility`.", "section": "§4.1", "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:facility-has-credit-memo",
+      "uuid": "30000000000000000000000000000007",
+      "name": "recommended_by",
+      "nameZh": "推荐依据",
+      "label": { "en": "LoanFacility recommended by CreditMemo", "zh": "信贷额度由审批备忘录推荐" },
+      "sourceObjectTypeId": "objectType:loan-facility",
+      "targetObjectTypeId": "objectType:credit-memo",
+      "cardinality": "one_to_one",
+      "viaAttribute": "facility_id",
+      "description": "Each facility is recommended for decision via a credit memo.",
+      "sources": [
+        { "documentId": "doc:commercial-lending-sop", "documentName": "01-process-sop.md", "snippet": "creates `CreditMemo`; creates one or more `Covenant` records ... bound to the `LoanFacility`.", "section": "§3.5", "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:covenant-waived-by-waiver-request",
+      "uuid": "30000000000000000000000000000008",
+      "name": "waived_by",
+      "nameZh": "豁免于",
+      "label": { "en": "Covenant waived by WaiverRequest", "zh": "契约由豁免申请豁免" },
+      "sourceObjectTypeId": "objectType:covenant",
+      "targetObjectTypeId": "objectType:waiver-request",
+      "cardinality": "one_to_many",
+      "viaAttribute": "covenant_id",
+      "description": "A breached covenant may be covered by a granted waiver request.",
+      "sources": [
+        { "documentId": "doc:commercial-lending-rules", "documentName": "02-business-rules-policy.md", "snippet": "unless a `WaiverRequest` with status `Granted` is on file for that `Covenant`.", "section": "R-05", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:margin-call-against-collateral",
+      "uuid": "30000000000000000000000000000009",
+      "name": "issued_against",
+      "nameZh": "针对",
+      "label": { "en": "MarginCallNotice issued against Collateral", "zh": "追加保证金通知针对抵押物" },
+      "sourceObjectTypeId": "objectType:margin-call-notice",
+      "targetObjectTypeId": "objectType:collateral",
+      "cardinality": "many_to_one",
+      "viaAttribute": "collateral_id",
+      "description": "A margin call references the under-valued collateral that triggered it.",
+      "sources": [
+        { "documentId": "doc:commercial-lending-sop", "documentName": "01-process-sop.md", "snippet": "creates a `MarginCallNotice` linked to the `LoanFacility` and the under-valued `Collateral`.", "section": "§5.5", "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    }
+  ],
+  "rules": [
+    {
+      "id": "rule:r01-officer-authority-5m",
+      "uuid": "40000000000000000000000000000001",
+      "title": "Credit Officer authority below USD 5M",
+      "titleZh": "信贷专员 500 万美元以下审批权限",
+      "statement": {
+        "en": "A CreditMemo recommending a new LoanFacility shall be approved by a Credit Officer when the committed amount is at or below USD 5,000,000; above this amount the CreditMemo must be escalated to the Credit Committee.",
+        "zh": "当承诺金额不超过 500 万美元时，推荐新信贷额度的信贷审批备忘录应由信贷专员批准；超过此金额则必须上报信贷委员会。"
+      },
+      "formal": "CreditMemo.approval_level = (LoanFacility.committed_amount <= 5000000 ? CreditOfficer : CreditCommittee)",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "loanFacility.committed_amount <= 5000000 ? creditMemo.approval_level == 'CreditOfficer' : creditMemo.approval_level == 'CreditCommittee'",
+        "bindings": [
+          { "var": "loanFacility", "objectTypeId": "objectType:loan-facility" },
+          { "var": "creditMemo", "objectTypeId": "objectType:credit-memo" }
+        ]
+      },
+      "kind": "authorization",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:credit-memo", "objectType:loan-facility"],
+      "appliesToAttributes": ["objectType:loan-facility.committed_amount", "objectType:credit-memo.approval_level"],
+      "trigger": { "description": "on credit decision", "onEventTypeId": "event:credit-memo.submitted" },
+      "groupId": "ruleGroup:approval-authority",
+      "sources": [
+        { "documentId": "doc:commercial-lending-rules", "documentName": "02-business-rules-policy.md", "snippet": "A `CreditMemo` recommending a new `LoanFacility` shall be approved by a Credit Officer when the committed amount is at or below USD 5,000,000; above this amount the `CreditMemo` must be escalated to the Credit Committee.", "section": "R-01", "sentenceRefs": [1], "quoteVerified": true }
+      ],
+      "confidence": 0.96,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:r02-weak-rating-requires-committee",
+      "uuid": "40000000000000000000000000000002",
+      "title": "Weak rating requires Credit Committee approval",
+      "titleZh": "弱评级须信贷委员会批准",
+      "statement": {
+        "en": "A LoanFacility with a Borrower RiskRating weaker than 6 (on the 1-10 scale where 10 is highest risk) may not be approved by a single Credit Officer and is required to receive Credit Committee approval regardless of amount.",
+        "zh": "借款人风险评级弱于 6（1 至 10 级，10 为最高风险）的信贷额度，不得由单一信贷专员批准，无论金额多少均须经信贷委员会批准。"
+      },
+      "formal": "RiskRating.value >= 6 → CreditMemo.approval_level = CreditCommittee",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "riskRating.value < 6 || creditMemo.approval_level == 'CreditCommittee'",
+        "bindings": [
+          { "var": "riskRating", "objectTypeId": "objectType:risk-rating" },
+          { "var": "creditMemo", "objectTypeId": "objectType:credit-memo" }
+        ]
+      },
+      "kind": "authorization",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:loan-facility", "objectType:risk-rating", "objectType:credit-memo"],
+      "appliesToAttributes": ["objectType:risk-rating.value", "objectType:credit-memo.approval_level"],
+      "trigger": { "description": "on credit decision", "onEventTypeId": "event:credit-memo.submitted" },
+      "groupId": "ruleGroup:approval-authority",
+      "sources": [
+        { "documentId": "doc:commercial-lending-rules", "documentName": "02-business-rules-policy.md", "snippet": "A `LoanFacility` with a `Borrower` `RiskRating` weaker than 6 (on the 1–10 scale where 10 is highest risk) may not be approved by a single Credit Officer and is required to receive Credit Committee approval regardless of amount.", "section": "R-02", "sentenceRefs": [1], "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:r03-facility-requires-covenant",
+      "uuid": "40000000000000000000000000000003",
+      "title": "Facility requires at least one covenant",
+      "titleZh": "信贷额度须至少含一项契约",
+      "statement": {
+        "en": "Every LoanFacility must have at least one financial Covenant defined in its CreditMemo before it may be submitted for credit decision.",
+        "zh": "每笔信贷额度在提交信贷决定前，必须在其审批备忘录中定义至少一项财务契约。"
+      },
+      "formal": "submitForDecision(LoanFacility) → count(Covenant where facility_id = LoanFacility.facility_id) >= 1",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "size(loanFacility.covenants) >= 1",
+        "bindings": [
+          { "var": "loanFacility", "objectTypeId": "objectType:loan-facility" }
+        ]
+      },
+      "kind": "constraint",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:loan-facility", "objectType:covenant", "objectType:credit-memo"],
+      "trigger": { "description": "before submission for credit decision", "onEventTypeId": "event:credit-memo.submitted" },
+      "groupId": "ruleGroup:approval-authority",
+      "sources": [
+        { "documentId": "doc:commercial-lending-rules", "documentName": "02-business-rules-policy.md", "snippet": "Every `LoanFacility` must have at least one financial `Covenant` defined in its `CreditMemo` before it may be submitted for credit decision.", "section": "R-03", "sentenceRefs": [1], "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:r04-no-funding-until-booked-and-perfected",
+      "uuid": "40000000000000000000000000000004",
+      "title": "No funding until booked and security perfected",
+      "titleZh": "未入账并完善担保前不得放款",
+      "statement": {
+        "en": "A LoanFacility may not be funded until both the FacilityBooked event and the SecurityPerfected event have been recorded, confirming all conditions precedent are satisfied.",
+        "zh": "信贷额度在 FacilityBooked 与 SecurityPerfected 两个事件均已记录、确认所有先决条件满足之前，不得放款。"
+      },
+      "formal": "fund(LoanFacility) → recorded(FacilityBooked) ∧ recorded(SecurityPerfected) ∧ LoanFacility.conditions_met = true",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "loanFacility.conditions_met == true && collateral.perfection_status == 'Perfected'",
+        "bindings": [
+          { "var": "loanFacility", "objectTypeId": "objectType:loan-facility" },
+          { "var": "collateral", "objectTypeId": "objectType:collateral" }
+        ]
+      },
+      "kind": "state_transition",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:loan-facility", "objectType:collateral"],
+      "appliesToAttributes": ["objectType:loan-facility.conditions_met", "objectType:collateral.perfection_status"],
+      "trigger": { "description": "before disbursement / funding", "onEventTypeId": "event:security.perfected" },
+      "groupId": "ruleGroup:funding-conditions",
+      "sources": [
+        { "documentId": "doc:commercial-lending-rules", "documentName": "02-business-rules-policy.md", "snippet": "A `LoanFacility` may not be funded until both the `FacilityBooked` event and the `SecurityPerfected` event have been recorded, confirming all conditions precedent are satisfied.", "section": "R-04", "sentenceRefs": [1], "quoteVerified": true }
+      ],
+      "confidence": 0.96,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:r05-no-drawdown-during-breach",
+      "uuid": "40000000000000000000000000000005",
+      "title": "No drawdown while covenant in breach without waiver",
+      "titleZh": "契约违约且无豁免时不得支用",
+      "statement": {
+        "en": "A LoanFacility may not be drawn down while any financial Covenant is in breach, unless a WaiverRequest with status Granted is on file for that Covenant.",
+        "zh": "在任何财务契约处于违约状态时，信贷额度不得支用，除非该契约已有状态为 Granted 的豁免申请在案。"
+      },
+      "formal": "drawdown(LoanFacility) → ∀ Covenant: (Covenant.test_result ≠ Breached) ∨ (∃ WaiverRequest: status = Granted)",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "covenant.test_result != 'Breached' || waiverRequest.status == 'Granted'",
+        "bindings": [
+          { "var": "covenant", "objectTypeId": "objectType:covenant" },
+          { "var": "waiverRequest", "objectTypeId": "objectType:waiver-request" }
+        ]
+      },
+      "kind": "constraint",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:loan-facility", "objectType:covenant", "objectType:waiver-request", "objectType:drawdown"],
+      "appliesToAttributes": ["objectType:covenant.test_result", "objectType:waiver-request.status"],
+      "trigger": { "description": "on drawdown eligibility check", "onEventTypeId": "event:drawdown.requested" },
+      "groupId": "ruleGroup:drawdown-controls",
+      "sources": [
+        { "documentId": "doc:commercial-lending-rules", "documentName": "02-business-rules-policy.md", "snippet": "A `LoanFacility` may not be drawn down while any financial `Covenant` is in breach, unless a `WaiverRequest` with status `Granted` is on file for that `Covenant`.", "section": "R-05", "sentenceRefs": [1], "quoteVerified": true }
+      ],
+      "confidence": 0.96,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:r06-drawdown-within-commitment",
+      "uuid": "40000000000000000000000000000006",
+      "title": "Drawdown within undrawn commitment",
+      "titleZh": "支用不得超过未提取承诺",
+      "statement": {
+        "en": "A Drawdown may not exceed the undrawn available commitment of its LoanFacility.",
+        "zh": "支用金额不得超过其信贷额度的未提取可用承诺。"
+      },
+      "formal": "Drawdown.amount <= (LoanFacility.committed_amount - LoanFacility.outstanding_principal)",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "drawdown.amount <= (loanFacility.committed_amount - loanFacility.outstanding_principal)",
+        "bindings": [
+          { "var": "drawdown", "objectTypeId": "objectType:drawdown" },
+          { "var": "loanFacility", "objectTypeId": "objectType:loan-facility" }
+        ]
+      },
+      "kind": "constraint",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:drawdown", "objectType:loan-facility"],
+      "appliesToAttributes": ["objectType:drawdown.amount", "objectType:loan-facility.committed_amount", "objectType:loan-facility.outstanding_principal"],
+      "trigger": { "description": "on drawdown eligibility check", "onEventTypeId": "event:drawdown.requested" },
+      "groupId": "ruleGroup:drawdown-controls",
+      "sources": [
+        { "documentId": "doc:commercial-lending-rules", "documentName": "02-business-rules-policy.md", "snippet": "A `Drawdown` may not exceed the undrawn available commitment of its `LoanFacility`.", "section": "R-06", "sentenceRefs": [1], "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:r07-rating-refresh-12-months",
+      "uuid": "40000000000000000000000000000007",
+      "title": "Risk rating refreshed at least every 12 months",
+      "titleZh": "风险评级至少每 12 个月刷新",
+      "statement": {
+        "en": "A Borrower RiskRating must be refreshed at least every 12 months.",
+        "zh": "借款人风险评级必须至少每 12 个月刷新一次。"
+      },
+      "formal": "RiskRating.next_review_date <= RiskRating.assigned_date + 12 months",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "riskRating.next_review_date <= timestamp(riskRating.assigned_date) + duration('8760h')",
+        "bindings": [
+          { "var": "riskRating", "objectTypeId": "objectType:risk-rating" }
+        ]
+      },
+      "kind": "temporal",
+      "severity": "warn",
+      "appliesToObjectTypeIds": ["objectType:risk-rating", "objectType:borrower"],
+      "appliesToAttributes": ["objectType:risk-rating.next_review_date"],
+      "trigger": { "description": "on rating review scheduling", "onEventTypeId": "event:rating.review-due" },
+      "groupId": "ruleGroup:risk-rating",
+      "sources": [
+        { "documentId": "doc:commercial-lending-rules", "documentName": "02-business-rules-policy.md", "snippet": "A `Borrower` `RiskRating` must be refreshed at least every 12 months.", "section": "R-07", "sentenceRefs": [1], "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:r08-rating-refresh-30-days-after-breach",
+      "uuid": "40000000000000000000000000000008",
+      "title": "Rating refresh within 30 days of breach",
+      "titleZh": "违约后 30 日内刷新评级",
+      "statement": {
+        "en": "A Borrower RiskRating is required to be refreshed within 30 days after any covenant breach, and where this 30-day deadline falls before the scheduled annual review it shall take precedence.",
+        "zh": "任何契约违约发生后 30 日内必须刷新借款人风险评级；若该 30 日期限早于预定年度复核，则以前者为准。"
+      },
+      "formal": "CovenantBreached(t) → RiskRating.next_review_date <= min(t + 30 days, scheduled_annual_review)",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "riskRating.next_review_date <= timestamp(breachDate) + duration('720h')",
+        "bindings": [
+          { "var": "riskRating", "objectTypeId": "objectType:risk-rating" },
+          { "var": "covenant", "objectTypeId": "objectType:covenant" }
+        ]
+      },
+      "kind": "temporal",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:risk-rating", "objectType:covenant", "objectType:borrower"],
+      "appliesToAttributes": ["objectType:risk-rating.next_review_date"],
+      "trigger": { "description": "on covenant breach", "onEventTypeId": "event:covenant.breached" },
+      "groupId": "ruleGroup:risk-rating",
+      "sources": [
+        { "documentId": "doc:commercial-lending-rules", "documentName": "02-business-rules-policy.md", "snippet": "A `Borrower` `RiskRating` is required to be refreshed within 30 days after any covenant breach, and where this 30-day deadline falls before the scheduled annual review it shall take precedence.", "section": "R-08", "sentenceRefs": [1], "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:r09-ltv-max-80-percent",
+      "uuid": "40000000000000000000000000000009",
+      "title": "LTV must stay at or below 80%",
+      "titleZh": "贷款价值比不得高于 80%",
+      "statement": {
+        "en": "A LoanFacility's loan-to-value must stay at or below 80% of the pledged Collateral fair value; a breach triggers a MarginCallNotice.",
+        "zh": "信贷额度的贷款价值比必须保持在所质押抵押物公允价值的 80% 及以下；违约将触发追加保证金通知。"
+      },
+      "formal": "LoanFacility.ltv <= 0.80 ∧ (LoanFacility.ltv > 0.80 → issue(MarginCallNotice))",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "loanFacility.ltv <= 0.80",
+        "bindings": [
+          { "var": "loanFacility", "objectTypeId": "objectType:loan-facility" },
+          { "var": "collateral", "objectTypeId": "objectType:collateral" }
+        ]
+      },
+      "kind": "constraint",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:loan-facility", "objectType:collateral", "objectType:margin-call-notice"],
+      "appliesToAttributes": ["objectType:loan-facility.ltv", "objectType:collateral.fair_value"],
+      "trigger": { "description": "on covenant test of LTV", "onEventTypeId": "event:covenant.tested" },
+      "groupId": "ruleGroup:collateral-ltv",
+      "sources": [
+        { "documentId": "doc:commercial-lending-rules", "documentName": "02-business-rules-policy.md", "snippet": "A `LoanFacility`'s loan-to-value must stay at or below 80% of the pledged `Collateral` fair value; a breach triggers a `MarginCallNotice`.", "section": "R-09", "sentenceRefs": [1], "quoteVerified": true }
+      ],
+      "confidence": 0.96,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:r10-quarterly-covenant-test-45-days",
+      "uuid": "40000000000000000000000000000010",
+      "title": "Quarterly covenant tested within 45 days of quarter end",
+      "titleZh": "季度契约须在季末 45 日内测试",
+      "statement": {
+        "en": "A financial Covenant with a quarterly test_frequency must be tested within 45 calendar days of each fiscal quarter end.",
+        "zh": "测试频率为季度的财务契约必须在每个财务季度结束后 45 个日历日内完成测试。"
+      },
+      "formal": "Covenant.test_frequency = Quarterly → test_date <= quarter_end + 45 days",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "covenant.test_frequency != 'Quarterly' || testDate <= quarterEnd + duration('1080h')",
+        "bindings": [
+          { "var": "covenant", "objectTypeId": "objectType:covenant" }
+        ]
+      },
+      "kind": "temporal",
+      "severity": "warn",
+      "appliesToObjectTypeIds": ["objectType:covenant"],
+      "appliesToAttributes": ["objectType:covenant.test_frequency"],
+      "trigger": { "description": "on covenant test scheduling", "onEventTypeId": "event:covenant.test-due" },
+      "groupId": "ruleGroup:covenant-testing",
+      "sources": [
+        { "documentId": "doc:commercial-lending-rules", "documentName": "02-business-rules-policy.md", "snippet": "A financial `Covenant` with a quarterly `test_frequency` must be tested within 45 calendar days of each fiscal quarter end.", "section": "R-10", "sentenceRefs": [1], "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:r11-dscr-breach-below-1-25",
+      "uuid": "40000000000000000000000000000011",
+      "title": "DSCR covenant breached below 1.25x",
+      "titleZh": "偿债保障比率低于 1.25 倍即违约",
+      "statement": {
+        "en": "A debt-service-coverage Covenant is breached when the tested ratio falls below 1.25x.",
+        "zh": "当测得的偿债保障比率低于 1.25 倍时，该偿债保障契约即视为违约。"
+      },
+      "formal": "Covenant.covenant_type = DSCR ∧ tested_ratio < 1.25 → Covenant.test_result = Breached",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "covenant.covenant_type == 'DSCR' && testedRatio < 1.25 ? covenant.test_result == 'Breached' : true",
+        "bindings": [
+          { "var": "covenant", "objectTypeId": "objectType:covenant" }
+        ]
+      },
+      "kind": "validation",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:covenant"],
+      "appliesToAttributes": ["objectType:covenant.covenant_type", "objectType:covenant.threshold_value", "objectType:covenant.test_result"],
+      "trigger": { "description": "on covenant evaluation", "onEventTypeId": "event:covenant.test-due" },
+      "groupId": "ruleGroup:covenant-testing",
+      "sources": [
+        { "documentId": "doc:commercial-lending-rules", "documentName": "02-business-rules-policy.md", "snippet": "A debt-service-coverage `Covenant` is breached when the tested ratio falls below 1.25x.", "section": "R-11", "sentenceRefs": [1], "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:r12-leverage-breach-above-3-5",
+      "uuid": "40000000000000000000000000000012",
+      "title": "Leverage covenant breached above 3.5x",
+      "titleZh": "杠杆比率高于 3.5 倍即违约",
+      "statement": {
+        "en": "A leverage Covenant is breached when total funded debt to EBITDA exceeds 3.5x.",
+        "zh": "当总有息负债与息税折旧摊销前利润之比超过 3.5 倍时，该杠杆契约即视为违约。"
+      },
+      "formal": "Covenant.covenant_type = Leverage ∧ (funded_debt / EBITDA) > 3.5 → Covenant.test_result = Breached",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "covenant.covenant_type == 'Leverage' && (fundedDebt / ebitda) > 3.5 ? covenant.test_result == 'Breached' : true",
+        "bindings": [
+          { "var": "covenant", "objectTypeId": "objectType:covenant" }
+        ]
+      },
+      "kind": "validation",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:covenant"],
+      "appliesToAttributes": ["objectType:covenant.covenant_type", "objectType:covenant.threshold_value", "objectType:covenant.test_result"],
+      "trigger": { "description": "on covenant evaluation", "onEventTypeId": "event:covenant.test-due" },
+      "groupId": "ruleGroup:covenant-testing",
+      "sources": [
+        { "documentId": "doc:commercial-lending-rules", "documentName": "02-business-rules-policy.md", "snippet": "A leverage `Covenant` is breached when total funded debt to EBITDA exceeds 3.5x.", "section": "R-12", "sentenceRefs": [1], "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:r13-breach-escalation-2-days",
+      "uuid": "40000000000000000000000000000013",
+      "title": "Breach escalated to committee within 2 business days",
+      "titleZh": "违约须在 2 个工作日内上报委员会",
+      "statement": {
+        "en": "A CovenantBreached event must be escalated to the Credit Committee within 2 business days of detection, with a citation to the breached covenant clause and the relevant Loan Agreement section.",
+        "zh": "CovenantBreached 事件必须在检测后 2 个工作日内上报信贷委员会，并附上所违约契约条款及相关贷款协议章节的引用。"
+      },
+      "formal": "CovenantBreached(t) → escalateToCommittee within 2 business days ∧ cite(Covenant.clause_reference)",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "escalationDate <= timestamp(breachDate) + duration('48h')",
+        "bindings": [
+          { "var": "covenant", "objectTypeId": "objectType:covenant" }
+        ]
+      },
+      "kind": "temporal",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:covenant"],
+      "appliesToAttributes": ["objectType:covenant.clause_reference", "objectType:covenant.test_result"],
+      "trigger": { "description": "on covenant breach", "onEventTypeId": "event:covenant.breached" },
+      "groupId": "ruleGroup:breach-handling",
+      "sources": [
+        { "documentId": "doc:commercial-lending-rules", "documentName": "02-business-rules-policy.md", "snippet": "A `CovenantBreached` event must be escalated to the Credit Committee within 2 business days of detection, with a citation to the breached covenant clause and the relevant `Loan Agreement` section.", "section": "R-13", "sentenceRefs": [1], "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:r14-two-breaches-watch-list",
+      "uuid": "40000000000000000000000000000014",
+      "title": "Two breaches in 12 months places borrower on Watch List",
+      "titleZh": "12 个月内两次违约列入观察名单",
+      "statement": {
+        "en": "A Borrower with two or more covenant breaches within any rolling 12-month period shall be placed on the Watch List and may not receive new LoanFacility approvals until removed.",
+        "zh": "在任意滚动 12 个月期间内发生两次或以上契约违约的借款人应被列入观察名单，并在移除前不得获得新的信贷额度批准。"
+      },
+      "formal": "count(CovenantBreached for Borrower in rolling 12 months) >= 2 → Borrower.watch_list_flag = true ∧ block(new LoanFacility approval)",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "borrower.watch_list_flag == false || loanFacility.status != 'Approved'",
+        "bindings": [
+          { "var": "borrower", "objectTypeId": "objectType:borrower" },
+          { "var": "loanFacility", "objectTypeId": "objectType:loan-facility" }
+        ]
+      },
+      "kind": "authorization",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:borrower", "objectType:loan-facility", "objectType:covenant"],
+      "appliesToAttributes": ["objectType:borrower.watch_list_flag"],
+      "trigger": { "description": "on covenant breach accumulation", "onEventTypeId": "event:covenant.breached" },
+      "groupId": "ruleGroup:breach-handling",
+      "sources": [
+        { "documentId": "doc:commercial-lending-rules", "documentName": "02-business-rules-policy.md", "snippet": "A `Borrower` with two or more covenant breaches within any rolling 12-month period shall be placed on the Watch List and may not receive new `LoanFacility` approvals until removed.", "section": "R-14", "sentenceRefs": [1], "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:r15-waiver-committee-only-with-expiry",
+      "uuid": "40000000000000000000000000000015",
+      "title": "Waiver granted only by committee with expiry",
+      "titleZh": "豁免仅委员会批准且须设到期日",
+      "statement": {
+        "en": "A WaiverRequest covering a financial covenant breach may be granted only by the Credit Committee and is required to specify an expiry date no later than the next scheduled covenant test.",
+        "zh": "针对财务契约违约的豁免申请仅可由信贷委员会批准，且必须指定不晚于下一次预定契约测试的到期日。"
+      },
+      "formal": "WaiverRequest.status = Granted → approvedBy = CreditCommittee ∧ WaiverRequest.expiry_date <= next_scheduled_test",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "waiverRequest.status != 'Granted' || waiverRequest.expiry_date <= nextScheduledTest",
+        "bindings": [
+          { "var": "waiverRequest", "objectTypeId": "objectType:waiver-request" },
+          { "var": "covenant", "objectTypeId": "objectType:covenant" }
+        ]
+      },
+      "kind": "authorization",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:waiver-request", "objectType:covenant"],
+      "appliesToAttributes": ["objectType:waiver-request.status", "objectType:waiver-request.expiry_date"],
+      "trigger": { "description": "on waiver decision", "onEventTypeId": "event:breach.escalated" },
+      "groupId": "ruleGroup:waivers",
+      "sources": [
+        { "documentId": "doc:commercial-lending-rules", "documentName": "02-business-rules-policy.md", "snippet": "A `WaiverRequest` covering a financial covenant breach may be granted only by the Credit Committee and is required to specify an expiry date no later than the next scheduled covenant test.", "section": "R-15", "sentenceRefs": [1], "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:r16-margin-call-cure-10-days",
+      "uuid": "40000000000000000000000000000016",
+      "title": "Margin call cured within 10 business days or default",
+      "titleZh": "追加保证金须 10 个工作日内补足否则违约",
+      "statement": {
+        "en": "A Borrower who receives a MarginCallNotice is required to cure the loan-to-value shortfall within 10 business days, after which the LoanFacility shall be classified as in default.",
+        "zh": "收到追加保证金通知的借款人必须在 10 个工作日内补足贷款价值比缺口，逾期后该信贷额度应被归类为违约。"
+      },
+      "formal": "MarginCallNotice issued → cure within 10 business days ∨ LoanFacility.status = Default",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "marginCallNotice.cure_deadline >= now || loanFacility.status == 'Default'",
+        "bindings": [
+          { "var": "marginCallNotice", "objectTypeId": "objectType:margin-call-notice" },
+          { "var": "loanFacility", "objectTypeId": "objectType:loan-facility" }
+        ]
+      },
+      "kind": "state_transition",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:margin-call-notice", "objectType:loan-facility", "objectType:borrower"],
+      "appliesToAttributes": ["objectType:margin-call-notice.cure_deadline", "objectType:loan-facility.status"],
+      "trigger": { "description": "on margin call issuance", "onEventTypeId": "event:margin-call.issued" },
+      "groupId": "ruleGroup:collateral-ltv",
+      "sources": [
+        { "documentId": "doc:commercial-lending-rules", "documentName": "02-business-rules-policy.md", "snippet": "A `Borrower` who receives a `MarginCallNotice` is required to cure the loan-to-value shortfall within 10 business days, after which the `LoanFacility` shall be classified as in default.", "section": "R-16", "sentenceRefs": [1], "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:r17-stale-drawdown-revalidation",
+      "uuid": "40000000000000000000000000000017",
+      "title": "Re-validate drawdown not funded within 5 business days",
+      "titleZh": "5 个工作日内未放款的支用须重新校验",
+      "statement": {
+        "en": "A Drawdown request that is not funded within 5 business days of being cleared is required to be re-validated against current Covenant states before disbursement.",
+        "zh": "在放行后 5 个工作日内未拨付的支用请求，必须在拨付前根据当前契约状态重新校验。"
+      },
+      "formal": "Drawdown.status = Cleared ∧ now > cleared_date + 5 business days → revalidate(Covenant states) before DisburseFunds",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "drawdown.status != 'Cleared' || (now - clearedDate) <= duration('120h') || revalidated == true",
+        "bindings": [
+          { "var": "drawdown", "objectTypeId": "objectType:drawdown" }
+        ]
+      },
+      "kind": "temporal",
+      "severity": "warn",
+      "appliesToObjectTypeIds": ["objectType:drawdown", "objectType:covenant"],
+      "appliesToAttributes": ["objectType:drawdown.status"],
+      "trigger": { "description": "before disbursement of a cleared drawdown", "onEventTypeId": "event:drawdown.cleared" },
+      "groupId": "ruleGroup:drawdown-controls",
+      "sources": [
+        { "documentId": "doc:commercial-lending-rules", "documentName": "02-business-rules-policy.md", "snippet": "A `Drawdown` request that is not funded within 5 business days of being cleared is required to be re-validated against current `Covenant` states before disbursement.", "section": "R-17", "sentenceRefs": [1], "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:r18-rating-9-10-committee-only",
+      "uuid": "40000000000000000000000000000018",
+      "title": "Rating of 9 or 10 requires Credit Committee review",
+      "titleZh": "9 或 10 级评级须信贷委员会复核",
+      "statement": {
+        "en": "A RiskRating of 9 or 10 must be reviewed by the Credit Committee and may not be assigned by a Credit Analyst acting alone.",
+        "zh": "9 或 10 级风险评级必须经信贷委员会复核，不得由信贷分析师单独授予。"
+      },
+      "formal": "RiskRating.value >= 9 → reviewedBy = CreditCommittee ∧ ¬assignedBy(CreditAnalyst alone)",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "riskRating.value < 9 || reviewedByCommittee == true",
+        "bindings": [
+          { "var": "riskRating", "objectTypeId": "objectType:risk-rating" }
+        ]
+      },
+      "kind": "authorization",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:risk-rating", "objectType:borrower"],
+      "appliesToAttributes": ["objectType:risk-rating.value"],
+      "trigger": { "description": "on risk rating assignment", "onEventTypeId": "event:risk-rating.assigned" },
+      "groupId": "ruleGroup:risk-rating",
+      "sources": [
+        { "documentId": "doc:commercial-lending-rules", "documentName": "02-business-rules-policy.md", "snippet": "A `RiskRating` of 9 or 10 must be reviewed by the Credit Committee and may not be assigned by a Credit Analyst acting alone.", "section": "R-18", "sentenceRefs": [1], "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:r19-collateral-reappraisal-18-months",
+      "uuid": "40000000000000000000000000000019",
+      "title": "Collateral re-appraised every 18 months or after margin call",
+      "titleZh": "抵押物每 18 个月或追加保证金后重新评估",
+      "statement": {
+        "en": "Collateral pledged against a LoanFacility must be re-appraised at least every 18 months, or within 30 days of a MarginCallNotice, whichever is sooner.",
+        "zh": "为信贷额度质押的抵押物必须至少每 18 个月重新评估一次，或在追加保证金通知发出后 30 日内重新评估，以较早者为准。"
+      },
+      "formal": "Collateral.appraisal_date <= min(last_appraisal + 18 months, MarginCallNotice.date + 30 days)",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "collateral.appraisal_date >= now - duration('13140h')",
+        "bindings": [
+          { "var": "collateral", "objectTypeId": "objectType:collateral" }
+        ]
+      },
+      "kind": "temporal",
+      "severity": "warn",
+      "appliesToObjectTypeIds": ["objectType:collateral", "objectType:margin-call-notice"],
+      "appliesToAttributes": ["objectType:collateral.appraisal_date"],
+      "trigger": { "description": "on collateral re-appraisal scheduling", "onEventTypeId": "event:margin-call.issued" },
+      "groupId": "ruleGroup:collateral-ltv",
+      "sources": [
+        { "documentId": "doc:commercial-lending-rules", "documentName": "02-business-rules-policy.md", "snippet": "`Collateral` pledged against a `LoanFacility` must be re-appraised at least every 18 months, or within 30 days of a `MarginCallNotice`, whichever is sooner.", "section": "R-19", "sentenceRefs": [1], "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:r20-no-retroactive-waiver-after-margin-call",
+      "uuid": "40000000000000000000000000000020",
+      "title": "No retroactive waiver after a margin call",
+      "titleZh": "追加保证金后不得追溯豁免",
+      "statement": {
+        "en": "A WaiverRequest may not be granted retroactively for a breach that has already triggered a MarginCallNotice.",
+        "zh": "对于已触发追加保证金通知的违约，不得追溯批准豁免申请。"
+      },
+      "formal": "exists(MarginCallNotice for breach) → WaiverRequest.status ≠ Granted (retroactive)",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "!marginCallIssued || waiverRequest.status != 'Granted'",
+        "bindings": [
+          { "var": "waiverRequest", "objectTypeId": "objectType:waiver-request" },
+          { "var": "marginCallNotice", "objectTypeId": "objectType:margin-call-notice" }
+        ]
+      },
+      "kind": "authorization",
+      "severity": "block",
+      "appliesToObjectTypeIds": ["objectType:waiver-request", "objectType:margin-call-notice", "objectType:covenant"],
+      "appliesToAttributes": ["objectType:waiver-request.status"],
+      "trigger": { "description": "on waiver decision", "onEventTypeId": "event:breach.escalated" },
+      "groupId": "ruleGroup:waivers",
+      "sources": [
+        { "documentId": "doc:commercial-lending-rules", "documentName": "02-business-rules-policy.md", "snippet": "A `WaiverRequest` may not be granted retroactively for a breach that has already triggered a `MarginCallNotice`.", "section": "R-20", "sentenceRefs": [1], "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    }
+  ],
+  "ruleGroups": [
+    {
+      "id": "ruleGroup:approval-authority",
+      "title": { "en": "Approval Authority & Eligibility", "zh": "审批权限与准入" },
+      "ruleIds": ["rule:r01-officer-authority-5m", "rule:r02-weak-rating-requires-committee", "rule:r03-facility-requires-covenant"],
+      "rationale": "Section A rules governing who may approve a facility and minimum eligibility to submit for decision."
+    },
+    {
+      "id": "ruleGroup:funding-conditions",
+      "title": { "en": "Funding Conditions Precedent", "zh": "放款先决条件" },
+      "ruleIds": ["rule:r04-no-funding-until-booked-and-perfected"],
+      "rationale": "Conditions that must be satisfied before any facility may be funded."
+    },
+    {
+      "id": "ruleGroup:drawdown-controls",
+      "title": { "en": "Drawdown Controls", "zh": "支用控制" },
+      "ruleIds": ["rule:r05-no-drawdown-during-breach", "rule:r06-drawdown-within-commitment", "rule:r17-stale-drawdown-revalidation"],
+      "rationale": "Section B controls limiting when and how much may be drawn down."
+    },
+    {
+      "id": "ruleGroup:risk-rating",
+      "title": { "en": "Risk Rating Governance", "zh": "风险评级治理" },
+      "ruleIds": ["rule:r07-rating-refresh-12-months", "rule:r08-rating-refresh-30-days-after-breach", "rule:r18-rating-9-10-committee-only"],
+      "rationale": "Section C rules on the cadence and authority of risk-rating refresh and assignment."
+    },
+    {
+      "id": "ruleGroup:collateral-ltv",
+      "title": { "en": "Collateral & Loan-to-Value", "zh": "抵押物与贷款价值比" },
+      "ruleIds": ["rule:r09-ltv-max-80-percent", "rule:r16-margin-call-cure-10-days", "rule:r19-collateral-reappraisal-18-months"],
+      "rationale": "Section D rules constraining LTV, margin calls, and collateral appraisal."
+    },
+    {
+      "id": "ruleGroup:covenant-testing",
+      "title": { "en": "Covenant Testing", "zh": "契约测试" },
+      "ruleIds": ["rule:r10-quarterly-covenant-test-45-days", "rule:r11-dscr-breach-below-1-25", "rule:r12-leverage-breach-above-3-5"],
+      "rationale": "Section E testing cadence and breach thresholds for financial covenants."
+    },
+    {
+      "id": "ruleGroup:breach-handling",
+      "title": { "en": "Breach Escalation & Watch List", "zh": "违约上报与观察名单" },
+      "ruleIds": ["rule:r13-breach-escalation-2-days", "rule:r14-two-breaches-watch-list"],
+      "rationale": "Section E breach escalation timing and recurring-breach watch-listing."
+    },
+    {
+      "id": "ruleGroup:waivers",
+      "title": { "en": "Waivers", "zh": "豁免" },
+      "ruleIds": ["rule:r15-waiver-committee-only-with-expiry", "rule:r20-no-retroactive-waiver-after-margin-call"],
+      "rationale": "Section F rules on who may grant waivers and their limits."
+    }
+  ],
+  "actions": [
+    {
+      "id": "action:capture-application",
+      "uuid": "50000000000000000000000000000001",
+      "name": "CaptureApplication",
+      "nameZh": "受理申请",
+      "description": "Consumes the borrower's signed application package and produces a new LoanFacility linked to the Borrower.",
+      "descriptionZh": "受理借款人已签署的申请材料，生成与借款人关联的新信贷额度记录。",
+      "inputs": [
+        { "name": "borrower", "objectTypeId": "objectType:borrower", "required": true, "description": "Applicant party." }
+      ],
+      "outputs": [
+        { "name": "loan_facility", "objectTypeId": "objectType:loan-facility", "required": true, "description": "New facility in status Applied." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Capture the borrower's signed application package in nCino.", "zh": "在 nCino 中录入借款人已签署的申请材料。" }, "writesObjectTypeIds": ["objectType:borrower"] },
+        { "order": 2, "text": { "en": "Create a LoanFacility record (status Applied) linked to the Borrower.", "zh": "创建与借款人关联的信贷额度记录（状态为 Applied）。" }, "writesObjectTypeIds": ["objectType:loan-facility"] }
+      ],
+      "preconditions": [],
+      "triggeredByEventIds": ["event:application.submitted"],
+      "emitsEvents": [
+        { "eventTypeId": "event:facility.created", "on": "success" }
+      ],
+      "sideEffects": [
+        { "kind": "db_write", "description": "Creates Borrower and LoanFacility records in nCino.", "objectTypeId": "objectType:loan-facility" }
+      ],
+      "actor": { "role": "Relationship Manager", "roleZh": "客户经理", "kind": "human" },
+      "permissions": ["facility:create"],
+      "agent": {
+        "toolName": "capture_application",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "borrower": { "type": "object", "description": "Applicant party.", "$objectTypeId": "objectType:borrower" }
+          },
+          "required": ["borrower"]
+        },
+        "toolDescription": "Capture a signed commercial loan application and create a new LoanFacility in status Applied.",
+        "promptHints": ["Verify the application package is signed before creating the facility."],
+        "execution": "human_task",
+        "integration": "nCino"
+      },
+      "sources": [
+        { "documentId": "doc:commercial-lending-sop", "documentName": "01-process-sop.md", "snippet": "`CaptureApplication` — consumes the borrower's signed application package; produces a new `LoanFacility` record linked to the `Borrower`.", "section": "§3.1", "quoteVerified": true }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:spread-financials",
+      "uuid": "50000000000000000000000000000002",
+      "name": "SpreadFinancials",
+      "nameZh": "财务报表展开",
+      "description": "Consumes the borrower's last three fiscal years of statements and produces computed ratios and an initial RiskRating candidate.",
+      "descriptionZh": "读取借款人最近三个财年的报表，计算比率并生成初始风险评级候选值。",
+      "inputs": [
+        { "name": "borrower", "objectTypeId": "objectType:borrower", "required": true },
+        { "name": "loan_facility", "objectTypeId": "objectType:loan-facility", "required": true }
+      ],
+      "outputs": [
+        { "name": "loan_facility", "objectTypeId": "objectType:loan-facility", "required": true, "description": "With computed leverage and DSCR ratios." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Read the borrower's last three fiscal years of financial statements.", "zh": "读取借款人最近三个财年的财务报表。" }, "readsObjectTypeIds": ["objectType:borrower"] },
+        { "order": 2, "text": { "en": "Compute leverage and debt-service-coverage ratios and write them back to nCino.", "zh": "计算杠杆与偿债保障比率并回写至 nCino。" }, "writesObjectTypeIds": ["objectType:loan-facility"] }
+      ],
+      "preconditions": [],
+      "triggeredByEventIds": ["event:facility.created"],
+      "emitsEvents": [
+        { "eventTypeId": "event:financials.spread", "on": "success" }
+      ],
+      "sideEffects": [
+        { "kind": "db_write", "description": "Writes computed ratios to the LoanFacility in nCino.", "objectTypeId": "objectType:loan-facility" }
+      ],
+      "actor": { "role": "Credit Analyst", "roleZh": "信贷分析师", "kind": "human" },
+      "permissions": ["financials:spread"],
+      "agent": {
+        "toolName": "spread_financials",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "borrower": { "type": "object", "$objectTypeId": "objectType:borrower" },
+            "loan_facility": { "type": "object", "$objectTypeId": "objectType:loan-facility" }
+          },
+          "required": ["borrower", "loan_facility"]
+        },
+        "toolDescription": "Spread three fiscal years of borrower financials and compute leverage and DSCR ratios.",
+        "execution": "function",
+        "integration": "Sageworks Spreading"
+      },
+      "sources": [
+        { "documentId": "doc:commercial-lending-sop", "documentName": "01-process-sop.md", "snippet": "`SpreadFinancials` — consumes the borrower's last three fiscal years of statements; produces computed ratios written back to nCino and an initial `RiskRating`.", "section": "§3.2", "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:assign-risk-rating",
+      "uuid": "50000000000000000000000000000003",
+      "name": "AssignRiskRating",
+      "nameZh": "授予风险评级",
+      "description": "Consumes the spread ratios and qualitative factors and produces a RiskRating with a next_review_date.",
+      "descriptionZh": "依据展开比率与定性因素，生成带有下次复核日期的风险评级。",
+      "inputs": [
+        { "name": "borrower", "objectTypeId": "objectType:borrower", "required": true },
+        { "name": "loan_facility", "objectTypeId": "objectType:loan-facility", "required": true }
+      ],
+      "outputs": [
+        { "name": "risk_rating", "objectTypeId": "objectType:risk-rating", "required": true }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Score the spread ratios and qualitative factors with the rating model.", "zh": "使用评级模型对展开比率与定性因素打分。" }, "readsObjectTypeIds": ["objectType:loan-facility"] },
+        { "order": 2, "text": { "en": "Create a RiskRating (scale 1-10) attached to the Borrower with a next_review_date.", "zh": "创建附加于借款人的风险评级（1 至 10 级）并设定下次复核日期。" }, "writesObjectTypeIds": ["objectType:risk-rating"], "guardRuleId": "rule:r18-rating-9-10-committee-only" }
+      ],
+      "preconditions": [
+        { "ruleId": "rule:r18-rating-9-10-committee-only", "severity": "block" }
+      ],
+      "triggeredByEventIds": ["event:financials.spread"],
+      "emitsEvents": [
+        { "eventTypeId": "event:risk-rating.assigned", "on": "success" }
+      ],
+      "sideEffects": [
+        { "kind": "db_write", "description": "Creates a RiskRating record on the Borrower.", "objectTypeId": "objectType:risk-rating" }
+      ],
+      "actor": { "role": "Credit Analyst", "roleZh": "信贷分析师", "kind": "human" },
+      "permissions": ["rating:assign"],
+      "agent": {
+        "toolName": "assign_risk_rating",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "borrower": { "type": "object", "$objectTypeId": "objectType:borrower" },
+            "loan_facility": { "type": "object", "$objectTypeId": "objectType:loan-facility" }
+          },
+          "required": ["borrower", "loan_facility"]
+        },
+        "toolDescription": "Assign a 1-10 risk rating to a borrower and set the next review date.",
+        "promptHints": ["A rating of 9 or 10 must route to the Credit Committee (Rule R-18)."],
+        "execution": "llm_tool",
+        "integration": "nCino"
+      },
+      "sources": [
+        { "documentId": "doc:commercial-lending-sop", "documentName": "01-process-sop.md", "snippet": "`AssignRiskRating` — consumes the spread ratios and qualitative factors; produces a `RiskRating` with a `next_review_date`.", "section": "§3.3", "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:value-collateral",
+      "uuid": "50000000000000000000000000000004",
+      "name": "ValueCollateral",
+      "nameZh": "抵押物估值",
+      "description": "Consumes the appraisal report and produces Collateral fair_value and the facility LTV.",
+      "descriptionZh": "读取评估报告，生成抵押物公允价值及额度的贷款价值比。",
+      "inputs": [
+        { "name": "loan_facility", "objectTypeId": "objectType:loan-facility", "required": true }
+      ],
+      "outputs": [
+        { "name": "collateral", "objectTypeId": "objectType:collateral", "required": true, "isArray": true, "cardinality": "many" }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Receive the external appraiser's report.", "zh": "接收外部评估机构的评估报告。" } },
+        { "order": 2, "text": { "en": "Create one or more Collateral records and compute fair_value and facility LTV.", "zh": "创建一项或多项抵押物记录，并计算公允价值与额度贷款价值比。" }, "writesObjectTypeIds": ["objectType:collateral", "objectType:loan-facility"], "guardRuleId": "rule:r09-ltv-max-80-percent" }
+      ],
+      "preconditions": [
+        { "ruleId": "rule:r09-ltv-max-80-percent", "severity": "block" }
+      ],
+      "triggeredByEventIds": [],
+      "emitsEvents": [
+        { "eventTypeId": "event:collateral.valued", "on": "success" }
+      ],
+      "sideEffects": [
+        { "kind": "db_write", "description": "Creates Collateral records and updates LoanFacility LTV.", "objectTypeId": "objectType:collateral" }
+      ],
+      "actor": { "role": "Credit Analyst", "roleZh": "信贷分析师", "kind": "human" },
+      "permissions": ["collateral:value"],
+      "agent": {
+        "toolName": "value_collateral",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "loan_facility": { "type": "object", "$objectTypeId": "objectType:loan-facility" }
+          },
+          "required": ["loan_facility"]
+        },
+        "toolDescription": "Record collateral appraisal fair value and compute the facility loan-to-value.",
+        "execution": "function",
+        "integration": "nCino"
+      },
+      "sources": [
+        { "documentId": "doc:commercial-lending-sop", "documentName": "01-process-sop.md", "snippet": "`ValueCollateral` — consumes the appraisal report; produces `Collateral.fair_value` and the facility LTV.", "section": "§3.4", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:draft-credit-memo",
+      "uuid": "50000000000000000000000000000005",
+      "name": "DraftCreditMemo",
+      "nameZh": "撰写信贷备忘录",
+      "description": "Consumes the RiskRating, Collateral, and proposed structure and produces a CreditMemo with attached Covenant definitions and recommended terms.",
+      "descriptionZh": "依据风险评级、抵押物与拟定结构，生成附带契约定义和建议条款的信贷审批备忘录。",
+      "inputs": [
+        { "name": "risk_rating", "objectTypeId": "objectType:risk-rating", "required": true },
+        { "name": "collateral", "objectTypeId": "objectType:collateral", "required": true, "isArray": true, "cardinality": "many" },
+        { "name": "loan_facility", "objectTypeId": "objectType:loan-facility", "required": true }
+      ],
+      "outputs": [
+        { "name": "credit_memo", "objectTypeId": "objectType:credit-memo", "required": true },
+        { "name": "covenant", "objectTypeId": "objectType:covenant", "required": true, "isArray": true, "cardinality": "many" }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Assemble the RiskRating, Collateral, and proposed structure into a credit memo.", "zh": "将风险评级、抵押物与拟定结构整合为信贷备忘录。" }, "readsObjectTypeIds": ["objectType:risk-rating", "objectType:collateral"] },
+        { "order": 2, "text": { "en": "Define at least one financial Covenant (e.g., DSCR >= 1.25x, max leverage <= 3.5x) bound to the LoanFacility.", "zh": "定义至少一项绑定于信贷额度的财务契约（如 DSCR >= 1.25 倍、最大杠杆 <= 3.5 倍）。" }, "writesObjectTypeIds": ["objectType:covenant"], "guardRuleId": "rule:r03-facility-requires-covenant" },
+        { "order": 3, "text": { "en": "Produce the CreditMemo with recommended terms and store it in iManage.", "zh": "生成含建议条款的信贷备忘录并存档于 iManage。" }, "writesObjectTypeIds": ["objectType:credit-memo"] }
+      ],
+      "preconditions": [
+        { "ruleId": "rule:r03-facility-requires-covenant", "severity": "block" }
+      ],
+      "triggeredByEventIds": ["event:risk-rating.assigned"],
+      "emitsEvents": [
+        { "eventTypeId": "event:credit-memo.submitted", "on": "success" }
+      ],
+      "sideEffects": [
+        { "kind": "db_write", "description": "Creates CreditMemo and Covenant records; pushes memo to iManage.", "objectTypeId": "objectType:credit-memo" }
+      ],
+      "actor": { "role": "Credit Analyst", "roleZh": "信贷分析师", "kind": "agent" },
+      "permissions": ["memo:author", "covenant:define"],
+      "agent": {
+        "toolName": "draft_credit_memo",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "risk_rating": { "type": "object", "$objectTypeId": "objectType:risk-rating" },
+            "collateral": { "type": "array", "items": { "type": "object", "$objectTypeId": "objectType:collateral" } },
+            "loan_facility": { "type": "object", "$objectTypeId": "objectType:loan-facility" }
+          },
+          "required": ["risk_rating", "loan_facility"]
+        },
+        "toolDescription": "Draft a credit memo with recommended terms and define at least one financial covenant.",
+        "promptHints": ["Every facility must carry at least one financial covenant before submission (Rule R-03)."],
+        "execution": "llm_tool",
+        "integration": "nCino"
+      },
+      "sources": [
+        { "documentId": "doc:commercial-lending-sop", "documentName": "01-process-sop.md", "snippet": "`DraftCreditMemo` — consumes the `RiskRating`, `Collateral`, and proposed structure; produces a `CreditMemo` with attached `Covenant` definitions and recommended terms.", "section": "§3.5", "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:render-credit-decision",
+      "uuid": "50000000000000000000000000000006",
+      "name": "RenderCreditDecision",
+      "nameZh": "作出信贷决定",
+      "description": "Consumes the CreditMemo and produces an approval record at the correct authority level.",
+      "descriptionZh": "审阅信贷备忘录，在正确的权限层级作出审批记录。",
+      "inputs": [
+        { "name": "credit_memo", "objectTypeId": "objectType:credit-memo", "required": true }
+      ],
+      "outputs": [
+        { "name": "credit_memo", "objectTypeId": "objectType:credit-memo", "required": true, "description": "Decision and approval_level set." },
+        { "name": "loan_facility", "objectTypeId": "objectType:loan-facility", "required": true, "description": "Status Approved on approval." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Determine the required authority level from committed amount and risk rating.", "zh": "依据承诺金额与风险评级确定所需审批权限层级。" }, "readsObjectTypeIds": ["objectType:credit-memo", "objectType:loan-facility"], "guardRuleId": "rule:r01-officer-authority-5m" },
+        { "order": 2, "text": { "en": "Render the decision; on approval set LoanFacility.status = Approved.", "zh": "作出决定；批准时将信贷额度状态置为 Approved。" }, "writesObjectTypeIds": ["objectType:credit-memo", "objectType:loan-facility"], "guardRuleId": "rule:r14-two-breaches-watch-list" }
+      ],
+      "preconditions": [
+        { "ruleId": "rule:r01-officer-authority-5m", "severity": "block" },
+        { "ruleId": "rule:r02-weak-rating-requires-committee", "severity": "block" },
+        { "ruleId": "rule:r14-two-breaches-watch-list", "severity": "block" }
+      ],
+      "triggeredByEventIds": ["event:credit-memo.submitted"],
+      "emitsEvents": [
+        { "eventTypeId": "event:facility.approved", "on": "success" },
+        { "eventTypeId": "event:facility.declined", "on": "failure" }
+      ],
+      "sideEffects": [
+        { "kind": "state_change", "description": "Sets CreditMemo.decision and LoanFacility.status.", "objectTypeId": "objectType:loan-facility" }
+      ],
+      "actor": { "role": "Credit Officer", "roleZh": "信贷专员", "kind": "human" },
+      "permissions": ["memo:approve"],
+      "agent": {
+        "toolName": "render_credit_decision",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "credit_memo": { "type": "object", "$objectTypeId": "objectType:credit-memo" }
+          },
+          "required": ["credit_memo"]
+        },
+        "toolDescription": "Render an approve/decline decision on a credit memo at the correct delegated-authority level.",
+        "promptHints": ["Escalate above USD 5,000,000 (R-01), for ratings weaker than 6 (R-02), and block watch-listed borrowers (R-14)."],
+        "execution": "human_task",
+        "integration": "nCino"
+      },
+      "sources": [
+        { "documentId": "doc:commercial-lending-sop", "documentName": "01-process-sop.md", "snippet": "`RenderCreditDecision` — consumes the `CreditMemo`; produces an approval record at the correct authority level (see Rules R-01, R-02).", "section": "§3.6", "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:book-facility",
+      "uuid": "50000000000000000000000000000007",
+      "name": "BookFacility",
+      "nameZh": "额度入账",
+      "description": "Consumes the approved terms from the CreditMemo and produces a booked LoanFacility (status Active) and an amortizing RepaymentSchedule.",
+      "descriptionZh": "依据信贷备忘录中已批准的条款，生成已入账的信贷额度（状态 Active）及摊还还款计划。",
+      "inputs": [
+        { "name": "credit_memo", "objectTypeId": "objectType:credit-memo", "required": true },
+        { "name": "loan_facility", "objectTypeId": "objectType:loan-facility", "required": true }
+      ],
+      "outputs": [
+        { "name": "loan_facility", "objectTypeId": "objectType:loan-facility", "required": true, "description": "Booked, status Active." },
+        { "name": "repayment_schedule", "objectTypeId": "objectType:repayment-schedule", "required": true }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Create the canonical LoanFacility in FLEXCUBE from approved terms.", "zh": "依据已批准条款在 FLEXCUBE 中创建规范的信贷额度。" }, "writesObjectTypeIds": ["objectType:loan-facility"] },
+        { "order": 2, "text": { "en": "Generate the amortizing RepaymentSchedule and set status Active.", "zh": "生成摊还还款计划并将状态置为 Active。" }, "writesObjectTypeIds": ["objectType:repayment-schedule"] }
+      ],
+      "preconditions": [],
+      "triggeredByEventIds": ["event:facility.approved"],
+      "emitsEvents": [
+        { "eventTypeId": "event:facility.booked", "on": "success" }
+      ],
+      "sideEffects": [
+        { "kind": "db_write", "description": "Books LoanFacility and generates RepaymentSchedule in FLEXCUBE.", "objectTypeId": "objectType:repayment-schedule" }
+      ],
+      "actor": { "role": "Loan Operations", "roleZh": "贷款运营", "kind": "system" },
+      "permissions": ["facility:book"],
+      "agent": {
+        "toolName": "book_facility",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "credit_memo": { "type": "object", "$objectTypeId": "objectType:credit-memo" },
+            "loan_facility": { "type": "object", "$objectTypeId": "objectType:loan-facility" }
+          },
+          "required": ["credit_memo", "loan_facility"]
+        },
+        "toolDescription": "Book an approved facility into FLEXCUBE and generate its amortizing repayment schedule.",
+        "execution": "function",
+        "integration": "Oracle FLEXCUBE"
+      },
+      "sources": [
+        { "documentId": "doc:commercial-lending-sop", "documentName": "01-process-sop.md", "snippet": "`BookFacility` — consumes the approved terms from the `CreditMemo`; produces a booked `LoanFacility` (status `Active`) and an amortizing `RepaymentSchedule`.", "section": "§3.7", "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:perfect-security",
+      "uuid": "50000000000000000000000000000008",
+      "name": "PerfectSecurity",
+      "nameZh": "完善担保权益",
+      "description": "Consumes the executed security agreements and produces perfected Collateral and a satisfied conditions-precedent checklist.",
+      "descriptionZh": "依据已签署的担保协议，完善抵押物担保权益并满足先决条件清单。",
+      "inputs": [
+        { "name": "collateral", "objectTypeId": "objectType:collateral", "required": true, "isArray": true, "cardinality": "many" },
+        { "name": "loan_facility", "objectTypeId": "objectType:loan-facility", "required": true }
+      ],
+      "outputs": [
+        { "name": "collateral", "objectTypeId": "objectType:collateral", "required": true, "description": "perfection_status Perfected." },
+        { "name": "loan_facility", "objectTypeId": "objectType:loan-facility", "required": true, "description": "conditions_met true." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Record the executed security agreements in iManage and FLEXCUBE.", "zh": "在 iManage 与 FLEXCUBE 中记录已签署的担保协议。" } },
+        { "order": 2, "text": { "en": "Set Collateral.perfection_status = Perfected and LoanFacility.conditions_met = true.", "zh": "将抵押物完善状态置为 Perfected，并将额度的先决条件满足标志置为 true。" }, "writesObjectTypeIds": ["objectType:collateral", "objectType:loan-facility"] }
+      ],
+      "preconditions": [],
+      "triggeredByEventIds": ["event:facility.booked"],
+      "emitsEvents": [
+        { "eventTypeId": "event:security.perfected", "on": "success" }
+      ],
+      "sideEffects": [
+        { "kind": "state_change", "description": "Sets perfection_status and conditions_met.", "objectTypeId": "objectType:collateral" }
+      ],
+      "actor": { "role": "Loan Operations", "roleZh": "贷款运营", "kind": "human" },
+      "permissions": ["security:perfect"],
+      "agent": {
+        "toolName": "perfect_security",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "collateral": { "type": "array", "items": { "type": "object", "$objectTypeId": "objectType:collateral" } },
+            "loan_facility": { "type": "object", "$objectTypeId": "objectType:loan-facility" }
+          },
+          "required": ["collateral", "loan_facility"]
+        },
+        "toolDescription": "Perfect pledged collateral and confirm all conditions precedent are satisfied.",
+        "execution": "human_task",
+        "integration": "iManage"
+      },
+      "sources": [
+        { "documentId": "doc:commercial-lending-sop", "documentName": "01-process-sop.md", "snippet": "`PerfectSecurity` — consumes the executed security agreements; produces perfected `Collateral` and a satisfied conditions-precedent checklist.", "section": "§3.8", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:request-drawdown",
+      "uuid": "50000000000000000000000000000009",
+      "name": "RequestDrawdown",
+      "nameZh": "发起支用请求",
+      "description": "Consumes the borrower drawdown notice and produces a Drawdown record against an Active LoanFacility.",
+      "descriptionZh": "受理借款人支用通知，针对生效的信贷额度生成支用记录。",
+      "inputs": [
+        { "name": "loan_facility", "objectTypeId": "objectType:loan-facility", "required": true }
+      ],
+      "outputs": [
+        { "name": "drawdown", "objectTypeId": "objectType:drawdown", "required": true, "description": "Status Requested." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Receive the borrower's drawdown notice via the Relationship Manager.", "zh": "经客户经理接收借款人的支用通知。" } },
+        { "order": 2, "text": { "en": "Create a Drawdown (status Requested) against the Active LoanFacility.", "zh": "针对生效的信贷额度创建支用记录（状态 Requested）。" }, "writesObjectTypeIds": ["objectType:drawdown"] }
+      ],
+      "preconditions": [],
+      "triggeredByEventIds": [],
+      "emitsEvents": [
+        { "eventTypeId": "event:drawdown.requested", "on": "success" }
+      ],
+      "sideEffects": [
+        { "kind": "db_write", "description": "Creates a Drawdown record.", "objectTypeId": "objectType:drawdown" }
+      ],
+      "actor": { "role": "Relationship Manager", "roleZh": "客户经理", "kind": "human" },
+      "permissions": ["drawdown:request"],
+      "agent": {
+        "toolName": "request_drawdown",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "loan_facility": { "type": "object", "$objectTypeId": "objectType:loan-facility" }
+          },
+          "required": ["loan_facility"]
+        },
+        "toolDescription": "Create a drawdown request against an active loan facility.",
+        "execution": "human_task",
+        "integration": "nCino"
+      },
+      "sources": [
+        { "documentId": "doc:commercial-lending-sop", "documentName": "01-process-sop.md", "snippet": "`RequestDrawdown` — consumes the borrower drawdown notice; produces a `Drawdown` record.", "section": "§4.1", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:check-drawdown-eligibility",
+      "uuid": "50000000000000000000000000000010",
+      "name": "CheckDrawdownEligibility",
+      "nameZh": "支用合规检查",
+      "description": "Consumes the Drawdown request, live Covenant states, available undrawn commitment, and any WaiverRequest, and produces an eligibility verdict.",
+      "descriptionZh": "依据支用请求、实时契约状态、可用未提取承诺及豁免申请，生成合规裁定。",
+      "inputs": [
+        { "name": "drawdown", "objectTypeId": "objectType:drawdown", "required": true },
+        { "name": "covenant", "objectTypeId": "objectType:covenant", "required": true, "isArray": true, "cardinality": "many" },
+        { "name": "waiver_request", "objectTypeId": "objectType:waiver-request", "required": false }
+      ],
+      "outputs": [
+        { "name": "drawdown", "objectTypeId": "objectType:drawdown", "required": true, "description": "Status Cleared or Blocked." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Read all Covenant records and current LTV for the LoanFacility; read any active WaiverRequest.", "zh": "读取该信贷额度的全部契约记录与当前贷款价值比，并读取任何有效的豁免申请。" }, "readsObjectTypeIds": ["objectType:covenant", "objectType:waiver-request"] },
+        { "order": 2, "text": { "en": "Verify drawdown does not exceed undrawn commitment.", "zh": "核验支用金额不超过未提取承诺。" }, "guardRuleId": "rule:r06-drawdown-within-commitment" },
+        { "order": 3, "text": { "en": "Block if any financial covenant is in breach with no granted waiver on file; otherwise clear.", "zh": "若任何财务契约违约且无已批准豁免在案则拦截，否则放行。" }, "writesObjectTypeIds": ["objectType:drawdown"], "guardRuleId": "rule:r05-no-drawdown-during-breach" }
+      ],
+      "preconditions": [
+        { "ruleId": "rule:r05-no-drawdown-during-breach", "severity": "block" },
+        { "ruleId": "rule:r06-drawdown-within-commitment", "severity": "block" }
+      ],
+      "triggeredByEventIds": ["event:drawdown.requested"],
+      "emitsEvents": [
+        { "eventTypeId": "event:drawdown.cleared", "on": "success" },
+        { "eventTypeId": "event:drawdown.blocked", "on": "failure" }
+      ],
+      "sideEffects": [
+        { "kind": "state_change", "description": "Sets Drawdown.status to Cleared or Blocked.", "objectTypeId": "objectType:drawdown" }
+      ],
+      "actor": { "role": "Loan Operations", "roleZh": "贷款运营", "kind": "system" },
+      "permissions": ["drawdown:check"],
+      "agent": {
+        "toolName": "check_drawdown_eligibility",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "drawdown": { "type": "object", "$objectTypeId": "objectType:drawdown" },
+            "covenant": { "type": "array", "items": { "type": "object", "$objectTypeId": "objectType:covenant" } },
+            "waiver_request": { "type": "object", "$objectTypeId": "objectType:waiver-request" }
+          },
+          "required": ["drawdown", "covenant"]
+        },
+        "toolDescription": "Check a drawdown against covenant states, undrawn commitment, and waivers; return Pass or Block.",
+        "promptHints": ["Block when any financial covenant is breached without a granted waiver (R-05); enforce the undrawn limit (R-06)."],
+        "execution": "function",
+        "integration": "CovenantWatch"
+      },
+      "sources": [
+        { "documentId": "doc:commercial-lending-sop", "documentName": "01-process-sop.md", "snippet": "`CheckDrawdownEligibility` — consumes the `Drawdown` request, the live `Covenant` states, the available undrawn commitment, and any `WaiverRequest`; produces an eligibility verdict (`Pass`/`Block`).", "section": "§4.2", "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:disburse-funds",
+      "uuid": "50000000000000000000000000000011",
+      "name": "DisburseFunds",
+      "nameZh": "拨付资金",
+      "description": "Consumes the cleared Drawdown and produces a funds transfer and an updated outstanding balance.",
+      "descriptionZh": "依据已放行的支用请求执行资金划转并更新未偿余额。",
+      "inputs": [
+        { "name": "drawdown", "objectTypeId": "objectType:drawdown", "required": true }
+      ],
+      "outputs": [
+        { "name": "drawdown", "objectTypeId": "objectType:drawdown", "required": true, "description": "Status Funded." },
+        { "name": "loan_facility", "objectTypeId": "objectType:loan-facility", "required": true, "description": "Incremented outstanding_principal." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Re-validate against current covenant states if not funded within 5 business days of clearing.", "zh": "若放行后 5 个工作日内未拨付，依据当前契约状态重新校验。" }, "guardRuleId": "rule:r17-stale-drawdown-revalidation" },
+        { "order": 2, "text": { "en": "Execute the funds transfer; set Drawdown.status = Funded and increment outstanding_principal.", "zh": "执行资金划转；将支用状态置为 Funded 并增加未偿本金。" }, "writesObjectTypeIds": ["objectType:drawdown", "objectType:loan-facility", "objectType:repayment-schedule"] }
+      ],
+      "preconditions": [
+        { "ruleId": "rule:r04-no-funding-until-booked-and-perfected", "severity": "block" },
+        { "ruleId": "rule:r17-stale-drawdown-revalidation", "severity": "warn" }
+      ],
+      "triggeredByEventIds": ["event:drawdown.cleared"],
+      "emitsEvents": [
+        { "eventTypeId": "event:funds.disbursed", "on": "success" }
+      ],
+      "sideEffects": [
+        { "kind": "payment", "description": "Transfers funds to the borrower.", "objectTypeId": "objectType:drawdown" },
+        { "kind": "state_change", "description": "Increments LoanFacility.outstanding_principal and adjusts RepaymentSchedule.", "objectTypeId": "objectType:loan-facility" }
+      ],
+      "actor": { "role": "Loan Operations", "roleZh": "贷款运营", "kind": "system" },
+      "permissions": ["funds:disburse"],
+      "agent": {
+        "toolName": "disburse_funds",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "drawdown": { "type": "object", "$objectTypeId": "objectType:drawdown" }
+          },
+          "required": ["drawdown"]
+        },
+        "toolDescription": "Disburse funds for a cleared drawdown and update the facility outstanding balance.",
+        "promptHints": ["Confirm funding conditions (R-04) and re-validate stale clearances over 5 business days old (R-17)."],
+        "execution": "function",
+        "integration": "Oracle FLEXCUBE"
+      },
+      "sources": [
+        { "documentId": "doc:commercial-lending-sop", "documentName": "01-process-sop.md", "snippet": "`DisburseFunds` — consumes the cleared `Drawdown`; produces a funds transfer and an updated outstanding balance.", "section": "§4.3", "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:schedule-covenant-test",
+      "uuid": "50000000000000000000000000000012",
+      "name": "ScheduleCovenantTest",
+      "nameZh": "排定契约测试",
+      "description": "Consumes the covenant calendar and produces a pending covenant test per facility per quarter.",
+      "descriptionZh": "依据契约日历，为每笔额度每季度生成一个待测的契约测试。",
+      "inputs": [
+        { "name": "covenant", "objectTypeId": "objectType:covenant", "required": true, "isArray": true, "cardinality": "many" }
+      ],
+      "outputs": [
+        { "name": "covenant", "objectTypeId": "objectType:covenant", "required": true, "description": "Pending test scheduled." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Read Covenant records with a quarterly test_frequency.", "zh": "读取测试频率为季度的契约记录。" }, "readsObjectTypeIds": ["objectType:covenant"], "guardRuleId": "rule:r10-quarterly-covenant-test-45-days" },
+        { "order": 2, "text": { "en": "Schedule a pending covenant test per facility per quarter.", "zh": "为每笔额度每季度排定一个待测的契约测试。" } }
+      ],
+      "preconditions": [
+        { "ruleId": "rule:r10-quarterly-covenant-test-45-days", "severity": "warn" }
+      ],
+      "triggeredByEventIds": [],
+      "emitsEvents": [
+        { "eventTypeId": "event:covenant.test-due", "on": "success" }
+      ],
+      "sideEffects": [
+        { "kind": "other", "description": "Schedules covenant tests at start of each reporting period.", "objectTypeId": "objectType:covenant" }
+      ],
+      "actor": { "role": "Covenant Monitoring Analyst", "roleZh": "契约监测分析师", "kind": "system" },
+      "permissions": ["covenant:schedule"],
+      "agent": {
+        "toolName": "schedule_covenant_test",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "covenant": { "type": "array", "items": { "type": "object", "$objectTypeId": "objectType:covenant" } }
+          },
+          "required": ["covenant"]
+        },
+        "toolDescription": "Schedule quarterly covenant tests per facility from the covenant calendar.",
+        "execution": "function",
+        "integration": "CovenantWatch"
+      },
+      "sources": [
+        { "documentId": "doc:commercial-lending-sop", "documentName": "01-process-sop.md", "snippet": "`ScheduleCovenantTest` — consumes the covenant calendar; produces a pending covenant test per facility per quarter.", "section": "§5.1", "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:evaluate-covenant",
+      "uuid": "50000000000000000000000000000013",
+      "name": "EvaluateCovenant",
+      "nameZh": "评估契约",
+      "description": "Consumes the latest financials and the Covenant thresholds and produces a Covenant test_result.",
+      "descriptionZh": "依据最新财务数据与契约阈值，生成契约测试结果。",
+      "inputs": [
+        { "name": "covenant", "objectTypeId": "objectType:covenant", "required": true }
+      ],
+      "outputs": [
+        { "name": "covenant", "objectTypeId": "objectType:covenant", "required": true, "description": "test_result Compliant or Breached." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Read the borrower's quarterly financials and recompute DSCR, leverage, and LTV.", "zh": "读取借款人季度财务数据并重算偿债保障比率、杠杆与贷款价值比。" }, "readsObjectTypeIds": ["objectType:covenant"] },
+        { "order": 2, "text": { "en": "Compare against thresholds; set test_result Compliant or Breached.", "zh": "与阈值比较；将测试结果置为 Compliant 或 Breached。" }, "writesObjectTypeIds": ["objectType:covenant"], "guardRuleId": "rule:r11-dscr-breach-below-1-25" }
+      ],
+      "preconditions": [
+        { "ruleId": "rule:r11-dscr-breach-below-1-25", "severity": "block" },
+        { "ruleId": "rule:r12-leverage-breach-above-3-5", "severity": "block" }
+      ],
+      "triggeredByEventIds": ["event:covenant.test-due"],
+      "emitsEvents": [
+        { "eventTypeId": "event:covenant.tested", "on": "always" },
+        { "eventTypeId": "event:covenant.breached", "on": "success", "condition": "covenant.test_result == 'Breached'" }
+      ],
+      "sideEffects": [
+        { "kind": "state_change", "description": "Sets Covenant.test_result.", "objectTypeId": "objectType:covenant" }
+      ],
+      "actor": { "role": "Covenant Monitoring Analyst", "roleZh": "契约监测分析师", "kind": "agent" },
+      "permissions": ["covenant:evaluate"],
+      "agent": {
+        "toolName": "evaluate_covenant",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "covenant": { "type": "object", "$objectTypeId": "objectType:covenant" }
+          },
+          "required": ["covenant"]
+        },
+        "toolDescription": "Evaluate a covenant against the latest financials and mark it Compliant or Breached.",
+        "promptHints": ["DSCR breaches below 1.25x (R-11); leverage breaches above 3.5x (R-12)."],
+        "execution": "llm_tool",
+        "integration": "Sageworks Spreading"
+      },
+      "sources": [
+        { "documentId": "doc:commercial-lending-sop", "documentName": "01-process-sop.md", "snippet": "`EvaluateCovenant` — consumes the latest financials and the `Covenant` thresholds; produces a `Covenant.test_result` (`Compliant` / `Breached`).", "section": "§5.2", "quoteVerified": true }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:escalate-breach",
+      "uuid": "50000000000000000000000000000014",
+      "name": "EscalateBreach",
+      "nameZh": "上报违约",
+      "description": "Consumes the CovenantBreached event and produces a committee notification citing the exact covenant clause and loan-agreement section.",
+      "descriptionZh": "依据契约违约事件，生成引用具体契约条款与贷款协议章节的委员会通知。",
+      "inputs": [
+        { "name": "covenant", "objectTypeId": "objectType:covenant", "required": true }
+      ],
+      "outputs": [
+        { "name": "waiver_request", "objectTypeId": "objectType:waiver-request", "required": false, "description": "May be created during escalation." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Create a breach record on the Covenant.", "zh": "在契约上创建违约记录。" }, "writesObjectTypeIds": ["objectType:covenant"] },
+        { "order": 2, "text": { "en": "Notify the Credit Committee within 2 business days citing the clause and loan-agreement section.", "zh": "在 2 个工作日内通知信贷委员会，并引用条款与贷款协议章节。" }, "guardRuleId": "rule:r13-breach-escalation-2-days" }
+      ],
+      "preconditions": [
+        { "ruleId": "rule:r13-breach-escalation-2-days", "severity": "block" }
+      ],
+      "triggeredByEventIds": ["event:covenant.breached"],
+      "emitsEvents": [
+        { "eventTypeId": "event:breach.escalated", "on": "success" }
+      ],
+      "sideEffects": [
+        { "kind": "notification", "description": "Notifies the Credit Committee of the breach.", "objectTypeId": "objectType:covenant" }
+      ],
+      "actor": { "role": "Covenant Monitoring Analyst", "roleZh": "契约监测分析师", "kind": "human" },
+      "permissions": ["breach:escalate"],
+      "agent": {
+        "toolName": "escalate_breach",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "covenant": { "type": "object", "$objectTypeId": "objectType:covenant" }
+          },
+          "required": ["covenant"]
+        },
+        "toolDescription": "Escalate a covenant breach to the Credit Committee with a clause citation within 2 business days.",
+        "promptHints": ["Always cite the breached covenant clause and the relevant loan-agreement section (R-13)."],
+        "execution": "function",
+        "integration": "CovenantWatch"
+      },
+      "sources": [
+        { "documentId": "doc:commercial-lending-sop", "documentName": "01-process-sop.md", "snippet": "`EscalateBreach` — consumes the `CovenantBreached` event; produces a committee notification citing the exact covenant clause and loan-agreement section.", "section": "§5.3", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:decide-waiver",
+      "uuid": "50000000000000000000000000000015",
+      "name": "DecideWaiver",
+      "nameZh": "豁免决定",
+      "description": "Consumes the WaiverRequest and produces a Granted or Denied decision recorded against the facility.",
+      "descriptionZh": "审阅豁免申请，作出批准或拒绝的决定并记录于额度。",
+      "inputs": [
+        { "name": "waiver_request", "objectTypeId": "objectType:waiver-request", "required": true }
+      ],
+      "outputs": [
+        { "name": "waiver_request", "objectTypeId": "objectType:waiver-request", "required": true, "description": "Status Granted or Denied." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Confirm the request is decided by the Credit Committee with a valid expiry date.", "zh": "确认申请由信贷委员会决定且具有合法到期日。" }, "guardRuleId": "rule:r15-waiver-committee-only-with-expiry" },
+        { "order": 2, "text": { "en": "Refuse retroactive waivers for breaches that already triggered a margin call.", "zh": "拒绝对已触发追加保证金的违约进行追溯豁免。" }, "guardRuleId": "rule:r20-no-retroactive-waiver-after-margin-call" },
+        { "order": 3, "text": { "en": "Record a Granted or Denied decision; on grant, link the waiver to the breached Covenant.", "zh": "记录批准或拒绝决定；批准时将豁免关联至违约契约。" }, "writesObjectTypeIds": ["objectType:waiver-request", "objectType:covenant"] }
+      ],
+      "preconditions": [
+        { "ruleId": "rule:r15-waiver-committee-only-with-expiry", "severity": "block" },
+        { "ruleId": "rule:r20-no-retroactive-waiver-after-margin-call", "severity": "block" }
+      ],
+      "triggeredByEventIds": ["event:breach.escalated"],
+      "emitsEvents": [
+        { "eventTypeId": "event:waiver.granted", "on": "success" },
+        { "eventTypeId": "event:waiver.denied", "on": "failure" }
+      ],
+      "sideEffects": [
+        { "kind": "state_change", "description": "Sets WaiverRequest.status and links to the Covenant on grant.", "objectTypeId": "objectType:waiver-request" }
+      ],
+      "actor": { "role": "Credit Committee", "roleZh": "信贷委员会", "kind": "human" },
+      "permissions": ["waiver:decide"],
+      "agent": {
+        "toolName": "decide_waiver",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "waiver_request": { "type": "object", "$objectTypeId": "objectType:waiver-request" }
+          },
+          "required": ["waiver_request"]
+        },
+        "toolDescription": "Decide a covenant-breach waiver request, granting only with a valid expiry and never retroactively after a margin call.",
+        "promptHints": ["Only the Credit Committee may grant (R-15); never grant retroactively after a margin call (R-20)."],
+        "execution": "human_task",
+        "integration": "nCino"
+      },
+      "sources": [
+        { "documentId": "doc:commercial-lending-sop", "documentName": "01-process-sop.md", "snippet": "`DecideWaiver` — consumes the `WaiverRequest`; produces a `Granted` or `Denied` decision recorded against the facility.", "section": "§5.4", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:issue-margin-call",
+      "uuid": "50000000000000000000000000000016",
+      "name": "IssueMarginCall",
+      "nameZh": "发出追加保证金通知",
+      "description": "Consumes the LTV breach result and produces a MarginCallNotice with a cure deadline.",
+      "descriptionZh": "依据贷款价值比违约结果，生成带有补足期限的追加保证金通知。",
+      "inputs": [
+        { "name": "covenant", "objectTypeId": "objectType:covenant", "required": true },
+        { "name": "collateral", "objectTypeId": "objectType:collateral", "required": true }
+      ],
+      "outputs": [
+        { "name": "margin_call_notice", "objectTypeId": "objectType:margin-call-notice", "required": true }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Confirm the LTV-specific covenant breach.", "zh": "确认贷款价值比专项契约违约。" }, "readsObjectTypeIds": ["objectType:covenant", "objectType:collateral"], "guardRuleId": "rule:r09-ltv-max-80-percent" },
+        { "order": 2, "text": { "en": "Create a MarginCallNotice with a 10-business-day cure deadline linked to the facility and collateral.", "zh": "创建关联额度与抵押物、补足期限为 10 个工作日的追加保证金通知。" }, "writesObjectTypeIds": ["objectType:margin-call-notice"], "guardRuleId": "rule:r16-margin-call-cure-10-days" }
+      ],
+      "preconditions": [
+        { "ruleId": "rule:r09-ltv-max-80-percent", "severity": "block" },
+        { "ruleId": "rule:r16-margin-call-cure-10-days", "severity": "block" }
+      ],
+      "triggeredByEventIds": ["event:covenant.breached"],
+      "emitsEvents": [
+        { "eventTypeId": "event:margin-call.issued", "on": "success" }
+      ],
+      "sideEffects": [
+        { "kind": "db_write", "description": "Creates a MarginCallNotice in FLEXCUBE and iManage.", "objectTypeId": "objectType:margin-call-notice" }
+      ],
+      "actor": { "role": "Loan Operations", "roleZh": "贷款运营", "kind": "system" },
+      "permissions": ["margin-call:issue"],
+      "agent": {
+        "toolName": "issue_margin_call",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "covenant": { "type": "object", "$objectTypeId": "objectType:covenant" },
+            "collateral": { "type": "object", "$objectTypeId": "objectType:collateral" }
+          },
+          "required": ["covenant", "collateral"]
+        },
+        "toolDescription": "Issue a margin call notice on an LTV breach with a 10-business-day cure deadline.",
+        "promptHints": ["Triggered by an LTV breach over 80% (R-09); set a 10-business-day cure deadline (R-16)."],
+        "execution": "function",
+        "integration": "Oracle FLEXCUBE"
+      },
+      "sources": [
+        { "documentId": "doc:commercial-lending-sop", "documentName": "01-process-sop.md", "snippet": "`IssueMarginCall` — consumes the LTV breach result; produces a `MarginCallNotice` with a cure deadline.", "section": "§5.5", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:trigger-rating-review",
+      "uuid": "50000000000000000000000000000017",
+      "name": "TriggerRatingReview",
+      "nameZh": "触发评级复核",
+      "description": "Consumes the rating calendar and breach events and produces a pending review task for the Credit Analyst.",
+      "descriptionZh": "依据评级日历与违约事件，为信贷分析师生成待办复核任务。",
+      "inputs": [
+        { "name": "risk_rating", "objectTypeId": "objectType:risk-rating", "required": true }
+      ],
+      "outputs": [
+        { "name": "risk_rating", "objectTypeId": "objectType:risk-rating", "required": true, "description": "Review task pending." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Read RiskRating.next_review_date and recent CovenantBreached events.", "zh": "读取风险评级的下次复核日期与近期契约违约事件。" }, "readsObjectTypeIds": ["objectType:risk-rating"] },
+        { "order": 2, "text": { "en": "Raise a review due at least every 12 months, or within 30 days of any breach, whichever is sooner.", "zh": "在至少每 12 个月、或任何违约后 30 日内（以较早者为准）生成复核到期。" }, "guardRuleId": "rule:r08-rating-refresh-30-days-after-breach" }
+      ],
+      "preconditions": [
+        { "ruleId": "rule:r07-rating-refresh-12-months", "severity": "warn" },
+        { "ruleId": "rule:r08-rating-refresh-30-days-after-breach", "severity": "block" }
+      ],
+      "triggeredByEventIds": ["event:covenant.breached"],
+      "emitsEvents": [
+        { "eventTypeId": "event:rating.review-due", "on": "success" }
+      ],
+      "sideEffects": [
+        { "kind": "other", "description": "Creates a pending rating-review task.", "objectTypeId": "objectType:risk-rating" }
+      ],
+      "actor": { "role": "Credit Analyst", "roleZh": "信贷分析师", "kind": "system" },
+      "permissions": ["rating:review-trigger"],
+      "agent": {
+        "toolName": "trigger_rating_review",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "risk_rating": { "type": "object", "$objectTypeId": "objectType:risk-rating" }
+          },
+          "required": ["risk_rating"]
+        },
+        "toolDescription": "Raise a risk-rating review when due by calendar or by a recent covenant breach.",
+        "promptHints": ["Due at least every 12 months (R-07) or within 30 days of a breach (R-08), whichever is sooner."],
+        "execution": "function",
+        "integration": "nCino"
+      },
+      "sources": [
+        { "documentId": "doc:commercial-lending-sop", "documentName": "01-process-sop.md", "snippet": "`TriggerRatingReview` — consumes the rating calendar and breach events; produces a pending review task for the Credit Analyst.", "section": "§6.1", "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:refresh-risk-rating",
+      "uuid": "50000000000000000000000000000018",
+      "name": "RefreshRiskRating",
+      "nameZh": "刷新风险评级",
+      "description": "Consumes the latest financials and breach history and produces an updated RiskRating (new version).",
+      "descriptionZh": "依据最新财务数据与违约历史，生成更新版本的风险评级。",
+      "inputs": [
+        { "name": "risk_rating", "objectTypeId": "objectType:risk-rating", "required": true },
+        { "name": "borrower", "objectTypeId": "objectType:borrower", "required": true }
+      ],
+      "outputs": [
+        { "name": "risk_rating", "objectTypeId": "objectType:risk-rating", "required": true, "description": "Updated value, next_review_date, incremented version." }
+      ],
+      "steps": [
+        { "order": 1, "text": { "en": "Re-spread the latest financials and review breach history.", "zh": "重新展开最新财务数据并审阅违约历史。" }, "readsObjectTypeIds": ["objectType:borrower"] },
+        { "order": 2, "text": { "en": "Update RiskRating.value and next_review_date on the Borrower and increment version.", "zh": "更新借款人风险评级的数值与下次复核日期并递增版本号。" }, "writesObjectTypeIds": ["objectType:risk-rating"], "guardRuleId": "rule:r18-rating-9-10-committee-only" }
+      ],
+      "preconditions": [
+        { "ruleId": "rule:r18-rating-9-10-committee-only", "severity": "block" }
+      ],
+      "triggeredByEventIds": ["event:rating.review-due"],
+      "emitsEvents": [
+        { "eventTypeId": "event:risk-rating.assigned", "on": "success" }
+      ],
+      "sideEffects": [
+        { "kind": "state_change", "description": "Updates RiskRating value/version on the Borrower.", "objectTypeId": "objectType:risk-rating" }
+      ],
+      "actor": { "role": "Credit Analyst", "roleZh": "信贷分析师", "kind": "human" },
+      "permissions": ["rating:refresh"],
+      "agent": {
+        "toolName": "refresh_risk_rating",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "risk_rating": { "type": "object", "$objectTypeId": "objectType:risk-rating" },
+            "borrower": { "type": "object", "$objectTypeId": "objectType:borrower" }
+          },
+          "required": ["risk_rating", "borrower"]
+        },
+        "toolDescription": "Refresh a borrower's risk rating from the latest financials and breach history.",
+        "promptHints": ["A refreshed rating of 9 or 10 must route to the Credit Committee (R-18)."],
+        "execution": "llm_tool",
+        "integration": "nCino"
+      },
+      "sources": [
+        { "documentId": "doc:commercial-lending-sop", "documentName": "01-process-sop.md", "snippet": "`RefreshRiskRating` — consumes the latest financials and breach history; produces an updated `RiskRating`.", "section": "§6.2", "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    }
+  ],
+  "events": [
+    {
+      "id": "event:application.submitted",
+      "uuid": "60000000000000000000000000000001",
+      "name": "application.submitted",
+      "nameZh": "申请已提交",
+      "description": "A borrower has submitted a signed loan application package via the borrower portal to nCino.",
+      "descriptionZh": "借款人已通过借款人门户向 nCino 提交已签署的贷款申请材料。",
+      "payload": [
+        { "name": "borrower", "type": "reference", "objectTypeId": "objectType:borrower", "required": true, "description": "Applicant party." }
+      ],
+      "producedByActionIds": [],
+      "consumedByActionIds": ["action:capture-application"],
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`ApplicationSubmitted` | Borrower portal → nCino | nCino | `Borrower` application | `CaptureApplication`", "section": "§4", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:facility.created",
+      "uuid": "60000000000000000000000000000002",
+      "name": "facility.created",
+      "nameZh": "额度已创建",
+      "description": "A new LoanFacility record was created in nCino and is ready for financial spreading.",
+      "descriptionZh": "在 nCino 中创建了新的信贷额度记录，准备进行财务报表展开。",
+      "payload": [
+        { "name": "loan_facility", "type": "reference", "objectTypeId": "objectType:loan-facility", "required": true }
+      ],
+      "producedByActionIds": ["action:capture-application"],
+      "consumedByActionIds": ["action:spread-financials"],
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`FacilityCreated` | nCino | Sageworks | `LoanFacility` | `SpreadFinancials`", "section": "§4", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:financials.spread",
+      "uuid": "60000000000000000000000000000003",
+      "name": "financials.spread",
+      "nameZh": "财务已展开",
+      "description": "Borrower financials were spread by Sageworks and computed ratios returned to nCino.",
+      "descriptionZh": "Sageworks 已完成借款人财务报表展开并将计算比率返回 nCino。",
+      "payload": [
+        { "name": "loan_facility", "type": "reference", "objectTypeId": "objectType:loan-facility", "required": true, "description": "With spread ratios." }
+      ],
+      "producedByActionIds": ["action:spread-financials"],
+      "consumedByActionIds": ["action:assign-risk-rating"],
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`FinancialsSpread` | Sageworks | nCino | spread ratios | `AssignRiskRating`", "section": "§4", "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:risk-rating.assigned",
+      "uuid": "60000000000000000000000000000004",
+      "name": "risk-rating.assigned",
+      "nameZh": "风险评级已授予",
+      "description": "A RiskRating was assigned (or refreshed to a new version) for a Borrower.",
+      "descriptionZh": "已为借款人授予（或刷新为新版本的）风险评级。",
+      "payload": [
+        { "name": "risk_rating", "type": "reference", "objectTypeId": "objectType:risk-rating", "required": true }
+      ],
+      "producedByActionIds": ["action:assign-risk-rating", "action:refresh-risk-rating"],
+      "consumedByActionIds": ["action:draft-credit-memo"],
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`RiskRatingAssigned` | nCino | nCino, CovenantWatch | `RiskRating` | `DraftCreditMemo`", "section": "§4", "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:collateral.valued",
+      "uuid": "60000000000000000000000000000005",
+      "name": "collateral.valued",
+      "nameZh": "抵押物已估值",
+      "description": "Collateral fair value and the facility LTV were computed from an appraisal report.",
+      "descriptionZh": "已依据评估报告计算抵押物公允价值与额度贷款价值比。",
+      "payload": [
+        { "name": "collateral", "type": "reference", "objectTypeId": "objectType:collateral", "required": true }
+      ],
+      "producedByActionIds": ["action:value-collateral"],
+      "consumedByActionIds": [],
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`CollateralValued` | nCino | FLEXCUBE | `Collateral` | `ValueCollateral`", "section": "§4", "quoteVerified": true }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:credit-memo.submitted",
+      "uuid": "60000000000000000000000000000006",
+      "name": "credit-memo.submitted",
+      "nameZh": "信贷备忘录已提交",
+      "description": "A CreditMemo was submitted into the nCino approval workflow for a credit decision.",
+      "descriptionZh": "信贷备忘录已提交至 nCino 审批流程以作出信贷决定。",
+      "payload": [
+        { "name": "credit_memo", "type": "reference", "objectTypeId": "objectType:credit-memo", "required": true }
+      ],
+      "producedByActionIds": ["action:draft-credit-memo"],
+      "consumedByActionIds": ["action:render-credit-decision"],
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`CreditMemoSubmitted` | nCino | nCino (approval) | `CreditMemo` | `RenderCreditDecision`", "section": "§4", "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:facility.approved",
+      "uuid": "60000000000000000000000000000007",
+      "name": "facility.approved",
+      "nameZh": "额度已批准",
+      "description": "A credit decision approved the facility at the correct authority level; mirrored into FLEXCUBE.",
+      "descriptionZh": "信贷决定在正确权限层级批准了额度，并镜像至 FLEXCUBE。",
+      "payload": [
+        { "name": "loan_facility", "type": "reference", "objectTypeId": "objectType:loan-facility", "required": true },
+        { "name": "credit_memo", "type": "reference", "objectTypeId": "objectType:credit-memo", "required": true }
+      ],
+      "producedByActionIds": ["action:render-credit-decision"],
+      "consumedByActionIds": ["action:book-facility"],
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`FacilityApproved` | nCino | Oracle FLEXCUBE | `LoanFacility`, `CreditMemo` | `BookFacility`", "section": "§4", "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:facility.declined",
+      "uuid": "60000000000000000000000000000008",
+      "name": "facility.declined",
+      "nameZh": "额度已否决",
+      "description": "A credit decision declined the facility; the pipeline is closed.",
+      "descriptionZh": "信贷决定否决了额度，流程关闭。",
+      "payload": [
+        { "name": "credit_memo", "type": "reference", "objectTypeId": "objectType:credit-memo", "required": true }
+      ],
+      "producedByActionIds": ["action:render-credit-decision"],
+      "consumedByActionIds": [],
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`FacilityDeclined` | nCino | nCino | `CreditMemo` | —", "section": "§4", "quoteVerified": true }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:facility.booked",
+      "uuid": "60000000000000000000000000000009",
+      "name": "facility.booked",
+      "nameZh": "额度已入账",
+      "description": "The canonical LoanFacility and its RepaymentSchedule were booked in FLEXCUBE.",
+      "descriptionZh": "规范的信贷额度及其还款计划已在 FLEXCUBE 入账。",
+      "payload": [
+        { "name": "loan_facility", "type": "reference", "objectTypeId": "objectType:loan-facility", "required": true },
+        { "name": "repayment_schedule", "type": "reference", "objectTypeId": "objectType:repayment-schedule", "required": true }
+      ],
+      "producedByActionIds": ["action:book-facility"],
+      "consumedByActionIds": ["action:perfect-security"],
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`FacilityBooked` | Oracle FLEXCUBE | CovenantWatch, Loan Ops | `LoanFacility`, `RepaymentSchedule` | `PerfectSecurity`", "section": "§4", "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:security.perfected",
+      "uuid": "60000000000000000000000000000010",
+      "name": "security.perfected",
+      "nameZh": "担保已完善",
+      "description": "Security agreements were executed and collateral perfected; together with FacilityBooked this is the precondition for funding (Rule R-04).",
+      "descriptionZh": "已签署担保协议并完善抵押物担保权益；与额度入账共同构成放款先决条件（规则 R-04）。",
+      "payload": [
+        { "name": "collateral", "type": "reference", "objectTypeId": "objectType:collateral", "required": true },
+        { "name": "loan_facility", "type": "reference", "objectTypeId": "objectType:loan-facility", "required": true }
+      ],
+      "producedByActionIds": ["action:perfect-security"],
+      "consumedByActionIds": [],
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`SecurityPerfected` | Loan Ops → FLEXCUBE | FLEXCUBE | `Collateral` | (enables funding, Rule R-04)", "section": "§4", "quoteVerified": true }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:drawdown.requested",
+      "uuid": "60000000000000000000000000000011",
+      "name": "drawdown.requested",
+      "nameZh": "支用已请求",
+      "description": "A Drawdown was requested against an Active LoanFacility and routed to CovenantWatch for eligibility checking.",
+      "descriptionZh": "针对生效信贷额度发起了支用请求，并路由至 CovenantWatch 进行合规检查。",
+      "payload": [
+        { "name": "drawdown", "type": "reference", "objectTypeId": "objectType:drawdown", "required": true }
+      ],
+      "producedByActionIds": ["action:request-drawdown"],
+      "consumedByActionIds": ["action:check-drawdown-eligibility"],
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`DrawdownRequested` | nCino | CovenantWatch | `Drawdown` | `CheckDrawdownEligibility`", "section": "§4", "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:drawdown.cleared",
+      "uuid": "60000000000000000000000000000012",
+      "name": "drawdown.cleared",
+      "nameZh": "支用已放行",
+      "description": "A Drawdown passed the pre-disbursement covenant and limit check and may be disbursed.",
+      "descriptionZh": "支用通过了拨付前契约与限额检查，可予拨付。",
+      "payload": [
+        { "name": "drawdown", "type": "reference", "objectTypeId": "objectType:drawdown", "required": true }
+      ],
+      "producedByActionIds": ["action:check-drawdown-eligibility"],
+      "consumedByActionIds": ["action:disburse-funds"],
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`DrawdownCleared` | CovenantWatch | Oracle FLEXCUBE | `Drawdown` | `DisburseFunds`", "section": "§4", "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:drawdown.blocked",
+      "uuid": "60000000000000000000000000000013",
+      "name": "drawdown.blocked",
+      "nameZh": "支用已拦截",
+      "description": "A Drawdown was blocked because a financial covenant is in breach with no waiver on file (Rule R-05).",
+      "descriptionZh": "因财务契约违约且无豁免在案，支用被拦截（规则 R-05）。",
+      "payload": [
+        { "name": "drawdown", "type": "reference", "objectTypeId": "objectType:drawdown", "required": true }
+      ],
+      "producedByActionIds": ["action:check-drawdown-eligibility"],
+      "consumedByActionIds": [],
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`DrawdownBlocked` | CovenantWatch | nCino, Loan Ops | `Drawdown` | (Rule R-05)", "section": "§4", "quoteVerified": true }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:funds.disbursed",
+      "uuid": "60000000000000000000000000000014",
+      "name": "funds.disbursed",
+      "nameZh": "资金已拨付",
+      "description": "Funds were disbursed for a cleared Drawdown and the facility outstanding balance updated.",
+      "descriptionZh": "已为放行的支用拨付资金并更新额度未偿余额。",
+      "payload": [
+        { "name": "drawdown", "type": "reference", "objectTypeId": "objectType:drawdown", "required": true },
+        { "name": "loan_facility", "type": "reference", "objectTypeId": "objectType:loan-facility", "required": true }
+      ],
+      "producedByActionIds": ["action:disburse-funds"],
+      "consumedByActionIds": [],
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`FundsDisbursed` | Oracle FLEXCUBE | nCino, GL | `Drawdown`, `LoanFacility` | —", "section": "§4", "quoteVerified": true }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:covenant.test-due",
+      "uuid": "60000000000000000000000000000015",
+      "name": "covenant.test-due",
+      "nameZh": "契约测试到期",
+      "description": "A covenant test is due at the start of a reporting period and routed to Sageworks and the analyst.",
+      "descriptionZh": "在报告期开始时契约测试到期，路由至 Sageworks 与分析师。",
+      "payload": [
+        { "name": "covenant", "type": "reference", "objectTypeId": "objectType:covenant", "required": true }
+      ],
+      "producedByActionIds": ["action:schedule-covenant-test"],
+      "consumedByActionIds": ["action:evaluate-covenant"],
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`CovenantTestDue` | CovenantWatch | Sageworks, Analyst | `Covenant` | `EvaluateCovenant`", "section": "§4", "quoteVerified": true }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:covenant.tested",
+      "uuid": "60000000000000000000000000000016",
+      "name": "covenant.tested",
+      "nameZh": "契约已测试",
+      "description": "A covenant was tested and its test_result recorded (Compliant or Breached).",
+      "descriptionZh": "契约已完成测试并记录测试结果（合规或违约）。",
+      "payload": [
+        { "name": "covenant", "type": "reference", "objectTypeId": "objectType:covenant", "required": true }
+      ],
+      "producedByActionIds": ["action:evaluate-covenant"],
+      "consumedByActionIds": [],
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`CovenantTested` | CovenantWatch | nCino | `Covenant` | —", "section": "§4", "quoteVerified": true }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:covenant.breached",
+      "uuid": "60000000000000000000000000000017",
+      "name": "covenant.breached",
+      "nameZh": "契约已违约",
+      "description": "A covenant test failed; the breach is routed to nCino and the Credit Committee, drives escalation, margin calls, and out-of-cycle rating review.",
+      "descriptionZh": "契约测试未通过；违约路由至 nCino 与信贷委员会，驱动上报、追加保证金及周期外评级复核。",
+      "payload": [
+        { "name": "covenant", "type": "reference", "objectTypeId": "objectType:covenant", "required": true }
+      ],
+      "producedByActionIds": ["action:evaluate-covenant"],
+      "consumedByActionIds": ["action:escalate-breach", "action:issue-margin-call", "action:trigger-rating-review"],
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`CovenantBreached` | CovenantWatch | nCino, Credit Committee | `Covenant` | `EscalateBreach`, `IssueMarginCall`", "section": "§4", "quoteVerified": true }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:breach.escalated",
+      "uuid": "60000000000000000000000000000018",
+      "name": "breach.escalated",
+      "nameZh": "违约已上报",
+      "description": "A breach was escalated to the Credit Committee, optionally with a WaiverRequest, for a waiver decision.",
+      "descriptionZh": "违约已上报信贷委员会（可附豁免申请），以作出豁免决定。",
+      "payload": [
+        { "name": "covenant", "type": "reference", "objectTypeId": "objectType:covenant", "required": true },
+        { "name": "waiver_request", "type": "reference", "objectTypeId": "objectType:waiver-request", "required": false }
+      ],
+      "producedByActionIds": ["action:escalate-breach"],
+      "consumedByActionIds": ["action:decide-waiver"],
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`BreachEscalated` | CovenantWatch | Credit Committee | `Covenant`, `WaiverRequest` | `DecideWaiver`", "section": "§4", "quoteVerified": true }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:waiver.granted",
+      "uuid": "60000000000000000000000000000019",
+      "name": "waiver.granted",
+      "nameZh": "豁免已批准",
+      "description": "A WaiverRequest was granted, re-enabling drawdowns previously blocked under Rule R-05.",
+      "descriptionZh": "豁免申请已获批准，重新启用此前因规则 R-05 被拦截的支用。",
+      "payload": [
+        { "name": "waiver_request", "type": "reference", "objectTypeId": "objectType:waiver-request", "required": true }
+      ],
+      "producedByActionIds": ["action:decide-waiver"],
+      "consumedByActionIds": [],
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`WaiverGranted` | nCino | CovenantWatch, FLEXCUBE | `WaiverRequest` | (re-enables drawdown)", "section": "§4", "quoteVerified": true }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:waiver.denied",
+      "uuid": "60000000000000000000000000000020",
+      "name": "waiver.denied",
+      "nameZh": "豁免已拒绝",
+      "description": "A WaiverRequest was denied; the breached covenant remains in effect.",
+      "descriptionZh": "豁免申请被拒绝；违约契约仍然有效。",
+      "payload": [
+        { "name": "waiver_request", "type": "reference", "objectTypeId": "objectType:waiver-request", "required": true }
+      ],
+      "producedByActionIds": ["action:decide-waiver"],
+      "consumedByActionIds": [],
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`WaiverDenied` | nCino | nCino | `WaiverRequest` | —", "section": "§4", "quoteVerified": true }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:margin-call.issued",
+      "uuid": "60000000000000000000000000000021",
+      "name": "margin-call.issued",
+      "nameZh": "追加保证金已发出",
+      "description": "A MarginCallNotice was issued on an LTV breach with a cure deadline, notifying the borrower portal and iManage.",
+      "descriptionZh": "因贷款价值比违约发出了带补足期限的追加保证金通知，通知借款人门户与 iManage。",
+      "payload": [
+        { "name": "margin_call_notice", "type": "reference", "objectTypeId": "objectType:margin-call-notice", "required": true }
+      ],
+      "producedByActionIds": ["action:issue-margin-call"],
+      "consumedByActionIds": [],
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`MarginCallIssued` | Oracle FLEXCUBE | Borrower portal, iManage | `MarginCallNotice` | (Rule R-16)", "section": "§4", "quoteVerified": true }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:rating.review-due",
+      "uuid": "60000000000000000000000000000022",
+      "name": "rating.review-due",
+      "nameZh": "评级复核到期",
+      "description": "A risk-rating review is due by calendar or by a recent covenant breach, routed to the analyst.",
+      "descriptionZh": "按日历或近期契约违约，风险评级复核到期，路由至分析师。",
+      "payload": [
+        { "name": "risk_rating", "type": "reference", "objectTypeId": "objectType:risk-rating", "required": true }
+      ],
+      "producedByActionIds": ["action:trigger-rating-review"],
+      "consumedByActionIds": ["action:refresh-risk-rating"],
+      "sources": [
+        { "documentId": "doc:commercial-lending-systems-data", "documentName": "03-systems-and-data.md", "snippet": "`RatingReviewDue` | nCino | Analyst | `RiskRating` | `RefreshRiskRating`", "section": "§4", "quoteVerified": true }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    }
+  ],
+  "processes": [
+    {
+      "id": "process:origination-to-funding",
+      "uuid": "70000000000000000000000000000001",
+      "name": { "en": "Origination to Funding", "zh": "受理到放款" },
+      "description": "P1: From application capture through spreading, rating, collateral valuation, credit memo, decision, booking, and security perfection that together enable funding.",
+      "actors": [
+        { "role": "Relationship Manager", "roleZh": "客户经理", "kind": "human" },
+        { "role": "Credit Analyst", "roleZh": "信贷分析师", "kind": "agent" },
+        { "role": "Credit Officer", "roleZh": "信贷专员", "kind": "human" },
+        { "role": "Credit Committee", "roleZh": "信贷委员会", "kind": "human" },
+        { "role": "Loan Operations", "roleZh": "贷款运营", "kind": "system" }
+      ],
+      "objectTypeIds": ["objectType:borrower", "objectType:loan-facility", "objectType:risk-rating", "objectType:collateral", "objectType:credit-memo", "objectType:covenant", "objectType:repayment-schedule"],
+      "steps": [
+        { "id": "s1", "actionTypeId": "action:capture-application", "order": 1, "actorRole": "Relationship Manager", "next": [{ "toStepId": "s2", "onEventTypeId": "event:facility.created" }] },
+        { "id": "s2", "actionTypeId": "action:spread-financials", "order": 2, "actorRole": "Credit Analyst", "next": [{ "toStepId": "s3", "onEventTypeId": "event:financials.spread" }] },
+        { "id": "s3", "actionTypeId": "action:assign-risk-rating", "order": 3, "actorRole": "Credit Analyst", "next": [{ "toStepId": "s4", "onEventTypeId": "event:risk-rating.assigned" }] },
+        { "id": "s4", "actionTypeId": "action:value-collateral", "order": 4, "actorRole": "Credit Analyst", "next": [{ "toStepId": "s5", "onEventTypeId": "event:collateral.valued" }] },
+        { "id": "s5", "actionTypeId": "action:draft-credit-memo", "order": 5, "actorRole": "Credit Analyst", "next": [{ "toStepId": "s6", "onEventTypeId": "event:credit-memo.submitted" }] },
+        { "id": "s6", "actionTypeId": "action:render-credit-decision", "order": 6, "actorRole": "Credit Officer", "next": [{ "toStepId": "s7", "onEventTypeId": "event:facility.approved", "label": { "en": "Approved", "zh": "批准" } }] },
+        { "id": "s7", "actionTypeId": "action:book-facility", "order": 7, "actorRole": "Loan Operations", "next": [{ "toStepId": "s8", "onEventTypeId": "event:facility.booked" }] },
+        { "id": "s8", "actionTypeId": "action:perfect-security", "order": 8, "actorRole": "Loan Operations", "next": [] }
+      ],
+      "triggers": [
+        { "kind": "event", "eventTypeId": "event:application.submitted", "description": "A borrower submits a signed application package." }
+      ],
+      "orchestration": {
+        "strategy": "event_driven",
+        "agentOrchestrated": true,
+        "agentRoles": [
+          { "role": "Credit Analyst", "promptProfile": "credit_analyst_origination" }
+        ],
+        "onFailure": "escalate"
+      },
+      "sources": [
+        { "documentId": "doc:commercial-lending-sop", "documentName": "01-process-sop.md", "snippet": "**P1 — Origination to Funding** (受理到放款): §3", "section": "§3", "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "process:drawdown-servicing",
+      "uuid": "70000000000000000000000000000002",
+      "name": { "en": "Drawdown Servicing", "zh": "放款支用" },
+      "description": "P2: From a borrower drawdown request through the pre-disbursement covenant and limit check to fund disbursement on a cleared drawdown.",
+      "actors": [
+        { "role": "Relationship Manager", "roleZh": "客户经理", "kind": "human" },
+        { "role": "Loan Operations", "roleZh": "贷款运营", "kind": "system" }
+      ],
+      "objectTypeIds": ["objectType:loan-facility", "objectType:drawdown", "objectType:covenant", "objectType:waiver-request", "objectType:repayment-schedule"],
+      "steps": [
+        { "id": "s1", "actionTypeId": "action:request-drawdown", "order": 1, "actorRole": "Relationship Manager", "next": [{ "toStepId": "s2", "onEventTypeId": "event:drawdown.requested" }] },
+        { "id": "s2", "actionTypeId": "action:check-drawdown-eligibility", "order": 2, "actorRole": "Loan Operations", "next": [{ "toStepId": "s3", "onEventTypeId": "event:drawdown.cleared", "label": { "en": "Cleared", "zh": "放行" } }] },
+        { "id": "s3", "actionTypeId": "action:disburse-funds", "order": 3, "actorRole": "Loan Operations", "next": [] }
+      ],
+      "triggers": [
+        { "kind": "event", "eventTypeId": "event:drawdown.requested", "description": "A borrower requests a drawdown against an active facility." }
+      ],
+      "orchestration": {
+        "strategy": "event_driven",
+        "agentOrchestrated": true,
+        "agentRoles": [
+          { "role": "Loan Operations", "promptProfile": "loan_ops_drawdown" }
+        ],
+        "onFailure": "halt"
+      },
+      "sources": [
+        { "documentId": "doc:commercial-lending-sop", "documentName": "01-process-sop.md", "snippet": "**P2 — Drawdown Servicing** (放款支用): §4", "section": "§4", "quoteVerified": true }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "process:quarterly-covenant-monitoring",
+      "uuid": "70000000000000000000000000000003",
+      "name": { "en": "Quarterly Covenant Monitoring", "zh": "季度契约监测" },
+      "description": "P3: Quarterly scheduling and evaluation of covenants, with branches to breach escalation/waiver decisions and LTV margin calls.",
+      "actors": [
+        { "role": "Covenant Monitoring Analyst", "roleZh": "契约监测分析师", "kind": "agent" },
+        { "role": "Credit Committee", "roleZh": "信贷委员会", "kind": "human" },
+        { "role": "Loan Operations", "roleZh": "贷款运营", "kind": "system" }
+      ],
+      "objectTypeIds": ["objectType:covenant", "objectType:waiver-request", "objectType:collateral", "objectType:margin-call-notice", "objectType:loan-facility"],
+      "steps": [
+        { "id": "s1", "actionTypeId": "action:schedule-covenant-test", "order": 1, "actorRole": "Covenant Monitoring Analyst", "next": [{ "toStepId": "s2", "onEventTypeId": "event:covenant.test-due" }] },
+        { "id": "s2", "actionTypeId": "action:evaluate-covenant", "order": 2, "actorRole": "Covenant Monitoring Analyst", "next": [
+          { "toStepId": "s3", "onEventTypeId": "event:covenant.breached", "condition": "covenant.covenant_type != 'LTV'", "label": { "en": "Financial covenant breach", "zh": "财务契约违约" } },
+          { "toStepId": "s5", "onEventTypeId": "event:covenant.breached", "condition": "covenant.covenant_type == 'LTV'", "label": { "en": "LTV breach", "zh": "贷款价值比违约" } }
+        ] },
+        { "id": "s3", "actionTypeId": "action:escalate-breach", "order": 3, "actorRole": "Covenant Monitoring Analyst", "next": [{ "toStepId": "s4", "onEventTypeId": "event:breach.escalated" }] },
+        { "id": "s4", "actionTypeId": "action:decide-waiver", "order": 4, "actorRole": "Credit Committee", "next": [] },
+        { "id": "s5", "actionTypeId": "action:issue-margin-call", "order": 5, "actorRole": "Loan Operations", "next": [] }
+      ],
+      "triggers": [
+        { "kind": "schedule", "schedule": "0 0 1 1,4,7,10 *", "description": "Start of each fiscal quarter; CovenantWatch scheduler raises tests within 45 days of quarter end (Rule R-10)." }
+      ],
+      "orchestration": {
+        "strategy": "state_machine",
+        "agentOrchestrated": true,
+        "agentRoles": [
+          { "role": "Covenant Monitoring Analyst", "promptProfile": "covenant_monitoring" }
+        ],
+        "onFailure": "escalate"
+      },
+      "sources": [
+        { "documentId": "doc:commercial-lending-sop", "documentName": "01-process-sop.md", "snippet": "**P3 — Quarterly Covenant Monitoring** (季度契约监测): §5", "section": "§5", "quoteVerified": true }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "process:risk-rating-review",
+      "uuid": "70000000000000000000000000000004",
+      "name": { "en": "Risk Rating Review", "zh": "风险评级复核" },
+      "description": "P4: Calendar- or breach-triggered review and re-assignment of a borrower's risk rating.",
+      "actors": [
+        { "role": "Credit Analyst", "roleZh": "信贷分析师", "kind": "agent" },
+        { "role": "Credit Committee", "roleZh": "信贷委员会", "kind": "human" }
+      ],
+      "objectTypeIds": ["objectType:risk-rating", "objectType:borrower", "objectType:covenant"],
+      "steps": [
+        { "id": "s1", "actionTypeId": "action:trigger-rating-review", "order": 1, "actorRole": "Credit Analyst", "next": [{ "toStepId": "s2", "onEventTypeId": "event:rating.review-due" }] },
+        { "id": "s2", "actionTypeId": "action:refresh-risk-rating", "order": 2, "actorRole": "Credit Analyst", "next": [] }
+      ],
+      "triggers": [
+        { "kind": "schedule", "schedule": "0 0 1 * *", "description": "At least every 12 months (Rule R-07)." },
+        { "kind": "event", "eventTypeId": "event:covenant.breached", "description": "Within 30 days of any covenant breach (Rule R-08)." }
+      ],
+      "orchestration": {
+        "strategy": "event_driven",
+        "agentOrchestrated": true,
+        "agentRoles": [
+          { "role": "Credit Analyst", "promptProfile": "credit_analyst_rating_review" }
+        ],
+        "onFailure": "escalate"
+      },
+      "sources": [
+        { "documentId": "doc:commercial-lending-sop", "documentName": "01-process-sop.md", "snippet": "**P4 — Risk Rating Review** (风险评级复核): §6", "section": "§6", "quoteVerified": true }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    }
+  ],
+  "confidence": 0.93,
+  "metadata": {
+    "createdAt": "2026-05-29T00:00:00.000Z",
+    "updatedAt": "2026-05-29T00:00:00.000Z",
+    "generation": {
+      "model": "openrouter/anthropic/claude-opus-4",
+      "provider": "openrouter",
+      "runId": "run_commercial_lending_v1"
+    },
+    "stats": {
+      "objects": 10,
+      "rules": 20,
+      "actions": 18,
+      "events": 22,
+      "processes": 4,
+      "relationships": 9,
+      "ruleGroups": 8
+    },
+    "danglingRefs": [],
+    "stageCritiques": {
+      "objects": "All 10 objects from the §5 catalogue extracted with PK/FK key roles and closed-vocab enums grounded in 03-systems-and-data.md §2.",
+      "rules": "All 20 atomic rules R-01..R-20 mined sentence-by-sentence with verbatim snippets, formal strings, and CEL where expressible; clustered into 8 groups.",
+      "actions": "All 18 SOP actions typed with IO referencing object ids, guard rules, preconditions, and agent tool bindings (snake_case tools).",
+      "events": "All 22 inter-system events from §4 captured; producedBy/consumedBy are exact inverses of action emitsEvents/triggeredByEventIds.",
+      "processes": "Four documented processes P1-P4 chained as event-driven/state-machine workflows with branch conditions for LTV vs financial breaches."
+    }
+  }
+}

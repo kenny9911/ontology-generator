@@ -1,0 +1,407 @@
+/* ========================================================================
+   Ontology Generator — design tokens & base
+   Ported from the claude.ai design artifact (OntologyGen_design/styles.css).
+   EVERY selector is scoped under `.ontogen` so these tokens/components can
+   never collide with the host app's global / Tailwind styles. The generator
+   root element is <div class="ontogen" data-theme=… data-density=…>.
+   ======================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+.ontogen {
+  /* Surfaces (default deep-space theme) */
+  --bg: #0a0e1a;
+  --bg-1: #0f1426;
+  --bg-2: #131a2e;
+  --bg-3: #1a2238;
+  --line: #232b45;
+  --line-strong: #2e3a5c;
+  --line-soft: rgba(255, 255, 255, 0.06);
+
+  /* Text */
+  --fg: #e7ecf5;
+  --fg-2: #b8c1da;
+  --fg-3: #8590ac;
+  --fg-4: #5f6a85;
+
+  /* Accents */
+  --accent: #5b8cff;     /* electric blue — primary */
+  --accent-2: #a47bff;   /* violet — secondary */
+  --accent-3: #6cf2d9;   /* mint — success/ai-positive */
+  --warn: #ffb84d;
+  --danger: #ff6b8b;
+
+  /* Semantic */
+  --ai: var(--accent-2);
+  --node-object: var(--accent);
+  --node-rule: var(--accent-2);
+  --node-process: var(--accent-3);
+  --node-attr: #ffb84d;
+
+  /* Type */
+  --font-display: "Space Grotesk", "Noto Sans SC", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Noto Sans SC", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Spacing scale */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+
+  /* Radii */
+  --r-1: 4px;
+  --r-2: 8px;
+  --r-3: 12px;
+  --r-4: 16px;
+
+  /* Shadows / glows */
+  --glow-accent: 0 0 0 1px rgba(91, 140, 255, 0.4), 0 0 24px rgba(91, 140, 255, 0.25);
+  --glow-ai: 0 0 0 1px rgba(164, 123, 255, 0.5), 0 0 28px rgba(164, 123, 255, 0.3);
+
+  /* Density (set on root) */
+  --density-pad: var(--s-4);
+  --density-row: 36px;
+  --density-text: 14px;
+
+  /* Root surface — fills the full viewport (standalone app, no host navbar). */
+  display: grid;
+  grid-template-rows: 56px 1fr;
+  height: 100vh;
+  font-family: var(--font-body);
+  font-size: var(--density-text);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, color-mix(in oklab, var(--accent) 8%, transparent) 0%, transparent 60%),
+    radial-gradient(900px 600px at -10% 110%, color-mix(in oklab, var(--accent-2) 8%, transparent) 0%, transparent 60%),
+    var(--bg);
+}
+
+.ontogen *, .ontogen *::before, .ontogen *::after { box-sizing: border-box; }
+
+.ontogen[data-density="compact"] {
+  --density-pad: var(--s-3);
+  --density-row: 30px;
+  --density-text: 13px;
+}
+.ontogen[data-density="comfortable"] {
+  --density-pad: var(--s-5);
+  --density-row: 44px;
+  --density-text: 15px;
+}
+
+/* Theme variants */
+.ontogen[data-theme="midnight"] {
+  --bg: #0a0e1a;
+  --bg-1: #0f1426;
+  --bg-2: #131a2e;
+  --bg-3: #1a2238;
+  --line: #232b45;
+  --accent: #5b8cff;
+  --accent-2: #a47bff;
+  --accent-3: #6cf2d9;
+}
+.ontogen[data-theme="forest"] {
+  --bg: #0a1410;
+  --bg-1: #0f1c16;
+  --bg-2: #13241c;
+  --bg-3: #1a2e24;
+  --line: #233a2e;
+  --line-strong: #2e4a3c;
+  --accent: #58d9a0;
+  --accent-2: #c5e36a;
+  --accent-3: #6cf2d9;
+}
+.ontogen[data-theme="ember"] {
+  --bg: #160b0a;
+  --bg-1: #1f110e;
+  --bg-2: #2a1814;
+  --bg-3: #361e18;
+  --line: #4a2820;
+  --line-strong: #5e342a;
+  --accent: #ff7a4d;
+  --accent-2: #ffb84d;
+  --accent-3: #ffd166;
+}
+.ontogen[data-theme="mono"] {
+  --bg: #0b0b0d;
+  --bg-1: #131316;
+  --bg-2: #1a1a1f;
+  --bg-3: #232328;
+  --line: #2d2d34;
+  --line-strong: #3a3a43;
+  --accent: #e7ecf5;
+  --accent-2: #b8c1da;
+  --accent-3: #8590ac;
+}
+
+.ontogen button { font-family: inherit; cursor: pointer; }
+.ontogen button:focus-visible,
+.ontogen a:focus-visible,
+.ontogen input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ===== App layout ===== */
+.ontogen .topbar {
+  display: grid;
+  grid-template-columns: 280px 1fr auto;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  padding: 0 var(--s-5);
+  background: color-mix(in oklab, var(--bg) 90%, transparent);
+  backdrop-filter: blur(8px);
+  z-index: 10;
+}
+.ontogen .brand {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+.ontogen .brand-mark {
+  width: 26px; height: 26px;
+  display: grid; place-items: center;
+}
+.ontogen .brand-sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-4);
+  border-left: 1px solid var(--line);
+  padding-left: var(--s-3);
+  margin-left: var(--s-2);
+}
+
+.ontogen .stepper {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.ontogen .step {
+  display: flex; align-items: center; gap: var(--s-2);
+  padding: 6px 12px;
+  color: var(--fg-4);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  white-space: nowrap;
+  transition: color 0.15s, background 0.15s;
+}
+.ontogen .step:hover { color: var(--fg-2); }
+.ontogen .step .step-num {
+  display: inline-grid; place-items: center;
+  width: 18px; height: 18px;
+  border-radius: 999px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  color: var(--fg-3);
+  font-size: 10px;
+}
+.ontogen .step.active { color: var(--fg); background: color-mix(in oklab, var(--accent) 10%, transparent); }
+.ontogen .step.active .step-num {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #0a0e1a;
+}
+.ontogen .step.done .step-num {
+  background: transparent;
+  border-color: var(--accent-3);
+  color: var(--accent-3);
+}
+.ontogen .step.done { color: var(--fg-2); }
+
+/* 9-step stepper: below 1100px collapse labels to step-numbers, keeping the
+   active step's label visible so the current stage stays legible. CSS-only. */
+@media (max-width: 1100px) {
+  .ontogen .stepper .step .step-label { display: none; }
+  .ontogen .stepper .step.active .step-label { display: inline; }
+  .ontogen .stepper .step { padding: 6px 8px; }
+}
+
+.ontogen .top-actions {
+  display: flex; align-items: center; gap: var(--s-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-3);
+}
+.ontogen .pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  color: var(--fg-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.ontogen .pill .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--accent-3); box-shadow: 0 0 8px var(--accent-3); }
+
+/* Compact in-bar controls (replaces the design's dev Tweaks panel) */
+.ontogen .ctl {
+  appearance: none;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  color: var(--fg-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  border-radius: 999px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.ontogen .ctl:hover { color: var(--fg); border-color: var(--line-strong); }
+.ontogen select.ctl { padding-right: 8px; }
+.ontogen .ctl-active { color: var(--accent); border-color: var(--accent); }
+
+/* ===== Main viewport ===== */
+.ontogen .viewport {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Screen transitions */
+.ontogen .screen {
+  position: absolute; inset: 0;
+  display: grid;
+  opacity: 1;
+  animation: og-screen-in 0.4s ease both;
+}
+@keyframes og-screen-in {
+  from { transform: translateY(6px); }
+  to   { transform: translateY(0); }
+}
+
+/* ===== Common primitives ===== */
+.ontogen .card {
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-3);
+}
+.ontogen .card-h {
+  padding: var(--s-3) var(--s-4);
+  border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+.ontogen .card-b { padding: var(--s-4); }
+
+.ontogen .btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 14px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: var(--r-2);
+  border: 1px solid var(--line-strong);
+  background: var(--bg-2);
+  color: var(--fg);
+  transition: all 0.15s;
+}
+.ontogen .btn:hover { background: var(--bg-3); border-color: var(--accent); }
+.ontogen .btn.primary {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.ontogen .btn.primary:hover { background: color-mix(in oklab, var(--accent) 85%, white); }
+.ontogen .btn.ai {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: white;
+  border: none;
+  box-shadow: var(--glow-ai);
+}
+.ontogen .btn.ghost {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--fg-2);
+}
+.ontogen .btn.ghost:hover { color: var(--fg); border-color: var(--line-strong); }
+.ontogen .btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+
+.ontogen .kbd {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  color: var(--fg-3);
+}
+
+.ontogen .tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--accent) 14%, transparent);
+  color: var(--accent);
+  border: 1px solid color-mix(in oklab, var(--accent) 30%, transparent);
+}
+.ontogen .tag.ai { background: color-mix(in oklab, var(--accent-2) 14%, transparent); color: var(--accent-2); border-color: color-mix(in oklab, var(--accent-2) 30%, transparent); }
+.ontogen .tag.ok { background: color-mix(in oklab, var(--accent-3) 14%, transparent); color: var(--accent-3); border-color: color-mix(in oklab, var(--accent-3) 30%, transparent); }
+.ontogen .tag.warn { background: color-mix(in oklab, var(--warn) 14%, transparent); color: var(--warn); border-color: color-mix(in oklab, var(--warn) 30%, transparent); }
+
+.ontogen .divider { height: 1px; background: var(--line); }
+
+/* Scrollbars */
+.ontogen .scroll { overflow: auto; scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+.ontogen .scroll::-webkit-scrollbar { width: 10px; height: 10px; }
+.ontogen .scroll::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 6px; border: 2px solid transparent; background-clip: padding-box; }
+.ontogen .scroll::-webkit-scrollbar-track { background: transparent; }
+
+/* Mono caption */
+.ontogen .mono-cap {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-4);
+}
+
+/* Subtle grid background for graph areas */
+.ontogen .grid-bg {
+  background-image:
+    linear-gradient(var(--line-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* Animation tokens (prefixed to avoid any host @keyframes collision) */
+@keyframes og-pulse-soft { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+@keyframes og-spin { to { transform: rotate(360deg); } }
+@keyframes og-node-pop {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes og-draw-line {
+  from { stroke-dashoffset: 100; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes og-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}

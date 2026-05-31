@@ -1,0 +1,41 @@
+{
+  "name": "ontology-generator",
+  "version": "0.1.0",
+  "private": false,
+  "license": "MIT",
+  "type": "module",
+  "description": "Turn business documents into a structured ontology (objects, rules, actions, events, processes) via a multi-stage LLM pipeline.",
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n web,api -c blue,green \"npm:dev:web\" \"npm:dev:api\"",
+    "dev:web": "vite",
+    "dev:api": "tsx watch scripts/dev-api.mts",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck:api": "tsc -p tsconfig.api.json"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.87.0",
+    "jsonwebtoken": "^9.0.3",
+    "mammoth": "^1.11.0",
+    "neo4j-driver": "^5.28.3",
+    "pdf-parse": "^1.1.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^22.10.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vercel/node": "^3.2.0",
+    "@vitejs/plugin-react": "^6.0.2",
+    "concurrently": "^8.2.2",
+    "dotenv": "^17.2.3",
+    "tsx": "^4.19.2",
+    "typescript": "~5.6.2",
+    "vite": "^8.0.14"
+  }
+}

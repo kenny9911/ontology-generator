@@ -1,0 +1,158 @@
+// Root of the Ontology Generator — a THIN container. It owns the page-local
+// presentation state (lang, theme, graph-layout, active step) and binds the ONE
+// run/review controller hook (`useOntologyRun`). Every screen receives the same
+// fixed contract — `t={tx} lang={lang} ctrl={ctrl}` — and reads/mutates the
+// canonical Ontology through `ctrl` (the demo `dataset` + `accepted` boolean map
+// are retired). See DESIGN_SPEC §8.3 + design-notes/frontend.md.
+import { useEffect, useMemo, useState } from 'react';
+import './ontology-generator.css';
+import type { Lang } from './data';
+import { useT, type StepId } from './i18n';
+import TopBar, { STEP_ORDER, type ThemeName, type LayoutMode } from './TopBar';
+import type { Stage } from '@/ontology/schema/types';
+import { useOntologyRun } from './useOntologyRun';
+import InputScreen from './InputScreen';
+import DiscoverScreen from './DiscoverScreen';
+import ObjectsScreen from './ObjectsScreen';
+import RulesScreen from './RulesScreen';
+import ActionsScreen from './ActionsScreen';
+import EventsScreen from './EventsScreen';
+import ProcessesScreen from './ProcessesScreen';
+import GraphScreen from './GraphScreen';
+import PublishScreen from './PublishScreen';
+
+/** Review steps that map 1:1 onto a pipeline {@link Stage}. */
+const STAGE_STEPS: Partial<Record<StepId, Stage>> = {
+  objects: 'objects',
+  rules: 'rules',
+  actions: 'actions',
+  events: 'events',
+  processes: 'processes',
+};
+
+export default function OntologyGenerator() {
+  const [lang, setLang] = useState<Lang>('zh');
+  const [theme, setTheme] = useState<ThemeName>('midnight');
+  const [graphLayout, setGraphLayout] = useState<LayoutMode>('force');
+  const [step, setStep] = useState<StepId>('input');
+
+  const tx = useT(lang);
+  const ctrl = useOntologyRun();
+
+  // A run/ontology exists once setup has fired (demo seeds it synchronously;
+  // live seeds a draft on runStart). Until then, only `input` is reachable.
+  const hasRun = ctrl.mode !== 'idle' && ctrl.ontology != null;
+
+  // Derive stepper "done" marks from the live run's stage progress (demo marks
+  // every stage done since the ontology is fully assembled up front).
+  const completed = useMemo<Partial<Record<StepId, boolean>>>(() => {
+    const done: Partial<Record<StepId, boolean>> = {};
+    if (!hasRun) return done;
+    done.input = true;
+
+    if (ctrl.mode === 'demo') {
+      done.discover = true;
+      for (const s of STEP_ORDER) done[s] = true;
+      done.publish = ctrl.ontology?.status === 'published';
+      return done;
+    }
+
+    // live: a review step is "done" once its stage has finished extracting.
+    const stages = ctrl.run?.stages ?? [];
+    let allStagesComplete = stages.length > 0;
+    for (const [stepId, stage] of Object.entries(STAGE_STEPS) as [StepId, Stage][]) {
+      const sp = stages.find((p) => p.stage === stage);
+      const finished = sp?.status === 'complete';
+      done[stepId] = finished;
+      if (!finished) allStagesComplete = false;
+    }
+    done.discover = ctrl.run?.status === 'complete' || allStagesComplete;
+    done.graph = done.discover;
+    done.publish = ctrl.ontology?.status === 'published';
+    return done;
+  }, [hasRun, ctrl.mode, ctrl.run, ctrl.ontology]);
+
+  // Gate navigation: `input` always; everything else only once a run exists.
+  // For a live run, a stage's review screen unlocks once that stage produced
+  // items (its StageProgress has a count) — demo unlocks everything.
+  function canVisit(target: StepId): boolean {
+    if (target === 'input') return true;
+    if (!hasRun) return false;
+    if (ctrl.mode === 'demo') return true;
+
+    const stage = STAGE_STEPS[target];
+    if (stage) {
+      const sp = ctrl.run?.stages.find((p) => p.stage === stage);
+      return (sp?.count ?? 0) > 0 || sp?.status === 'complete';
+    }
+    // discover / graph / publish — reachable whenever a live run exists.
+    return true;
+  }
+
+  function go(target: StepId) {
+    if (canVisit(target)) setStep(target);
+  }
+
+  // When the controller is reset (PublishScreen → ctrl.reset()), snap the
+  // stepper back to `input` so the page returns to its empty setup state.
+  useEffect(() => {
+    if (!hasRun && step !== 'input') setStep('input');
+  }, [hasRun, step]);
+
+  // On setup (InputScreen → startDemo/startUpload/startSample/loadSaved), a
+  // run/ontology appears; advance the stepper from `input`. A freshly started
+  // run (or the demo tour) goes to `discover` to watch extraction; a LOADED
+  // session arrives already complete, so jump straight to the graph
+  // (DESIGN_SPEC §8.5).
+  useEffect(() => {
+    if (hasRun && step === 'input') {
+      const loadedComplete = ctrl.mode === 'live' && ctrl.run?.status === 'complete';
+      setStep(loadedComplete ? 'graph' : 'discover');
+    }
+  }, [hasRun, step, ctrl.mode, ctrl.run]);
+
+  // Screens are locked to the { t, lang, ctrl } prop contract — they carry no
+  // navigation callback. To let one request a step change (DiscoverScreen's
+  // "See results →" → Objects), they dispatch a window `ontogen:goto` event
+  // whose detail is the target StepId; the container honors it through `go`
+  // (which still applies the same `canVisit` gating).
+  useEffect(() => {
+    function onGoto(e: Event) {
+      const target = (e as CustomEvent<StepId>).detail;
+      if (target) go(target);
+    }
+    window.addEventListener('ontogen:goto', onGoto as EventListener);
+    return () => window.removeEventListener('ontogen:goto', onGoto as EventListener);
+    // Re-subscribe when the gating inputs change so `go`/`canVisit` see fresh state.
+  }, [hasRun, ctrl.mode, ctrl.run]);
+
+  return (
+    <div className="ontogen" data-theme={theme} data-density="regular">
+      <TopBar
+        step={step}
+        setStep={go}
+        onHome={ctrl.reset}
+        ctrl={ctrl}
+        t={tx}
+        lang={lang}
+        completed={completed}
+        theme={theme}
+        setTheme={setTheme}
+        setLang={setLang}
+        layout={graphLayout}
+        setLayout={setGraphLayout}
+      />
+      <main className="viewport">
+        {step === 'input' && <InputScreen t={tx} lang={lang} ctrl={ctrl} />}
+        {step === 'discover' && <DiscoverScreen t={tx} lang={lang} ctrl={ctrl} />}
+        {step === 'objects' && <ObjectsScreen t={tx} lang={lang} ctrl={ctrl} />}
+        {step === 'rules' && <RulesScreen t={tx} lang={lang} ctrl={ctrl} />}
+        {step === 'actions' && <ActionsScreen t={tx} lang={lang} ctrl={ctrl} />}
+        {step === 'events' && <EventsScreen t={tx} lang={lang} ctrl={ctrl} />}
+        {step === 'processes' && <ProcessesScreen t={tx} lang={lang} ctrl={ctrl} />}
+        {step === 'graph' && <GraphScreen t={tx} lang={lang} ctrl={ctrl} layout={graphLayout} />}
+        {step === 'publish' && <PublishScreen t={tx} lang={lang} ctrl={ctrl} />}
+      </main>
+    </div>
+  );
+}

@@ -1,0 +1,6067 @@
+{
+  "id": "ontology:hr-talent-acquisition",
+  "uuid": "60bcba3ebddf270c7063b1b250029d73",
+  "name": "HR Talent Acquisition",
+  "nameZh": "人力资源人才招聘",
+  "domain": "hr_talent_acquisition",
+  "version": 1,
+  "schemaVersion": 1,
+  "status": "draft",
+  "sourceDocuments": [
+    {
+      "id": "doc:hr-talent-acquisition-sop",
+      "uuid": "a5db0aad041967dd670feeb0909e5e34",
+      "name": "01-process-sop.md",
+      "kind": "doc",
+      "mimeType": "text/markdown",
+      "parsedRef": "parsed_ta_sop_v42",
+      "contentHash": "sha256:ta-sop-001-v42"
+    },
+    {
+      "id": "doc:hr-talent-acquisition-policy",
+      "uuid": "0c00ac2c57c6e0536f7eab612989fb01",
+      "name": "02-business-rules-policy.md",
+      "kind": "doc",
+      "mimeType": "text/markdown",
+      "parsedRef": "parsed_ta_pol_v42",
+      "contentHash": "sha256:ta-pol-002-v42"
+    },
+    {
+      "id": "doc:hr-talent-acquisition-systems",
+      "uuid": "1ff994597f9159ccdecc018c24fda6d8",
+      "name": "03-systems-and-data.md",
+      "kind": "doc",
+      "mimeType": "text/markdown",
+      "parsedRef": "parsed_ta_sys_v42",
+      "contentHash": "sha256:ta-sys-003-v42"
+    }
+  ],
+  "objects": [
+    {
+      "id": "objectType:position",
+      "uuid": "ecf166dd55e98226e61e74099729bb5b",
+      "name": "Position",
+      "nameZh": "职位",
+      "description": "A funded headcount slot in Workday with budget and salary band, against which Requisitions are opened.",
+      "descriptionZh": "Workday 中带预算与薪资范围的已拨款编制名额，需求基于该职位发起。",
+      "attributes": [
+        {
+          "name": "position_id",
+          "type": "string",
+          "required": true,
+          "keyRole": "pk",
+          "nameZh": "职位ID"
+        },
+        {
+          "name": "job_profile",
+          "type": "string",
+          "required": false,
+          "keyRole": "none"
+        },
+        {
+          "name": "cost_center",
+          "type": "string",
+          "required": false,
+          "keyRole": "none"
+        },
+        {
+          "name": "funded_headcount",
+          "type": "integer",
+          "required": false,
+          "keyRole": "none",
+          "description": "Approved headcount for this position."
+        },
+        {
+          "name": "annual_budget",
+          "type": "decimal",
+          "required": false,
+          "keyRole": "none",
+          "description": "Annual budget, decimal(12,2)."
+        },
+        {
+          "name": "salary_band_id",
+          "type": "reference",
+          "required": false,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:salary-band"
+        },
+        {
+          "name": "status",
+          "type": "enum",
+          "required": false,
+          "keyRole": "none",
+          "enumValues": [
+            "Open",
+            "Frozen",
+            "Filled"
+          ]
+        }
+      ],
+      "relationshipIds": [
+        "rel:position-has-band",
+        "rel:requisition-against-position"
+      ],
+      "display": {
+        "emoji": "🪑",
+        "color": "#0ea5e9"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`position_id` | string | **PK**",
+          "quoteVerified": true,
+          "section": "§2.1"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "System of record for Position, headcount, and Approval chain.",
+          "quoteVerified": true
+        }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:salary-band",
+      "uuid": "6aea880b18793ec9d1bcb2ef4b6f2c08",
+      "name": "SalaryBand",
+      "nameZh": "薪资范围",
+      "description": "The published salary band (min/mid/max) for a job level and location zone, mastered in Workday.",
+      "descriptionZh": "按职级与地区发布的薪资范围（最低/中位/最高），主数据在 Workday。",
+      "attributes": [
+        {
+          "name": "salary_band_id",
+          "type": "string",
+          "required": true,
+          "keyRole": "pk",
+          "nameZh": "薪资范围ID"
+        },
+        {
+          "name": "job_level",
+          "type": "string",
+          "required": false,
+          "keyRole": "none"
+        },
+        {
+          "name": "location_zone",
+          "type": "string",
+          "required": false,
+          "keyRole": "none"
+        },
+        {
+          "name": "currency",
+          "type": "string",
+          "required": false,
+          "keyRole": "none",
+          "description": "ISO 4217 char(3)."
+        },
+        {
+          "name": "min_salary",
+          "type": "money",
+          "required": false,
+          "keyRole": "none"
+        },
+        {
+          "name": "mid_salary",
+          "type": "money",
+          "required": false,
+          "keyRole": "none"
+        },
+        {
+          "name": "max_salary",
+          "type": "money",
+          "required": false,
+          "keyRole": "none"
+        }
+      ],
+      "relationshipIds": [
+        "rel:offer-priced-against-band"
+      ],
+      "display": {
+        "emoji": "💰",
+        "color": "#22c55e"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`salary_band_id` | string | **PK**",
+          "quoteVerified": true,
+          "section": "§2.2"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "Workday (HRIS) | Core HR | `Position`, `Approval` chain, `Worker`, `SalaryBand` (master)",
+          "quoteVerified": true,
+          "section": "§1"
+        }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:requisition",
+      "uuid": "3dec76fe9a80ae782e14d5821b2b4201",
+      "name": "Requisition",
+      "nameZh": "招聘需求",
+      "description": "A hiring request opened against a Position in Greenhouse, moving Draft -> Approved -> Open -> Filled/Closed.",
+      "descriptionZh": "在 Greenhouse 中基于职位开立的招聘请求，状态从草稿到审批通过、开放，再到填补/关闭。",
+      "attributes": [
+        {
+          "name": "requisition_id",
+          "type": "string",
+          "required": true,
+          "keyRole": "pk",
+          "nameZh": "需求ID"
+        },
+        {
+          "name": "position_id",
+          "type": "reference",
+          "required": true,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:position"
+        },
+        {
+          "name": "hiring_manager_id",
+          "type": "reference",
+          "required": true,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:worker"
+        },
+        {
+          "name": "recruiter_id",
+          "type": "string",
+          "required": false,
+          "keyRole": "none"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "required": false,
+          "keyRole": "none"
+        },
+        {
+          "name": "status",
+          "type": "enum",
+          "required": true,
+          "keyRole": "none",
+          "enumValues": [
+            "Draft",
+            "Pending Approval",
+            "Approved",
+            "Rejected",
+            "Open",
+            "Filled",
+            "Closed"
+          ]
+        },
+        {
+          "name": "opened_at",
+          "type": "datetime",
+          "required": false,
+          "keyRole": "none"
+        },
+        {
+          "name": "closed_at",
+          "type": "datetime",
+          "required": false,
+          "keyRole": "none",
+          "description": "Nullable; set when the requisition is filled or closed."
+        }
+      ],
+      "relationshipIds": [
+        "rel:requisition-against-position",
+        "rel:application-for-requisition",
+        "rel:offer-for-requisition"
+      ],
+      "display": {
+        "emoji": "📋",
+        "color": "#6366f1"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`requisition_id` | string | **PK**",
+          "quoteVerified": true,
+          "section": "§2.3"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "produces a `Requisition` record in `Draft` status in Greenhouse, linked to the Workday `Position`.",
+          "quoteVerified": true,
+          "section": "§3 Step 1.1"
+        }
+      ],
+      "confidence": 0.96,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:candidate",
+      "uuid": "8931e639565050b27a55e82a4c89e78e",
+      "name": "Candidate",
+      "nameZh": "候选人",
+      "description": "A person being considered for one or more Requisitions, deduplicated globally by email in Greenhouse.",
+      "descriptionZh": "被一项或多项招聘需求考虑的人选，在 Greenhouse 中按邮箱全局去重。",
+      "attributes": [
+        {
+          "name": "candidate_id",
+          "type": "string",
+          "required": true,
+          "keyRole": "pk",
+          "nameZh": "候选人ID"
+        },
+        {
+          "name": "email",
+          "type": "string",
+          "required": true,
+          "keyRole": "none",
+          "description": "Unique dedup key."
+        },
+        {
+          "name": "full_name",
+          "type": "string",
+          "required": false,
+          "keyRole": "none"
+        },
+        {
+          "name": "is_internal",
+          "type": "boolean",
+          "required": false,
+          "keyRole": "none",
+          "description": "True when the candidate is a current employee (per R18)."
+        },
+        {
+          "name": "source",
+          "type": "enum",
+          "required": false,
+          "keyRole": "none",
+          "enumValues": [
+            "Inbound",
+            "Sourced",
+            "Referral",
+            "Agency"
+          ]
+        },
+        {
+          "name": "consent_retention_until",
+          "type": "date",
+          "required": false,
+          "keyRole": "none",
+          "description": "Nullable; talent-pool retention consent date (per R16)."
+        }
+      ],
+      "relationshipIds": [
+        "rel:candidate-has-application",
+        "rel:candidate-has-background-check"
+      ],
+      "display": {
+        "emoji": "👤",
+        "color": "#f59e0b"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`candidate_id` | string | **PK**",
+          "quoteVerified": true,
+          "section": "§2.4"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "A `Candidate` is deduplicated globally by `email`.",
+          "quoteVerified": true,
+          "section": "§5"
+        }
+      ],
+      "confidence": 0.96,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:application",
+      "uuid": "37ec95504901025258a105799efa7fec",
+      "name": "Application",
+      "nameZh": "申请",
+      "description": "The unique link between one Candidate and one Requisition, advancing through staged review to Hired or Rejected.",
+      "descriptionZh": "一名候选人与一项招聘需求之间的唯一关联，经分阶段评审推进至录用或拒绝。",
+      "attributes": [
+        {
+          "name": "application_id",
+          "type": "string",
+          "required": true,
+          "keyRole": "pk",
+          "nameZh": "申请ID"
+        },
+        {
+          "name": "candidate_id",
+          "type": "reference",
+          "required": true,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:candidate"
+        },
+        {
+          "name": "requisition_id",
+          "type": "reference",
+          "required": true,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:requisition"
+        },
+        {
+          "name": "current_stage",
+          "type": "enum",
+          "required": true,
+          "keyRole": "none",
+          "enumValues": [
+            "Application Review",
+            "Recruiter Screen",
+            "Assessment",
+            "Onsite",
+            "Offer",
+            "Hired",
+            "Rejected"
+          ]
+        },
+        {
+          "name": "disposition_reason",
+          "type": "string",
+          "required": false,
+          "keyRole": "none",
+          "description": "Nullable; required when Rejected (per R17)."
+        },
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "required": false,
+          "keyRole": "none"
+        }
+      ],
+      "relationshipIds": [
+        "rel:application-for-requisition",
+        "rel:candidate-has-application",
+        "rel:application-has-stage",
+        "rel:application-has-assessment",
+        "rel:application-has-offer"
+      ],
+      "display": {
+        "emoji": "📝",
+        "color": "#8b5cf6"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`application_id` | string | **PK**",
+          "quoteVerified": true,
+          "section": "§2.5"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "An `Application` is the unique link between one `Candidate` and one `Requisition`.",
+          "quoteVerified": true,
+          "section": "§5"
+        }
+      ],
+      "confidence": 0.96,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:interview-stage",
+      "uuid": "e85265a4a9c2ccc7012316f18e2a8d42",
+      "name": "InterviewStage",
+      "nameZh": "面试阶段",
+      "description": "A structured interview stage of an Application, bound to an InterviewPanel of at least three Interviewers including a Bar Raiser.",
+      "descriptionZh": "申请的一个结构化面试阶段，绑定至少由三名面试官（含一名 Bar Raiser）组成的面试小组。",
+      "attributes": [
+        {
+          "name": "stage_id",
+          "type": "string",
+          "required": true,
+          "keyRole": "pk",
+          "nameZh": "阶段ID"
+        },
+        {
+          "name": "application_id",
+          "type": "reference",
+          "required": true,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:application"
+        },
+        {
+          "name": "stage_name",
+          "type": "string",
+          "required": false,
+          "keyRole": "none"
+        },
+        {
+          "name": "panel_id",
+          "type": "string",
+          "required": false,
+          "keyRole": "none",
+          "description": "Identifier of the InterviewPanel for this stage."
+        },
+        {
+          "name": "interviewer_ids",
+          "type": "array",
+          "required": false,
+          "keyRole": "none",
+          "description": "Min length 3 (per R5)."
+        },
+        {
+          "name": "bar_raiser_id",
+          "type": "reference",
+          "required": false,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:worker",
+          "description": "Bar Raiser member (per R14)."
+        },
+        {
+          "name": "scheduled_at",
+          "type": "datetime",
+          "required": false,
+          "keyRole": "none"
+        }
+      ],
+      "relationshipIds": [
+        "rel:application-has-stage",
+        "rel:stage-has-scorecard"
+      ],
+      "display": {
+        "emoji": "🗓️",
+        "color": "#ec4899"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`stage_id` | string | **PK**",
+          "quoteVerified": true,
+          "section": "§2.6"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`interviewer_ids` | array<string> | min length 3 (per R5)",
+          "quoteVerified": true,
+          "section": "§2.6"
+        }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:scorecard",
+      "uuid": "9dd5fc7376a7d9bcc55458494ebec537",
+      "name": "Scorecard",
+      "nameZh": "评分表",
+      "description": "One Interviewer's structured recommendation for an Application at a given InterviewStage.",
+      "descriptionZh": "某面试官在指定面试阶段对一份申请给出的结构化推荐意见。",
+      "attributes": [
+        {
+          "name": "scorecard_id",
+          "type": "string",
+          "required": true,
+          "keyRole": "pk",
+          "nameZh": "评分表ID"
+        },
+        {
+          "name": "application_id",
+          "type": "reference",
+          "required": true,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:application"
+        },
+        {
+          "name": "stage_id",
+          "type": "reference",
+          "required": true,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:interview-stage"
+        },
+        {
+          "name": "interviewer_id",
+          "type": "reference",
+          "required": true,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:worker"
+        },
+        {
+          "name": "recommendation",
+          "type": "enum",
+          "required": true,
+          "keyRole": "none",
+          "enumValues": [
+            "Strong Yes",
+            "Yes",
+            "No",
+            "Strong No"
+          ]
+        },
+        {
+          "name": "submitted_at",
+          "type": "datetime",
+          "required": false,
+          "keyRole": "none"
+        }
+      ],
+      "relationshipIds": [
+        "rel:stage-has-scorecard"
+      ],
+      "display": {
+        "emoji": "⭐",
+        "color": "#f43f5e"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`scorecard_id` | string | **PK**",
+          "quoteVerified": true,
+          "section": "§2.7"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "produces one `Scorecard` per `Interviewer` with a recommendation (Strong Yes / Yes / No / Strong No).",
+          "quoteVerified": true,
+          "section": "§3 Step 3.4"
+        }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:assessment",
+      "uuid": "ef8ec981d8a92bb1db87def375afe53b",
+      "name": "Assessment",
+      "nameZh": "技术测评",
+      "description": "A HackerRank technical assessment for an Application, scored as a percentage against a 70% pass threshold.",
+      "descriptionZh": "针对某份申请的 HackerRank 技术测评，按百分比评分，及格线为 70%。",
+      "attributes": [
+        {
+          "name": "assessment_id",
+          "type": "string",
+          "required": true,
+          "keyRole": "pk",
+          "nameZh": "测评ID"
+        },
+        {
+          "name": "application_id",
+          "type": "reference",
+          "required": true,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:application"
+        },
+        {
+          "name": "score_pct",
+          "type": "decimal",
+          "required": false,
+          "keyRole": "none",
+          "description": "Percentage score; pass threshold 70% (per R7)."
+        },
+        {
+          "name": "completed_at",
+          "type": "datetime",
+          "required": false,
+          "keyRole": "none"
+        }
+      ],
+      "relationshipIds": [
+        "rel:application-has-assessment"
+      ],
+      "display": {
+        "emoji": "🧪",
+        "color": "#14b8a6"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`assessment_id` | string | **PK**",
+          "quoteVerified": true,
+          "section": "§2.8"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`score_pct` | decimal(5,2) | pass threshold 70% (per R7)",
+          "quoteVerified": true,
+          "section": "§2.8"
+        }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:offer",
+      "uuid": "f54fad13f88efc6204d1e2cdb61d9d93",
+      "name": "Offer",
+      "nameZh": "录用通知",
+      "description": "A compensation offer for an Application, priced against a SalaryBand and signed via DocuSign through its lifecycle.",
+      "descriptionZh": "针对某份申请的薪酬录用通知，依据薪资范围定价，并经 DocuSign 在其生命周期内签署。",
+      "attributes": [
+        {
+          "name": "offer_id",
+          "type": "string",
+          "required": true,
+          "keyRole": "pk",
+          "nameZh": "录用ID"
+        },
+        {
+          "name": "application_id",
+          "type": "reference",
+          "required": true,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:application"
+        },
+        {
+          "name": "requisition_id",
+          "type": "reference",
+          "required": true,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:requisition"
+        },
+        {
+          "name": "salary_band_id",
+          "type": "reference",
+          "required": true,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:salary-band"
+        },
+        {
+          "name": "base_salary",
+          "type": "money",
+          "required": false,
+          "keyRole": "none"
+        },
+        {
+          "name": "signon_bonus",
+          "type": "money",
+          "required": false,
+          "keyRole": "none",
+          "description": "Sign-on bonus; cap per R13."
+        },
+        {
+          "name": "band_status",
+          "type": "enum",
+          "required": false,
+          "keyRole": "none",
+          "enumValues": [
+            "InBand",
+            "AboveBand",
+            "BelowBand"
+          ]
+        },
+        {
+          "name": "status",
+          "type": "enum",
+          "required": true,
+          "keyRole": "none",
+          "enumValues": [
+            "Draft",
+            "Pending Approval",
+            "Approved",
+            "Extended",
+            "Accepted",
+            "Declined",
+            "Expired"
+          ]
+        },
+        {
+          "name": "expires_at",
+          "type": "date",
+          "required": false,
+          "keyRole": "none",
+          "description": "Expiry date, <= 7 business days after extension (per R9)."
+        }
+      ],
+      "relationshipIds": [
+        "rel:application-has-offer",
+        "rel:offer-for-requisition",
+        "rel:offer-priced-against-band"
+      ],
+      "display": {
+        "emoji": "📄",
+        "color": "#ef4444"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`offer_id` | string | **PK**",
+          "quoteVerified": true,
+          "section": "§2.9"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "produces an `Offer` record in `Draft` with base salary, bonus target, equity, and start date.",
+          "quoteVerified": true,
+          "section": "§3 Step 4.1"
+        }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:approval",
+      "uuid": "db549bfe9b2ab3f186fe42ea4eaf52d8",
+      "name": "Approval",
+      "nameZh": "审批",
+      "description": "A polymorphic approval record against a Requisition or an Offer, capturing approver, level, and decision.",
+      "descriptionZh": "针对招聘需求或录用通知的多态审批记录，记录审批人、级别与决定。",
+      "attributes": [
+        {
+          "name": "approval_id",
+          "type": "string",
+          "required": true,
+          "keyRole": "pk",
+          "nameZh": "审批ID"
+        },
+        {
+          "name": "subject_type",
+          "type": "enum",
+          "required": true,
+          "keyRole": "none",
+          "enumValues": [
+            "Requisition",
+            "Offer"
+          ]
+        },
+        {
+          "name": "subject_id",
+          "type": "string",
+          "required": true,
+          "keyRole": "none",
+          "description": "Polymorphic reference to a Requisition or Offer, discriminated by subject_type (per §5). Not a single-target FK, so no refObjectTypeId."
+        },
+        {
+          "name": "approver_id",
+          "type": "string",
+          "required": false,
+          "keyRole": "none"
+        },
+        {
+          "name": "approval_level",
+          "type": "enum",
+          "required": false,
+          "keyRole": "none",
+          "enumValues": [
+            "Manager",
+            "HRBP",
+            "Finance",
+            "VP"
+          ]
+        },
+        {
+          "name": "decision",
+          "type": "enum",
+          "required": false,
+          "keyRole": "none",
+          "enumValues": [
+            "Approved",
+            "Rejected",
+            "Pending"
+          ]
+        },
+        {
+          "name": "decided_at",
+          "type": "datetime",
+          "required": false,
+          "keyRole": "none"
+        }
+      ],
+      "relationshipIds": [],
+      "display": {
+        "emoji": "✅",
+        "color": "#10b981"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`approval_id` | string | **PK**",
+          "quoteVerified": true,
+          "section": "§2.10"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "An `Approval` polymorphically references either a `Requisition` or an `Offer` via (`subject_type`, `subject_id`).",
+          "quoteVerified": true,
+          "section": "§5"
+        }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:background-check",
+      "uuid": "a7f9ac37d158c4b3a7b88d80788569af",
+      "name": "BackgroundCheck",
+      "nameZh": "背景调查",
+      "description": "A Checkr background screening for a Candidate tied to an accepted Offer, gating conversion to Worker.",
+      "descriptionZh": "针对与已接受录用关联的候选人的 Checkr 背景调查，作为转为正式员工的前置门槛。",
+      "attributes": [
+        {
+          "name": "check_id",
+          "type": "string",
+          "required": true,
+          "keyRole": "pk",
+          "nameZh": "背调ID"
+        },
+        {
+          "name": "candidate_id",
+          "type": "reference",
+          "required": true,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:candidate"
+        },
+        {
+          "name": "offer_id",
+          "type": "reference",
+          "required": true,
+          "keyRole": "fk",
+          "refObjectTypeId": "objectType:offer"
+        },
+        {
+          "name": "result",
+          "type": "enum",
+          "required": false,
+          "keyRole": "none",
+          "enumValues": [
+            "Clear",
+            "Consider",
+            "Suspended"
+          ],
+          "description": "Hire gate per R10."
+        },
+        {
+          "name": "completed_at",
+          "type": "datetime",
+          "required": false,
+          "keyRole": "none"
+        }
+      ],
+      "relationshipIds": [
+        "rel:candidate-has-background-check"
+      ],
+      "display": {
+        "emoji": "🔍",
+        "color": "#a855f7"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`check_id` | string | **PK**",
+          "quoteVerified": true,
+          "section": "§2.11"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`result` | enum(`Clear`,`Consider`,`Suspended`) | (gate per R10)",
+          "quoteVerified": true,
+          "section": "§2.11"
+        }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "objectType:worker",
+      "uuid": "b4d9148cd74d3248e0824994d1a3663b",
+      "name": "Worker",
+      "nameZh": "员工",
+      "description": "A Workday Worker record — the hired employee, and the identity backing HiringManagers and Interviewers.",
+      "descriptionZh": "Workday 中的员工记录——已入职员工，同时也是招聘经理与面试官的身份载体。",
+      "attributes": [
+        {
+          "name": "worker_id",
+          "type": "string",
+          "required": true,
+          "keyRole": "pk",
+          "nameZh": "员工ID"
+        },
+        {
+          "name": "email",
+          "type": "string",
+          "required": true,
+          "keyRole": "none",
+          "description": "Unique."
+        },
+        {
+          "name": "department",
+          "type": "string",
+          "required": false,
+          "keyRole": "none"
+        },
+        {
+          "name": "is_bar_raiser_certified",
+          "type": "boolean",
+          "required": false,
+          "keyRole": "none",
+          "description": "True for trained Bar Raisers (per R14)."
+        }
+      ],
+      "relationshipIds": [],
+      "display": {
+        "emoji": "🧑‍💼",
+        "color": "#64748b"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`worker_id` | string | **PK**",
+          "quoteVerified": true,
+          "section": "§2.12"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "produces a `Worker` record in Workday, closes the `Requisition` as `Filled`, and decrements the `Position` headcount.",
+          "quoteVerified": true,
+          "section": "§3 Step 5.4"
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    }
+  ],
+  "relationships": [
+    {
+      "id": "rel:requisition-against-position",
+      "uuid": "540936c4b417eada7d963a10a015bca4",
+      "name": "opened_against",
+      "nameZh": "基于",
+      "label": {
+        "en": "Requisition → Position",
+        "zh": "招聘需求 → 职位"
+      },
+      "sourceObjectTypeId": "objectType:requisition",
+      "targetObjectTypeId": "objectType:position",
+      "cardinality": "many_to_one",
+      "viaAttribute": "position_id",
+      "description": "Each Requisition is opened against exactly one funded Position.",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "produces a `Requisition` record in `Draft` status in Greenhouse, linked to the Workday `Position`.",
+          "quoteVerified": true,
+          "section": "§3 Step 1.1"
+        }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:position-has-band",
+      "uuid": "48eff7dabb390b67cf40bfb9b6274adc",
+      "name": "priced_by",
+      "nameZh": "定价依据",
+      "label": {
+        "en": "Position → SalaryBand",
+        "zh": "职位 → 薪资范围"
+      },
+      "sourceObjectTypeId": "objectType:position",
+      "targetObjectTypeId": "objectType:salary-band",
+      "cardinality": "many_to_one",
+      "viaAttribute": "salary_band_id",
+      "description": "Each Position is associated with one SalaryBand.",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`salary_band_id` | string | **FK → SalaryBand**",
+          "quoteVerified": true,
+          "section": "§2.1"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:candidate-has-application",
+      "uuid": "a706194ff0206964fb1ab0b785c91078",
+      "name": "submits",
+      "nameZh": "提交",
+      "label": {
+        "en": "Candidate → Application",
+        "zh": "候选人 → 申请"
+      },
+      "sourceObjectTypeId": "objectType:candidate",
+      "targetObjectTypeId": "objectType:application",
+      "cardinality": "one_to_many",
+      "viaAttribute": "candidate_id",
+      "description": "One Candidate may submit many Applications.",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`candidate_id` | string | **FK → Candidate**",
+          "quoteVerified": true,
+          "section": "§2.5"
+        }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:application-for-requisition",
+      "uuid": "6d044642a65b25d5151fa7e6e0279f44",
+      "name": "applies_to",
+      "nameZh": "申请于",
+      "label": {
+        "en": "Application → Requisition",
+        "zh": "申请 → 招聘需求"
+      },
+      "sourceObjectTypeId": "objectType:application",
+      "targetObjectTypeId": "objectType:requisition",
+      "cardinality": "many_to_one",
+      "viaAttribute": "requisition_id",
+      "description": "Many Applications target one Requisition; each Application links exactly one Candidate to one Requisition.",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "linking exactly one `Candidate` to one `Requisition`.",
+          "quoteVerified": true,
+          "section": "§3 Step 2.2"
+        }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:application-has-stage",
+      "uuid": "339198a8055f8042fd2fd2a5f1d385ef",
+      "name": "has_stage",
+      "nameZh": "包含阶段",
+      "label": {
+        "en": "Application → InterviewStage",
+        "zh": "申请 → 面试阶段"
+      },
+      "sourceObjectTypeId": "objectType:application",
+      "targetObjectTypeId": "objectType:interview-stage",
+      "cardinality": "one_to_many",
+      "viaAttribute": "application_id",
+      "description": "An Application proceeds through one or more InterviewStages.",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`application_id` | string | **FK → Application**",
+          "quoteVerified": true,
+          "section": "§2.6"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:stage-has-scorecard",
+      "uuid": "7adab13bf8bcd87e724e8d22ea373d12",
+      "name": "has_scorecard",
+      "nameZh": "包含评分",
+      "label": {
+        "en": "InterviewStage → Scorecard",
+        "zh": "面试阶段 → 评分表"
+      },
+      "sourceObjectTypeId": "objectType:interview-stage",
+      "targetObjectTypeId": "objectType:scorecard",
+      "cardinality": "one_to_many",
+      "viaAttribute": "stage_id",
+      "description": "Each InterviewStage collects one Scorecard per Interviewer.",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "produces one `Scorecard` per `Interviewer` with a recommendation",
+          "quoteVerified": true,
+          "section": "§3 Step 3.4"
+        }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:application-has-assessment",
+      "uuid": "fde4a15f5335b92211c4559de5fea1c3",
+      "name": "has_assessment",
+      "nameZh": "包含测评",
+      "label": {
+        "en": "Application → Assessment",
+        "zh": "申请 → 技术测评"
+      },
+      "sourceObjectTypeId": "objectType:application",
+      "targetObjectTypeId": "objectType:assessment",
+      "cardinality": "one_to_many",
+      "viaAttribute": "application_id",
+      "description": "An Application may have a technical Assessment when required by the role.",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`application_id` | string | **FK → Application**",
+          "quoteVerified": true,
+          "section": "§2.8"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:application-has-offer",
+      "uuid": "79f3e77601ffe5e3cca78e34b09a2c96",
+      "name": "results_in",
+      "nameZh": "产生",
+      "label": {
+        "en": "Application → Offer",
+        "zh": "申请 → 录用通知"
+      },
+      "sourceObjectTypeId": "objectType:application",
+      "targetObjectTypeId": "objectType:offer",
+      "cardinality": "one_to_one",
+      "viaAttribute": "application_id",
+      "description": "An advancing Application results in at most one active Offer.",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "An `Offer` links back to exactly one `Application`, `Requisition`, and `SalaryBand`.",
+          "quoteVerified": true,
+          "section": "§5"
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:offer-for-requisition",
+      "uuid": "b3895e92e883f0eeccfef5a99275989a",
+      "name": "fills",
+      "nameZh": "填补",
+      "label": {
+        "en": "Offer → Requisition",
+        "zh": "录用通知 → 招聘需求"
+      },
+      "sourceObjectTypeId": "objectType:offer",
+      "targetObjectTypeId": "objectType:requisition",
+      "cardinality": "many_to_one",
+      "viaAttribute": "requisition_id",
+      "description": "An Offer is made against one Requisition.",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`requisition_id` | string | **FK → Requisition**",
+          "quoteVerified": true,
+          "section": "§2.9"
+        }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:offer-priced-against-band",
+      "uuid": "e243d81d124ba718568698579293ec59",
+      "name": "priced_against",
+      "nameZh": "定价于",
+      "label": {
+        "en": "Offer → SalaryBand",
+        "zh": "录用通知 → 薪资范围"
+      },
+      "sourceObjectTypeId": "objectType:offer",
+      "targetObjectTypeId": "objectType:salary-band",
+      "cardinality": "many_to_one",
+      "viaAttribute": "salary_band_id",
+      "description": "An Offer's base salary is validated against the role's SalaryBand.",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "consumes the `Offer`'s proposed salary and the published `SalaryBand` for the role and location",
+          "quoteVerified": true,
+          "section": "§3 Step 4.2"
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rel:candidate-has-background-check",
+      "uuid": "33d04eb3751c870ae0dfbd1556ddc9ac",
+      "name": "undergoes",
+      "nameZh": "接受",
+      "label": {
+        "en": "Candidate → BackgroundCheck",
+        "zh": "候选人 → 背景调查"
+      },
+      "sourceObjectTypeId": "objectType:candidate",
+      "targetObjectTypeId": "objectType:background-check",
+      "cardinality": "one_to_many",
+      "viaAttribute": "candidate_id",
+      "description": "An accepted Candidate undergoes a BackgroundCheck before conversion.",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`candidate_id` | string | **FK → Candidate**",
+          "quoteVerified": true,
+          "section": "§2.11"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    }
+  ],
+  "rules": [
+    {
+      "id": "rule:offer-requires-approved-requisition",
+      "uuid": "cf6a0250844d1b1fd4fa4008306edac5",
+      "title": "Offer requires approved requisition",
+      "titleZh": "录用须需求已审批通过",
+      "statement": {
+        "en": "An Offer may not be extended unless its linked Requisition is in status Approved.",
+        "zh": "除非关联的招聘需求处于已审批通过状态，否则不得发出录用通知。"
+      },
+      "formal": "Offer.status = Extended → Requisition.status = 'Approved'",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "offer.status != 'Extended' || requisition.status == 'Approved'",
+        "bindings": [
+          {
+            "var": "offer",
+            "objectTypeId": "objectType:offer"
+          },
+          {
+            "var": "requisition",
+            "objectTypeId": "objectType:requisition"
+          }
+        ]
+      },
+      "kind": "state_transition",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:offer",
+        "objectType:requisition"
+      ],
+      "appliesToAttributes": [
+        "objectType:offer.status",
+        "objectType:requisition.status"
+      ],
+      "trigger": {
+        "description": "Before an Offer transitions to Extended.",
+        "onEventTypeId": "event:offer.validated"
+      },
+      "groupId": "ruleGroup:compensation-offer",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-policy",
+          "documentName": "02-business-rules-policy.md",
+          "snippet": "An `Offer` may not be extended unless its linked `Requisition` is in status `Approved`.",
+          "quoteVerified": true,
+          "section": "R1",
+          "sentenceRefs": [
+            1
+          ]
+        }
+      ],
+      "confidence": 0.95,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:above-band-vp-approval",
+      "uuid": "a7a8139615e993654048d180094b89d1",
+      "title": "Above-band offer needs VP approval",
+      "titleZh": "超范围录用须VP审批",
+      "statement": {
+        "en": "An Offer whose proposed base salary falls above the role's published SalaryBand maximum is required to obtain VP approval recorded against the Requisition before it may be extended.",
+        "zh": "若录用通知的拟定基本薪资高于该职位发布的薪资范围上限，须先获得针对该招聘需求记录的VP审批，方可发出。"
+      },
+      "formal": "Offer.base_salary > SalaryBand.max_salary → ∃ Approval(level=VP, subject=Requisition) before Offer.status=Extended",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "offer.base_salary <= band.max_salary || offer.band_status != 'AboveBand' || hasVpApproval",
+        "bindings": [
+          {
+            "var": "offer",
+            "objectTypeId": "objectType:offer"
+          },
+          {
+            "var": "band",
+            "objectTypeId": "objectType:salary-band"
+          }
+        ]
+      },
+      "kind": "authorization",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:offer",
+        "objectType:salary-band",
+        "objectType:approval"
+      ],
+      "appliesToAttributes": [
+        "objectType:offer.base_salary"
+      ],
+      "trigger": {
+        "description": "When drafting/extending an above-band Offer.",
+        "onEventTypeId": "event:offer.validated"
+      },
+      "groupId": "ruleGroup:compensation-offer",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-policy",
+          "documentName": "02-business-rules-policy.md",
+          "snippet": "An `Offer` whose proposed base salary falls above the role's published `SalaryBand` maximum is required to obtain VP approval recorded against the `Requisition` before it may be extended.",
+          "quoteVerified": true,
+          "section": "R2",
+          "sentenceRefs": [
+            2
+          ]
+        }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:in-band-hm-hrbp-approval",
+      "uuid": "f61350a3a42d5c4ac05cb25d910fdb2c",
+      "title": "In-band offer needs HM and HRBP approval",
+      "titleZh": "范围内录用须HM与HRBP审批",
+      "statement": {
+        "en": "An in-band Offer shall be approved by both the Hiring Manager and the HR Business Partner before extension.",
+        "zh": "范围内的录用通知须在发出前同时获得招聘经理与HR业务伙伴的批准。"
+      },
+      "formal": "Offer.band_status = InBand → Approval(Manager) ∧ Approval(HRBP)",
+      "kind": "authorization",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:offer",
+        "objectType:approval"
+      ],
+      "appliesToAttributes": [
+        "objectType:offer.band_status"
+      ],
+      "trigger": {
+        "description": "On routing an in-band Offer for approval.",
+        "onEventTypeId": "event:offer.validated"
+      },
+      "groupId": "ruleGroup:compensation-offer",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-policy",
+          "documentName": "02-business-rules-policy.md",
+          "snippet": "An in-band `Offer` shall be approved by both the Hiring Manager and the HR Business Partner before extension.",
+          "quoteVerified": true,
+          "section": "R3",
+          "sentenceRefs": [
+            3
+          ]
+        }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:over-budget-vp-escalation",
+      "uuid": "225929f5bf81579282c30da03e8e1775",
+      "title": "Over-budget requisition escalates to VP",
+      "titleZh": "超预算需求升级至VP",
+      "statement": {
+        "en": "A Requisition whose proposed annualized cost exceeds the funded Position budget by more than 10% must be escalated to VP approval before it may be published.",
+        "zh": "若招聘需求的拟定年化成本超过已拨款职位预算的10%以上，须先升级至VP审批，方可发布。"
+      },
+      "formal": "Requisition.annualized_cost > 1.10 * Position.annual_budget → Approval(level=VP) before JobPublished",
+      "kind": "authorization",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:requisition",
+        "objectType:position",
+        "objectType:approval"
+      ],
+      "appliesToAttributes": [
+        "objectType:position.annual_budget"
+      ],
+      "trigger": {
+        "description": "During Requisition approval, before publish.",
+        "onEventTypeId": "event:requisition.submitted-for-approval"
+      },
+      "groupId": "ruleGroup:compensation-offer",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-policy",
+          "documentName": "02-business-rules-policy.md",
+          "snippet": "A `Requisition` whose proposed annualized cost exceeds the funded `Position` budget by more than 10% must be escalated to VP approval before it may be published.",
+          "quoteVerified": true,
+          "section": "R4",
+          "sentenceRefs": [
+            4
+          ]
+        }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:below-band-needs-exception",
+      "uuid": "9a52ca08e242480f73751f324185b338",
+      "title": "Below-band salary needs comp exception",
+      "titleZh": "低于范围薪资须薪酬例外",
+      "statement": {
+        "en": "A proposed base salary that is below the role's SalaryBand minimum may not be entered on an Offer without a documented Compensation Analyst exception.",
+        "zh": "低于该职位薪资范围下限的拟定基本薪资，未经记录的薪酬分析师例外审批，不得录入录用通知。"
+      },
+      "formal": "Offer.base_salary < SalaryBand.min_salary → require CompensationException",
+      "kind": "constraint",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:offer",
+        "objectType:salary-band"
+      ],
+      "appliesToAttributes": [
+        "objectType:offer.base_salary"
+      ],
+      "trigger": {
+        "description": "When entering base salary on a Draft Offer."
+      },
+      "groupId": "ruleGroup:compensation-offer",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-policy",
+          "documentName": "02-business-rules-policy.md",
+          "snippet": "A proposed base salary that is below the role's `SalaryBand` minimum may not be entered on an `Offer` without a documented Compensation Analyst exception.",
+          "quoteVerified": true,
+          "section": "R12",
+          "sentenceRefs": [
+            5
+          ]
+        }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:signon-bonus-cap",
+      "uuid": "e44c4ffd440a20b65d0ced79dfdf6a16",
+      "title": "Sign-on bonus capped at 20% without VP",
+      "titleZh": "签约奖金无VP不超20%",
+      "statement": {
+        "en": "A sign-on bonus on an Offer may not exceed 20% of the proposed annual base salary without VP approval.",
+        "zh": "未经VP审批，录用通知的签约奖金不得超过拟定年度基本薪资的20%。"
+      },
+      "formal": "Offer.signon_bonus > 0.20 * Offer.base_salary → Approval(level=VP)",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "offer.signon_bonus <= 0.20 * offer.base_salary || hasVpApproval",
+        "bindings": [
+          {
+            "var": "offer",
+            "objectTypeId": "objectType:offer"
+          }
+        ]
+      },
+      "kind": "constraint",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:offer",
+        "objectType:approval"
+      ],
+      "appliesToAttributes": [
+        "objectType:offer.signon_bonus",
+        "objectType:offer.base_salary"
+      ],
+      "groupId": "ruleGroup:compensation-offer",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-policy",
+          "documentName": "02-business-rules-policy.md",
+          "snippet": "A sign-on bonus on an `Offer` may not exceed 20% of the proposed annual base salary without VP approval.",
+          "quoteVerified": true,
+          "section": "R13",
+          "sentenceRefs": [
+            6
+          ]
+        }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:min-panel-three",
+      "uuid": "8e90a0a9b06159ad0d6824763b30b951",
+      "title": "Minimum panel of three interviewers",
+      "titleZh": "面试小组至少三人",
+      "statement": {
+        "en": "Every Application must clear a structured InterviewPanel of at least three Interviewers before it may reach the Offer stage.",
+        "zh": "每份申请须通过由至少三名面试官组成的结构化面试小组，方可进入录用阶段。"
+      },
+      "formal": "Application.current_stage = Offer → count(InterviewStage.interviewer_ids) >= 3",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "application.current_stage != 'Offer' || size(stage.interviewer_ids) >= 3",
+        "bindings": [
+          {
+            "var": "application",
+            "objectTypeId": "objectType:application"
+          },
+          {
+            "var": "stage",
+            "objectTypeId": "objectType:interview-stage"
+          }
+        ]
+      },
+      "kind": "validation",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:application",
+        "objectType:interview-stage"
+      ],
+      "appliesToAttributes": [
+        "objectType:interview-stage.interviewer_ids"
+      ],
+      "trigger": {
+        "description": "Before an Application reaches the Offer stage."
+      },
+      "groupId": "ruleGroup:interview-hiring",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-policy",
+          "documentName": "02-business-rules-policy.md",
+          "snippet": "Every `Application` must clear a structured `InterviewPanel` of at least three `Interviewer`s before it may reach the `Offer` stage.",
+          "quoteVerified": true,
+          "section": "R5",
+          "sentenceRefs": [
+            7
+          ]
+        }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:all-scorecards-before-advance",
+      "uuid": "6961c536edf0edf203fcf2721e726a3e",
+      "title": "All scorecards before advance decision",
+      "titleZh": "全部评分齐备方可推进",
+      "statement": {
+        "en": "A hiring decision of Advance to Offer shall not be recorded until every assigned Interviewer has submitted a Scorecard for the Application.",
+        "zh": "在每名指派面试官均已为该申请提交评分表之前，不得记录“推进至录用”的招聘决定。"
+      },
+      "formal": "HiringDecision = AdvanceToOffer → ∀ Interviewer ∈ Panel: ∃ Scorecard(Interviewer, Application)",
+      "kind": "validation",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:application",
+        "objectType:scorecard",
+        "objectType:interview-stage"
+      ],
+      "trigger": {
+        "description": "On recording the hiring decision.",
+        "onEventTypeId": "event:interview.completed"
+      },
+      "groupId": "ruleGroup:interview-hiring",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-policy",
+          "documentName": "02-business-rules-policy.md",
+          "snippet": "A hiring decision of `Advance to Offer` shall not be recorded until every assigned `Interviewer` has submitted a `Scorecard` for the `Application`.",
+          "quoteVerified": true,
+          "section": "R6",
+          "sentenceRefs": [
+            8
+          ]
+        }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:engineering-assessment-threshold",
+      "uuid": "6a5132a4278b6eee184960ecff9850c3",
+      "title": "Engineering assessment 70% threshold",
+      "titleZh": "工程测评70%门槛",
+      "statement": {
+        "en": "For engineering roles, a Candidate whose Assessment score is below 70% may not advance past the Recruiter Screen stage.",
+        "zh": "对于工程类岗位，技术测评得分低于70%的候选人不得越过招聘官初筛阶段。"
+      },
+      "formal": "Role = Engineering ∧ Assessment.score_pct < 70 → Application.current_stage ≤ 'Recruiter Screen'",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "assessment.score_pct >= 70 || application.current_stage == 'Recruiter Screen'",
+        "bindings": [
+          {
+            "var": "assessment",
+            "objectTypeId": "objectType:assessment"
+          },
+          {
+            "var": "application",
+            "objectTypeId": "objectType:application"
+          }
+        ]
+      },
+      "kind": "validation",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:assessment",
+        "objectType:application"
+      ],
+      "appliesToAttributes": [
+        "objectType:assessment.score_pct"
+      ],
+      "trigger": {
+        "description": "After Assessment completion for engineering roles.",
+        "onEventTypeId": "event:assessment.completed"
+      },
+      "groupId": "ruleGroup:interview-hiring",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-policy",
+          "documentName": "02-business-rules-policy.md",
+          "snippet": "For engineering roles, a `Candidate` whose `Assessment` score is below 70% may not advance past the `Recruiter Screen` stage.",
+          "quoteVerified": true,
+          "section": "R7",
+          "sentenceRefs": [
+            9
+          ]
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:one-scorecard-per-interviewer",
+      "uuid": "b677810994f5ee546e2ebedb62d69953",
+      "title": "One scorecard per interviewer per application",
+      "titleZh": "每名面试官每份申请仅一张评分表",
+      "statement": {
+        "en": "No single Interviewer may submit more than one Scorecard for the same Application.",
+        "zh": "同一名面试官不得为同一份申请提交多于一张评分表。"
+      },
+      "formal": "∀ Interviewer, Application: count(Scorecard(Interviewer, Application)) <= 1",
+      "kind": "constraint",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:scorecard",
+        "objectType:application"
+      ],
+      "appliesToAttributes": [
+        "objectType:scorecard.interviewer_id"
+      ],
+      "trigger": {
+        "description": "On Scorecard submission."
+      },
+      "groupId": "ruleGroup:interview-hiring",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-policy",
+          "documentName": "02-business-rules-policy.md",
+          "snippet": "No single `Interviewer` may submit more than one `Scorecard` for the same `Application`.",
+          "quoteVerified": true,
+          "section": "R8",
+          "sentenceRefs": [
+            10
+          ]
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:panel-bar-raiser",
+      "uuid": "8418da0f6c2f8b1c3f98560c41952726",
+      "title": "Panel must include independent Bar Raiser",
+      "titleZh": "小组须含独立Bar Raiser",
+      "statement": {
+        "en": "At least one member of every InterviewPanel is required to be a trained Bar Raiser independent of the hiring team.",
+        "zh": "每个面试小组须至少有一名经培训且独立于招聘团队的Bar Raiser成员。"
+      },
+      "formal": "∀ InterviewPanel: ∃ member m: m.is_bar_raiser_certified ∧ m ∉ hiringTeam",
+      "kind": "constraint",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:interview-stage",
+        "objectType:worker"
+      ],
+      "appliesToAttributes": [
+        "objectType:interview-stage.bar_raiser_id",
+        "objectType:worker.is_bar_raiser_certified"
+      ],
+      "trigger": {
+        "description": "When forming the InterviewPanel."
+      },
+      "groupId": "ruleGroup:interview-hiring",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-policy",
+          "documentName": "02-business-rules-policy.md",
+          "snippet": "At least one member of every `InterviewPanel` is required to be a trained Bar Raiser independent of the hiring team.",
+          "quoteVerified": true,
+          "section": "R14",
+          "sentenceRefs": [
+            11
+          ]
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:interviewer-recusal",
+      "uuid": "79029820b84ce3dd7f2c52c94012aad8",
+      "title": "Interviewer with personal relationship must recuse",
+      "titleZh": "有私人关系面试官须回避",
+      "statement": {
+        "en": "An Interviewer who has a personal relationship with the Candidate must recuse from the InterviewPanel and may not submit a Scorecard.",
+        "zh": "与候选人存在私人关系的面试官须从面试小组中回避，且不得提交评分表。"
+      },
+      "formal": "PersonalRelationship(Interviewer, Candidate) → Interviewer ∉ Panel ∧ ¬∃ Scorecard(Interviewer)",
+      "kind": "constraint",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:interview-stage",
+        "objectType:scorecard",
+        "objectType:candidate"
+      ],
+      "trigger": {
+        "description": "When assigning Interviewers to a panel."
+      },
+      "groupId": "ruleGroup:interview-hiring",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-policy",
+          "documentName": "02-business-rules-policy.md",
+          "snippet": "An `Interviewer` who has a personal relationship with the `Candidate` must recuse from the `InterviewPanel` and may not submit a `Scorecard`.",
+          "quoteVerified": true,
+          "section": "R15",
+          "sentenceRefs": [
+            12
+          ]
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:offer-expiry-window",
+      "uuid": "a215cbaeb0b0a70ea6ab55d1a6630b41",
+      "title": "Offer expiry within 7 business days",
+      "titleZh": "录用7个工作日内到期",
+      "statement": {
+        "en": "An Offer is required to specify an expiry date no more than 7 business days after it is extended, and an Offer not accepted by its expiry date shall transition to status Expired.",
+        "zh": "录用通知须指定自发出起不超过7个工作日的到期日；到期未被接受的录用通知须转为已过期状态。"
+      },
+      "formal": "Offer.expires_at <= extended_at + 7 business days ∧ (now > Offer.expires_at ∧ Offer.status ≠ Accepted → Offer.status = Expired)",
+      "kind": "temporal",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:offer"
+      ],
+      "appliesToAttributes": [
+        "objectType:offer.expires_at",
+        "objectType:offer.status"
+      ],
+      "trigger": {
+        "description": "On Offer extension and at expiry.",
+        "onEventTypeId": "event:offer.extended"
+      },
+      "groupId": "ruleGroup:eligibility-timing-compliance",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-policy",
+          "documentName": "02-business-rules-policy.md",
+          "snippet": "An `Offer` is required to specify an expiry date no more than 7 business days after it is extended, and an `Offer` not accepted by its expiry date shall transition to status `Expired`.",
+          "quoteVerified": true,
+          "section": "R9",
+          "sentenceRefs": [
+            13
+          ]
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:clear-background-before-hire",
+      "uuid": "a3892ffd9063e7f472830859e9103935",
+      "title": "Clear background check before hire",
+      "titleZh": "入职前背调须Clear",
+      "statement": {
+        "en": "A Candidate may not be converted to a Worker until a BackgroundCheck with result Clear is on file; a result of Consider shall suspend the hire pending individualized adjudication.",
+        "zh": "在备有结果为Clear的背景调查之前，候选人不得转为正式员工；结果为Consider时须暂停入职，等待个案裁定。"
+      },
+      "formal": "Candidate → Worker requires BackgroundCheck.result = 'Clear'; BackgroundCheck.result = 'Consider' → suspend hire",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "check.result == 'Clear'",
+        "bindings": [
+          {
+            "var": "check",
+            "objectTypeId": "objectType:background-check"
+          }
+        ]
+      },
+      "kind": "state_transition",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:candidate",
+        "objectType:background-check",
+        "objectType:worker"
+      ],
+      "appliesToAttributes": [
+        "objectType:background-check.result"
+      ],
+      "trigger": {
+        "description": "Before converting an accepted Candidate to a Worker.",
+        "onEventTypeId": "event:background-check.completed"
+      },
+      "groupId": "ruleGroup:eligibility-timing-compliance",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-policy",
+          "documentName": "02-business-rules-policy.md",
+          "snippet": "A `Candidate` may not be converted to a `Worker` until a `BackgroundCheck` with result `Clear` is on file; a result of `Consider` shall suspend the hire pending individualized adjudication.",
+          "quoteVerified": true,
+          "section": "R10",
+          "sentenceRefs": [
+            14
+          ]
+        }
+      ],
+      "confidence": 0.94,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:minimum-posting-period",
+      "uuid": "1d13ad706dda0597376271c978b2d887",
+      "title": "Minimum 5 business day posting period",
+      "titleZh": "至少5个工作日发布期",
+      "statement": {
+        "en": "A Requisition must remain open for a minimum posting period of 5 business days before any Offer may be extended against it.",
+        "zh": "招聘需求须保持开放至少5个工作日的发布期，方可针对其发出任何录用通知。"
+      },
+      "formal": "Offer.status = Extended → (now - Requisition.opened_at) >= 5 business days",
+      "kind": "temporal",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:requisition",
+        "objectType:offer"
+      ],
+      "appliesToAttributes": [
+        "objectType:requisition.opened_at"
+      ],
+      "trigger": {
+        "description": "Before extending an Offer against a Requisition."
+      },
+      "groupId": "ruleGroup:eligibility-timing-compliance",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-policy",
+          "documentName": "02-business-rules-policy.md",
+          "snippet": "A `Requisition` must remain open for a minimum posting period of 5 business days before any `Offer` may be extended against it.",
+          "quoteVerified": true,
+          "section": "R11",
+          "sentenceRefs": [
+            15
+          ]
+        }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:candidate-data-retention",
+      "uuid": "fe8b6a472797136ee61c97156306672f",
+      "title": "Candidate data retained max 24 months",
+      "titleZh": "候选人数据最多保留24个月",
+      "statement": {
+        "en": "A Candidate's personal data must be retained for no longer than 24 months after the final Application disposition unless the Candidate has consented to a longer talent-pool retention.",
+        "zh": "除非候选人同意更长的人才库保留期，否则其个人数据在最终申请处置后保留期不得超过24个月。"
+      },
+      "formal": "retain(Candidate) <= disposition_date + 24 months ∨ Candidate.consent_retention_until > now",
+      "kind": "temporal",
+      "severity": "warn",
+      "appliesToObjectTypeIds": [
+        "objectType:candidate",
+        "objectType:application"
+      ],
+      "appliesToAttributes": [
+        "objectType:candidate.consent_retention_until"
+      ],
+      "trigger": {
+        "description": "After final Application disposition."
+      },
+      "groupId": "ruleGroup:eligibility-timing-compliance",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-policy",
+          "documentName": "02-business-rules-policy.md",
+          "snippet": "A `Candidate`'s personal data must be retained for no longer than 24 months after the final `Application` disposition unless the `Candidate` has consented to a longer talent-pool retention.",
+          "quoteVerified": true,
+          "section": "R16",
+          "sentenceRefs": [
+            16
+          ]
+        }
+      ],
+      "confidence": 0.89,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:rejection-disposition-reason",
+      "uuid": "5a0e038e7555b1f8de180e036df29249",
+      "title": "Rejection requires disposition reason",
+      "titleZh": "拒绝须记录处置原因",
+      "statement": {
+        "en": "Every Application that is rejected is required to record a standardized disposition reason code before it may be closed.",
+        "zh": "每份被拒绝的申请须先记录标准化的处置原因代码，方可关闭。"
+      },
+      "formal": "Application.current_stage = Rejected → Application.disposition_reason != null",
+      "expression": {
+        "dialect": "cel",
+        "predicate": "application.current_stage != 'Rejected' || application.disposition_reason != ''",
+        "bindings": [
+          {
+            "var": "application",
+            "objectTypeId": "objectType:application"
+          }
+        ]
+      },
+      "kind": "validation",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:application"
+      ],
+      "appliesToAttributes": [
+        "objectType:application.disposition_reason",
+        "objectType:application.current_stage"
+      ],
+      "trigger": {
+        "description": "When rejecting/closing an Application."
+      },
+      "groupId": "ruleGroup:eligibility-timing-compliance",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-policy",
+          "documentName": "02-business-rules-policy.md",
+          "snippet": "Every `Application` that is rejected is required to record a standardized disposition reason code before it may be closed.",
+          "quoteVerified": true,
+          "section": "R17",
+          "sentenceRefs": [
+            17
+          ]
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:internal-candidate-guaranteed-interview",
+      "uuid": "c33e90b0b25a46593a5538a026112ddf",
+      "title": "Qualified internal candidate gets interview",
+      "titleZh": "合格内部候选人保证面试",
+      "statement": {
+        "en": "An internal Candidate who is a current employee shall be granted an interview for any Requisition for which they meet the minimum qualifications.",
+        "zh": "作为现任员工的内部候选人，对其满足最低任职资格的任何招聘需求，应被给予面试机会。"
+      },
+      "formal": "Candidate.is_internal ∧ meetsMinQualifications(Candidate, Requisition) → grant interview",
+      "kind": "authorization",
+      "severity": "warn",
+      "appliesToObjectTypeIds": [
+        "objectType:candidate",
+        "objectType:requisition",
+        "objectType:application"
+      ],
+      "appliesToAttributes": [
+        "objectType:candidate.is_internal"
+      ],
+      "trigger": {
+        "description": "On screening an internal Candidate's Application."
+      },
+      "groupId": "ruleGroup:eligibility-timing-compliance",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-policy",
+          "documentName": "02-business-rules-policy.md",
+          "snippet": "An internal `Candidate` who is a current employee shall be granted an interview for any `Requisition` for which they meet the minimum qualifications.",
+          "quoteVerified": true,
+          "section": "R18",
+          "sentenceRefs": [
+            18
+          ]
+        }
+      ],
+      "confidence": 0.88,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:no-reopen-after-12-months",
+      "uuid": "f2c65f0b9b7319ec16a3fbb6dd8dac0f",
+      "title": "No requisition reopen after 12 months",
+      "titleZh": "12个月后不得重开需求",
+      "statement": {
+        "en": "A Requisition may not be reopened more than 12 months after it was closed; a new Requisition is required instead.",
+        "zh": "招聘需求关闭超过12个月后不得重新开启，须改为新建招聘需求。"
+      },
+      "formal": "(now - Requisition.closed_at) > 12 months → ¬reopen(Requisition)",
+      "kind": "temporal",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:requisition"
+      ],
+      "appliesToAttributes": [
+        "objectType:requisition.closed_at"
+      ],
+      "trigger": {
+        "description": "On a request to reopen a closed Requisition."
+      },
+      "groupId": "ruleGroup:eligibility-timing-compliance",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-policy",
+          "documentName": "02-business-rules-policy.md",
+          "snippet": "A `Requisition` may not be reopened more than 12 months after it was closed; a new `Requisition` is required instead.",
+          "quoteVerified": true,
+          "section": "R19",
+          "sentenceRefs": [
+            19
+          ]
+        }
+      ],
+      "confidence": 0.89,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "rule:export-control-screening",
+      "uuid": "4ebd91579efc7b59d31440d218474a58",
+      "title": "Regulated-role offer needs export-control clearance",
+      "titleZh": "受管制岗位录用须出口管制清关",
+      "statement": {
+        "en": "An Offer to a Candidate for a regulated role may not be extended until an export-control screening has returned a Cleared result.",
+        "zh": "受管制岗位的录用通知，须在出口管制筛查返回“Cleared”结果后，方可向候选人发出。"
+      },
+      "formal": "Requisition.regulated ∧ Offer.status = Extended → ExportControlScreening.result = 'Cleared'",
+      "kind": "authorization",
+      "severity": "block",
+      "appliesToObjectTypeIds": [
+        "objectType:offer",
+        "objectType:candidate",
+        "objectType:requisition"
+      ],
+      "trigger": {
+        "description": "Before extending an Offer for a regulated role.",
+        "onEventTypeId": "event:offer.approved"
+      },
+      "groupId": "ruleGroup:eligibility-timing-compliance",
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-policy",
+          "documentName": "02-business-rules-policy.md",
+          "snippet": "An `Offer` to a `Candidate` for a regulated role may not be extended until an export-control screening has returned a `Cleared` result.",
+          "quoteVerified": true,
+          "section": "R20",
+          "sentenceRefs": [
+            20
+          ]
+        }
+      ],
+      "confidence": 0.88,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    }
+  ],
+  "ruleGroups": [
+    {
+      "id": "ruleGroup:compensation-offer",
+      "title": {
+        "en": "Compensation & Offer Rules",
+        "zh": "薪酬与录用规则"
+      },
+      "ruleIds": [
+        "rule:offer-requires-approved-requisition",
+        "rule:above-band-vp-approval",
+        "rule:in-band-hm-hrbp-approval",
+        "rule:over-budget-vp-escalation",
+        "rule:below-band-needs-exception",
+        "rule:signon-bonus-cap"
+      ],
+      "rationale": "Salary-band, budget, and approval-chain controls governing what an Offer or Requisition may contain and who must sign off."
+    },
+    {
+      "id": "ruleGroup:interview-hiring",
+      "title": {
+        "en": "Interview & Hiring Rules",
+        "zh": "面试与录用规则"
+      },
+      "ruleIds": [
+        "rule:min-panel-three",
+        "rule:all-scorecards-before-advance",
+        "rule:engineering-assessment-threshold",
+        "rule:one-scorecard-per-interviewer",
+        "rule:panel-bar-raiser",
+        "rule:interviewer-recusal"
+      ],
+      "rationale": "Structured-interview integrity: panel composition, scorecard completeness, assessment thresholds, and conflict-of-interest recusal."
+    },
+    {
+      "id": "ruleGroup:eligibility-timing-compliance",
+      "title": {
+        "en": "Eligibility, Timing & Compliance Rules",
+        "zh": "资格、时效与合规规则"
+      },
+      "ruleIds": [
+        "rule:offer-expiry-window",
+        "rule:clear-background-before-hire",
+        "rule:minimum-posting-period",
+        "rule:candidate-data-retention",
+        "rule:rejection-disposition-reason",
+        "rule:internal-candidate-guaranteed-interview",
+        "rule:no-reopen-after-12-months",
+        "rule:export-control-screening"
+      ],
+      "rationale": "Time windows, background-check gates, data-retention, internal-mobility, and regulatory screening obligations."
+    }
+  ],
+  "actions": [
+    {
+      "id": "action:create-requisition",
+      "uuid": "85d35de67f48244c533cf5b01a3691c6",
+      "name": "CreateRequisition",
+      "nameZh": "创建招聘需求",
+      "description": "Create a draft Requisition in Greenhouse linked to a Workday Position and SalaryBand.",
+      "descriptionZh": "在 Greenhouse 中创建草稿招聘需求，并关联至 Workday 职位与薪资范围。",
+      "inputs": [
+        {
+          "name": "position",
+          "required": true,
+          "objectTypeId": "objectType:position"
+        },
+        {
+          "name": "salary_band",
+          "required": true,
+          "objectTypeId": "objectType:salary-band"
+        },
+        {
+          "name": "hiring_manager_id",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "requisition",
+          "required": true,
+          "objectTypeId": "objectType:requisition"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Capture the hiring manager's role definition and target SalaryBand.",
+            "zh": "采集招聘经理的角色定义与目标薪资范围。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:salary-band",
+            "objectType:position"
+          ]
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Create the Requisition in Draft, linked to the Workday Position.",
+            "zh": "创建草稿状态的招聘需求，并关联至 Workday 职位。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:requisition"
+          ]
+        }
+      ],
+      "preconditions": [],
+      "triggeredByEventIds": [
+        "event:hiring-need.identified"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:requisition.created",
+          "on": "success"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "db_write",
+          "description": "Create a Requisition record in status Draft.",
+          "objectTypeId": "objectType:requisition"
+        }
+      ],
+      "actor": {
+        "role": "Hiring Manager",
+        "roleZh": "招聘经理",
+        "kind": "human"
+      },
+      "permissions": [
+        "requisition:create"
+      ],
+      "agent": {
+        "toolName": "create_requisition",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "position": {
+              "type": "object",
+              "description": "The funded Workday Position.",
+              "$objectTypeId": "objectType:position"
+            },
+            "salary_band": {
+              "type": "object",
+              "description": "Target salary band.",
+              "$objectTypeId": "objectType:salary-band"
+            },
+            "hiring_manager_id": {
+              "type": "string",
+              "description": "Worker id of the hiring manager."
+            }
+          },
+          "required": [
+            "position",
+            "salary_band",
+            "hiring_manager_id"
+          ]
+        },
+        "toolDescription": "Create a draft Requisition linked to a funded Position.",
+        "promptHints": [
+          "Always link the Requisition to a funded Workday Position before saving."
+        ],
+        "execution": "human_task",
+        "integration": "Greenhouse ATS"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "`CreateRequisition` — consumes the Hiring Manager's role definition, the target `SalaryBand`, and the `Position` ID from Workday; produces a `Requisition` record in `Draft` status in Greenhouse, linked to the Workday `Position`.",
+          "quoteVerified": true,
+          "section": "§3 Step 1.1"
+        }
+      ],
+      "confidence": 0.93,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:validate-headcount",
+      "uuid": "f797a7c2a67599e6b80d1001751c4b04",
+      "name": "ValidateHeadcount",
+      "nameZh": "校验编制",
+      "description": "Validate Requisition headcount and budget against the funded Position and route an Approval task.",
+      "descriptionZh": "依据已拨款职位校验招聘需求的编制与预算，并路由审批任务。",
+      "inputs": [
+        {
+          "name": "requisition",
+          "required": true,
+          "objectTypeId": "objectType:requisition"
+        },
+        {
+          "name": "position",
+          "required": true,
+          "objectTypeId": "objectType:position"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "approval",
+          "required": true,
+          "objectTypeId": "objectType:approval"
+        },
+        {
+          "name": "headcount_validated",
+          "required": true,
+          "type": "boolean"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Read the funded Position headcount and budget from Workday.",
+            "zh": "从 Workday 读取已拨款职位的编制与预算。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:position"
+          ]
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Set the headcountValidated flag and open an Approval task to the chain; return unfunded Requisitions to the Hiring Manager.",
+            "zh": "设置编制校验标志并向审批链开立审批任务；将无资金的招聘需求退回招聘经理。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:approval"
+          ],
+          "guardRuleId": "rule:over-budget-vp-escalation"
+        }
+      ],
+      "preconditions": [
+        {
+          "ruleId": "rule:over-budget-vp-escalation",
+          "severity": "block"
+        }
+      ],
+      "triggeredByEventIds": [
+        "event:requisition.created"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:requisition.submitted-for-approval",
+          "on": "success"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "db_write",
+          "description": "Open an Approval task routed to the approval chain.",
+          "objectTypeId": "objectType:approval"
+        }
+      ],
+      "actor": {
+        "role": "HR Business Partner",
+        "roleZh": "HR业务伙伴",
+        "kind": "system"
+      },
+      "permissions": [
+        "requisition:validate"
+      ],
+      "agent": {
+        "toolName": "validate_headcount",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "requisition": {
+              "type": "object",
+              "description": "The draft Requisition.",
+              "$objectTypeId": "objectType:requisition"
+            },
+            "position": {
+              "type": "object",
+              "description": "The funded Position.",
+              "$objectTypeId": "objectType:position"
+            }
+          },
+          "required": [
+            "requisition",
+            "position"
+          ]
+        },
+        "toolDescription": "Validate Requisition headcount/budget and open an Approval task.",
+        "promptHints": [
+          "Return any Requisition with no funded Position to the Hiring Manager."
+        ],
+        "execution": "function",
+        "integration": "Workday"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "`ValidateHeadcount` — consumes the `Requisition` and the approved `Position` headcount and budget in Workday; produces a `headcountValidated` flag and an open `Approval` task routed to the approval chain.",
+          "quoteVerified": true,
+          "section": "§3 Step 1.2"
+        }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:approve-requisition",
+      "uuid": "a029be2597b141212abad8d7ebe9e75e",
+      "name": "ApproveRequisition",
+      "nameZh": "审批招聘需求",
+      "description": "Record an Approval decision and transition the Requisition to Approved or Rejected.",
+      "descriptionZh": "记录审批决定并将招聘需求转为已批准或已拒绝。",
+      "inputs": [
+        {
+          "name": "requisition",
+          "required": true,
+          "objectTypeId": "objectType:requisition"
+        },
+        {
+          "name": "approval",
+          "required": true,
+          "objectTypeId": "objectType:approval"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "requisition",
+          "required": true,
+          "objectTypeId": "objectType:requisition"
+        },
+        {
+          "name": "approval",
+          "required": true,
+          "objectTypeId": "objectType:approval"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Review the open Approval task and the budget check; escalate to VP if over budget.",
+            "zh": "审阅开立的审批任务与预算检查；超预算时升级至VP。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:approval"
+          ],
+          "guardRuleId": "rule:over-budget-vp-escalation"
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Record the decision, approver, level, and timestamp; transition the Requisition.",
+            "zh": "记录决定、审批人、级别与时间戳；变更招聘需求状态。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:requisition",
+            "objectType:approval"
+          ]
+        }
+      ],
+      "preconditions": [
+        {
+          "ruleId": "rule:over-budget-vp-escalation",
+          "severity": "block"
+        }
+      ],
+      "triggeredByEventIds": [
+        "event:requisition.submitted-for-approval"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:requisition.approved",
+          "on": "success",
+          "condition": "requisition.status == 'Approved'"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "state_change",
+          "description": "Requisition.status := Approved | Rejected.",
+          "objectTypeId": "objectType:requisition"
+        }
+      ],
+      "actor": {
+        "role": "Approval chain",
+        "roleZh": "审批链",
+        "kind": "human"
+      },
+      "permissions": [
+        "requisition:approve"
+      ],
+      "agent": {
+        "toolName": "approve_requisition",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "requisition": {
+              "type": "object",
+              "description": "The Requisition under approval.",
+              "$objectTypeId": "objectType:requisition"
+            },
+            "approval": {
+              "type": "object",
+              "description": "The open Approval task.",
+              "$objectTypeId": "objectType:approval"
+            }
+          },
+          "required": [
+            "requisition",
+            "approval"
+          ]
+        },
+        "toolDescription": "Approve or reject a Requisition and record the Approval.",
+        "promptHints": [
+          "Above-budget Requisitions require VP approval per R4 before they can be Approved."
+        ],
+        "execution": "human_task",
+        "integration": "Workday"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "`ApproveRequisition` — consumes the open `Approval` task and the budget check; produces an `Approval` record with decision, approver, level, and timestamp, and transitions the `Requisition` to `Approved` or `Rejected`.",
+          "quoteVerified": true,
+          "section": "§3 Step 1.3"
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:publish-job",
+      "uuid": "a5f0841d455a641a37113c312577ce79",
+      "name": "PublishJob",
+      "nameZh": "发布职位",
+      "description": "Publish an approved Requisition as Job Posts and open the application funnel.",
+      "descriptionZh": "将已审批通过的招聘需求发布为职位帖并开启申请漏斗。",
+      "inputs": [
+        {
+          "name": "requisition",
+          "required": true,
+          "objectTypeId": "objectType:requisition"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "requisition",
+          "required": true,
+          "objectTypeId": "objectType:requisition"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Verify the Requisition is Approved and has met the minimum posting period.",
+            "zh": "确认招聘需求已批准并满足最短发布期。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:requisition"
+          ],
+          "guardRuleId": "rule:minimum-posting-period"
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Publish one or more public/internal Job Posts and open the funnel.",
+            "zh": "发布一个或多个对内/对外职位帖并开启漏斗。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:requisition"
+          ]
+        }
+      ],
+      "preconditions": [
+        {
+          "ruleId": "rule:minimum-posting-period",
+          "severity": "block"
+        }
+      ],
+      "triggeredByEventIds": [
+        "event:requisition.approved"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:job.published",
+          "on": "success"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "state_change",
+          "description": "Requisition.status := Open.",
+          "objectTypeId": "objectType:requisition"
+        },
+        {
+          "kind": "notification",
+          "description": "Distribute Job Posts to sourcing channels."
+        }
+      ],
+      "actor": {
+        "role": "Recruiter",
+        "roleZh": "招聘官",
+        "kind": "agent"
+      },
+      "permissions": [
+        "job:publish"
+      ],
+      "agent": {
+        "toolName": "publish_job",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "requisition": {
+              "type": "object",
+              "description": "The approved Requisition.",
+              "$objectTypeId": "objectType:requisition"
+            }
+          },
+          "required": [
+            "requisition"
+          ]
+        },
+        "toolDescription": "Publish an approved Requisition and open the application funnel.",
+        "promptHints": [
+          "Only publish Requisitions in status Approved."
+        ],
+        "execution": "function",
+        "integration": "Greenhouse ATS"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "`PublishJob` — consumes the `Approved` `Requisition`; produces one or more public/internal `Job Post` records and opens the Application funnel.",
+          "quoteVerified": true,
+          "section": "§3 Step 1.4"
+        }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:source-candidate",
+      "uuid": "23cc6dcdb605c538b17b2837315c948e",
+      "name": "SourceCandidate",
+      "nameZh": "寻源候选人",
+      "description": "Source a passive Candidate against Requisition criteria, deduplicated by email.",
+      "descriptionZh": "依据招聘需求条件寻源被动候选人，并按邮箱去重。",
+      "inputs": [
+        {
+          "name": "requisition",
+          "required": true,
+          "objectTypeId": "objectType:requisition"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "candidate",
+          "required": true,
+          "objectTypeId": "objectType:candidate"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Read search criteria from the Requisition.",
+            "zh": "从招聘需求读取搜索条件。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:requisition"
+          ]
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Create or update a Candidate record, deduplicated by email.",
+            "zh": "创建或更新候选人记录，按邮箱去重。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:candidate"
+          ]
+        }
+      ],
+      "preconditions": [],
+      "triggeredByEventIds": [
+        "event:job.published"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:candidate.sourced",
+          "on": "success"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "db_write",
+          "description": "Create or update a Candidate record.",
+          "objectTypeId": "objectType:candidate"
+        }
+      ],
+      "actor": {
+        "role": "Sourcer",
+        "roleZh": "寻源专员",
+        "kind": "human"
+      },
+      "permissions": [
+        "candidate:source"
+      ],
+      "agent": {
+        "toolName": "source_candidate",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "requisition": {
+              "type": "object",
+              "description": "The published Requisition.",
+              "$objectTypeId": "objectType:requisition"
+            }
+          },
+          "required": [
+            "requisition"
+          ]
+        },
+        "toolDescription": "Source and dedupe a passive Candidate.",
+        "promptHints": [
+          "Deduplicate Candidates globally by email before creating a new record."
+        ],
+        "execution": "human_task",
+        "integration": "Greenhouse ATS"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "`SourceCandidate` — consumes search criteria from the `Requisition`; produces or updates a `Candidate` record (deduplicated by email).",
+          "quoteVerified": true,
+          "section": "§3 Step 2.1"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:create-application",
+      "uuid": "9e8255e2dab986091dd9fe31794d1a13",
+      "name": "CreateApplication",
+      "nameZh": "创建申请",
+      "description": "Create an Application linking exactly one Candidate to one Requisition in stage Application Review.",
+      "descriptionZh": "创建一份申请，将恰好一名候选人与一项招聘需求关联，状态为申请评审。",
+      "inputs": [
+        {
+          "name": "candidate",
+          "required": true,
+          "objectTypeId": "objectType:candidate"
+        },
+        {
+          "name": "requisition",
+          "required": true,
+          "objectTypeId": "objectType:requisition"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "application",
+          "required": true,
+          "objectTypeId": "objectType:application"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Bind the Candidate to the published Requisition.",
+            "zh": "将候选人绑定至已发布的招聘需求。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:candidate",
+            "objectType:requisition"
+          ]
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Create the Application in stage Application Review.",
+            "zh": "创建状态为申请评审的申请。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:application"
+          ]
+        }
+      ],
+      "preconditions": [],
+      "triggeredByEventIds": [
+        "event:job.published",
+        "event:candidate.sourced"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:application.received",
+          "on": "success"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "db_write",
+          "description": "Create an Application in stage Application Review.",
+          "objectTypeId": "objectType:application"
+        }
+      ],
+      "actor": {
+        "role": "Recruiter",
+        "roleZh": "招聘官",
+        "kind": "system"
+      },
+      "permissions": [
+        "application:create"
+      ],
+      "agent": {
+        "toolName": "create_application",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "candidate": {
+              "type": "object",
+              "description": "The applying Candidate.",
+              "$objectTypeId": "objectType:candidate"
+            },
+            "requisition": {
+              "type": "object",
+              "description": "The published Requisition.",
+              "$objectTypeId": "objectType:requisition"
+            }
+          },
+          "required": [
+            "candidate",
+            "requisition"
+          ]
+        },
+        "toolDescription": "Create an Application linking a Candidate to a Requisition.",
+        "promptHints": [
+          "Each Application must link exactly one Candidate to one Requisition."
+        ],
+        "execution": "function",
+        "integration": "Greenhouse ATS"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "`CreateApplication` — consumes the `Candidate` and the published `Requisition`; produces an `Application` record in stage `Application Review`, linking exactly one `Candidate` to one `Requisition`.",
+          "quoteVerified": true,
+          "section": "§3 Step 2.2"
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:screen-application",
+      "uuid": "fc65fa4b759c70df4f034367670686b3",
+      "name": "ScreenApplication",
+      "nameZh": "初筛申请",
+      "description": "Screen an Application against Requisition criteria, advancing or rejecting with a disposition reason.",
+      "descriptionZh": "依据招聘需求条件初筛申请，推进或附处置原因拒绝。",
+      "inputs": [
+        {
+          "name": "application",
+          "required": true,
+          "objectTypeId": "objectType:application"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "application",
+          "required": true,
+          "objectTypeId": "objectType:application"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Compare the Application against Requisition criteria.",
+            "zh": "将申请与招聘需求条件比对。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:application",
+            "objectType:requisition"
+          ]
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Advance to Recruiter Screen or Reject; record a disposition reason on rejection; guarantee an interview for qualified internal candidates.",
+            "zh": "推进至招聘官初筛或拒绝；拒绝时记录处置原因；为合格内部候选人保证面试。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:application"
+          ],
+          "guardRuleId": "rule:rejection-disposition-reason"
+        }
+      ],
+      "preconditions": [
+        {
+          "ruleId": "rule:rejection-disposition-reason",
+          "severity": "block"
+        },
+        {
+          "ruleId": "rule:internal-candidate-guaranteed-interview",
+          "severity": "warn"
+        }
+      ],
+      "triggeredByEventIds": [
+        "event:application.received"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:application.advanced",
+          "on": "success",
+          "condition": "application.current_stage == 'Recruiter Screen'"
+        },
+        {
+          "eventTypeId": "event:application.rejected",
+          "on": "success",
+          "condition": "application.current_stage == 'Rejected'"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "state_change",
+          "description": "Application.current_stage := Recruiter Screen | Rejected.",
+          "objectTypeId": "objectType:application"
+        }
+      ],
+      "actor": {
+        "role": "Recruiter",
+        "roleZh": "招聘官",
+        "kind": "agent"
+      },
+      "permissions": [
+        "application:screen"
+      ],
+      "agent": {
+        "toolName": "screen_application",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "application": {
+              "type": "object",
+              "description": "The received Application.",
+              "$objectTypeId": "objectType:application"
+            }
+          },
+          "required": [
+            "application"
+          ]
+        },
+        "toolDescription": "Screen an Application and advance or reject it.",
+        "promptHints": [
+          "Record a standardized disposition reason whenever you reject an Application.",
+          "Grant an interview to a qualified internal candidate per R18."
+        ],
+        "execution": "llm_tool",
+        "integration": "Greenhouse ATS"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "`ScreenApplication` — consumes the `Application` and the `Requisition` criteria; produces an updated `Application` stage of either `Recruiter Screen` (advance) or `Rejected`. Records a screening disposition reason.",
+          "quoteVerified": true,
+          "section": "§3 Step 3.1"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:request-assessment",
+      "uuid": "9245643d54d6990db65c607803bb305c",
+      "name": "RequestAssessment",
+      "nameZh": "发起技术测评",
+      "description": "Send a HackerRank Assessment invitation and write back the score, gating on the 70% threshold.",
+      "descriptionZh": "发送 HackerRank 测评邀请并回写得分，以70%门槛设限。",
+      "inputs": [
+        {
+          "name": "application",
+          "required": true,
+          "objectTypeId": "objectType:application"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "assessment",
+          "required": true,
+          "objectTypeId": "objectType:assessment"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Send the Assessment invitation for the Application.",
+            "zh": "为申请发送测评邀请。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:application"
+          ]
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "On completion, write the Assessment score back to the Application and enforce the engineering threshold.",
+            "zh": "完成后将测评得分回写至申请并执行工程门槛。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:assessment",
+            "objectType:application"
+          ],
+          "guardRuleId": "rule:engineering-assessment-threshold"
+        }
+      ],
+      "preconditions": [
+        {
+          "ruleId": "rule:engineering-assessment-threshold",
+          "severity": "block"
+        }
+      ],
+      "triggeredByEventIds": [
+        "event:application.advanced"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:assessment.completed",
+          "on": "success"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "external_call",
+          "description": "Invite candidate to a HackerRank assessment."
+        },
+        {
+          "kind": "db_write",
+          "description": "Write Assessment score back to the Application.",
+          "objectTypeId": "objectType:assessment"
+        }
+      ],
+      "actor": {
+        "role": "Recruiter",
+        "roleZh": "招聘官",
+        "kind": "system"
+      },
+      "permissions": [
+        "assessment:request"
+      ],
+      "agent": {
+        "toolName": "request_assessment",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "application": {
+              "type": "object",
+              "description": "The advanced Application.",
+              "$objectTypeId": "objectType:application"
+            }
+          },
+          "required": [
+            "application"
+          ]
+        },
+        "toolDescription": "Send a technical Assessment and record the score.",
+        "promptHints": [
+          "For engineering roles, do not advance candidates scoring below 70%."
+        ],
+        "execution": "function",
+        "integration": "HackerRank"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "`RequestAssessment` — consumes the `Application`; produces an `Assessment` invitation and, on completion, an `Assessment` score written back to the `Application`.",
+          "quoteVerified": true,
+          "section": "§3 Step 3.2"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:schedule-interview",
+      "uuid": "b6f40988ebb76d9dd4b18dc5a6405dfb",
+      "name": "ScheduleInterview",
+      "nameZh": "安排面试",
+      "description": "Schedule a structured InterviewPanel of at least three Interviewers including a Bar Raiser; advance to Onsite.",
+      "descriptionZh": "安排由至少三名面试官（含Bar Raiser）组成的结构化面试小组；推进至现场阶段。",
+      "inputs": [
+        {
+          "name": "application",
+          "required": true,
+          "objectTypeId": "objectType:application"
+        },
+        {
+          "name": "interviewers",
+          "required": true,
+          "objectTypeId": "objectType:worker",
+          "isArray": true,
+          "cardinality": "many",
+          "description": "Roster of available interviewers."
+        }
+      ],
+      "outputs": [
+        {
+          "name": "interview_stage",
+          "required": true,
+          "objectTypeId": "objectType:interview-stage"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Read the Application and the roster of available Interviewers.",
+            "zh": "读取申请与可用面试官名单。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:application",
+            "objectType:worker"
+          ]
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Form one InterviewPanel of >=3 Interviewers with an independent Bar Raiser; recuse conflicted interviewers.",
+            "zh": "组建一个由不少于3名面试官、含独立Bar Raiser的面试小组；回避有利益冲突的面试官。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:interview-stage"
+          ],
+          "guardRuleId": "rule:min-panel-three"
+        },
+        {
+          "order": 3,
+          "text": {
+            "en": "Bind the panel to one InterviewStage and advance the Application to Onsite.",
+            "zh": "将小组绑定至一个面试阶段并将申请推进至现场。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:application",
+            "objectType:interview-stage"
+          ],
+          "guardRuleId": "rule:panel-bar-raiser"
+        }
+      ],
+      "preconditions": [
+        {
+          "ruleId": "rule:min-panel-three",
+          "severity": "block"
+        },
+        {
+          "ruleId": "rule:panel-bar-raiser",
+          "severity": "block"
+        },
+        {
+          "ruleId": "rule:interviewer-recusal",
+          "severity": "block"
+        }
+      ],
+      "triggeredByEventIds": [
+        "event:assessment.completed",
+        "event:application.advanced"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:interview.scheduled",
+          "on": "success"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "state_change",
+          "description": "Application.current_stage := Onsite.",
+          "objectTypeId": "objectType:application"
+        },
+        {
+          "kind": "notification",
+          "description": "Send calendar invites to panel Interviewers."
+        }
+      ],
+      "actor": {
+        "role": "Recruiter",
+        "roleZh": "招聘官",
+        "kind": "agent"
+      },
+      "permissions": [
+        "interview:schedule"
+      ],
+      "agent": {
+        "toolName": "schedule_interview",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "application": {
+              "type": "object",
+              "description": "The Application to schedule.",
+              "$objectTypeId": "objectType:application"
+            },
+            "interviewers": {
+              "type": "array",
+              "description": "Available interviewers.",
+              "items": {
+                "type": "object",
+                "$objectTypeId": "objectType:worker"
+              }
+            }
+          },
+          "required": [
+            "application",
+            "interviewers"
+          ]
+        },
+        "toolDescription": "Schedule a compliant structured InterviewPanel.",
+        "promptHints": [
+          "Every panel must have at least three interviewers and one independent Bar Raiser.",
+          "Recuse any interviewer with a personal relationship to the candidate."
+        ],
+        "execution": "llm_tool",
+        "integration": "Greenhouse ATS"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "`ScheduleInterview` — consumes the `Application` and a roster of available `Interviewer`s; produces one `InterviewPanel` of at least three `Interviewer`s bound to one `InterviewStage`, and advances the `Application` to stage `Onsite`.",
+          "quoteVerified": true,
+          "section": "§3 Step 3.3"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:submit-scorecard",
+      "uuid": "a741d1dfdd4f4d4aad83842ed878f1e4",
+      "name": "SubmitScorecard",
+      "nameZh": "提交评分表",
+      "description": "Submit one Scorecard per Interviewer with a structured recommendation; emit InterviewCompleted when all are in.",
+      "descriptionZh": "每名面试官提交一张含结构化推荐意见的评分表；全部齐备时发出面试完成事件。",
+      "inputs": [
+        {
+          "name": "interview_stage",
+          "required": true,
+          "objectTypeId": "objectType:interview-stage"
+        },
+        {
+          "name": "interviewer_id",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "scorecard",
+          "required": true,
+          "objectTypeId": "objectType:scorecard"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Complete the structured interview kit for the InterviewStage.",
+            "zh": "完成该面试阶段的结构化面试套件。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:interview-stage"
+          ]
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Submit exactly one Scorecard per Interviewer with a recommendation.",
+            "zh": "每名面试官提交恰好一张含推荐意见的评分表。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:scorecard"
+          ],
+          "guardRuleId": "rule:one-scorecard-per-interviewer"
+        }
+      ],
+      "preconditions": [
+        {
+          "ruleId": "rule:one-scorecard-per-interviewer",
+          "severity": "block"
+        },
+        {
+          "ruleId": "rule:interviewer-recusal",
+          "severity": "block"
+        }
+      ],
+      "triggeredByEventIds": [
+        "event:interview.scheduled"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:scorecard.submitted",
+          "on": "success"
+        },
+        {
+          "eventTypeId": "event:interview.completed",
+          "on": "success",
+          "condition": "all_scorecards_in"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "db_write",
+          "description": "Create a Scorecard record.",
+          "objectTypeId": "objectType:scorecard"
+        }
+      ],
+      "actor": {
+        "role": "Interviewer",
+        "roleZh": "面试官",
+        "kind": "human"
+      },
+      "permissions": [
+        "scorecard:submit"
+      ],
+      "agent": {
+        "toolName": "submit_scorecard",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "interview_stage": {
+              "type": "object",
+              "description": "The interview stage.",
+              "$objectTypeId": "objectType:interview-stage"
+            },
+            "interviewer_id": {
+              "type": "string",
+              "description": "Worker id of the submitting interviewer."
+            }
+          },
+          "required": [
+            "interview_stage",
+            "interviewer_id"
+          ]
+        },
+        "toolDescription": "Submit a single structured Scorecard for an interview stage.",
+        "promptHints": [
+          "A single interviewer may submit only one scorecard per application."
+        ],
+        "execution": "human_task",
+        "integration": "Greenhouse ATS"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "`SubmitScorecard` — consumes the structured interview kit for the `InterviewStage`; produces one `Scorecard` per `Interviewer` with a recommendation (Strong Yes / Yes / No / Strong No).",
+          "quoteVerified": true,
+          "section": "§3 Step 3.4"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:record-hiring-decision",
+      "uuid": "f40745c14dc5ae59d4300980b510a3db",
+      "name": "RecordHiringDecision",
+      "nameZh": "记录招聘决定",
+      "description": "Record an Advance to Offer or Reject decision from a complete panel of Scorecards.",
+      "descriptionZh": "依据齐备的评分表小组记录“推进至录用”或“拒绝”的决定。",
+      "inputs": [
+        {
+          "name": "application",
+          "required": true,
+          "objectTypeId": "objectType:application"
+        },
+        {
+          "name": "scorecards",
+          "required": true,
+          "objectTypeId": "objectType:scorecard",
+          "isArray": true,
+          "cardinality": "many"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "application",
+          "required": true,
+          "objectTypeId": "objectType:application"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Verify a complete panel and that every assigned Interviewer submitted a Scorecard.",
+            "zh": "核实小组齐备且每名指派面试官均已提交评分表。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:scorecard",
+            "objectType:interview-stage"
+          ],
+          "guardRuleId": "rule:all-scorecards-before-advance"
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Record Advance to Offer or Reject on the Application.",
+            "zh": "在申请上记录推进至录用或拒绝。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:application"
+          ],
+          "guardRuleId": "rule:min-panel-three"
+        }
+      ],
+      "preconditions": [
+        {
+          "ruleId": "rule:all-scorecards-before-advance",
+          "severity": "block"
+        },
+        {
+          "ruleId": "rule:min-panel-three",
+          "severity": "block"
+        }
+      ],
+      "triggeredByEventIds": [
+        "event:interview.completed"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:hiring-decision.recorded",
+          "on": "always"
+        },
+        {
+          "eventTypeId": "event:offer.requested",
+          "on": "success",
+          "condition": "decision == 'Advance to Offer'"
+        },
+        {
+          "eventTypeId": "event:application.rejected",
+          "on": "success",
+          "condition": "decision == 'Reject'"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "state_change",
+          "description": "Application decision recorded; stage advances to Offer or Rejected.",
+          "objectTypeId": "objectType:application"
+        }
+      ],
+      "actor": {
+        "role": "Hiring Manager",
+        "roleZh": "招聘经理",
+        "kind": "human"
+      },
+      "permissions": [
+        "hiring:decide"
+      ],
+      "agent": {
+        "toolName": "record_hiring_decision",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "application": {
+              "type": "object",
+              "description": "The interviewed Application.",
+              "$objectTypeId": "objectType:application"
+            },
+            "scorecards": {
+              "type": "array",
+              "description": "All submitted scorecards.",
+              "items": {
+                "type": "object",
+                "$objectTypeId": "objectType:scorecard"
+              }
+            }
+          },
+          "required": [
+            "application",
+            "scorecards"
+          ]
+        },
+        "toolDescription": "Record the debrief hiring decision for an Application.",
+        "promptHints": [
+          "Do not record Advance to Offer until every assigned interviewer has submitted a scorecard."
+        ],
+        "execution": "human_task",
+        "integration": "Greenhouse ATS"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "`RecordHiringDecision` — consumes all `Scorecard`s for the `Application`; produces a decision of `Advance to Offer` or `Reject` on the `Application`.",
+          "quoteVerified": true,
+          "section": "§3 Step 3.5"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:draft-offer",
+      "uuid": "b5ec706c258096ed2dcd210bf8f3be24",
+      "name": "DraftOffer",
+      "nameZh": "拟定录用",
+      "description": "Draft an Offer with base salary, bonus, equity, and start date against the role's SalaryBand.",
+      "descriptionZh": "依据该职位薪资范围拟定含基本薪资、奖金、股权与入职日期的录用通知。",
+      "inputs": [
+        {
+          "name": "application",
+          "required": true,
+          "objectTypeId": "objectType:application"
+        },
+        {
+          "name": "requisition",
+          "required": true,
+          "objectTypeId": "objectType:requisition"
+        },
+        {
+          "name": "salary_band",
+          "required": true,
+          "objectTypeId": "objectType:salary-band"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "offer",
+          "required": true,
+          "objectTypeId": "objectType:offer"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Read the Application, Requisition, and SalaryBand.",
+            "zh": "读取申请、招聘需求与薪资范围。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:application",
+            "objectType:requisition",
+            "objectType:salary-band"
+          ]
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Create the Offer in Draft; enforce below-band exception and sign-on bonus cap.",
+            "zh": "创建草稿录用通知；执行低于范围例外与签约奖金上限。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:offer"
+          ],
+          "guardRuleId": "rule:below-band-needs-exception"
+        }
+      ],
+      "preconditions": [
+        {
+          "ruleId": "rule:below-band-needs-exception",
+          "severity": "block"
+        },
+        {
+          "ruleId": "rule:signon-bonus-cap",
+          "severity": "block"
+        }
+      ],
+      "triggeredByEventIds": [
+        "event:offer.requested"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:offer.drafted",
+          "on": "success"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "db_write",
+          "description": "Create an Offer record in Draft.",
+          "objectTypeId": "objectType:offer"
+        }
+      ],
+      "actor": {
+        "role": "Recruiter",
+        "roleZh": "招聘官",
+        "kind": "agent"
+      },
+      "permissions": [
+        "offer:draft"
+      ],
+      "agent": {
+        "toolName": "draft_offer",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "application": {
+              "type": "object",
+              "description": "The advancing Application.",
+              "$objectTypeId": "objectType:application"
+            },
+            "requisition": {
+              "type": "object",
+              "description": "The Requisition.",
+              "$objectTypeId": "objectType:requisition"
+            },
+            "salary_band": {
+              "type": "object",
+              "description": "The role's salary band.",
+              "$objectTypeId": "objectType:salary-band"
+            }
+          },
+          "required": [
+            "application",
+            "requisition",
+            "salary_band"
+          ]
+        },
+        "toolDescription": "Draft a compensation Offer against the role's salary band.",
+        "promptHints": [
+          "A below-minimum base salary requires a documented Compensation Analyst exception.",
+          "A sign-on bonus above 20% of base salary requires VP approval."
+        ],
+        "execution": "llm_tool",
+        "integration": "Greenhouse ATS"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "`DraftOffer` — consumes the `Application`, the `Requisition`, and the role's `SalaryBand`; produces an `Offer` record in `Draft` with base salary, bonus target, equity, and start date.",
+          "quoteVerified": true,
+          "section": "§3 Step 4.1"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:validate-offer-band",
+      "uuid": "e387a9f735b81a259e3cd42c24445636",
+      "name": "ValidateOfferBand",
+      "nameZh": "校验录用薪资范围",
+      "description": "Determine inBand/aboveBand for an Offer and block if the Requisition is not Approved.",
+      "descriptionZh": "判定录用通知为范围内/超范围，若招聘需求未批准则拦截。",
+      "inputs": [
+        {
+          "name": "offer",
+          "required": true,
+          "objectTypeId": "objectType:offer"
+        },
+        {
+          "name": "salary_band",
+          "required": true,
+          "objectTypeId": "objectType:salary-band"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "offer",
+          "required": true,
+          "objectTypeId": "objectType:offer"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Compare proposed salary to the published SalaryBand for role and location.",
+            "zh": "将拟定薪资与该职位及地区发布的薪资范围比对。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:offer",
+            "objectType:salary-band"
+          ]
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Set inBand/aboveBand on the Offer; block if the Requisition is not Approved.",
+            "zh": "在录用通知上设置范围内/超范围；若招聘需求未批准则拦截。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:offer"
+          ],
+          "guardRuleId": "rule:offer-requires-approved-requisition"
+        }
+      ],
+      "preconditions": [
+        {
+          "ruleId": "rule:offer-requires-approved-requisition",
+          "severity": "block"
+        }
+      ],
+      "triggeredByEventIds": [
+        "event:offer.drafted"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:offer.validated",
+          "on": "success"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "state_change",
+          "description": "Offer.band_status := InBand | AboveBand | BelowBand.",
+          "objectTypeId": "objectType:offer"
+        }
+      ],
+      "actor": {
+        "role": "Compensation Analyst",
+        "roleZh": "薪酬分析师",
+        "kind": "system"
+      },
+      "permissions": [
+        "offer:validate-band"
+      ],
+      "agent": {
+        "toolName": "validate_offer_band",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "offer": {
+              "type": "object",
+              "description": "The drafted Offer.",
+              "$objectTypeId": "objectType:offer"
+            },
+            "salary_band": {
+              "type": "object",
+              "description": "The role's salary band.",
+              "$objectTypeId": "objectType:salary-band"
+            }
+          },
+          "required": [
+            "offer",
+            "salary_band"
+          ]
+        },
+        "toolDescription": "Determine an Offer's band status and gate on requisition approval.",
+        "promptHints": [
+          "Block any Offer whose Requisition is not in status Approved."
+        ],
+        "execution": "function",
+        "integration": "Workday"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "`ValidateOfferBand` — consumes the `Offer`'s proposed salary and the published `SalaryBand` for the role and location; produces an `inBand` / `aboveBand` determination on the `Offer`. An `Offer` is blocked if the `Requisition` is not `Approved`.",
+          "quoteVerified": true,
+          "section": "§3 Step 4.2"
+        }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:approve-offer",
+      "uuid": "b8073fffe4a7fe63c1a378533bc81835",
+      "name": "ApproveOffer",
+      "nameZh": "审批录用",
+      "description": "Route the validated Offer for approval; above-band offers additionally require VP approval.",
+      "descriptionZh": "将已校验录用通知路由审批；超范围录用须另获VP审批。",
+      "inputs": [
+        {
+          "name": "offer",
+          "required": true,
+          "objectTypeId": "objectType:offer"
+        },
+        {
+          "name": "requisition",
+          "required": true,
+          "objectTypeId": "objectType:requisition"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "approval",
+          "required": true,
+          "objectTypeId": "objectType:approval"
+        },
+        {
+          "name": "offer",
+          "required": true,
+          "objectTypeId": "objectType:offer"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Route to Hiring Manager + HRBP for in-band offers.",
+            "zh": "范围内录用路由至招聘经理与HRBP。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:offer"
+          ],
+          "guardRuleId": "rule:in-band-hm-hrbp-approval"
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "For above-band offers, additionally require VP approval recorded against the Requisition.",
+            "zh": "超范围录用另需针对招聘需求记录VP审批。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:approval"
+          ],
+          "guardRuleId": "rule:above-band-vp-approval"
+        }
+      ],
+      "preconditions": [
+        {
+          "ruleId": "rule:in-band-hm-hrbp-approval",
+          "severity": "block"
+        },
+        {
+          "ruleId": "rule:above-band-vp-approval",
+          "severity": "block"
+        }
+      ],
+      "triggeredByEventIds": [
+        "event:offer.validated"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:offer.approved",
+          "on": "success",
+          "condition": "offer.status == 'Approved'"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "db_write",
+          "description": "Create an Approval record for the Offer.",
+          "objectTypeId": "objectType:approval"
+        },
+        {
+          "kind": "state_change",
+          "description": "Offer.status := Approved | Pending Approval.",
+          "objectTypeId": "objectType:offer"
+        }
+      ],
+      "actor": {
+        "role": "Approval chain",
+        "roleZh": "审批链",
+        "kind": "human"
+      },
+      "permissions": [
+        "offer:approve"
+      ],
+      "agent": {
+        "toolName": "approve_offer",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "offer": {
+              "type": "object",
+              "description": "The validated Offer.",
+              "$objectTypeId": "objectType:offer"
+            },
+            "requisition": {
+              "type": "object",
+              "description": "The linked Requisition.",
+              "$objectTypeId": "objectType:requisition"
+            }
+          },
+          "required": [
+            "offer",
+            "requisition"
+          ]
+        },
+        "toolDescription": "Approve a validated Offer through the appropriate chain.",
+        "promptHints": [
+          "Above-band offers require VP approval recorded against the Requisition."
+        ],
+        "execution": "human_task",
+        "integration": "Workday"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "`ApproveOffer` — consumes the validated `Offer`; produces an `Approval` record. In-band offers require Hiring Manager + HRBP approval; above-band offers additionally require VP approval recorded against the `Requisition`.",
+          "quoteVerified": true,
+          "section": "§3 Step 4.3"
+        }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:extend-offer",
+      "uuid": "46a791191b48259a3e58864e6765fcd4",
+      "name": "ExtendOffer",
+      "nameZh": "发出录用",
+      "description": "Send an approved Offer to the Candidate via a DocuSign envelope with a valid expiry window.",
+      "descriptionZh": "通过 DocuSign 信封向候选人发出已审批录用通知，并设置有效到期窗口。",
+      "inputs": [
+        {
+          "name": "offer",
+          "required": true,
+          "objectTypeId": "objectType:offer"
+        },
+        {
+          "name": "candidate",
+          "required": true,
+          "objectTypeId": "objectType:candidate"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "offer",
+          "required": true,
+          "objectTypeId": "objectType:offer"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Confirm the Offer is Approved, the Requisition is Approved and met the posting period, and any export-control screening cleared.",
+            "zh": "确认录用已批准、招聘需求已批准并满足发布期、且出口管制筛查通过。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:offer",
+            "objectType:requisition"
+          ],
+          "guardRuleId": "rule:offer-requires-approved-requisition"
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Send a DocuSign envelope with an expiry no more than 7 business days out; transition Offer to Extended.",
+            "zh": "发送到期不超过7个工作日的 DocuSign 信封；将录用转为已发出。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:offer"
+          ],
+          "guardRuleId": "rule:offer-expiry-window"
+        }
+      ],
+      "preconditions": [
+        {
+          "ruleId": "rule:offer-requires-approved-requisition",
+          "severity": "block"
+        },
+        {
+          "ruleId": "rule:offer-expiry-window",
+          "severity": "block"
+        },
+        {
+          "ruleId": "rule:minimum-posting-period",
+          "severity": "block"
+        },
+        {
+          "ruleId": "rule:export-control-screening",
+          "severity": "block"
+        }
+      ],
+      "triggeredByEventIds": [
+        "event:offer.approved"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:offer.extended",
+          "on": "success"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "external_call",
+          "description": "Send a DocuSign envelope to the Candidate."
+        },
+        {
+          "kind": "state_change",
+          "description": "Offer.status := Extended.",
+          "objectTypeId": "objectType:offer"
+        }
+      ],
+      "actor": {
+        "role": "Recruiter",
+        "roleZh": "招聘官",
+        "kind": "agent"
+      },
+      "permissions": [
+        "offer:extend"
+      ],
+      "agent": {
+        "toolName": "extend_offer",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "offer": {
+              "type": "object",
+              "description": "The approved Offer.",
+              "$objectTypeId": "objectType:offer"
+            },
+            "candidate": {
+              "type": "object",
+              "description": "The recipient Candidate.",
+              "$objectTypeId": "objectType:candidate"
+            }
+          },
+          "required": [
+            "offer",
+            "candidate"
+          ]
+        },
+        "toolDescription": "Send an approved Offer to a candidate via DocuSign.",
+        "promptHints": [
+          "Set the offer expiry to no more than 7 business days after extension.",
+          "Regulated roles require a cleared export-control screening before extension."
+        ],
+        "execution": "function",
+        "integration": "DocuSign"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "`ExtendOffer` — consumes the `Approved` `Offer`; produces a DocuSign envelope sent to the `Candidate` and transitions the `Offer` to `Extended`.",
+          "quoteVerified": true,
+          "section": "§3 Step 5.1"
+        }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:record-offer-response",
+      "uuid": "72e13468fa43ca811cb1c8a28126152e",
+      "name": "RecordOfferResponse",
+      "nameZh": "记录录用回复",
+      "description": "Record the Candidate's Accept or Decline from the DocuSign signature event.",
+      "descriptionZh": "依据 DocuSign 签署事件记录候选人的接受或拒绝。",
+      "inputs": [
+        {
+          "name": "offer",
+          "required": true,
+          "objectTypeId": "objectType:offer"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "offer",
+          "required": true,
+          "objectTypeId": "objectType:offer"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Consume the DocuSign signature event.",
+            "zh": "接收 DocuSign 签署事件。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:offer"
+          ]
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Set Offer status to Accepted or Declined; expire if past the window.",
+            "zh": "将录用状态设为已接受或已拒绝；超期则置为已过期。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:offer"
+          ],
+          "guardRuleId": "rule:offer-expiry-window"
+        }
+      ],
+      "preconditions": [
+        {
+          "ruleId": "rule:offer-expiry-window",
+          "severity": "block"
+        }
+      ],
+      "triggeredByEventIds": [
+        "event:offer.extended"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:offer.accepted",
+          "on": "success",
+          "condition": "offer.status == 'Accepted'"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "state_change",
+          "description": "Offer.status := Accepted | Declined | Expired.",
+          "objectTypeId": "objectType:offer"
+        }
+      ],
+      "actor": {
+        "role": "Candidate",
+        "roleZh": "候选人",
+        "kind": "human"
+      },
+      "permissions": [
+        "offer:respond"
+      ],
+      "agent": {
+        "toolName": "record_offer_response",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "offer": {
+              "type": "object",
+              "description": "The extended Offer.",
+              "$objectTypeId": "objectType:offer"
+            }
+          },
+          "required": [
+            "offer"
+          ]
+        },
+        "toolDescription": "Record a candidate's acceptance or decline of an Offer.",
+        "promptHints": [
+          "An Offer not accepted by its expiry date transitions to Expired."
+        ],
+        "execution": "function",
+        "integration": "DocuSign"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "`RecordOfferResponse` — consumes the DocuSign signature event; produces an `Offer` status of `Accepted` or `Declined`.",
+          "quoteVerified": true,
+          "section": "§3 Step 5.2"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:initiate-background-check",
+      "uuid": "ea13c840dc0c45c15999bd494968cf77",
+      "name": "InitiateBackgroundCheck",
+      "nameZh": "发起背景调查",
+      "description": "Order a Checkr BackgroundCheck on candidate consent for an accepted Offer.",
+      "descriptionZh": "在候选人同意下，针对已接受录用向 Checkr 下单发起背景调查。",
+      "inputs": [
+        {
+          "name": "offer",
+          "required": true,
+          "objectTypeId": "objectType:offer"
+        },
+        {
+          "name": "candidate",
+          "required": true,
+          "objectTypeId": "objectType:candidate"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "background_check",
+          "required": true,
+          "objectTypeId": "objectType:background-check"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Confirm the Offer is Accepted and obtain Candidate consent.",
+            "zh": "确认录用已接受并取得候选人同意。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:offer",
+            "objectType:candidate"
+          ]
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Order the BackgroundCheck and record the result.",
+            "zh": "下单背景调查并记录结果。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:background-check"
+          ]
+        }
+      ],
+      "preconditions": [],
+      "triggeredByEventIds": [
+        "event:offer.accepted"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:background-check.completed",
+          "on": "success"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "external_call",
+          "description": "Order a Checkr background screening."
+        },
+        {
+          "kind": "db_write",
+          "description": "Create a BackgroundCheck record.",
+          "objectTypeId": "objectType:background-check"
+        }
+      ],
+      "actor": {
+        "role": "Recruiter",
+        "roleZh": "招聘官",
+        "kind": "system"
+      },
+      "permissions": [
+        "background-check:initiate"
+      ],
+      "agent": {
+        "toolName": "initiate_background_check",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "offer": {
+              "type": "object",
+              "description": "The accepted Offer.",
+              "$objectTypeId": "objectType:offer"
+            },
+            "candidate": {
+              "type": "object",
+              "description": "The Candidate.",
+              "$objectTypeId": "objectType:candidate"
+            }
+          },
+          "required": [
+            "offer",
+            "candidate"
+          ]
+        },
+        "toolDescription": "Order a background check for an accepted offer.",
+        "promptHints": [
+          "Require documented candidate consent before ordering the check."
+        ],
+        "execution": "function",
+        "integration": "Checkr"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "`InitiateBackgroundCheck` — consumes the accepted `Offer` and `Candidate` consent; produces a `BackgroundCheck` record with status `Clear` / `Consider` / `Suspended`.",
+          "quoteVerified": true,
+          "section": "§3 Step 5.3"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "action:convert-to-hire",
+      "uuid": "4fdcb5ff8d6206c8ea0fc74f8948a89d",
+      "name": "ConvertToHire",
+      "nameZh": "转为入职",
+      "description": "Create a Workday Worker on a Clear BackgroundCheck, close the Requisition as Filled, and decrement headcount.",
+      "descriptionZh": "在背调结果为Clear时创建 Workday 员工，将招聘需求关闭为已填补，并扣减编制。",
+      "inputs": [
+        {
+          "name": "offer",
+          "required": true,
+          "objectTypeId": "objectType:offer"
+        },
+        {
+          "name": "background_check",
+          "required": true,
+          "objectTypeId": "objectType:background-check"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "worker",
+          "required": true,
+          "objectTypeId": "objectType:worker"
+        },
+        {
+          "name": "requisition",
+          "required": true,
+          "objectTypeId": "objectType:requisition"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "text": {
+            "en": "Verify the Offer is Accepted and the BackgroundCheck result is Clear; suspend on Consider.",
+            "zh": "核实录用已接受且背调结果为Clear；结果为Consider时暂停。"
+          },
+          "readsObjectTypeIds": [
+            "objectType:offer",
+            "objectType:background-check"
+          ],
+          "guardRuleId": "rule:clear-background-before-hire"
+        },
+        {
+          "order": 2,
+          "text": {
+            "en": "Create a Worker, close the Requisition as Filled, and decrement the Position headcount.",
+            "zh": "创建员工，将招聘需求关闭为已填补，并扣减职位编制。"
+          },
+          "writesObjectTypeIds": [
+            "objectType:worker",
+            "objectType:requisition",
+            "objectType:position"
+          ]
+        }
+      ],
+      "preconditions": [
+        {
+          "ruleId": "rule:clear-background-before-hire",
+          "severity": "block"
+        }
+      ],
+      "triggeredByEventIds": [
+        "event:background-check.completed"
+      ],
+      "emitsEvents": [
+        {
+          "eventTypeId": "event:candidate.hired",
+          "on": "success"
+        },
+        {
+          "eventTypeId": "event:requisition.closed",
+          "on": "success"
+        }
+      ],
+      "sideEffects": [
+        {
+          "kind": "db_write",
+          "description": "Create a Worker record in Workday.",
+          "objectTypeId": "objectType:worker"
+        },
+        {
+          "kind": "state_change",
+          "description": "Requisition.status := Filled; Position headcount decremented.",
+          "objectTypeId": "objectType:requisition"
+        }
+      ],
+      "actor": {
+        "role": "HR Business Partner",
+        "roleZh": "HR业务伙伴",
+        "kind": "system"
+      },
+      "permissions": [
+        "hire:convert"
+      ],
+      "agent": {
+        "toolName": "convert_to_hire",
+        "parameterSchema": {
+          "type": "object",
+          "properties": {
+            "offer": {
+              "type": "object",
+              "description": "The accepted Offer.",
+              "$objectTypeId": "objectType:offer"
+            },
+            "background_check": {
+              "type": "object",
+              "description": "The completed BackgroundCheck.",
+              "$objectTypeId": "objectType:background-check"
+            }
+          },
+          "required": [
+            "offer",
+            "background_check"
+          ]
+        },
+        "toolDescription": "Convert an accepted, cleared candidate into a Worker and close the requisition.",
+        "promptHints": [
+          "Do not convert to hire unless the background check result is Clear.",
+          "A Consider result suspends the hire pending individualized adjudication."
+        ],
+        "execution": "function",
+        "integration": "Workday"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "`ConvertToHire` — consumes the accepted `Offer` and `Clear` `BackgroundCheck`; produces a `Worker` record in Workday, closes the `Requisition` as `Filled`, and decrements the `Position` headcount.",
+          "quoteVerified": true,
+          "section": "§3 Step 5.4"
+        }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    }
+  ],
+  "events": [
+    {
+      "id": "event:hiring-need.identified",
+      "uuid": "ce7ed8a304bab702f76870ac239a6d3b",
+      "name": "hiring-need.identified",
+      "nameZh": "识别到招聘需求",
+      "description": "A hiring need has been identified by a Hiring Manager, initiating the requisition process.",
+      "descriptionZh": "招聘经理已识别出招聘需求，启动需求流程。",
+      "payload": [
+        {
+          "name": "position_id",
+          "type": "reference",
+          "required": false,
+          "objectTypeId": "objectType:position"
+        },
+        {
+          "name": "hiring_manager_id",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "producedByActionIds": [],
+      "consumedByActionIds": [
+        "action:create-requisition"
+      ],
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "Trigger event: `HiringNeedIdentified`.",
+          "quoteVerified": true,
+          "section": "§3 Step 1.1"
+        }
+      ],
+      "confidence": 0.85,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:requisition.created",
+      "uuid": "1b1f115b4b58c509c029a69a3fb144e5",
+      "name": "requisition.created",
+      "nameZh": "招聘需求已创建",
+      "description": "A draft Requisition has been created in Greenhouse and linked to a Workday Position.",
+      "descriptionZh": "已在 Greenhouse 中创建草稿招聘需求并关联至 Workday 职位。",
+      "payload": [
+        {
+          "name": "requisition_id",
+          "type": "reference",
+          "required": true,
+          "objectTypeId": "objectType:requisition"
+        }
+      ],
+      "producedByActionIds": [
+        "action:create-requisition"
+      ],
+      "consumedByActionIds": [
+        "action:validate-headcount"
+      ],
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "Emitted event: `RequisitionCreated`.",
+          "quoteVerified": true,
+          "section": "§3 Step 1.1"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:requisition.submitted-for-approval",
+      "uuid": "e51b6b0deafa45235f6af49a70944aa6",
+      "name": "requisition.submitted-for-approval",
+      "nameZh": "招聘需求已提交审批",
+      "description": "A Requisition has passed headcount validation and an Approval task has been routed to the approval chain.",
+      "descriptionZh": "招聘需求已通过编制校验，并已将审批任务路由至审批链。",
+      "payload": [
+        {
+          "name": "requisition_id",
+          "type": "reference",
+          "required": true,
+          "objectTypeId": "objectType:requisition"
+        },
+        {
+          "name": "approval_id",
+          "type": "reference",
+          "required": false,
+          "objectTypeId": "objectType:approval"
+        }
+      ],
+      "producedByActionIds": [
+        "action:validate-headcount"
+      ],
+      "consumedByActionIds": [
+        "action:approve-requisition"
+      ],
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "Emitted event: `RequisitionSubmittedForApproval`.",
+          "quoteVerified": true,
+          "section": "§3 Step 1.2"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:requisition.approved",
+      "uuid": "30065704b936a2b32285b6737663cb7d",
+      "name": "requisition.approved",
+      "nameZh": "招聘需求已批准",
+      "description": "A Requisition has been approved by the approval chain and may be published.",
+      "descriptionZh": "招聘需求已获审批链批准，可以发布。",
+      "payload": [
+        {
+          "name": "requisition_id",
+          "type": "reference",
+          "required": true,
+          "objectTypeId": "objectType:requisition"
+        },
+        {
+          "name": "approval_id",
+          "type": "reference",
+          "required": false,
+          "objectTypeId": "objectType:approval"
+        }
+      ],
+      "producedByActionIds": [
+        "action:approve-requisition"
+      ],
+      "consumedByActionIds": [
+        "action:publish-job"
+      ],
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "Emitted event: `RequisitionApproved` (or `RequisitionRejected`).",
+          "quoteVerified": true,
+          "section": "§3 Step 1.3"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`RequisitionApproved` | Workday | Greenhouse | `requisition_id`, `Approval`",
+          "quoteVerified": true,
+          "section": "§4"
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:job.published",
+      "uuid": "de59d60bc9973727c17b3fe6f99ea18e",
+      "name": "job.published",
+      "nameZh": "职位已发布",
+      "description": "An approved Requisition has been published as one or more Job Posts, opening the application funnel.",
+      "descriptionZh": "已审批通过的招聘需求已发布为一个或多个职位帖，开启申请漏斗。",
+      "payload": [
+        {
+          "name": "requisition_id",
+          "type": "reference",
+          "required": true,
+          "objectTypeId": "objectType:requisition"
+        }
+      ],
+      "producedByActionIds": [
+        "action:publish-job"
+      ],
+      "consumedByActionIds": [
+        "action:source-candidate",
+        "action:create-application"
+      ],
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "Emitted event: `JobPublished`.",
+          "quoteVerified": true,
+          "section": "§3 Step 1.4"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`JobPublished` | Greenhouse | sourcing channels | `requisition_id`",
+          "quoteVerified": true,
+          "section": "§4"
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:candidate.sourced",
+      "uuid": "8514960c3e7f837bb52d42bc54696e4e",
+      "name": "candidate.sourced",
+      "nameZh": "候选人已寻源",
+      "description": "A passive Candidate has been sourced and a Candidate record created or updated.",
+      "descriptionZh": "已寻源到一名被动候选人，并创建或更新候选人记录。",
+      "payload": [
+        {
+          "name": "candidate_id",
+          "type": "reference",
+          "required": true,
+          "objectTypeId": "objectType:candidate"
+        }
+      ],
+      "producedByActionIds": [
+        "action:source-candidate"
+      ],
+      "consumedByActionIds": [
+        "action:create-application"
+      ],
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "Emitted event: `CandidateSourced`.",
+          "quoteVerified": true,
+          "section": "§3 Step 2.1"
+        }
+      ],
+      "confidence": 0.88,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:application.received",
+      "uuid": "a1bd6188e5d08218db393c7a68a8fcb8",
+      "name": "application.received",
+      "nameZh": "申请已接收",
+      "description": "An Application has been received linking one Candidate to one Requisition, entering Application Review.",
+      "descriptionZh": "已接收一份申请，将一名候选人与一项招聘需求关联，进入申请评审阶段。",
+      "payload": [
+        {
+          "name": "application_id",
+          "type": "reference",
+          "required": true,
+          "objectTypeId": "objectType:application"
+        },
+        {
+          "name": "candidate_id",
+          "type": "reference",
+          "required": true,
+          "objectTypeId": "objectType:candidate"
+        }
+      ],
+      "producedByActionIds": [
+        "action:create-application"
+      ],
+      "consumedByActionIds": [
+        "action:screen-application"
+      ],
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "Emitted event: `ApplicationReceived`.",
+          "quoteVerified": true,
+          "section": "§3 Step 2.2"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`ApplicationReceived` | Greenhouse | Recruiter queue | `application_id`, `candidate_id`",
+          "quoteVerified": true,
+          "section": "§4"
+        }
+      ],
+      "confidence": 0.92,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:application.advanced",
+      "uuid": "dbc2a2ab0af002028a22978172039528",
+      "name": "application.advanced",
+      "nameZh": "申请已推进",
+      "description": "An Application has advanced past Recruiter Screen.",
+      "descriptionZh": "申请已通过招聘官初筛并推进。",
+      "payload": [
+        {
+          "name": "application_id",
+          "type": "reference",
+          "required": true,
+          "objectTypeId": "objectType:application"
+        }
+      ],
+      "producedByActionIds": [
+        "action:screen-application"
+      ],
+      "consumedByActionIds": [
+        "action:request-assessment",
+        "action:schedule-interview"
+      ],
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "Emitted event: `ApplicationAdvanced` (or `ApplicationRejected`).",
+          "quoteVerified": true,
+          "section": "§3 Step 3.1"
+        }
+      ],
+      "confidence": 0.89,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:application.rejected",
+      "uuid": "2b2d3eef6a12dc28d96f9c15cdbfa12d",
+      "name": "application.rejected",
+      "nameZh": "申请已拒绝",
+      "description": "An Application has been rejected with a recorded disposition reason.",
+      "descriptionZh": "申请已被拒绝，并记录了处置原因。",
+      "payload": [
+        {
+          "name": "application_id",
+          "type": "reference",
+          "required": true,
+          "objectTypeId": "objectType:application"
+        },
+        {
+          "name": "disposition_reason",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "producedByActionIds": [
+        "action:screen-application",
+        "action:record-hiring-decision"
+      ],
+      "consumedByActionIds": [],
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "Emitted event: `ApplicationAdvanced` (or `ApplicationRejected`).",
+          "quoteVerified": true,
+          "section": "§3 Step 3.1"
+        }
+      ],
+      "confidence": 0.88,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:assessment.completed",
+      "uuid": "107fa92a802e985fa5c4762cbd3ca1bd",
+      "name": "assessment.completed",
+      "nameZh": "测评已完成",
+      "description": "A technical Assessment has been completed and its score written back to the Application.",
+      "descriptionZh": "技术测评已完成，得分已回写至申请。",
+      "payload": [
+        {
+          "name": "assessment_id",
+          "type": "reference",
+          "required": true,
+          "objectTypeId": "objectType:assessment"
+        },
+        {
+          "name": "score_pct",
+          "type": "decimal",
+          "required": false
+        }
+      ],
+      "producedByActionIds": [
+        "action:request-assessment"
+      ],
+      "consumedByActionIds": [
+        "action:schedule-interview"
+      ],
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "Emitted event: `AssessmentCompleted`.",
+          "quoteVerified": true,
+          "section": "§3 Step 3.2"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`AssessmentCompleted` | HackerRank | Greenhouse | `assessment_id`, `score_pct`",
+          "quoteVerified": true,
+          "section": "§4"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:interview.scheduled",
+      "uuid": "23819074e4cfe8bf8fbed46034988135",
+      "name": "interview.scheduled",
+      "nameZh": "面试已安排",
+      "description": "A structured InterviewPanel has been scheduled and the Application advanced to Onsite.",
+      "descriptionZh": "已安排结构化面试小组，申请推进至现场阶段。",
+      "payload": [
+        {
+          "name": "stage_id",
+          "type": "reference",
+          "required": true,
+          "objectTypeId": "objectType:interview-stage"
+        },
+        {
+          "name": "interviewer_ids",
+          "type": "array",
+          "required": false
+        }
+      ],
+      "producedByActionIds": [
+        "action:schedule-interview"
+      ],
+      "consumedByActionIds": [
+        "action:submit-scorecard"
+      ],
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "Emitted event: `InterviewScheduled`.",
+          "quoteVerified": true,
+          "section": "§3 Step 3.3"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`InterviewScheduled` | Greenhouse | calendar, Interviewers | `stage_id`, `interviewer_ids`",
+          "quoteVerified": true,
+          "section": "§4"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:scorecard.submitted",
+      "uuid": "3bf900866a1a95fd456c6446ba5a49ef",
+      "name": "scorecard.submitted",
+      "nameZh": "评分表已提交",
+      "description": "An Interviewer has submitted a Scorecard for the Application.",
+      "descriptionZh": "某面试官已为该申请提交评分表。",
+      "payload": [
+        {
+          "name": "scorecard_id",
+          "type": "reference",
+          "required": true,
+          "objectTypeId": "objectType:scorecard"
+        },
+        {
+          "name": "recommendation",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "producedByActionIds": [
+        "action:submit-scorecard"
+      ],
+      "consumedByActionIds": [],
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "Emitted event: `ScorecardSubmitted`; when all panel scorecards are in, `InterviewCompleted`.",
+          "quoteVerified": true,
+          "section": "§3 Step 3.4"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`ScorecardSubmitted` | Greenhouse | Recruiter | `scorecard_id`, `recommendation`",
+          "quoteVerified": true,
+          "section": "§4"
+        }
+      ],
+      "confidence": 0.89,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:interview.completed",
+      "uuid": "5c1dbc43b834c97a84042e63ede5b7c4",
+      "name": "interview.completed",
+      "nameZh": "面试已完成",
+      "description": "All panel Scorecards for an Application have been submitted, completing the interview loop.",
+      "descriptionZh": "该申请的全部小组评分表均已提交，面试环节完成。",
+      "payload": [
+        {
+          "name": "application_id",
+          "type": "reference",
+          "required": true,
+          "objectTypeId": "objectType:application"
+        }
+      ],
+      "producedByActionIds": [
+        "action:submit-scorecard"
+      ],
+      "consumedByActionIds": [
+        "action:record-hiring-decision"
+      ],
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "when all panel scorecards are in, `InterviewCompleted`.",
+          "quoteVerified": true,
+          "section": "§3 Step 3.4"
+        }
+      ],
+      "confidence": 0.88,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:hiring-decision.recorded",
+      "uuid": "73cba660bc0fce6dbc1db3e4a270730a",
+      "name": "hiring-decision.recorded",
+      "nameZh": "招聘决定已记录",
+      "description": "A hiring decision of Advance to Offer or Reject has been recorded on the Application.",
+      "descriptionZh": "已在申请上记录“推进至录用”或“拒绝”的招聘决定。",
+      "payload": [
+        {
+          "name": "application_id",
+          "type": "reference",
+          "required": true,
+          "objectTypeId": "objectType:application"
+        },
+        {
+          "name": "decision",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "producedByActionIds": [
+        "action:record-hiring-decision"
+      ],
+      "consumedByActionIds": [],
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "Emitted event: `HiringDecisionRecorded` → `OfferRequested` (on advance) or `ApplicationRejected`.",
+          "quoteVerified": true,
+          "section": "§3 Step 3.5"
+        }
+      ],
+      "confidence": 0.88,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:offer.requested",
+      "uuid": "2c2a8e6bf83a3728b5e178845b44eead",
+      "name": "offer.requested",
+      "nameZh": "已请求录用",
+      "description": "An Offer has been requested following a positive hiring decision.",
+      "descriptionZh": "在正向招聘决定后已请求发出录用通知。",
+      "payload": [
+        {
+          "name": "application_id",
+          "type": "reference",
+          "required": true,
+          "objectTypeId": "objectType:application"
+        }
+      ],
+      "producedByActionIds": [
+        "action:record-hiring-decision"
+      ],
+      "consumedByActionIds": [
+        "action:draft-offer"
+      ],
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "Emitted event: `HiringDecisionRecorded` → `OfferRequested` (on advance)",
+          "quoteVerified": true,
+          "section": "§3 Step 3.5"
+        }
+      ],
+      "confidence": 0.88,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:offer.drafted",
+      "uuid": "5981952fee3e496aba9cedf5dd638d4f",
+      "name": "offer.drafted",
+      "nameZh": "录用已拟定",
+      "description": "An Offer has been drafted with base salary, bonus target, equity, and start date.",
+      "descriptionZh": "已拟定录用通知，含基本薪资、奖金目标、股权与入职日期。",
+      "payload": [
+        {
+          "name": "offer_id",
+          "type": "reference",
+          "required": true,
+          "objectTypeId": "objectType:offer"
+        }
+      ],
+      "producedByActionIds": [
+        "action:draft-offer"
+      ],
+      "consumedByActionIds": [
+        "action:validate-offer-band"
+      ],
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "Emitted event: `OfferDrafted`.",
+          "quoteVerified": true,
+          "section": "§3 Step 4.1"
+        }
+      ],
+      "confidence": 0.89,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:offer.validated",
+      "uuid": "66a8a2981d67f8fb0256a84022c8ea9f",
+      "name": "offer.validated",
+      "nameZh": "录用已校验",
+      "description": "An Offer has received an inBand/aboveBand determination against the SalaryBand.",
+      "descriptionZh": "已针对薪资范围对录用通知作出范围内/超范围的判定。",
+      "payload": [
+        {
+          "name": "offer_id",
+          "type": "reference",
+          "required": true,
+          "objectTypeId": "objectType:offer"
+        },
+        {
+          "name": "band_status",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "producedByActionIds": [
+        "action:validate-offer-band"
+      ],
+      "consumedByActionIds": [
+        "action:approve-offer"
+      ],
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "Emitted event: `OfferValidated`.",
+          "quoteVerified": true,
+          "section": "§3 Step 4.2"
+        }
+      ],
+      "confidence": 0.89,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:offer.approved",
+      "uuid": "6adbfeecd2012dbe2b13abcd56b4b702",
+      "name": "offer.approved",
+      "nameZh": "录用已批准",
+      "description": "An Offer has been approved through the appropriate approval chain.",
+      "descriptionZh": "录用通知已通过相应审批链获得批准。",
+      "payload": [
+        {
+          "name": "offer_id",
+          "type": "reference",
+          "required": true,
+          "objectTypeId": "objectType:offer"
+        },
+        {
+          "name": "approval_id",
+          "type": "reference",
+          "required": false,
+          "objectTypeId": "objectType:approval"
+        }
+      ],
+      "producedByActionIds": [
+        "action:approve-offer"
+      ],
+      "consumedByActionIds": [
+        "action:extend-offer"
+      ],
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "Emitted event: `OfferApproved` (or `OfferReturnedForRevision`).",
+          "quoteVerified": true,
+          "section": "§3 Step 4.3"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`OfferApproved` | Workday | Greenhouse, DocuSign | `offer_id`, `Approval`",
+          "quoteVerified": true,
+          "section": "§4"
+        }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:offer.extended",
+      "uuid": "d50e1fab906ce6c8489e33d009b31db7",
+      "name": "offer.extended",
+      "nameZh": "录用已发出",
+      "description": "An approved Offer has been sent to the Candidate via a DocuSign envelope.",
+      "descriptionZh": "已审批通过的录用通知已通过 DocuSign 信封发送给候选人。",
+      "payload": [
+        {
+          "name": "offer_id",
+          "type": "reference",
+          "required": true,
+          "objectTypeId": "objectType:offer"
+        }
+      ],
+      "producedByActionIds": [
+        "action:extend-offer"
+      ],
+      "consumedByActionIds": [
+        "action:record-offer-response"
+      ],
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "Emitted event: `OfferExtended`.",
+          "quoteVerified": true,
+          "section": "§3 Step 5.1"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:offer.accepted",
+      "uuid": "47fa0dc9ffeef0881efa66aadcb50454",
+      "name": "offer.accepted",
+      "nameZh": "录用已接受",
+      "description": "The Candidate has accepted the Offer via DocuSign signature.",
+      "descriptionZh": "候选人已通过 DocuSign 签署接受录用通知。",
+      "payload": [
+        {
+          "name": "offer_id",
+          "type": "reference",
+          "required": true,
+          "objectTypeId": "objectType:offer"
+        }
+      ],
+      "producedByActionIds": [
+        "action:record-offer-response"
+      ],
+      "consumedByActionIds": [
+        "action:initiate-background-check"
+      ],
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "Emitted event: `OfferAccepted` (or `OfferDeclined`).",
+          "quoteVerified": true,
+          "section": "§3 Step 5.2"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`OfferAccepted` | DocuSign | Greenhouse → Workday | `offer_id`, signature",
+          "quoteVerified": true,
+          "section": "§4"
+        }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:background-check.completed",
+      "uuid": "c486adb2cc224e0c405acd5884c67fff",
+      "name": "background-check.completed",
+      "nameZh": "背景调查已完成",
+      "description": "A Checkr BackgroundCheck has completed with a Clear/Consider/Suspended result.",
+      "descriptionZh": "Checkr 背景调查已完成，结果为 Clear/Consider/Suspended。",
+      "payload": [
+        {
+          "name": "check_id",
+          "type": "reference",
+          "required": true,
+          "objectTypeId": "objectType:background-check"
+        },
+        {
+          "name": "result",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "producedByActionIds": [
+        "action:initiate-background-check"
+      ],
+      "consumedByActionIds": [
+        "action:convert-to-hire"
+      ],
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "Emitted event: `BackgroundCheckCompleted`.",
+          "quoteVerified": true,
+          "section": "§3 Step 5.3"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`BackgroundCheckCompleted` | Checkr | Greenhouse, Workday | `check_id`, `result`",
+          "quoteVerified": true,
+          "section": "§4"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:candidate.hired",
+      "uuid": "d2c747dd3faf1cbfdd1d43d0f3a9c080",
+      "name": "candidate.hired",
+      "nameZh": "候选人已录用",
+      "description": "A Worker record has been created in Workday and the candidate is hired.",
+      "descriptionZh": "已在 Workday 中创建员工记录，候选人入职。",
+      "payload": [
+        {
+          "name": "worker_id",
+          "type": "reference",
+          "required": true,
+          "objectTypeId": "objectType:worker"
+        },
+        {
+          "name": "requisition_id",
+          "type": "reference",
+          "required": true,
+          "objectTypeId": "objectType:requisition"
+        }
+      ],
+      "producedByActionIds": [
+        "action:convert-to-hire"
+      ],
+      "consumedByActionIds": [],
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "Emitted event: `CandidateHired` → `RequisitionClosed`.",
+          "quoteVerified": true,
+          "section": "§3 Step 5.4"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`CandidateHired` | Workday | Onboarding | `worker_id`, `requisition_id`",
+          "quoteVerified": true,
+          "section": "§4"
+        }
+      ],
+      "confidence": 0.91,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "event:requisition.closed",
+      "uuid": "66a5dd8c2772c1e34ffeea58693d6631",
+      "name": "requisition.closed",
+      "nameZh": "招聘需求已关闭",
+      "description": "The Requisition has been closed as Filled and Position headcount decremented.",
+      "descriptionZh": "招聘需求已作为已填补关闭，并已扣减职位编制。",
+      "payload": [
+        {
+          "name": "requisition_id",
+          "type": "reference",
+          "required": true,
+          "objectTypeId": "objectType:requisition"
+        },
+        {
+          "name": "closed_at",
+          "type": "datetime",
+          "required": false
+        }
+      ],
+      "producedByActionIds": [
+        "action:convert-to-hire"
+      ],
+      "consumedByActionIds": [],
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "Emitted event: `CandidateHired` → `RequisitionClosed`.",
+          "quoteVerified": true,
+          "section": "§3 Step 5.4"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-systems",
+          "documentName": "03-systems-and-data.md",
+          "snippet": "`RequisitionClosed` | Greenhouse | reporting | `requisition_id`, `closed_at`",
+          "quoteVerified": true,
+          "section": "§4"
+        }
+      ],
+      "confidence": 0.9,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    }
+  ],
+  "processes": [
+    {
+      "id": "process:requisition-intake-approval",
+      "uuid": "2bd87e0ceafed50dac23f8939dd75be4",
+      "name": {
+        "en": "Requisition Intake & Approval",
+        "zh": "需求受理与审批"
+      },
+      "description": "From an identified hiring need through headcount validation, approval, and publishing the Job.",
+      "actors": [
+        {
+          "role": "Hiring Manager",
+          "roleZh": "招聘经理",
+          "kind": "human"
+        },
+        {
+          "role": "HR Business Partner",
+          "roleZh": "HR业务伙伴",
+          "kind": "human"
+        },
+        {
+          "role": "Approval chain",
+          "roleZh": "审批链",
+          "kind": "human"
+        },
+        {
+          "role": "Recruiter",
+          "roleZh": "招聘官",
+          "kind": "agent"
+        }
+      ],
+      "objectTypeIds": [
+        "objectType:requisition",
+        "objectType:position",
+        "objectType:approval",
+        "objectType:salary-band"
+      ],
+      "steps": [
+        {
+          "id": "s1",
+          "actionTypeId": "action:create-requisition",
+          "order": 1,
+          "actorRole": "Hiring Manager",
+          "next": [
+            {
+              "toStepId": "s2",
+              "onEventTypeId": "event:requisition.created"
+            }
+          ]
+        },
+        {
+          "id": "s2",
+          "actionTypeId": "action:validate-headcount",
+          "order": 2,
+          "actorRole": "HR Business Partner",
+          "next": [
+            {
+              "toStepId": "s3",
+              "onEventTypeId": "event:requisition.submitted-for-approval"
+            }
+          ]
+        },
+        {
+          "id": "s3",
+          "actionTypeId": "action:approve-requisition",
+          "order": 3,
+          "actorRole": "Approval chain",
+          "next": [
+            {
+              "toStepId": "s4",
+              "condition": "requisition.status == 'Approved'",
+              "onEventTypeId": "event:requisition.approved",
+              "label": {
+                "en": "Approved",
+                "zh": "已批准"
+              }
+            }
+          ]
+        },
+        {
+          "id": "s4",
+          "actionTypeId": "action:publish-job",
+          "order": 4,
+          "actorRole": "Recruiter",
+          "next": []
+        }
+      ],
+      "triggers": [
+        {
+          "kind": "event",
+          "eventTypeId": "event:hiring-need.identified",
+          "description": "A hiring need is identified."
+        }
+      ],
+      "orchestration": {
+        "strategy": "event_driven",
+        "agentOrchestrated": true,
+        "agentRoles": [
+          {
+            "role": "Recruiter",
+            "promptProfile": "ta_recruiter_v1"
+          }
+        ],
+        "onFailure": "escalate"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "P1 — Requisition Intake & Approval (需求受理与审批)",
+          "quoteVerified": true,
+          "section": "§1"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "| P1 Requisition Intake & Approval | `HiringNeedIdentified` | `JobPublished` | Requisition, Position, Approval |",
+          "quoteVerified": true,
+          "section": "§5"
+        }
+      ],
+      "confidence": 0.88,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "process:sourcing-application",
+      "uuid": "973ca56761ea4fe601d09653cebe57db",
+      "name": {
+        "en": "Sourcing & Application",
+        "zh": "寻源与投递"
+      },
+      "description": "From a published Job through sourcing passive candidates and receiving applications.",
+      "actors": [
+        {
+          "role": "Sourcer",
+          "roleZh": "寻源专员",
+          "kind": "human"
+        },
+        {
+          "role": "Recruiter",
+          "roleZh": "招聘官",
+          "kind": "agent"
+        },
+        {
+          "role": "Candidate",
+          "roleZh": "候选人",
+          "kind": "human"
+        }
+      ],
+      "objectTypeIds": [
+        "objectType:candidate",
+        "objectType:application",
+        "objectType:requisition"
+      ],
+      "steps": [
+        {
+          "id": "s1",
+          "actionTypeId": "action:source-candidate",
+          "order": 1,
+          "actorRole": "Sourcer",
+          "next": [
+            {
+              "toStepId": "s2",
+              "onEventTypeId": "event:candidate.sourced"
+            }
+          ]
+        },
+        {
+          "id": "s2",
+          "actionTypeId": "action:create-application",
+          "order": 2,
+          "actorRole": "Recruiter",
+          "next": []
+        }
+      ],
+      "triggers": [
+        {
+          "kind": "event",
+          "eventTypeId": "event:job.published",
+          "description": "A Job has been published."
+        }
+      ],
+      "orchestration": {
+        "strategy": "event_driven",
+        "agentOrchestrated": true,
+        "agentRoles": [
+          {
+            "role": "Recruiter",
+            "promptProfile": "ta_recruiter_v1"
+          }
+        ],
+        "onFailure": "escalate"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "P2 — Sourcing & Application (寻源与投递)",
+          "quoteVerified": true,
+          "section": "§1"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "| P2 Sourcing & Application | `JobPublished` | `ApplicationReceived` | Candidate, Application |",
+          "quoteVerified": true,
+          "section": "§5"
+        }
+      ],
+      "confidence": 0.86,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "process:screening-to-offer",
+      "uuid": "bd1b1538599baecff25e1fc6a23a59e4",
+      "name": {
+        "en": "Screening to Offer",
+        "zh": "筛选到录用"
+      },
+      "description": "From a received application through screening, assessment, interviews, and the hiring decision that requests an offer.",
+      "actors": [
+        {
+          "role": "Recruiter",
+          "roleZh": "招聘官",
+          "kind": "agent"
+        },
+        {
+          "role": "Interviewer",
+          "roleZh": "面试官",
+          "kind": "human"
+        },
+        {
+          "role": "Hiring Manager",
+          "roleZh": "招聘经理",
+          "kind": "human"
+        }
+      ],
+      "objectTypeIds": [
+        "objectType:application",
+        "objectType:assessment",
+        "objectType:interview-stage",
+        "objectType:scorecard"
+      ],
+      "steps": [
+        {
+          "id": "s1",
+          "actionTypeId": "action:screen-application",
+          "order": 1,
+          "actorRole": "Recruiter",
+          "next": [
+            {
+              "toStepId": "s2",
+              "condition": "application.current_stage == 'Recruiter Screen'",
+              "onEventTypeId": "event:application.advanced",
+              "label": {
+                "en": "Advance",
+                "zh": "推进"
+              }
+            }
+          ]
+        },
+        {
+          "id": "s2",
+          "actionTypeId": "action:request-assessment",
+          "order": 2,
+          "actorRole": "Recruiter",
+          "next": [
+            {
+              "toStepId": "s3",
+              "onEventTypeId": "event:assessment.completed"
+            }
+          ]
+        },
+        {
+          "id": "s3",
+          "actionTypeId": "action:schedule-interview",
+          "order": 3,
+          "actorRole": "Recruiter",
+          "next": [
+            {
+              "toStepId": "s4",
+              "onEventTypeId": "event:interview.scheduled"
+            }
+          ]
+        },
+        {
+          "id": "s4",
+          "actionTypeId": "action:submit-scorecard",
+          "order": 4,
+          "actorRole": "Interviewer",
+          "next": [
+            {
+              "toStepId": "s5",
+              "onEventTypeId": "event:interview.completed"
+            }
+          ]
+        },
+        {
+          "id": "s5",
+          "actionTypeId": "action:record-hiring-decision",
+          "order": 5,
+          "actorRole": "Hiring Manager",
+          "next": []
+        }
+      ],
+      "triggers": [
+        {
+          "kind": "event",
+          "eventTypeId": "event:application.received",
+          "description": "An application has been received."
+        }
+      ],
+      "orchestration": {
+        "strategy": "event_driven",
+        "agentOrchestrated": true,
+        "agentRoles": [
+          {
+            "role": "Recruiter",
+            "promptProfile": "ta_recruiter_v1"
+          }
+        ],
+        "onFailure": "escalate"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "P3 — Screening to Offer (筛选到录用)",
+          "quoteVerified": true,
+          "section": "§1"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "| P3 Screening to Offer | `ApplicationReceived` | `OfferRequested` | Application, InterviewStage, Scorecard, Assessment |",
+          "quoteVerified": true,
+          "section": "§5"
+        }
+      ],
+      "confidence": 0.86,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "process:offer-approval",
+      "uuid": "768d6411c66ec2e3c351b2c794a7dc24",
+      "name": {
+        "en": "Offer Approval",
+        "zh": "录用审批"
+      },
+      "description": "From an offer request through drafting, band validation, and approval of the offer.",
+      "actors": [
+        {
+          "role": "Recruiter",
+          "roleZh": "招聘官",
+          "kind": "agent"
+        },
+        {
+          "role": "Compensation Analyst",
+          "roleZh": "薪酬分析师",
+          "kind": "human"
+        },
+        {
+          "role": "Approval chain",
+          "roleZh": "审批链",
+          "kind": "human"
+        }
+      ],
+      "objectTypeIds": [
+        "objectType:offer",
+        "objectType:salary-band",
+        "objectType:approval",
+        "objectType:requisition"
+      ],
+      "steps": [
+        {
+          "id": "s1",
+          "actionTypeId": "action:draft-offer",
+          "order": 1,
+          "actorRole": "Recruiter",
+          "next": [
+            {
+              "toStepId": "s2",
+              "onEventTypeId": "event:offer.drafted"
+            }
+          ]
+        },
+        {
+          "id": "s2",
+          "actionTypeId": "action:validate-offer-band",
+          "order": 2,
+          "actorRole": "Compensation Analyst",
+          "next": [
+            {
+              "toStepId": "s3",
+              "onEventTypeId": "event:offer.validated"
+            }
+          ]
+        },
+        {
+          "id": "s3",
+          "actionTypeId": "action:approve-offer",
+          "order": 3,
+          "actorRole": "Approval chain",
+          "next": []
+        }
+      ],
+      "triggers": [
+        {
+          "kind": "event",
+          "eventTypeId": "event:offer.requested",
+          "description": "An offer has been requested."
+        }
+      ],
+      "orchestration": {
+        "strategy": "event_driven",
+        "agentOrchestrated": true,
+        "agentRoles": [
+          {
+            "role": "Compensation Analyst",
+            "promptProfile": "ta_comp_analyst_v1"
+          }
+        ],
+        "onFailure": "halt"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "P4 — Offer Approval (录用审批)",
+          "quoteVerified": true,
+          "section": "§1"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "| P4 Offer Approval | `OfferRequested` | `OfferApproved` | Offer, SalaryBand, Approval |",
+          "quoteVerified": true,
+          "section": "§5"
+        }
+      ],
+      "confidence": 0.86,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    },
+    {
+      "id": "process:offer-to-onboarding",
+      "uuid": "d8fbf97191ac563af9317a1a54742e41",
+      "name": {
+        "en": "Offer to Onboarding",
+        "zh": "录用到入职"
+      },
+      "description": "From an approved offer through extension, candidate response, background check, and conversion to hire.",
+      "actors": [
+        {
+          "role": "Recruiter",
+          "roleZh": "招聘官",
+          "kind": "agent"
+        },
+        {
+          "role": "Candidate",
+          "roleZh": "候选人",
+          "kind": "human"
+        },
+        {
+          "role": "HR Business Partner",
+          "roleZh": "HR业务伙伴",
+          "kind": "human"
+        }
+      ],
+      "objectTypeIds": [
+        "objectType:offer",
+        "objectType:background-check",
+        "objectType:candidate",
+        "objectType:position",
+        "objectType:worker"
+      ],
+      "steps": [
+        {
+          "id": "s1",
+          "actionTypeId": "action:extend-offer",
+          "order": 1,
+          "actorRole": "Recruiter",
+          "next": [
+            {
+              "toStepId": "s2",
+              "onEventTypeId": "event:offer.extended"
+            }
+          ]
+        },
+        {
+          "id": "s2",
+          "actionTypeId": "action:record-offer-response",
+          "order": 2,
+          "actorRole": "Candidate",
+          "next": [
+            {
+              "toStepId": "s3",
+              "condition": "offer.status == 'Accepted'",
+              "onEventTypeId": "event:offer.accepted",
+              "label": {
+                "en": "Accepted",
+                "zh": "已接受"
+              }
+            }
+          ]
+        },
+        {
+          "id": "s3",
+          "actionTypeId": "action:initiate-background-check",
+          "order": 3,
+          "actorRole": "Recruiter",
+          "next": [
+            {
+              "toStepId": "s4",
+              "onEventTypeId": "event:background-check.completed"
+            }
+          ]
+        },
+        {
+          "id": "s4",
+          "actionTypeId": "action:convert-to-hire",
+          "order": 4,
+          "actorRole": "HR Business Partner",
+          "next": []
+        }
+      ],
+      "triggers": [
+        {
+          "kind": "event",
+          "eventTypeId": "event:offer.approved",
+          "description": "An offer has been approved."
+        }
+      ],
+      "orchestration": {
+        "strategy": "event_driven",
+        "agentOrchestrated": true,
+        "agentRoles": [
+          {
+            "role": "Recruiter",
+            "promptProfile": "ta_recruiter_v1"
+          }
+        ],
+        "onFailure": "compensate"
+      },
+      "sources": [
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "P5 — Offer to Onboarding (录用到入职)",
+          "quoteVerified": true,
+          "section": "§1"
+        },
+        {
+          "documentId": "doc:hr-talent-acquisition-sop",
+          "documentName": "01-process-sop.md",
+          "snippet": "| P5 Offer to Onboarding | `OfferApproved` | `RequisitionClosed` | Offer, BackgroundCheck, Candidate, Position |",
+          "quoteVerified": true,
+          "section": "§5"
+        }
+      ],
+      "confidence": 0.86,
+      "provenance": "extracted",
+      "reviewState": "accepted"
+    }
+  ],
+  "confidence": 0.909,
+  "metadata": {
+    "createdAt": "2026-05-29T00:00:00.000Z",
+    "updatedAt": "2026-05-29T00:00:00.000Z",
+    "generation": {
+      "model": "openrouter/anthropic/claude-opus-4",
+      "provider": "openrouter",
+      "runId": "run_hr_talent_acquisition_v1"
+    },
+    "stats": {
+      "objects": 12,
+      "rules": 20,
+      "actions": 18,
+      "events": 23,
+      "processes": 5,
+      "relationships": 11,
+      "ruleGroups": 3
+    },
+    "history": [
+      {
+        "version": 1,
+        "at": "2026-05-29T00:00:00.000Z",
+        "note": "Initial extraction from TA-SOP-001, TA-POL-002, TA-SYS-003."
+      }
+    ],
+    "danglingRefs": [],
+    "stageCritiques": {}
+  }
+}
