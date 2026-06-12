@@ -19,6 +19,7 @@
 //   document     -> "doc:"          e.g. doc:order-fulfillment-sop
 //   ontology     -> "ontology:"     e.g. ontology:acme-retail-o2c
 //   instance     -> "inst:"         e.g. inst:order
+//   term         -> "term:"         e.g. term:credit-hold
 //
 // Pure module: no project imports.
 
@@ -33,7 +34,8 @@ export type Kind =
   | 'process'
   | 'document'
   | 'ontology'
-  | 'instance';
+  | 'instance'
+  | 'term';
 
 const PREFIXES: Record<Kind, string> = {
   object: 'objectType:',
@@ -46,6 +48,7 @@ const PREFIXES: Record<Kind, string> = {
   document: 'doc:',
   ontology: 'ontology:',
   instance: 'inst:',
+  term: 'term:',
 };
 
 /**

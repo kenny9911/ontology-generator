@@ -63,6 +63,7 @@ import type {
 import { validateOntology } from '../../_shared/ontology-validate.js';
 import type { ValidationIssue } from '../../_shared/ontology-validate.js';
 import { executeLLMWithTracking } from '../llm.js';
+import { ctxAgentLlm } from '../llm-router.js';
 import type { ChatMessage, ExecuteLLMOptions } from '../llm.js';
 
 import type { StageContext } from './context.js';
@@ -504,9 +505,10 @@ async function runCritique(stage: Stage, ctx: StageContext): Promise<string | un
       { role: 'system', content: system },
       { role: 'user', content: user },
     ];
+    const llm = ctxAgentLlm(ctx, 'stage_critic');
     const opts: ExecuteLLMOptions = {
-      model: ctx.model,
-      provider: ctx.provider as ExecuteLLMOptions['provider'],
+      model: llm.model,
+      provider: llm.provider as ExecuteLLMOptions['provider'],
       messages,
       temperature: 0,
       maxTokens: 4000,

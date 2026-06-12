@@ -595,6 +595,26 @@ export interface OntologyMetadata {
   danglingRefs?: { from: string; field: string; missingId: string }[];
   /** Review-trail: per-stage critique notes from the extraction pass. */
   stageCritiques?: Partial<Record<Stage, string>>;
+
+  // ---- Deep-swarm artifacts (optional; only set by the opt-in swarm mode) ----
+  /** Web-augmented SME business-understanding brief that framed extraction. */
+  businessBrief?: BusinessBrief;
+  /** Latest coverage/recall report (recomputed at the end of each iteration). */
+  coverageReport?: CoverageReport;
+  /** Follow-up questions for the user, emitted at the end of the swarm run. */
+  followUpQuestions?: FollowUpQuestion[];
+  /** Swarm run provenance. */
+  swarm?: { iterations: number; web: boolean };
+
+  // ---- Hyper-automation artifacts (optional; only set by the opt-in hyper mode) ----
+  /** Recognized business terminology / data-type glossary (hyper phase 1). */
+  terminology?: TerminologyExtraction;
+  /** Latest document-coverage eval pass. */
+  documentCoverage?: DocumentCoverageEval;
+  /** Earlier coverage passes, findings trimmed to [] to keep the envelope light. */
+  documentCoverageHistory?: DocumentCoverageEval[];
+  /** Hyper run provenance. */
+  hyper?: { passes: number; coverageTarget: number; remediationRounds: number; web: boolean };
 }
 
 /**
@@ -697,6 +717,406 @@ export interface OntologyRun {
   log: { at: string; text: string }[];
   createdAt: string;
   updatedAt: string;
+
+  /**
+   * The ontology name was auto-derived (e.g. from uploaded filenames) and should
+   * be upgraded to a content-descriptive title once extraction completes. Set by
+   * `run.start` for uploaded corpora; cleared after the one-shot upgrade.
+   */
+  autoName?: boolean;
+
+  // ---- Deep-swarm / hyper mode (optional; absent on the fast single-pass path) ----
+  /** Extraction mode. Absent or `'fast'` = the classic single-pass pipeline. */
+  mode?: 'fast' | 'swarm' | 'hyper';
+  /** Current high-level swarm/hyper phase (mode === 'swarm' | 'hyper'). null before/after. */
+  currentPhase?: RunPhase | null;
+  /** One entry per SWARM_PHASE_ORDER (swarm) / HYPER_PHASE_ORDER (hyper) phase. */
+  phases?: SwarmPhaseProgress[];
+}
+
+// ===========================================================================
+// 10b. Deep-swarm extraction (opt-in multi-agent mode). See ONTOLOGY_GENERATION.md.
+//      All types optional on the envelope; absent on the fast single-pass path.
+// ===========================================================================
+
+/**
+ * High-level phases of the opt-in deep-swarm mode. The client steps through
+ * these via `run.swarm.step`; each fine-grained backend sub-step reports under
+ * one of these for the UI stepper. Mirrors the STAGE_ORDER const pattern.
+ */
+export const SWARM_PHASE_ORDER = [
+  'business_understanding',
+  'iteration_1',
+  'iteration_2',
+  'follow_up',
+] as const;
+export type SwarmPhase = (typeof SWARM_PHASE_ORDER)[number];
+
+/** A business persona/actor the SME swarm identifies for the domain. */
+export interface Persona {
+  id: string;
+  name: Bilingual;
+  description?: Bilingual;
+  goals?: Bilingual[];
+}
+
+/** A canonical business use case the ontology must support. */
+export interface UseCase {
+  id: string;
+  name: Bilingual;
+  description?: Bilingual;
+  /** Persona ids that participate. */
+  personaIds: string[];
+  /** ExpectedEntity ids this use case relies on. */
+  expectedEntityIds?: string[];
+}
+
+/** A glossary term for the domain (bilingual). */
+export interface GlossaryTerm {
+  term: Bilingual;
+  definition: Bilingual;
+}
+
+/**
+ * Something the SME swarm EXPECTS to appear for this domain (a recall target).
+ * After extraction, `found` records whether the ontology captured it.
+ */
+export interface ExpectedEntity {
+  id: string;
+  /** Which layer this expectation belongs to. */
+  kind: EntityKind;
+  name: Bilingual;
+  description?: Bilingual;
+  /** True once a matching node was extracted/inferred. */
+  found: boolean;
+  /** The ontology node id that satisfied this expectation, when found. */
+  matchedId?: string;
+}
+
+/**
+ * The business-understanding brief produced by the web-augmented SME swarm,
+ * carried on `OntologyMetadata.businessBrief`. Drives recall in both iterations.
+ */
+export interface BusinessBrief {
+  /** One-paragraph scenario framing, bilingual. */
+  summary: Bilingual;
+  personas: Persona[];
+  useCases: UseCase[];
+  /** The expected-vs-found checklist across all layers. */
+  expectedEntities: ExpectedEntity[];
+  glossary: GlossaryTerm[];
+  /** True when live web search contributed; false = parametric fallback. */
+  webAugmented: boolean;
+  /** Source labels/URLs the SME swarm cited (best-effort). */
+  references?: string[];
+}
+
+/** A coverage/recall gap the BA review or coverage critic found. */
+export interface CoverageGap {
+  id: string;
+  /** Which layer the gap is in (or 'general'). */
+  layer: EntityKind | 'general';
+  description: Bilingual;
+  severity: Severity;
+  /** The use case the gap blocks, when applicable. */
+  useCaseId?: string;
+  /** A related ontology node id, when the gap concerns a specific item. */
+  relatedItemId?: string;
+}
+
+/** Per-layer recall: expected vs found. */
+export interface LayerCoverage {
+  layer: EntityKind;
+  expected: number;
+  found: number;
+  /** found / expected, clamped to [0,1]. */
+  recall: number;
+}
+
+/** Per-use-case coverage. */
+export interface UseCaseCoverage {
+  useCaseId: string;
+  /** 0..1 — fraction of the use case's expected entities that are present. */
+  coverage: number;
+  /** CoverageGap ids blocking this use case. */
+  gapIds: string[];
+}
+
+/**
+ * The coverage report produced by the BA/coverage agents, carried on
+ * `OntologyMetadata.coverageReport`. Recomputed at the end of each iteration.
+ */
+export interface CoverageReport {
+  /** Which iteration produced this report (1 or 2). */
+  iteration: number;
+  perLayer: LayerCoverage[];
+  perUseCase: UseCaseCoverage[];
+  gaps: CoverageGap[];
+  /** Weighted overall recall across layers, 0..1. */
+  overallRecall: number;
+}
+
+/**
+ * A follow-up question emitted at the end of the swarm run, each tied to the
+ * gap / ambiguity / low-confidence item it addresses. Carried on
+ * `OntologyMetadata.followUpQuestions`. Read-only output (not interactive in v1).
+ */
+export interface FollowUpQuestion {
+  id: string;
+  question: Bilingual;
+  /** Why we're asking — the gap/ambiguity rationale. */
+  rationale?: Bilingual;
+  layer: EntityKind | 'general';
+  /** The CoverageGap.id this resolves, when applicable. */
+  addressesGapId?: string;
+  /** The ontology node id this concerns, when applicable. */
+  relatedItemId?: string;
+}
+
+/** Live status of one agent within a swarm phase (for the progress UI). */
+export interface SwarmAgentProgress {
+  id: string;
+  /** Human role label, e.g. "SME · Data", "Business Analyst". */
+  role: string;
+  status: RunStatus;
+  note?: string;
+}
+
+/** Progress of one high-level swarm/hyper phase (parallel to StageProgress). */
+export interface SwarmPhaseProgress {
+  /** Phase id from SWARM_PHASE_ORDER (swarm runs) or HYPER_PHASE_ORDER (hyper runs). */
+  phase: RunPhase;
+  status: RunStatus;
+  /** Short bilingual label for the stepper. */
+  label?: Bilingual;
+  /** Free-text detail / current sub-step. */
+  detail?: string;
+  agents?: SwarmAgentProgress[];
+  startedAt?: string;
+  finishedAt?: string;
+}
+
+// ===========================================================================
+// 10c. Hyper-automation extraction (opt-in deep mode). See docs/HYPER_AUTOMATION_DESIGN.md.
+//      All types optional on the envelope; absent on the fast/swarm paths.
+// ===========================================================================
+
+/**
+ * High-level phases of the opt-in hyper-automation mode. A superset of the
+ * swarm machine: a terminology sweep runs first, and each extraction iteration
+ * is followed by a sentence-level document-coverage eval plus targeted
+ * remediation of whatever it found uncovered. The client steps through these
+ * via `run.hyper.step`. Mirrors the SWARM_PHASE_ORDER const pattern.
+ */
+export const HYPER_PHASE_ORDER = [
+  'terminology',
+  'business_understanding',
+  'iteration_1',
+  'coverage_eval_1',
+  'remediation_1',
+  'iteration_2',
+  'coverage_eval_2',
+  'remediation_2',
+  'final_eval',
+  'follow_up',
+] as const;
+export type HyperPhase = (typeof HYPER_PHASE_ORDER)[number];
+
+/**
+ * Any high-level run phase — swarm or hyper. `OntologyRun.currentPhase` and
+ * `SwarmPhaseProgress.phase` use this so one progress surface serves both modes.
+ */
+export type RunPhase = SwarmPhase | HyperPhase;
+
+/** Closed vocabulary for what kind of business term a glossary entry names. */
+export type TermKind =
+  | 'entity'
+  | 'attribute'
+  | 'metric'
+  | 'role'
+  | 'status'
+  | 'document'
+  | 'system'
+  | 'abbreviation'
+  | 'event'
+  | 'process'
+  | 'other';
+
+/**
+ * One business term recognized by the terminology sweep (hyper phase 1).
+ * Terms are metadata, NOT layer nodes — they are never grounded by the
+ * orchestrator, but their snippets must be verbatim per the prompt contract.
+ */
+export interface TermEntity {
+  /** Slug id, prefix "term:", minted via makeId kind 'term'. */
+  id: string;
+  /** The term itself, bilingual. */
+  term: Bilingual;
+  /** Concise definition as evidenced by the documents, bilingual. */
+  definition: Bilingual;
+  /** What kind of thing the term names. */
+  kind: TermKind;
+  /** Recognized closed-vocabulary data type, when the term is data-shaped. */
+  dataTypeHint?: DataType;
+  /** Enumerated values spelled out in the documents, when the term is an enum set. */
+  enumValuesHint?: string[];
+  /** Synonyms / abbreviations the documents use for the same term. */
+  aliases?: string[];
+  /** Verbatim citations into the source documents. */
+  sources: SourceRef[];
+  /** The ontology node id that realized this term (deterministic name/alias match). */
+  matchedId?: string;
+}
+
+/**
+ * The glossary produced by the terminology sweep, carried on
+ * `OntologyMetadata.terminology`. Its rendered seed block is appended to every
+ * later extraction prompt to drive recall and data-type fidelity.
+ */
+export interface TerminologyExtraction {
+  terms: TermEntity[];
+  /** Computed counters (e.g. per kind) surfaced in UI. */
+  stats?: Record<string, number>;
+}
+
+/** Verdict for one source sentence in the document-coverage eval. */
+export type SentenceCoverageStatus = 'covered' | 'partial' | 'uncovered' | 'uncoverable';
+
+/**
+ * Coverage verdict for ONE numbered source sentence — the unit of the
+ * eval agent's "did the ontology account for the whole document?" check.
+ */
+export interface SentenceCoverage {
+  /** Global 1-based sentence index, continuous across all sources. */
+  idx: number;
+  /** The document the sentence belongs to (SourceDocument.id). */
+  documentId: string;
+  /** The sentence text, verbatim from the parsed source. */
+  text: string;
+  status: SentenceCoverageStatus;
+  /** Ontology node ids whose citations cover this sentence. */
+  coveredBy?: string[];
+  /** Layers that SHOULD represent this sentence (routes remediation). */
+  expectedKinds?: EntityKind[];
+  /** What the ontology is missing for this sentence, free text. */
+  missing?: string;
+}
+
+/**
+ * The document-coverage eval report — sentence-level verification that every
+ * meaningful sentence of every source document is represented in the ontology.
+ * Carried on `OntologyMetadata.documentCoverage` (latest pass) and
+ * `documentCoverageHistory` (earlier passes, findings trimmed).
+ */
+export interface DocumentCoverageEval {
+  /** Which eval pass produced this report (1, 2, or 3 = final). */
+  pass: number;
+  totalSentences: number;
+  covered: number;
+  partial: number;
+  uncovered: number;
+  uncoverable: number;
+  /** covered / max(1, total - uncoverable). */
+  coverageRatio: number;
+  /** Target ratio (env ONTOLOGY_GEN_COVERAGE_TARGET, default 1.0). */
+  target: number;
+  /** True when coverageRatio >= target — the hyper run's success gate. */
+  meetsTarget: boolean;
+  /** ONLY partial|uncovered entries retained (keeps the envelope light). */
+  findings: SentenceCoverage[];
+  evaluatedAt: string; // ISO-8601
+}
+
+// ===========================================================================
+// 10d. LLM agent registry / settings + inference (hyper-automation).
+// ===========================================================================
+
+/** What an LLM agent is for — drives the smart router's strength-tier choice. */
+export const AGENT_PURPOSES = [
+  'extraction',
+  'enrichment',
+  'review',
+  'reasoning',
+  'synthesis',
+  'inference',
+  'classification',
+] as const;
+export type AgentPurpose = (typeof AGENT_PURPOSES)[number];
+
+/** One LLM-calling agent in the system (a frontend-visible registry row). */
+export interface AgentDef {
+  /** Stable agent id, e.g. "rules_extractor". */
+  id: string;
+  /** Human label for the settings table, bilingual. */
+  label: Bilingual;
+  description?: Bilingual;
+  purpose: AgentPurpose;
+  /** Which pipeline the agent belongs to ('shared' = used by several). */
+  group: 'fast' | 'swarm' | 'hyper' | 'inference' | 'shared';
+}
+
+/** The resolved provider+model for one agent, plus where the choice came from. */
+export interface AgentModelAssignment {
+  agentId: string;
+  provider: string;
+  model: string;
+  /** Resolution precedence, first hit wins: env > settings > router > default. */
+  source: 'env' | 'settings' | 'router' | 'default';
+  /** Human-readable reason for the choice (router tier, env var name, ...). */
+  rationale?: string;
+}
+
+/** User-editable LLM routing settings (the settings page), persisted globally. */
+export interface LlmSettings {
+  /** Per-agent overrides, keyed by agent id. */
+  overrides: Record<string, { provider?: string; model?: string }>;
+  defaultProvider?: string;
+  defaultModel?: string;
+  /** Smart per-agent router on/off. Default true. */
+  routerEnabled?: boolean;
+  updatedAt?: string;
+}
+
+/** One subject–predicate–object fact projected from the ontology graph. */
+export interface Triple {
+  /** Subject node id. */
+  s: string;
+  /** Predicate — a closed, documented vocabulary (e.g. 'consumes', 'precedes'). */
+  p: string;
+  /** Object node id, or a literal value when `literal` is true. */
+  o: string;
+  literal?: boolean;
+}
+
+/** One reasoning hop of the inference agent: the triples used + the conclusion. */
+export interface InferenceHop {
+  /** 1-based hop number. */
+  step: number;
+  /** The triples this hop reasoned over. */
+  triples: Triple[];
+  /** Conclusion drawn at this hop. */
+  inference: string;
+}
+
+/**
+ * The result of one multi-hop inference run over the ontology graph, returned
+ * by the `infer` action. The engine owns the graph walk; `hops` record the
+ * LLM's reasoning chain so the answer is auditable end-to-end.
+ */
+export interface InferenceResult {
+  question: string;
+  answer: Bilingual;
+  /** The reasoning chain, one entry per expansion iteration that drew a conclusion. */
+  hops: InferenceHop[];
+  /** Node ids on the reasoning path (for graph highlighting). */
+  pathNodeIds: string[];
+  /** Total triples projected from the ontology. */
+  tripleCount: number;
+  /** Triples actually shown to the agent during the walk. */
+  usedTripleCount: number;
+  /** LLM expansion iterations consumed. */
+  iterations: number;
+  durationMs?: number;
 }
 
 // ===========================================================================

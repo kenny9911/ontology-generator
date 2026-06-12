@@ -34,6 +34,7 @@
 
 import { executeLLMWithTracking, type ExecuteLLMOptions } from '../../llm.js';
 import { buildEventsPrompt } from '../../prompts.js';
+import { ctxAgentLlm } from '../../llm-router.js';
 import type { StageContext } from '../context.js';
 import type {
   ActionType,
@@ -224,12 +225,13 @@ async function enrichViaLlm(ctx: StageContext): Promise<Map<string, EventEnrichm
 
   let raw: string;
   try {
+    const llm = ctxAgentLlm(ctx, 'events_enricher');
     raw = await executeLLMWithTracking({
-      model: ctx.model,
+      model: llm.model,
       // StageContext.provider is a plain string; narrow to the option's union.
-      provider: ctx.provider as ExecuteLLMOptions['provider'],
+      provider: llm.provider as ExecuteLLMOptions['provider'],
       messages: [
-        { role: 'system', content: system },
+        { role: 'system', content: ctx.briefSeed ? `${system}\n\n${ctx.briefSeed}` : system },
         { role: 'user', content: user },
       ],
       temperature: 0.1,

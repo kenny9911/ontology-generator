@@ -33,6 +33,7 @@ import { randomUUID } from 'node:crypto';
 import { executeLLMWithTracking } from '../../llm.js';
 import { makeId } from '../../../_shared/ids.js';
 import { buildActionsPrompt } from '../../prompts.js';
+import { ctxAgentLlm } from '../../llm-router.js';
 import type { StageContext } from '../context.js';
 import {
   DATA_TYPES,
@@ -524,11 +525,12 @@ export async function extractActions(ctx: StageContext): Promise<{ actions: Acti
 
   let raw: string;
   try {
+    const llm = ctxAgentLlm(ctx, 'actions_extractor', { inputChars: chunkText.length });
     raw = await executeLLMWithTracking({
-      model: ctx.model,
-      provider: ctx.provider as never,
+      model: llm.model,
+      provider: llm.provider as never,
       messages: [
-        { role: 'system', content: system },
+        { role: 'system', content: ctx.briefSeed ? `${system}\n\n${ctx.briefSeed}` : system },
         { role: 'user', content: user },
       ],
       maxTokens: MAX_TOKENS,

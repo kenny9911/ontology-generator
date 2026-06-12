@@ -4,11 +4,11 @@
 // fixed contract — `t={tx} lang={lang} ctrl={ctrl}` — and reads/mutates the
 // canonical Ontology through `ctrl` (the demo `dataset` + `accepted` boolean map
 // are retired). See DESIGN_SPEC §8.3 + design-notes/frontend.md.
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import './ontology-generator.css';
 import type { Lang } from './data';
 import { useT, type StepId } from './i18n';
-import TopBar, { STEP_ORDER, type ThemeName, type LayoutMode } from './TopBar';
+import TopBar, { STEP_ORDER, stepOrderFor, type ThemeName, type LayoutMode } from './TopBar';
 import type { Stage } from '@/ontology/schema/types';
 import { useOntologyRun } from './useOntologyRun';
 import InputScreen from './InputScreen';
@@ -20,6 +20,10 @@ import EventsScreen from './EventsScreen';
 import ProcessesScreen from './ProcessesScreen';
 import GraphScreen from './GraphScreen';
 import PublishScreen from './PublishScreen';
+import BusinessUnderstandingScreen from './BusinessUnderstandingScreen';
+import CoverageScreen from './CoverageScreen';
+import FollowUpQuestionsScreen from './FollowUpQuestionsScreen';
+import LLMSettingsScreen from './LLMSettingsScreen';
 
 /** Review steps that map 1:1 onto a pipeline {@link Stage}. */
 const STAGE_STEPS: Partial<Record<StepId, Stage>> = {
@@ -32,7 +36,7 @@ const STAGE_STEPS: Partial<Record<StepId, Stage>> = {
 
 export default function OntologyGenerator() {
   const [lang, setLang] = useState<Lang>('zh');
-  const [theme, setTheme] = useState<ThemeName>('midnight');
+  const [theme, setTheme] = useState<ThemeName>('lumen');
   const [graphLayout, setGraphLayout] = useState<LayoutMode>('force');
   const [step, setStep] = useState<StepId>('input');
 
@@ -69,16 +73,28 @@ export default function OntologyGenerator() {
     done.discover = ctrl.run?.status === 'complete' || allStagesComplete;
     done.graph = done.discover;
     done.publish = ctrl.ontology?.status === 'published';
+    if (ctrl.mode === 'swarm' || ctrl.mode === 'hyper') {
+      done.brief = ctrl.businessBrief != null;
+      done.coverage = ctrl.coverageReport != null || ctrl.documentCoverage != null;
+      done.questions = ctrl.followUpQuestions != null;
+    }
     return done;
-  }, [hasRun, ctrl.mode, ctrl.run, ctrl.ontology]);
+  }, [hasRun, ctrl.mode, ctrl.run, ctrl.ontology, ctrl.businessBrief, ctrl.coverageReport, ctrl.documentCoverage, ctrl.followUpQuestions]);
 
-  // Gate navigation: `input` always; everything else only once a run exists.
-  // For a live run, a stage's review screen unlocks once that stage produced
-  // items (its StageProgress has a count) — demo unlocks everything.
+  // Gate navigation: `input` and `settings` always (the LLM settings page needs
+  // no run); everything else only once a run exists. For a live run, a stage's
+  // review screen unlocks once that stage produced items (its StageProgress has
+  // a count) — demo unlocks everything.
   function canVisit(target: StepId): boolean {
-    if (target === 'input') return true;
+    if (target === 'input' || target === 'settings') return true;
     if (!hasRun) return false;
     if (ctrl.mode === 'demo') return true;
+
+    if (ctrl.mode === 'swarm' || ctrl.mode === 'hyper') {
+      if (target === 'brief') return ctrl.businessBrief != null;
+      if (target === 'coverage') return ctrl.coverageReport != null || ctrl.documentCoverage != null;
+      if (target === 'questions') return ctrl.followUpQuestions != null;
+    }
 
     const stage = STAGE_STEPS[target];
     if (stage) {
@@ -95,18 +111,25 @@ export default function OntologyGenerator() {
 
   // When the controller is reset (PublishScreen → ctrl.reset()), snap the
   // stepper back to `input` so the page returns to its empty setup state.
+  // `settings` is exempt — it is reachable at any time, run or no run.
   useEffect(() => {
-    if (!hasRun && step !== 'input') setStep('input');
+    if (!hasRun && step !== 'input' && step !== 'settings') setStep('input');
   }, [hasRun, step]);
 
   // On setup (InputScreen → startDemo/startUpload/startSample/loadSaved), a
   // run/ontology appears; advance the stepper from `input`. A freshly started
   // run (or the demo tour) goes to `discover` to watch extraction; a LOADED
   // session arrives already complete, so jump straight to the graph
-  // (DESIGN_SPEC §8.5).
+  // (DESIGN_SPEC §8.5). The hasRun false→true TRANSITION is tracked via a ref
+  // so the jump also fires when a session is loaded from the `settings` screen
+  // (LLM settings is reachable with no run) — while never yanking a user who
+  // merely browses settings during an already-active run.
+  const hadRun = useRef(false);
   useEffect(() => {
-    if (hasRun && step === 'input') {
-      const loadedComplete = ctrl.mode === 'live' && ctrl.run?.status === 'complete';
+    const appeared = hasRun && !hadRun.current;
+    hadRun.current = hasRun;
+    if (appeared && (step === 'input' || step === 'settings')) {
+      const loadedComplete = (ctrl.mode === 'live' || ctrl.mode === 'swarm' || ctrl.mode === 'hyper') && ctrl.run?.status === 'complete';
       setStep(loadedComplete ? 'graph' : 'discover');
     }
   }, [hasRun, step, ctrl.mode, ctrl.run]);
@@ -124,13 +147,14 @@ export default function OntologyGenerator() {
     window.addEventListener('ontogen:goto', onGoto as EventListener);
     return () => window.removeEventListener('ontogen:goto', onGoto as EventListener);
     // Re-subscribe when the gating inputs change so `go`/`canVisit` see fresh state.
-  }, [hasRun, ctrl.mode, ctrl.run]);
+  }, [hasRun, ctrl.mode, ctrl.run, ctrl.businessBrief, ctrl.coverageReport, ctrl.documentCoverage, ctrl.followUpQuestions]);
 
   return (
     <div className="ontogen" data-theme={theme} data-density="regular">
       <TopBar
         step={step}
         setStep={go}
+        steps={stepOrderFor(ctrl.mode)}
         onHome={ctrl.reset}
         ctrl={ctrl}
         t={tx}
@@ -145,13 +169,17 @@ export default function OntologyGenerator() {
       <main className="viewport">
         {step === 'input' && <InputScreen t={tx} lang={lang} ctrl={ctrl} />}
         {step === 'discover' && <DiscoverScreen t={tx} lang={lang} ctrl={ctrl} />}
+        {step === 'brief' && <BusinessUnderstandingScreen t={tx} lang={lang} ctrl={ctrl} />}
         {step === 'objects' && <ObjectsScreen t={tx} lang={lang} ctrl={ctrl} />}
         {step === 'rules' && <RulesScreen t={tx} lang={lang} ctrl={ctrl} />}
         {step === 'actions' && <ActionsScreen t={tx} lang={lang} ctrl={ctrl} />}
         {step === 'events' && <EventsScreen t={tx} lang={lang} ctrl={ctrl} />}
         {step === 'processes' && <ProcessesScreen t={tx} lang={lang} ctrl={ctrl} />}
+        {step === 'coverage' && <CoverageScreen t={tx} lang={lang} ctrl={ctrl} />}
+        {step === 'questions' && <FollowUpQuestionsScreen t={tx} lang={lang} ctrl={ctrl} />}
         {step === 'graph' && <GraphScreen t={tx} lang={lang} ctrl={ctrl} layout={graphLayout} />}
         {step === 'publish' && <PublishScreen t={tx} lang={lang} ctrl={ctrl} />}
+        {step === 'settings' && <LLMSettingsScreen t={tx} lang={lang} ctrl={ctrl} />}
       </main>
     </div>
   );

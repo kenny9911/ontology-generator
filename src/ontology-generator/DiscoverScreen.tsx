@@ -28,6 +28,7 @@ import type { Dataset, Lang, OntObject, DiscoveryEvent, DiscoveryScript } from '
 import type { Strings } from './i18n';
 import type { OntologyRunController } from './useOntologyRun';
 import type { ObjectType, Stage } from '@/ontology/schema/types';
+import SwarmDiscover from './SwarmDiscover';
 
 interface DiscoverScreenProps {
   t: Strings;
@@ -41,6 +42,9 @@ function gotoStep(target: 'objects'): void {
 }
 
 export default function DiscoverScreen({ t, lang, ctrl }: DiscoverScreenProps) {
+  if (ctrl.mode === 'swarm' || ctrl.mode === 'hyper') {
+    return <SwarmDiscover t={t} lang={lang} ctrl={ctrl} />;
+  }
   if (ctrl.mode === 'live') {
     return <LiveDiscover t={t} lang={lang} ctrl={ctrl} />;
   }

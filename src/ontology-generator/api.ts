@@ -29,6 +29,17 @@ import type {
   GeneratorTarget,
   DomainKey,
   Bilingual,
+  SwarmPhase,
+  RunPhase,
+  BusinessBrief,
+  CoverageReport,
+  FollowUpQuestion,
+  TerminologyExtraction,
+  DocumentCoverageEval,
+  InferenceResult,
+  AgentDef,
+  AgentModelAssignment,
+  LlmSettings,
 } from '@/ontology/schema/types';
 import type { ValidationIssue } from '@/ontology/schema/validate';
 
@@ -65,7 +76,7 @@ export interface OntologySummary {
 
 /** Input for `run.start`: either explicit source ids or a bundled sample. */
 export type RunStartInput =
-  | { name: Bilingual; domain?: DomainKey; sourceIds: string[] }
+  | { name: Bilingual; domain?: DomainKey; sourceIds: string[]; autoName?: boolean }
   | { name: Bilingual; sampleId: string };
 
 /** Result of a single re-run of one extraction stage (`stage.*`). */
@@ -275,6 +286,70 @@ export function runGet(runId: string): Promise<{ ontology: Ontology; run: Ontolo
 }
 
 // ===========================================================================
+// 2b. Deep-swarm run — run.swarm.start / run.swarm.step (opt-in, multi-agent)
+// ===========================================================================
+
+/** One `run.swarm.step` result. Artifacts appear as their phase completes. */
+export interface SwarmStepResult {
+  ontology: Ontology;
+  run: OntologyRun;
+  phase: SwarmPhase;
+  businessBrief?: BusinessBrief;
+  coverageReport?: CoverageReport;
+  followUpQuestions?: FollowUpQuestion[];
+}
+
+/** `POST ?action=run.swarm.start` — seed a run for the deep-swarm pipeline. */
+export function runSwarmStart(input: RunStartInput): Promise<{ ontology: Ontology; run: OntologyRun }> {
+  return jsonRequest<{ ontology: Ontology; run: OntologyRun }>('run.swarm.start', 'POST', input);
+}
+
+/** `POST ?action=run.swarm.step` — advance exactly one swarm sub-step. */
+export function runSwarmStep(runId: string): Promise<SwarmStepResult> {
+  return jsonRequest<SwarmStepResult>('run.swarm.step', 'POST', { runId });
+}
+
+// ===========================================================================
+// 2c. Hyper-automation run — run.hyper.start / run.hyper.step / infer
+//     (opt-in, full document-coverage multi-agent mode)
+// ===========================================================================
+
+/**
+ * One `run.hyper.step` result — the swarm artifacts PLUS the hyper extras
+ * (the phase machine is the wider {@link RunPhase} HYPER_PHASE_ORDER union).
+ */
+export interface HyperStepResult extends Omit<SwarmStepResult, 'phase'> {
+  phase: RunPhase;
+  terminology?: TerminologyExtraction;
+  documentCoverage?: DocumentCoverageEval;
+}
+
+/** `POST ?action=run.hyper.start` — seed a run for the hyper-automation pipeline. */
+export function startHyperRun(input: RunStartInput): Promise<{ ontology: Ontology; run: OntologyRun }> {
+  return jsonRequest<{ ontology: Ontology; run: OntologyRun }>('run.hyper.start', 'POST', input);
+}
+
+/** `POST ?action=run.hyper.step` — advance exactly one hyper sub-step. */
+export function stepHyperRun(runId: string): Promise<HyperStepResult> {
+  return jsonRequest<HyperStepResult>('run.hyper.step', 'POST', { runId });
+}
+
+/**
+ * `POST ?action=infer` — run a multi-hop inference question over a stored
+ * ontology (`ontologyId`+`version`) or an inline `ontology` envelope.
+ */
+export function infer(input: {
+  ontologyId?: string;
+  version?: number;
+  ontology?: Ontology;
+  question: string;
+  maxHops?: number;
+  maxIterations?: number;
+}): Promise<{ result: InferenceResult }> {
+  return jsonRequest<{ result: InferenceResult }>('infer', 'POST', input);
+}
+
+// ===========================================================================
 // 3. Single-stage re-run — stage.*  (DESIGN_SPEC §3.2)
 // ===========================================================================
 
@@ -383,4 +458,32 @@ export function importGraph(id: string, version?: number): Promise<Neo4jStatus> 
 export async function graphStatus(): Promise<'connected' | 'unreachable' | 'disabled'> {
   const res = await request<{ neo4j: 'connected' | 'unreachable' | 'disabled' }>('graph-status');
   return res.neo4j;
+}
+
+// ===========================================================================
+// 7. LLM routing — llm.agents / llm.settings (hyper-automation settings page)
+// ===========================================================================
+
+/** `GET ?action=llm.agents` — the agent registry, the resolved per-agent
+ *  model assignments, and the persisted (possibly empty) LLM settings. */
+export function getLlmAgents(): Promise<{
+  agents: AgentDef[];
+  assignments: AgentModelAssignment[];
+  settings: LlmSettings;
+}> {
+  return request<{ agents: AgentDef[]; assignments: AgentModelAssignment[]; settings: LlmSettings }>(
+    'llm.agents',
+  );
+}
+
+/** `POST ?action=llm.settings` — persist LLM routing settings; returns the
+ *  saved settings plus the recomputed per-agent assignments. */
+export function saveLlmSettings(
+  settings: LlmSettings,
+): Promise<{ settings: LlmSettings; assignments: AgentModelAssignment[] }> {
+  return jsonRequest<{ settings: LlmSettings; assignments: AgentModelAssignment[] }>(
+    'llm.settings',
+    'POST',
+    settings,
+  );
 }

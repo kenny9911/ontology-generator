@@ -25,6 +25,7 @@ import { executeLLMWithTracking } from '../../llm.js';
 import type { LLMProvider } from '../../llm.js';
 import { makeId } from '../../../_shared/ids.js';
 import { buildRulesPrompt } from '../../prompts.js';
+import { ctxAgentLlm } from '../../llm-router.js';
 import type { StageContext } from '../context.js';
 import type {
   Rule,
@@ -100,12 +101,15 @@ export async function extractRules(
   let raw: string;
   try {
     const messages: ChatMessage[] = [
-      { role: 'system', content: system },
+      { role: 'system', content: ctx.briefSeed ? `${system}\n\n${ctx.briefSeed}` : system },
       { role: 'user', content: user },
     ];
+    const llm = ctxAgentLlm(ctx, 'rules_extractor', {
+      inputChars: messages.reduce((n, m) => n + m.content.length, 0),
+    });
     raw = await executeLLMWithTracking({
-      model: ctx.model,
-      provider: ctx.provider as LLMProvider,
+      model: llm.model,
+      provider: llm.provider as LLMProvider,
       messages,
       temperature: 0.1,
       maxTokens: 28000,

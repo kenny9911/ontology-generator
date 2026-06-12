@@ -7,10 +7,20 @@ import type { Strings, StepId } from './i18n';
 import type { OntologySummary } from './api';
 import type { OntologyRunController } from './useOntologyRun';
 
-export type ThemeName = 'midnight' | 'forest' | 'ember' | 'mono';
+export type ThemeName = 'lumen' | 'midnight' | 'forest' | 'ember' | 'mono';
 export type LayoutMode = 'force' | 'radial' | 'hierarchical' | 'clustered';
 
 export const STEP_ORDER: StepId[] = ['input', 'discover', 'objects', 'rules', 'actions', 'events', 'processes', 'graph', 'publish'];
+
+/** Deep-swarm adds business-understanding, coverage, and follow-up-question steps.
+ *  Hyper mode reuses the same order (all three artifact screens apply); the
+ *  `settings` step is deliberately in NO order — it is reached via the gear only. */
+export const SWARM_STEP_ORDER: StepId[] = ['input', 'discover', 'brief', 'objects', 'rules', 'actions', 'events', 'processes', 'coverage', 'questions', 'graph', 'publish'];
+
+/** The stepper order for the active mode. */
+export function stepOrderFor(mode: string): StepId[] {
+  return mode === 'swarm' || mode === 'hyper' ? SWARM_STEP_ORDER : STEP_ORDER;
+}
 
 export function BrandMark() {
   return (
@@ -38,6 +48,8 @@ export function BrandMark() {
 interface TopBarProps {
   step: StepId;
   setStep: (s: StepId) => void;
+  /** The ordered stepper ids for the active mode (fast vs. deep-swarm). */
+  steps: StepId[];
   /** Return to the generator home (Input screen). */
   onHome: () => void;
   /** Controller — powers the saved-ontology dropdown (list / load / delete). */
@@ -53,6 +65,7 @@ interface TopBarProps {
 }
 
 const THEME_OPTIONS: { value: ThemeName; label: string }[] = [
+  { value: 'lumen', label: 'Lumen' },
   { value: 'midnight', label: 'Midnight' },
   { value: 'forest', label: 'Forest' },
   { value: 'ember', label: 'Ember' },
@@ -66,7 +79,7 @@ const LAYOUT_OPTIONS: { value: LayoutMode; label: string }[] = [
   { value: 'clustered', label: 'Cluster' },
 ];
 
-export default function TopBar({ step, setStep, onHome, ctrl, t, lang, completed, theme, setTheme, setLang, layout, setLayout }: TopBarProps) {
+export default function TopBar({ step, setStep, steps, onHome, ctrl, t, lang, completed, theme, setTheme, setLang, layout, setLayout }: TopBarProps) {
   return (
     <header className="topbar">
       <button
@@ -83,7 +96,7 @@ export default function TopBar({ step, setStep, onHome, ctrl, t, lang, completed
       </button>
 
       <nav className="stepper">
-        {STEP_ORDER.map((s, i) => {
+        {steps.map((s, i) => {
           const isActive = s === step;
           const isDone = completed[s];
           const num = String(i + 1).padStart(2, '0');
@@ -127,12 +140,40 @@ export default function TopBar({ step, setStep, onHome, ctrl, t, lang, completed
         >
           {lang === 'zh' ? 'EN' : '中文'}
         </button>
+        <button
+          className={`ctl ${step === 'settings' ? 'ctl-active' : ''}`}
+          onClick={() => setStep('settings')}
+          title={t.settingsNav}
+          aria-label={t.settingsNav}
+        >
+          <GearIcon />
+        </button>
         <span className="pill">
           <span className="dot" />
           {lang === 'zh' ? 'AI 在线' : 'AI online'}
         </span>
       </div>
     </header>
+  );
+}
+
+/** Compact gear glyph for the LLM-settings button, drawn in the BrandMark's
+ *  inline-SVG idiom so it sits flush with the other `.ctl` controls. */
+function GearIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" style={{ display: 'block' }}>
+      <circle cx="7" cy="7" r="2.1" stroke="currentColor" strokeWidth="1.2" fill="none" />
+      <g stroke="currentColor" strokeWidth="1.2" strokeLinecap="round">
+        <line x1="7" y1="0.8" x2="7" y2="2.6" />
+        <line x1="7" y1="11.4" x2="7" y2="13.2" />
+        <line x1="0.8" y1="7" x2="2.6" y2="7" />
+        <line x1="11.4" y1="7" x2="13.2" y2="7" />
+        <line x1="2.6" y1="2.6" x2="3.9" y2="3.9" />
+        <line x1="10.1" y1="10.1" x2="11.4" y2="11.4" />
+        <line x1="11.4" y1="2.6" x2="10.1" y2="3.9" />
+        <line x1="3.9" y1="10.1" x2="2.6" y2="11.4" />
+      </g>
+    </svg>
   );
 }
 

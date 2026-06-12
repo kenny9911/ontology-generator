@@ -73,6 +73,20 @@ export interface StageContext {
   userInfo: unknown | null;
   /** Appends a line to the run's live log panel. */
   log: (text: string) => void;
+
+  /**
+   * OPTIONAL pre-rendered domain-brief seed block (deep-swarm mode only). When
+   * present, each extraction stage appends it to its system prompt to raise
+   * RECALL against the SME swarm's expectations. Undefined on the fast path, so
+   * the single-pass pipeline behaves byte-identically. Built by
+   * `pipeline/swarm/business-understanding.ts#renderBriefSeed`.
+   */
+  briefSeed?: string;
+
+  /** Per-agent LLM resolution (hyper-automation router; see api/ontology-gen/llm-router.ts).
+   *  When absent, callers fall back to ctx.model/ctx.provider — behavior is then
+   *  byte-identical to the pre-router pipeline. */
+  agentLlm?: (agentId: string, opts?: { inputChars?: number; needsWeb?: boolean }) => { provider: string; model: string };
 }
 
 /**

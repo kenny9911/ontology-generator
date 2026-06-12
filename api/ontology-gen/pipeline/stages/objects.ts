@@ -40,6 +40,7 @@ import { makeId } from '../../../_shared/ids.js';
 import { executeLLMWithTracking } from '../../llm.js';
 import type { ExecuteLLMOptions } from '../../llm.js';
 import { buildObjectsPrompt } from '../../prompts.js';
+import { ctxAgentLlm } from '../../llm-router.js';
 import type { StageContext } from '../context.js';
 
 // ---------------------------------------------------------------------------
@@ -263,11 +264,12 @@ export async function extractObjects(
 
     let raw = '';
     try {
+      const llm = ctxAgentLlm(ctx, 'objects_extractor', { inputChars: chunkText.length });
       const llmOptions: ExecuteLLMOptions = {
-        model: ctx.model,
-        provider: ctx.provider as ExecuteLLMOptions['provider'],
+        model: llm.model,
+        provider: llm.provider as ExecuteLLMOptions['provider'],
         messages: [
-          { role: 'system', content: system },
+          { role: 'system', content: ctx.briefSeed ? `${system}\n\n${ctx.briefSeed}` : system },
           { role: 'user', content: user },
         ],
         temperature: 0.1,

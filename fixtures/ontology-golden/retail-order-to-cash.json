@@ -864,7 +864,7 @@
       "severity": "block",
       "appliesToObjectTypeIds": ["objectType:creditHold"],
       "appliesToAttributes": ["objectType:creditHold.status"],
-      "trigger": { "description": "On credit hold override", "onEventTypeId": "event:creditHold.opened" },
+      "trigger": { "description": "On credit hold override", "onEventTypeId": "event:credit.hold.opened" },
       "groupId": "ruleGroup:credit-hold",
       "sources": [
         { "documentId": "doc:business-rules-policy", "documentName": "02-business-rules-policy.md", "snippet": "An active `CreditHold` may not be overridden except by a Credit Manager or higher, and the override must record a written reason.", "section": "§4 R-13", "sentenceRefs": [13], "quoteVerified": true }

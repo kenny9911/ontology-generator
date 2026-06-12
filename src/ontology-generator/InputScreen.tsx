@@ -90,6 +90,7 @@ export default function InputScreen({ t, lang, ctrl }: InputScreenProps) {
   const [samplesError, setSamplesError] = useState<string | null>(null);
   // Track which start path is in flight (so the right pill / button shows a spinner).
   const [pending, setPending] = useState<'upload' | 'demo' | DomainKey | null>(null);
+  const [extractMode, setExtractMode] = useState<'fast' | 'swarm' | 'hyper'>('fast');
 
   const running = ctrl.running;
 
@@ -153,28 +154,32 @@ export default function InputScreen({ t, lang, ctrl }: InputScreenProps) {
     if (files.length === 0 || running) return;
     setPending('upload');
     try {
-      await ctrl.startUpload(files);
+      if (extractMode === 'hyper') await ctrl.startHyper({ files });
+      else if (extractMode === 'swarm') await ctrl.startSwarm({ files });
+      else await ctrl.startUpload(files);
       // On success the container advances to `discover`; nothing else to do.
     } catch {
       // ctrl.error already carries the message; surface it inline below.
     } finally {
       setPending(null);
     }
-  }, [files, running, ctrl]);
+  }, [files, running, ctrl, extractMode]);
 
   const startSample = useCallback(
     async (domain: DomainKey) => {
       if (running) return;
       setPending(domain);
       try {
-        await ctrl.startSample(domain);
+        if (extractMode === 'hyper') await ctrl.startHyper({ sample: domain });
+        else if (extractMode === 'swarm') await ctrl.startSwarm({ sample: domain });
+        else await ctrl.startSample(domain);
       } catch {
         /* ctrl.error surfaced inline */
       } finally {
         setPending(null);
       }
     },
-    [running, ctrl],
+    [running, ctrl, extractMode],
   );
 
   const startDemo = useCallback(() => {
@@ -485,9 +490,41 @@ export default function InputScreen({ t, lang, ctrl }: InputScreenProps) {
         </div>
 
         <div className="card" style={{ padding: 'var(--s-4)' }}>
+          <div className="mono-cap" style={{ marginBottom: 'var(--s-2)' }}>{t.extractionMode}</div>
+          <div className="mode-toggle" style={{ marginBottom: 'var(--s-3)' }}>
+            <button
+              type="button"
+              className={`opt ${extractMode === 'fast' ? 'on' : ''}`}
+              aria-pressed={extractMode === 'fast'}
+              onClick={() => setExtractMode('fast')}
+            >
+              <strong>{t.modeFast}</strong>
+              <span className="mono-cap">{t.modeFastHint}</span>
+            </button>
+            <button
+              type="button"
+              className={`opt ${extractMode === 'swarm' ? 'on' : ''}`}
+              aria-pressed={extractMode === 'swarm'}
+              onClick={() => setExtractMode('swarm')}
+            >
+              <strong>{t.modeSwarm}</strong>
+              <span className="mono-cap">{t.modeSwarmHint}</span>
+            </button>
+            <button
+              type="button"
+              className={`opt ${extractMode === 'hyper' ? 'on' : ''}`}
+              aria-pressed={extractMode === 'hyper'}
+              onClick={() => setExtractMode('hyper')}
+            >
+              <strong>{t.modeHyper}</strong>
+              <span className="mono-cap">{t.modeHyperHint}</span>
+            </button>
+          </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 'var(--s-3)' }}>
             <span className="mono-cap">{t.estimatedTime}</span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 16, color: 'var(--accent-3)' }}>~ 38s</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 16, color: 'var(--accent-3)' }}>
+              {extractMode === 'hyper' ? t.hyperEstTime : extractMode === 'swarm' ? t.swarmEstTime : '~ 38s'}
+            </span>
           </div>
           <button
             className="btn ai"

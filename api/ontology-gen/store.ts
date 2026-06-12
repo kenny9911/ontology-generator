@@ -613,7 +613,7 @@ export class SupabaseOntologyStore implements OntologyStore {
   async getRun(id: string): Promise<OntologyRun | null> {
     const { data, error } = await this.db
       .from('ontology_runs')
-      .select('id, ontology_id, status, current_stage, stages, log')
+      .select('id, ontology_id, status, current_stage, stages, log, ontology')
       .eq('id', id)
       .maybeSingle();
     if (error) throw new Error(`STORE_GETRUN_FAILED:${error.message}`);
@@ -625,7 +625,12 @@ export class SupabaseOntologyStore implements OntologyStore {
       current_stage: OntologyRun['currentStage'];
       stages: OntologyRun['stages'];
       log: OntologyRun['log'];
+      ontology?: OntologyRun | null;
     };
+    // saveRun() persists the WHOLE run object in the `ontology` column. Prefer it
+    // so optional fields (autoName, mode/currentPhase/phases, timestamps) survive
+    // the round-trip; the narrow projection below is only a legacy-row fallback.
+    if (r.ontology) return r.ontology;
     return {
       id: r.id,
       ontologyId: r.ontology_id,

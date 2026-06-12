@@ -77,11 +77,17 @@ export async function callLLM(options: {
   temperature?: number;
   signal?: AbortSignal;
   title?: string;
+  /**
+   * When true AND the call resolves to the OpenRouter path, enable live web
+   * search via OpenRouter's `web` plugin. Ignored on direct-provider paths
+   * (the caller degrades to parametric knowledge — see swarm/web-search.ts).
+   */
+  web?: boolean;
 }): Promise<{
   content: string;
   usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
 }> {
-  const { provider, model, messages, maxTokens = 500, temperature = 0.7, signal, title } = options;
+  const { provider, model, messages, maxTokens = 500, temperature = 0.7, signal, title, web = false } = options;
 
   const effectiveProvider: LLMProvider = (provider || 'openrouter') as LLMProvider;
   const effectiveModel = normalizeModelForProvider(effectiveProvider, model);
@@ -117,13 +123,13 @@ export async function callLLM(options: {
   };
 
   // OpenRouter (also the fallback for unknown/`google` providers).
-  const callOpenRouter = async (apiKey: string, modelOverride?: string) => {
+  const callOpenRouter = async (apiKey: string, modelOverride?: string, useWeb = false) => {
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
-        'HTTP-Referer': process.env.SITE_URL || 'http://localhost:5273',
+        'HTTP-Referer': process.env.SITE_URL || 'http://localhost:3598',
         'X-Title': title || 'Ontology Generator',
       },
       body: JSON.stringify({
@@ -131,6 +137,8 @@ export async function callLLM(options: {
         messages,
         max_tokens: maxTokens,
         temperature,
+        // OpenRouter web plugin: augments any model with live search results.
+        ...(useWeb ? { plugins: [{ id: 'web' }] } : {}),
       }),
       signal,
     });
@@ -154,7 +162,7 @@ export async function callLLM(options: {
   if (effectiveProvider === 'openrouter') {
     const apiKey = getApiKey('openrouter');
     if (!apiKey) throw new Error('OpenRouter API key not configured (set OPENROUTER_API_KEY)');
-    return await callOpenRouter(apiKey);
+    return await callOpenRouter(apiKey, undefined, web);
   }
 
   if (effectiveProvider === 'openai') {
@@ -187,7 +195,7 @@ export async function callLLM(options: {
   // Fallback (covers `google` and any unknown provider): route via OpenRouter.
   const fallbackKey = getApiKey('openrouter');
   if (!fallbackKey) throw new Error('OpenRouter API key not configured (set OPENROUTER_API_KEY)');
-  return await callOpenRouter(fallbackKey, normalizeModelForProvider('openrouter', model));
+  return await callOpenRouter(fallbackKey, normalizeModelForProvider('openrouter', model), web);
 }
 
 // -----------------------------------------------------------------------------
@@ -206,10 +214,29 @@ export interface ExecuteLLMOptions {
   actionName: string;
   userInfo?: UserInfo | null;
   promptPreview?: string;
+  /** Enable live web search (OpenRouter web plugin) for this call. */
+  web?: boolean;
+}
+
+/** Non-retryable failures: configuration problems a retry can never fix. */
+function isConfigError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return /api key|unauthorized|401|403|invalid model/i.test(msg);
 }
 
 export async function executeLLMWithTracking(options: ExecuteLLMOptions): Promise<string> {
-  const { provider = 'openrouter', model, messages, maxTokens, temperature, signal, title } = options;
-  const result = await callLLM({ provider, model, messages, maxTokens, temperature, signal, title });
-  return result.content;
+  const { provider = 'openrouter', model, messages, maxTokens, temperature, signal, title, web } = options;
+  try {
+    const result = await callLLM({ provider, model, messages, maxTokens, temperature, signal, title, web });
+    return result.content;
+  } catch (err) {
+    // ONE retry on transient transport/provider failures (streams 'terminated'
+    // mid-flight, resets, 5xx). A lost extraction call silently empties a whole
+    // pipeline stage, so a single retry is cheap insurance; config errors
+    // (bad key/model) rethrow immediately.
+    if (isConfigError(err) || options.signal?.aborted) throw err;
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    const result = await callLLM({ provider, model, messages, maxTokens, temperature, signal, title, web });
+    return result.content;
+  }
 }

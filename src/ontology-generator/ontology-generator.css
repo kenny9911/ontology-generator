@@ -18,18 +18,20 @@
   --line-strong: #2e3a5c;
   --line-soft: rgba(255, 255, 255, 0.06);
 
-  /* Text */
-  --fg: #e7ecf5;
-  --fg-2: #b8c1da;
-  --fg-3: #8590ac;
-  --fg-4: #5f6a85;
+  /* Text — brightened contrast floor (claude.ai/design review): every step
+     clears WCAG AA on card surfaces; tertiary text reaches AAA. Themes with a
+     hue cast (forest/ember/mono) override with tinted ramps at the same floor. */
+  --fg: #f2f6ff;
+  --fg-2: #ccd7f2;
+  --fg-3: #a8b6dc;
+  --fg-4: #8290bb;
 
   /* Accents */
   --accent: #5b8cff;     /* electric blue — primary */
   --accent-2: #a47bff;   /* violet — secondary */
   --accent-3: #6cf2d9;   /* mint — success/ai-positive */
-  --warn: #ffb84d;
-  --danger: #ff6b8b;
+  --warn: #ffc266;
+  --danger: #ff7e9c;
 
   /* Semantic */
   --ai: var(--accent-2);
@@ -98,6 +100,31 @@
 }
 
 /* Theme variants */
+/* "Lumen" — the modern high-contrast default (designer restyle, see
+   docs/design/). Same hue family as midnight, one full step brighter:
+   every text token clears WCAG AA on cards (captions 3.2:1 → 5.2:1,
+   tertiary text reaches AAA at 8.2:1) and all five accents stay ≥6.6:1
+   when used AS text. Measured ratios live in docs/design/tokens-colors.html. */
+.ontogen[data-theme="lumen"] {
+  --bg: #0b0f1e;
+  --bg-1: #111729;
+  --bg-2: #161e36;
+  --bg-3: #1e2845;
+  --line: #28324f;
+  --line-strong: #36436b;
+  --line-soft: rgba(255, 255, 255, 0.07);
+  --fg: #f2f6ff;
+  --fg-2: #ccd7f2;
+  --fg-3: #a8b6dc;
+  --fg-4: #8290bb;
+  --accent: #7aa2ff;
+  --accent-2: #b495ff;
+  --accent-3: #54e8c7;
+  --warn: #ffc266;
+  --danger: #ff7e9c;
+  --glow-accent: 0 0 0 1px rgba(122, 162, 255, 0.45), 0 0 24px rgba(122, 162, 255, 0.28);
+  --glow-ai: 0 0 0 1px rgba(180, 149, 255, 0.5), 0 0 28px rgba(180, 149, 255, 0.32);
+}
 .ontogen[data-theme="midnight"] {
   --bg: #0a0e1a;
   --bg-1: #0f1426;
@@ -108,6 +135,8 @@
   --accent-2: #a47bff;
   --accent-3: #6cf2d9;
 }
+/* Forest/ember/mono — retuned to the Lumen contrast floor (hue-cast text
+   ramps; tertiary ≥8:1 AAA, captions ≥4.8:1 AA, accents-as-text ≥7.5:1). */
 .ontogen[data-theme="forest"] {
   --bg: #0a1410;
   --bg-1: #0f1c16;
@@ -115,9 +144,14 @@
   --bg-3: #1a2e24;
   --line: #233a2e;
   --line-strong: #2e4a3c;
-  --accent: #58d9a0;
-  --accent-2: #c5e36a;
-  --accent-3: #6cf2d9;
+  --fg: #eefaf2;
+  --fg-2: #c8e2d2;
+  --fg-3: #9fc4ae;
+  --fg-4: #7ba18c;
+  --accent: #63e2a8;
+  --accent-2: #cfe97a;
+  --accent-3: #5ff0d2;
+  --danger: #ff8d9d;
 }
 .ontogen[data-theme="ember"] {
   --bg: #160b0a;
@@ -126,9 +160,14 @@
   --bg-3: #361e18;
   --line: #4a2820;
   --line-strong: #5e342a;
-  --accent: #ff7a4d;
-  --accent-2: #ffb84d;
-  --accent-3: #ffd166;
+  --fg: #fdf3ed;
+  --fg-2: #eed6c8;
+  --fg-3: #d2af9d;
+  --fg-4: #b08e7b;
+  --accent: #ff9468;
+  --accent-2: #ffc266;
+  --accent-3: #ffd97a;
+  --danger: #ff8d9d;
 }
 .ontogen[data-theme="mono"] {
   --bg: #0b0b0d;
@@ -137,17 +176,25 @@
   --bg-3: #232328;
   --line: #2d2d34;
   --line-strong: #3a3a43;
-  --accent: #e7ecf5;
-  --accent-2: #b8c1da;
-  --accent-3: #8590ac;
+  --fg: #f4f4f7;
+  --fg-2: #d0d1da;
+  --fg-3: #a8aab8;
+  --fg-4: #848797;
+  --accent: #f4f4f7;
+  --accent-2: #cfd0d8;
+  --accent-3: #a8aab8;
+  --danger: #ff8d9d;
 }
 
 .ontogen button { font-family: inherit; cursor: pointer; }
+/* Focus = ring + soft luminous halo: visible on every surface (a11y). */
 .ontogen button:focus-visible,
 .ontogen a:focus-visible,
-.ontogen input:focus-visible {
+.ontogen input:focus-visible,
+.ontogen select:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+  box-shadow: 0 0 0 6px color-mix(in oklab, var(--accent) 20%, transparent);
 }
 
 /* ===== App layout ===== */
@@ -177,7 +224,7 @@
 .ontogen .brand-sub {
   font-family: var(--font-mono);
   font-size: 11px;
-  color: var(--fg-4);
+  color: var(--fg-3);
   border-left: 1px solid var(--line);
   padding-left: var(--s-3);
   margin-left: var(--s-2);
@@ -195,7 +242,7 @@
 .ontogen .step {
   display: flex; align-items: center; gap: var(--s-2);
   padding: 6px 12px;
-  color: var(--fg-4);
+  color: var(--fg-3);
   background: none;
   border: none;
   border-radius: 6px;
@@ -291,6 +338,12 @@
   background: var(--bg-1);
   border: 1px solid var(--line);
   border-radius: var(--r-3);
+  /* Two-layer elevation (claude.ai/design review): inner top highlight +
+     tight contact shadow + soft ambient — cards read as LIT surfaces. */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.045),
+    0 1px 2px rgba(0, 0, 0, 0.45),
+    0 8px 28px rgba(0, 0, 0, 0.35);
 }
 .ontogen .card-h {
   padding: var(--s-3) var(--s-4);
@@ -316,7 +369,14 @@
   color: var(--fg);
   transition: all 0.15s;
 }
-.ontogen .btn:hover { background: var(--bg-3); border-color: var(--accent); }
+/* Hover = lift by light: subtle rise + brightened border (reviewed spec). */
+.ontogen .btn:hover {
+  background: var(--bg-3);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+.ontogen .btn:active { transform: translateY(0); box-shadow: none; }
 .ontogen .btn.primary {
   background: var(--accent);
   color: var(--bg);
@@ -326,7 +386,10 @@
 .ontogen .btn.primary:hover { background: color-mix(in oklab, var(--accent) 85%, white); }
 .ontogen .btn.ai {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: white;
+  /* Dark ink, not white: white on the brightened gradients measures ~2:1
+     (claude.ai/design review catch); ink tracks --bg per theme at 7.7-18:1. */
+  color: var(--bg);
+  font-weight: 600;
   border: none;
   box-shadow: var(--glow-ai);
 }
@@ -350,9 +413,9 @@
 
 .ontogen .tag {
   display: inline-flex; align-items: center; gap: 4px;
-  padding: 2px 8px;
+  padding: 3px 9px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 10.5px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   border-radius: 999px;
@@ -372,13 +435,14 @@
 .ontogen .scroll::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 6px; border: 2px solid transparent; background-clip: padding-box; }
 .ontogen .scroll::-webkit-scrollbar-track { background: transparent; }
 
-/* Mono caption */
+/* Mono caption — 11px on --fg-3: the old 10px/--fg-4 combination measured
+   3.2:1 on cards (below WCAG AA); this is the app's most-used small text. */
 .ontogen .mono-cap {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--fg-4);
+  color: var(--fg-3);
 }
 
 /* Subtle grid background for graph areas */
@@ -404,4 +468,258 @@
 @keyframes og-shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
+}
+
+/* ── Deep-swarm mode: extraction toggle, brief, coverage, questions ───────── */
+.ontogen .mode-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.ontogen .mode-toggle .opt {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-2);
+  background: var(--bg-2);
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.ontogen .mode-toggle .opt:hover { border-color: var(--accent); }
+.ontogen .mode-toggle .opt.on {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.ontogen .mode-toggle .opt .mono-cap { line-height: 1.35; }
+/* With three mode cards (fast / swarm / hyper) the odd one out spans the row. */
+.ontogen .mode-toggle .opt:last-child:nth-child(odd) { grid-column: 1 / -1; }
+
+.ontogen .recall-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  margin-top: 4px;
+}
+.ontogen .recall-bar > span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+}
+
+.ontogen .gap-card,
+.ontogen .persona-card {
+  border: 1px solid var(--line);
+  border-radius: var(--r-2);
+  background: var(--bg-2);
+  padding: 10px;
+}
+
+.ontogen .agent-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-2);
+  font-size: 12px;
+}
+.ontogen .agent-row .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+}
+
+/* ── Document coverage (hyper mode) — CoverageScreen's DocCoverageCard.
+   Reuses .card/.tag/.recall-bar/.mono-cap; everything new is .doccov-*. */
+.ontogen .doccov-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+.ontogen .doccov-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  table-layout: fixed;
+}
+.ontogen .doccov-table th {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fg-3);
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+}
+.ontogen .doccov-table th:first-child { width: 44px; }
+.ontogen .doccov-table th:nth-child(3) { width: 96px; }
+.ontogen .doccov-table th:nth-child(5) { width: 130px; }
+.ontogen .doccov-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+  color: var(--fg-2);
+}
+.ontogen .doccov-table td.sent {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── LLM settings screen: per-agent model routing ─────────────────────────
+   Layout for LLMSettingsScreen.tsx — agent registry grouped into cards,
+   resolved model + source badge per agent, override inputs, global defaults.
+   Reuses .card/.card-h/.btn/.tag/.mono-cap; everything new is .llm-*. */
+.ontogen .llm-settings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  padding: var(--s-6);
+  overflow-y: auto;
+}
+
+/* One agent = one row: info | resolved model | override inputs. */
+.ontogen .llm-agent-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.2fr) minmax(220px, 1fr) minmax(260px, 1fr);
+  gap: var(--s-4);
+  align-items: center;
+  padding: var(--s-3) var(--s-4);
+}
+.ontogen .llm-agent-row + .llm-agent-row { border-top: 1px solid var(--line); }
+
+.ontogen .llm-agent-name {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-weight: 500;
+  font-size: 13px;
+}
+.ontogen .llm-agent-desc {
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--fg-3);
+  line-height: 1.45;
+}
+
+.ontogen .llm-agent-resolved {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.ontogen .llm-model {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-2);
+  word-break: break-all;
+}
+
+/* Where the resolved model came from — env > settings > router > default,
+   each a distinct muted tint. Rationale rides the title= tooltip. */
+.ontogen .llm-source-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  color: var(--fg-3);
+  white-space: nowrap;
+  cursor: help;
+}
+.ontogen .llm-source-badge[data-source="env"] {
+  color: var(--warn);
+  border-color: color-mix(in oklab, var(--warn) 30%, transparent);
+  background: color-mix(in oklab, var(--warn) 10%, transparent);
+}
+.ontogen .llm-source-badge[data-source="settings"] {
+  color: var(--accent);
+  border-color: color-mix(in oklab, var(--accent) 30%, transparent);
+  background: color-mix(in oklab, var(--accent) 10%, transparent);
+}
+.ontogen .llm-source-badge[data-source="router"] {
+  color: var(--accent-2);
+  border-color: color-mix(in oklab, var(--accent-2) 30%, transparent);
+  background: color-mix(in oklab, var(--accent-2) 10%, transparent);
+}
+.ontogen .llm-source-badge[data-source="default"] {
+  color: var(--fg-4);
+  border-color: var(--line);
+  background: var(--bg-2);
+}
+
+/* Per-agent override inputs: model text field + provider select. */
+.ontogen .llm-agent-overrides {
+  display: grid;
+  grid-template-columns: 1fr 150px;
+  gap: var(--s-2);
+}
+.ontogen .llm-input,
+.ontogen .llm-select {
+  appearance: none;
+  width: 100%;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  color: var(--fg-2);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  border-radius: var(--r-2);
+  padding: 6px 10px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.ontogen .llm-input:hover,
+.ontogen .llm-select:hover { border-color: var(--line-strong); }
+.ontogen .llm-input::placeholder { color: var(--fg-4); }
+
+/* Global defaults card body + router toggle. */
+.ontogen .llm-global {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) minmax(170px, 0.8fr) minmax(240px, 1.2fr);
+  gap: var(--s-4);
+  align-items: start;
+  padding: var(--s-4);
+}
+.ontogen .llm-field {
+  display: grid;
+  gap: 6px;
+}
+.ontogen .llm-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.ontogen .llm-toggle input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.ontogen .llm-hint {
+  font-size: 12px;
+  color: var(--fg-3);
+  line-height: 1.45;
+}
+
+/* Narrow viewports: stack each agent row's three cells. */
+@media (max-width: 1000px) {
+  .ontogen .llm-agent-row { grid-template-columns: 1fr; gap: var(--s-2); }
+  .ontogen .llm-global { grid-template-columns: 1fr; }
 }

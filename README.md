@@ -7,6 +7,9 @@ and refine each layer and explore the result as an interactive graph.
 
 - **Bilingual UI** (English / 中文)
 - **5-stage extraction pipeline:** objects → rules → actions → events → processes
+- **Three extraction modes:** fast (one LLM call per stage), swarm (multi-agent
+  SME pipeline), and **hyper** (swarm + terminology scan + sentence-level
+  coverage verification + automatic gap remediation)
 - **Grounded extraction** with per-item source snippets and confidence
 - **Interactive graph** (force / radial / hierarchical / clustered layouts)
 - **Publish** to a versioned store, optionally mirrored to **Neo4j**
@@ -28,10 +31,10 @@ cd ontology-generator
 npm install
 
 cp .env.example .env          # set OPENROUTER_API_KEY=<your key>
-npm run dev                   # SPA on http://localhost:5273, API on :5111
+npm run dev                   # SPA on http://localhost:3598, API on :5111
 ```
 
-Open http://localhost:5273. Pick a **sample corpus** or upload your own
+Open http://localhost:3598. Pick a **sample corpus** or upload your own
 documents, then watch the pipeline extract each layer.
 
 ### Try it with no API key
@@ -39,6 +42,52 @@ documents, then watch the pipeline extract each layer.
 The UI ships a **demo mode** that fabricates a complete ontology entirely in the
 browser — no backend, no LLM key — so you can explore the interface before
 configuring anything. Choose "Demo" on the input screen.
+
+---
+
+## Hyper automation
+
+Beyond the default **fast** mode (one LLM call per stage) and the multi-agent
+**swarm** mode, the input screen offers a third card: **hyper** mode, which
+aims at covering **100% of your documents** automatically. A hyper run drives
+22 client-paced sub-steps over 10 phases:
+
+1. **Terminology & data-type scan** — every business term, entity, attribute,
+   enum set, data type, role, abbreviation, and document kind is extracted
+   first (with verbatim citations) and seeded into every later prompt.
+2. **Multi-agent extraction** — the swarm machine (SME brief → breadth pass →
+   BA review → gap-driven deepening → link synthesis), reused verbatim.
+3. **Sentence-level coverage eval** — an eval agent classifies *every sentence
+   of every source document* as covered / partial / uncovered / uncoverable,
+   with the covering node ids as receipts. A deterministic citation-overlap
+   pre-pass resolves most sentences for free; LLM judging of the remainder
+   fails closed (a judging failure can only increase reported gaps).
+4. **Automatic gap remediation** — uncovered sentences become targeted
+   re-extraction gaps that merge back without losing prior work.
+5. **Final coverage gate** — a last eval pass records whether the run meets
+   the configurable coverage target, surfaced on the review screen.
+6. **Follow-up questions** — whatever the documents could not answer is
+   emitted as explicit, citable questions.
+
+**LLM settings & smart router.** The gear icon in the top bar opens a settings
+screen listing every AI agent in the system (14, registry-driven) with the
+provider + model it will use and *why* (env / settings / router / default).
+You can override any agent, change the global default, or disable the router.
+Absent any configuration, a smart router picks model strength per agent
+purpose — extraction-tier agents get a fast sibling of your base model (e.g.
+`gemini-2.5-pro → gemini-2.5-flash`), reasoning/review/synthesis agents keep
+the strong base model. Per-agent env vars beat everything.
+
+**Multi-hop inference.** Any ontology can be queried through the `infer` API
+action: a deterministic projector converts the graph into subject–predicate–
+object triples, and an inference agent walks them in an expand/answer loop,
+returning a bilingual answer plus an explicit hop-by-hop reasoning chain.
+Thirty ready-made multi-hop use cases (3 per sample domain, each ≥3 hops) live
+in [docs/INFERENCE_USE_CASES.md](./docs/INFERENCE_USE_CASES.md).
+
+The full requirements and architecture live in
+[docs/HYPER_AUTOMATION_SPEC.md](./docs/HYPER_AUTOMATION_SPEC.md) and
+[docs/HYPER_AUTOMATION_DESIGN.md](./docs/HYPER_AUTOMATION_DESIGN.md).
 
 ---
 
@@ -62,12 +111,14 @@ configuring anything. Choose "Demo" on the input screen.
 - **Frontend** — `src/ontology-generator/` (a self-contained React subtree) +
   `src/ontology/schema/` (the canonical type system). All API calls go through
   the single client in `src/ontology-generator/api.ts`.
-- **Backend** — `api/ontology-gen/index.ts` routes ~18 `?action=` operations
+- **Backend** — `api/ontology-gen/index.ts` routes ~25 `?action=` operations
   (`upload`, `parse`, `samples`, `run.start` / `run.step` / `run.get`,
-  `stage.<objects|rules|actions|events|processes>`, `list`, `get`, `save`,
-  `publish`, `delete`, `validate`, `generate`, `import-graph`, `graph-status`)
-  through the pipeline. The LLM client is the self-contained
-  `api/ontology-gen/llm.ts`.
+  `run.swarm.start` / `run.swarm.step`, `run.hyper.start` / `run.hyper.step`,
+  `stage.<objects|rules|actions|events|processes>`, `llm.agents`,
+  `llm.settings`, `infer`, `list`, `get`, `save`, `publish`, `delete`,
+  `validate`, `generate`, `import-graph`, `graph-status`) through the
+  pipeline. The LLM client is the self-contained `api/ontology-gen/llm.ts`,
+  fronted by a per-agent router (`api/ontology-gen/llm-router.ts`).
 - **Samples** — synthetic corpora in `fixtures/ontology-corpus/`.
 
 ---
@@ -86,6 +137,10 @@ The only required variable is an LLM API key. Everything else is optional; see
 | `ONTOLOGY_GEN_DATA_DIR` | | `<cwd>/.data/ontology-gen` | File-store directory |
 | `ONTOLOGY_GEN_REQUIRE_AUTH` | | off | `1` requires a valid Bearer JWT |
 | `JWT_SECRET` | only if auth on | — | JWT signing secret (no fallback) |
+| `ONTOLOGY_GEN_COVERAGE_TARGET` | | `1.0` | Document-coverage eval target (0..1, hyper mode) |
+| `ONTOLOGY_GEN_ROUTER` | | on | `0` disables the smart per-agent LLM router |
+| `ONTOLOGY_GEN_MODEL_<AGENT_ID>` | | — | Per-agent model pin (e.g. `ONTOLOGY_GEN_MODEL_RULES_EXTRACTOR`) |
+| `ONTOLOGY_GEN_PROVIDER_<AGENT_ID>` | | — | Per-agent provider pin (pairs with the model pin) |
 | `SUPABASE_URL` / `SUPABASE_SERVICE_KEY` | | — | Durable store (optional upgrade) |
 | `NEO4J_URI` / `NEO4J_USER` / `NEO4J_PASSWORD` | | — | Graph mirror (optional) |
 

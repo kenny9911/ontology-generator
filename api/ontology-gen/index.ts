@@ -49,12 +49,27 @@ import type {
 import { makeId } from '../_shared/ids.js';
 import { validateOntology } from '../_shared/ontology-validate.js';
 import type { ValidationIssue } from '../_shared/ontology-validate.js';
+import type { LlmSettings } from '../_shared/ontology-schema.js';
 
 import { getStore, newUuid } from './store.js';
 import type { OntologyStore } from './store.js';
 import { parseDocument } from './parse.js';
 import { runStage, buildOntology } from './pipeline/orchestrator.js';
 import type { StageContext } from './pipeline/context.js';
+import { advanceSwarm, seedSwarmPhases } from './pipeline/swarm/orchestrator.js';
+import { advanceHyper, seedHyperPhases } from './pipeline/hyper/orchestrator.js';
+import { runInference } from './inference/engine.js';
+import {
+  resolveAgentLlm,
+  listAssignments,
+  loadLlmSettings,
+  saveLlmSettings,
+  makeAgentLlmResolver,
+} from './llm-router.js';
+import { AGENT_REGISTRY } from './agents.js';
+import { executeLLMWithTracking } from './llm.js';
+import type { ChatMessage, ExecuteLLMOptions } from './llm.js';
+import { extractJson } from './pipeline/swarm/llm-json.js';
 import { generate } from './generators/index.js';
 import type { GeneratorTarget } from './generators/index.js';
 import { importOntology } from './neo4j/import.js';
@@ -432,6 +447,12 @@ async function contextFromOntology(
   // Seed the `taken` id set with every id already present so re-mints don't collide.
   const taken = collectTakenIds(ontology, sources);
 
+  // Per-agent LLM routing: load the global settings ONCE per request and attach
+  // a resolver closure; call sites pick their model via ctxAgentLlm(ctx, ...).
+  const settings = await loadLlmSettings(store);
+  const model = overrides?.model || defaultModel();
+  const provider = overrides?.provider || defaultProvider();
+
   return {
     ontologyId: ontology.id,
     domain: ontology.domain,
@@ -445,10 +466,11 @@ async function contextFromOntology(
     actions: ontology.actions ?? [],
     events: ontology.events ?? [],
     processes: ontology.processes ?? [],
-    model: overrides?.model || defaultModel(),
-    provider: overrides?.provider || defaultProvider(),
+    model,
+    provider,
     userInfo,
     log,
+    agentLlm: makeAgentLlmResolver(settings, model, provider),
   };
 }
 
@@ -646,12 +668,38 @@ async function loadRunState(
   return { run, ontology };
 }
 
+// ---------------------------------------------------------------------------
+// Deep-swarm working state — the sub-step cursor, stashed like the partial
+// ontology (a ParsedSource-shaped row) so it persists across `run.swarm.step`
+// calls on every store. Brief/coverage/questions ride on ontology.metadata.
+// ---------------------------------------------------------------------------
+
+const swarmStateRef = (runId: string): string => `swarm_state:${runId}`;
+
+async function persistSwarmState(store: OntologyStore, runId: string, cursor: number): Promise<void> {
+  await store.putParsed({ ref: swarmStateRef(runId), documentId: runId, text: JSON.stringify({ cursor }) });
+}
+
+async function loadSwarmState(store: OntologyStore, runId: string): Promise<{ cursor: number } | null> {
+  const stash = await store.getParsed(swarmStateRef(runId));
+  if (!stash) return null;
+  try {
+    const o = JSON.parse(stash.text) as { cursor?: unknown };
+    return { cursor: Number(o.cursor) || 0 };
+  } catch {
+    return null;
+  }
+}
+
 // ===========================================================================
 // Action: run.start — seed an OntologyRun + a draft Ontology from sources or a
 // sample corpus.
 // ===========================================================================
 
-async function actionRunStart(req: VercelRequest, res: VercelResponse, userInfo: unknown | null): Promise<void> {
+async function buildSeededRun(
+  req: VercelRequest,
+  userInfo: unknown | null,
+): Promise<{ store: OntologyStore; run: OntologyRun; ontology: Ontology }> {
   const store = getStore();
   const body = bodyObject(req);
 
@@ -711,6 +759,9 @@ async function actionRunStart(req: VercelRequest, res: VercelResponse, userInfo:
   const ontologyId = makeId('ontology', name.en, taken);
 
   // Build a seed (empty-layer) ontology via the orchestrator's assembler.
+  // The seed context makes no LLM calls, but carries the per-agent resolver for
+  // consistency with every other StageContext built in this handler.
+  const settings = await loadLlmSettings(store);
   const seedCtx: StageContext = {
     ontologyId,
     domain,
@@ -728,6 +779,7 @@ async function actionRunStart(req: VercelRequest, res: VercelResponse, userInfo:
     provider: defaultProvider(),
     userInfo,
     log: () => {},
+    agentLlm: makeAgentLlmResolver(settings, defaultModel(), defaultProvider()),
   };
   const ontology = buildOntology(seedCtx);
   ontology.name = name.en;
@@ -735,9 +787,140 @@ async function actionRunStart(req: VercelRequest, res: VercelResponse, userInfo:
 
   const runId = `run_${newUuid()}`;
   const run = freshRun(runId, ontologyId);
+  // Uploaded corpora seed a filename-derived name; flag the run so completion
+  // upgrades it to a content-descriptive title. Sample corpora keep their label.
+  if (body.autoName === true) run.autoName = true;
 
+  return { store, run, ontology };
+}
+
+// Thin wrappers over the shared seeding helper.
+async function actionRunStart(req: VercelRequest, res: VercelResponse, userInfo: unknown | null): Promise<void> {
+  const { store, run, ontology } = await buildSeededRun(req, userInfo);
   await persistRunState(store, run, ontology);
   ok(res, { run, ontology });
+}
+
+// run.swarm.start — seed a run flagged for the opt-in deep-swarm pipeline.
+async function actionSwarmStart(req: VercelRequest, res: VercelResponse, userInfo: unknown | null): Promise<void> {
+  const { store, run, ontology } = await buildSeededRun(req, userInfo);
+  run.mode = 'swarm';
+  run.phases = seedSwarmPhases();
+  run.currentPhase = null;
+  await persistRunState(store, run, ontology);
+  await persistSwarmState(store, run.id, 0);
+  ok(res, { run, ontology });
+}
+
+// run.hyper.start — seed a run flagged for the opt-in hyper-automation pipeline.
+// Identical body contract + source/sample seeding to run.swarm.start; only the
+// mode flag and the (10-phase) phase machine differ.
+async function actionHyperStart(req: VercelRequest, res: VercelResponse, userInfo: unknown | null): Promise<void> {
+  const { store, run, ontology } = await buildSeededRun(req, userInfo);
+  run.mode = 'hyper';
+  run.phases = seedHyperPhases();
+  run.currentPhase = null;
+  await persistRunState(store, run, ontology);
+  await persistSwarmState(store, run.id, 0);
+  ok(res, { run, ontology });
+}
+
+// ===========================================================================
+// Auto-naming — upgrade a filename-derived ontology name to a content-descriptive
+// bilingual title once extraction has discovered objects/processes/actions.
+// ===========================================================================
+
+/**
+ * Ask the LLM for a concise bilingual title naming the business domain/process
+ * the discovered ontology describes. Returns null on any failure (no key, parse
+ * error, empty layers) so callers degrade silently to the filename-derived name.
+ */
+async function suggestOntologyName(
+  ontology: Ontology,
+  userInfo: unknown | null,
+): Promise<Bilingual | null> {
+  const objects = ontology.objects.slice(0, 12).map((o) => o.name).filter(Boolean);
+  const processes = ontology.processes
+    .slice(0, 6)
+    .map((p) => p.name?.en || p.name?.zh || '')
+    .filter(Boolean);
+  const actions = ontology.actions.slice(0, 8).map((a) => a.name).filter(Boolean);
+  // Nothing was discovered — a name from this would be guesswork.
+  if (objects.length === 0 && processes.length === 0 && actions.length === 0) return null;
+
+  const system =
+    'You name enterprise ontologies. Given the key entities discovered from a ' +
+    'business corpus, return a concise, specific title that names the business ' +
+    'domain or end-to-end process — never a generic label like "Uploaded corpus". ' +
+    'Respond with STRICT JSON only: {"en": "...", "zh": "..."}. ' +
+    '"en": 2-6 words in Title Case, no quotes, no trailing punctuation. ' +
+    '"zh": 简体中文 4-12 字。Do not add the word "Ontology"/"本体" unless it reads naturally.';
+  const user = [
+    `Domain: ${ontology.domain}`,
+    objects.length ? `Objects: ${objects.join(', ')}` : '',
+    processes.length ? `Processes: ${processes.join(', ')}` : '',
+    actions.length ? `Actions: ${actions.join(', ')}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  const messages: ChatMessage[] = [
+    { role: 'system', content: system },
+    { role: 'user', content: user },
+  ];
+
+  let raw: string;
+  try {
+    // Route the (one-shot, per-request) title call through the agent router.
+    const settings = await loadLlmSettings(getStore());
+    const llm = resolveAgentLlm('title_generator', {
+      settings,
+      baseModel: defaultModel(),
+      baseProvider: defaultProvider(),
+    });
+    raw = await executeLLMWithTracking({
+      provider: llm.provider as ExecuteLLMOptions['provider'],
+      model: llm.model,
+      messages,
+      temperature: 0.2,
+      maxTokens: 200,
+      module: 'ontology_generator',
+      actionName: 'name.suggest',
+      userInfo: userInfo as ExecuteLLMOptions['userInfo'],
+    });
+  } catch {
+    return null;
+  }
+
+  const parsed = extractJson(raw) as { en?: unknown; zh?: unknown } | null;
+  if (!parsed) return null;
+  const en = typeof parsed.en === 'string' ? parsed.en.trim() : '';
+  const zh = typeof parsed.zh === 'string' ? parsed.zh.trim() : '';
+  if (!en && !zh) return null;
+  return { en: en || zh, zh: zh || en };
+}
+
+/**
+ * One-shot: when a run is flagged `autoName`, replace the filename-derived name
+ * with an LLM-suggested title (mutates `ontology`), then clear the flag whether
+ * or not the suggestion succeeded so it never re-fires. Never throws.
+ */
+async function maybeUpgradeAutoName(
+  run: OntologyRun,
+  ontology: Ontology,
+  userInfo: unknown | null,
+): Promise<void> {
+  if (!run.autoName) return;
+  run.autoName = false;
+  try {
+    const suggested = await suggestOntologyName(ontology, userInfo);
+    if (suggested) {
+      ontology.name = suggested.en;
+      ontology.nameZh = suggested.zh;
+    }
+  } catch {
+    // degrade silently — the filename-derived name stands.
+  }
 }
 
 // ===========================================================================
@@ -756,6 +939,16 @@ async function actionRunStep(req: VercelRequest, res: VercelResponse, userInfo: 
 
   const { run } = state;
   let { ontology } = state;
+
+  // Phase-machine runs advance through their own cursor-driven step actions;
+  // letting run.step drive them would corrupt the cursor/phase bookkeeping.
+  if (run.mode === 'swarm' || run.mode === 'hyper') {
+    throw new HttpError(
+      400,
+      `run ${runId} is a ${run.mode} run — use run.${run.mode}.step`,
+      'WRONG_RUN_MODE',
+    );
+  }
 
   if (run.status === 'complete') {
     ok(res, { run, ontology });
@@ -807,6 +1000,8 @@ async function actionRunStep(req: VercelRequest, res: VercelResponse, userInfo: 
     if (!remaining) {
       run.status = 'complete';
       run.currentStage = null;
+      // Run finished — upgrade a filename-derived name to a content title.
+      await maybeUpgradeAutoName(run, ontology, userInfo);
     } else {
       run.status = 'running';
     }
@@ -827,6 +1022,92 @@ async function actionRunGet(req: VercelRequest, res: VercelResponse): Promise<vo
   const state = await loadRunState(store, runId);
   if (!state) throw new HttpError(404, `run not found: ${runId}`, 'RUN_NOT_FOUND');
   ok(res, { run: state.run, ontology: state.ontology });
+}
+
+// ===========================================================================
+// Action: run.swarm.step / run.hyper.step — advance ONE sub-step of a
+// client-paced multi-phase run (see pipeline/swarm and pipeline/hyper).
+//
+// MODE GUARD: both step actions share this driver and dispatch on the
+// PERSISTED `run.mode` — never on the endpoint name — so a client hitting the
+// wrong endpoint cannot corrupt a run: a swarm run always advances via
+// `advanceSwarm` and a hyper run via `advanceHyper`. The cursor stash
+// (`swarm_state:<runId>`) is mode-agnostic and reused unchanged for hyper.
+// Hyper responses additionally carry `terminology` + `documentCoverage`.
+// ===========================================================================
+
+async function actionModeStep(
+  req: VercelRequest,
+  res: VercelResponse,
+  userInfo: unknown | null,
+  actionName: 'run.swarm.step' | 'run.hyper.step',
+): Promise<void> {
+  const store = getStore();
+  const body = bodyObject(req);
+  const runId = typeof body.runId === 'string' ? body.runId : queryStr(req, 'runId');
+  if (!runId) throw new HttpError(400, `${actionName} requires runId`, 'NO_RUN_ID');
+
+  const state = await loadRunState(store, runId);
+  if (!state) throw new HttpError(404, `run not found: ${runId}`, 'RUN_NOT_FOUND');
+
+  const { run } = state;
+  let { ontology } = state;
+
+  // Only phase-machine runs may be stepped here; a fast run has no cursor and
+  // must advance through run.step.
+  if (run.mode !== 'swarm' && run.mode !== 'hyper') {
+    throw new HttpError(400, `run ${runId} is a fast run — use run.step`, 'WRONG_RUN_MODE');
+  }
+  const isHyper = run.mode === 'hyper';
+
+  // Idempotent terminal: a completed run echoes its artifacts.
+  if (run.status === 'complete') {
+    const payload: Record<string, unknown> = {
+      run,
+      ontology,
+      phase: run.currentPhase ?? 'follow_up',
+      businessBrief: ontology.metadata?.businessBrief,
+      coverageReport: ontology.metadata?.coverageReport,
+      followUpQuestions: ontology.metadata?.followUpQuestions,
+    };
+    if (isHyper) {
+      payload.terminology = ontology.metadata?.terminology;
+      payload.documentCoverage = ontology.metadata?.documentCoverage;
+    }
+    ok(res, payload);
+    return;
+  }
+
+  const cursor = (await loadSwarmState(store, runId))?.cursor ?? 0;
+  const log = (text: string) => appendLog(run, text);
+  const ctx = await contextFromOntology(store, ontology, undefined, userInfo, log);
+
+  const result = isHyper
+    ? await advanceHyper({ cursor, ctx, run, ontology })
+    : await advanceSwarm({ cursor, ctx, run, ontology });
+  ontology = result.ontology;
+
+  // Run finished — upgrade a filename-derived name to a content title.
+  if (result.run.status === 'complete') {
+    await maybeUpgradeAutoName(result.run, ontology, userInfo);
+  }
+
+  await persistRunState(store, result.run, ontology);
+  await persistSwarmState(store, runId, result.cursor);
+
+  const payload: Record<string, unknown> = {
+    run: result.run,
+    ontology,
+    phase: result.phase,
+    businessBrief: result.businessBrief,
+    coverageReport: result.coverageReport,
+    followUpQuestions: result.followUpQuestions,
+  };
+  if ('terminology' in result) {
+    payload.terminology = result.terminology;
+    payload.documentCoverage = result.documentCoverage;
+  }
+  ok(res, payload);
 }
 
 // ===========================================================================
@@ -1075,6 +1356,87 @@ async function safeImport(ontology: Ontology): Promise<{ mirrored: boolean; node
 }
 
 // ===========================================================================
+// Action: llm.agents / llm.settings — the per-agent LLM routing surface
+// (agent registry + resolved assignments + the persisted LlmSettings).
+// ===========================================================================
+
+async function actionLlmAgents(_req: VercelRequest, res: VercelResponse): Promise<void> {
+  const store = getStore();
+  const settings = await loadLlmSettings(store);
+  ok(res, {
+    agents: AGENT_REGISTRY,
+    assignments: listAssignments(settings, defaultModel(), defaultProvider()),
+    settings: settings ?? { overrides: {} },
+  });
+}
+
+async function actionLlmSettings(req: VercelRequest, res: VercelResponse): Promise<void> {
+  const body = bodyObject(req);
+
+  // Defensive narrowing of the LlmSettings shape; saveLlmSettings sanitizes
+  // further (unknown agent ids dropped, empty strings stripped).
+  const input: LlmSettings = { overrides: {} };
+  const rawOverrides = body.overrides;
+  if (rawOverrides && typeof rawOverrides === 'object' && !Array.isArray(rawOverrides)) {
+    input.overrides = rawOverrides as LlmSettings['overrides'];
+  }
+  if (typeof body.defaultProvider === 'string') input.defaultProvider = body.defaultProvider;
+  if (typeof body.defaultModel === 'string') input.defaultModel = body.defaultModel;
+  if (typeof body.routerEnabled === 'boolean') input.routerEnabled = body.routerEnabled;
+
+  const store = getStore();
+  const saved = await saveLlmSettings(store, input);
+  ok(res, {
+    settings: saved,
+    assignments: listAssignments(saved, defaultModel(), defaultProvider()),
+  });
+}
+
+// ===========================================================================
+// Action: infer — multi-hop graph reasoning over an ontology (inline or by id).
+// ===========================================================================
+
+async function actionInfer(req: VercelRequest, res: VercelResponse, userInfo: unknown | null): Promise<void> {
+  const store = getStore();
+  const body = bodyObject(req);
+
+  const question = typeof body.question === 'string' ? body.question.trim() : '';
+  if (!question) throw new HttpError(400, 'infer requires a non-empty question', 'NO_QUESTION');
+
+  // Either an inline ontology or an id (+ optional version) to load.
+  let ontology = body.ontology && typeof body.ontology === 'object' && !Array.isArray(body.ontology)
+    ? (body.ontology as Ontology)
+    : undefined;
+  if (!ontology) {
+    const id = typeof body.ontologyId === 'string' ? body.ontologyId : undefined;
+    if (!id) throw new HttpError(400, 'infer requires ontology or ontologyId', 'NO_ONTOLOGY');
+    const version = typeof body.version === 'number' ? body.version : undefined;
+    const loaded = await store.get(id, version);
+    if (!loaded) throw new HttpError(404, `ontology not found: ${id}`, 'NOT_FOUND');
+    ontology = loaded;
+  }
+
+  const settings = await loadLlmSettings(store);
+  const llm = resolveAgentLlm('inference_agent', {
+    settings,
+    baseModel: defaultModel(),
+    baseProvider: defaultProvider(),
+  });
+
+  const result = await runInference({
+    ontology,
+    question,
+    model: llm.model,
+    provider: llm.provider,
+    userInfo: userInfo as ExecuteLLMOptions['userInfo'] ?? null,
+    maxHops: typeof body.maxHops === 'number' ? body.maxHops : undefined,
+    maxIterations: typeof body.maxIterations === 'number' ? body.maxIterations : undefined,
+  });
+
+  ok(res, { result });
+}
+
+// ===========================================================================
 // Small shared helpers.
 // ===========================================================================
 
@@ -1129,7 +1491,7 @@ const STAGE_ACTIONS: Record<string, Stage> = {
 };
 
 // Which actions are pure reads (GET).
-const READ_ACTIONS = new Set<string>(['samples', 'run.get', 'list', 'get', 'graph-status']);
+const READ_ACTIONS = new Set<string>(['samples', 'run.get', 'list', 'get', 'graph-status', 'llm.agents']);
 
 // ===========================================================================
 // Default export — the Vercel handler.
@@ -1213,6 +1575,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         return;
       case 'run.get':
         await actionRunGet(req, res);
+        return;
+      case 'run.swarm.start':
+        await actionSwarmStart(req, res, userInfo);
+        return;
+      case 'run.swarm.step':
+        await actionModeStep(req, res, userInfo, 'run.swarm.step');
+        return;
+      case 'run.hyper.start':
+        await actionHyperStart(req, res, userInfo);
+        return;
+      case 'run.hyper.step':
+        await actionModeStep(req, res, userInfo, 'run.hyper.step');
+        return;
+      case 'llm.agents':
+        await actionLlmAgents(req, res);
+        return;
+      case 'llm.settings':
+        await actionLlmSettings(req, res);
+        return;
+      case 'infer':
+        await actionInfer(req, res, userInfo);
         return;
       case 'list':
         await actionList(req, res);

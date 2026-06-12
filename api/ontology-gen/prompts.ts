@@ -7,6 +7,19 @@
  *  (Objects -> Rules -> Actions -> Events -> Processes), the cross-chunk merge
  *  step, and the 3 generation targets (agent code, agent prompts, manifest).
  *
+ *  DOCTRINE (docs/HYPER_AUTOMATION_DESIGN.md §4): every prompt is
+ *  RECALL-FIRST-WITH-RECEIPTS. The goal is COMPLETE coverage — extract every
+ *  item the evidence supports (missing a real item is as serious an error as
+ *  inventing one) while strictly banning invention of anything the evidence
+ *  does not support. Each extraction prompt therefore carries: a section-sweep
+ *  method, a per-stage "commonly missed" negative-space checklist, seed-block
+ *  reconciliation (StageContext.briefSeed is appended AFTER the system prompt
+ *  by every stage caller), a counting self-check, and anti-truncation output
+ *  discipline (terse descriptions, never fewer items). JSON contracts are
+ *  FROZEN: every OUTPUT CONTRACT field name, nesting, and enum value below is
+ *  byte-identical to what the stage parsers/coercers read — rewrites change
+ *  instructions, never the contract.
+ *
  *  HARD RULES for THIS file:
  *  --------------------------------------------------------------------------
  *  - ZERO project imports. Pure functions, no runtime side effects. This file
@@ -52,48 +65,93 @@ const DATA_TYPES =
 
 /**
  * GLOBAL RULES — inlined verbatim at the top of every extraction system prompt.
- * Encodes the non-negotiables: JSON-only, extract-not-invent, mandatory verbatim
- * citations, kind-prefixed slug ids, bilingual, honest confidence, closed enums.
+ * Encodes the non-negotiables: JSON-only, recall-first-with-receipts (complete
+ * coverage AND zero invention), mandatory verbatim citations, kind-prefixed
+ * slug ids, bilingual, honest confidence, closed enums, seed reconciliation,
+ * and anti-truncation output discipline.
  */
-const SHARED_RULES = `GLOBAL RULES (these override any instinct to be verbose or "helpful"):
+const SHARED_RULES = `GLOBAL RULES (non-negotiable — they override any instinct to summarize, hedge, or pad):
 1. OUTPUT ONLY a single JSON object that matches the OUTPUT CONTRACT below. No prose,
    no markdown, no code fences, no commentary, no trailing text.
-2. EXTRACT, never invent. If the document does not state it, do NOT emit it. Returning
-   FEWER, correct items is the goal. Never fabricate to look "complete".
+2. COMPLETENESS AND FIDELITY: extract every item the text supports — missing a real item
+   is as serious an error as inventing one. Never invent what the evidence does not
+   support. Sweep the WHOLE document; never stop after the prominent items, and never
+   fabricate to look "complete". An item you omit is invisible to every downstream stage.
 3. CITATIONS ARE MANDATORY. Every node needs "sources" with >=1 SourceRef whose "snippet"
-   is copied VERBATIM from the document (trim to one sentence/clause; never paraphrase
-   inside "snippet"). If you cannot find a supporting snippet, DROP the node. Populate
-   "documentName" with the provided DOCUMENT NAME. Do NOT emit charStart/charEnd/
-   quoteVerified — the backend computes those.
+   is copied VERBATIM from the document (trim to the load-bearing clause, <=40 words;
+   never paraphrase inside "snippet"). If you cannot find a supporting snippet, DROP the
+   node (unless this stage's guidance explicitly allows "inferred" nodes with
+   "derivedFrom" and empty "sources"). Populate "documentName" with the provided
+   DOCUMENT NAME. Do NOT emit charStart/charEnd/quoteVerified — the backend computes those.
 4. IDS are lowercase, kind-prefixed slugs ([a-z0-9.-]):
      objectType:<slug>  rel:<slug>  rule:<slug>  action:<slug>  process:<slug>
      event:<dotted.name>  (events use a dotted suffix, e.g. event:order.fulfilled)
-   When referring to a node from a PRIOR STAGE, reuse its EXACT id. Never rename an
-   existing id; never invent ids for collections you were not given.
-5. BILINGUAL is required. Provide BOTH English and Simplified Chinese where the contract
+   When referring to a node from a PRIOR STAGE, reuse its EXACT id, byte for byte. Never
+   rename an existing id; never invent ids for collections you were not given.
+5. BILINGUAL is required. Provide BOTH English and Simplified Chinese wherever the contract
    asks (nameZh / statement.{en,zh} / name.{en,zh} / text.{en,zh}). zh must be a faithful
-   business translation, never pinyin, never left blank.
+   business translation — never pinyin, never left blank, never the English text repeated.
 6. CONFIDENCE is your honest 0..1 estimate of how DIRECTLY the document supports the node.
-   Multi-sentence inferences score lower than directly-stated facts. Be calibrated.
+   Multi-sentence inferences score lower than directly-stated facts. Be calibrated — and
+   remember: a real item with honest low confidence is far more valuable than an omitted
+   item. Emit it and score it honestly; never silently drop a supported item to keep
+   confidence numbers high.
 7. CONTROLLED VOCABULARIES ONLY. Never invent enum members.
      DataType: ${DATA_TYPES}
      Severity: info | warn | block
      provenance: "extracted" (default for things you mine from text)
      reviewState: "pending" (always, for newly extracted nodes)
-8. SELF-CHECK before returning (see SELF-CHECK block). Silently fix violations; do not
-   narrate the fixes in the output.`;
+8. SEED RECONCILIATION. If an EXPECTED ITEMS / TERMINOLOGY seed block is present (e.g. a
+   "DOMAIN BRIEF" with "EXPECTED ITEMS TO LOOK FOR" appended after these instructions),
+   reconcile against it — every seeded expectation must either map to an output item or be
+   consciously skipped because the documents do not support it. The seed raises RECALL
+   only: it tells you where to look, it is NEVER itself evidence, and it NEVER substitutes
+   for a verbatim citation.
+9. OUTPUT BUDGET DISCIPLINE. The token budget is finite and item COUNT is what matters.
+   Keep every description <= 2 short sentences and every snippet <= 40 words. NEVER pad,
+   NEVER repeat the input, NEVER restate one item inside another. If you approach the
+   output limit, prefer emitting MORE items with terser descriptions over fewer verbose
+   ones — completeness is never traded away for prose.
+10. SELF-CHECK before returning (see SELF-CHECK block). Silently fix violations; do not
+    narrate the fixes in the output.`;
+
+/**
+ * Section-sweep method — inlined into every extraction system prompt between
+ * the GLOBAL RULES and the stage guidance. This is the recall engine.
+ */
+const SWEEP_METHOD = `SWEEP DISCIPLINE (run silently, in order — this is how you reach full coverage):
+1. SEGMENT the evidence into its natural sections (headings, numbered clauses, paragraphs,
+   tables, bullet lists). Note how many sections there are.
+2. ENUMERATE candidates section by section, paragraph by paragraph. List EVERY candidate
+   for this stage BEFORE filtering anything. Enumerating a weak candidate costs nothing;
+   silently skipping a real one loses it forever.
+3. FILTER: keep every candidate a verbatim quote supports; discard only true non-items
+   (pure narration, headings, exact duplicates of an already-kept item).
+4. RECONCILE against the seed block, if one is appended (GLOBAL RULE 8): walk the seeded
+   expectations one by one — map each to an output item or consciously skip it.
+5. COMPLETENESS PASS: re-scan each section one final time. A section that contributed
+   ZERO items must be consciously justified (silently). Sections describing data,
+   obligations, procedures, parties, or lifecycles almost always contribute something.`;
 
 /** Self-critique checklist appended to every extraction system prompt. */
 const SELF_CHECK = `SELF-CHECK (run this silently, then emit only the corrected JSON):
+- [ ] COUNT: how many sections did the evidence have, and how many items did each section
+      yield? Any zero-item section needs a conscious justification — if you cannot justify
+      it, go back and extract what that section supports before returning.
 - [ ] Output is ONE JSON object with the exact top-level key, nothing else.
-- [ ] Every node has >=1 source whose "snippet" is a verbatim substring of the evidence.
-      If any snippet is paraphrased or not found, fix it to a real quote or DROP the node.
+- [ ] Every extracted node has >=1 source whose "snippet" is a verbatim substring of the
+      evidence. If any snippet is paraphrased or not found, fix it to a real quote or DROP
+      the node. (Nodes this stage explicitly allows as "inferred" instead carry
+      "derivedFrom" + empty "sources".)
 - [ ] Every id is a correctly kind-prefixed slug; every cross-ref id exists in the prior
       stage or in this output. Remove or repair dangling references.
 - [ ] No invented enum values; every DataType/severity/provenance is from the vocabulary.
 - [ ] Bilingual fields are filled in BOTH languages with faithful business translations.
 - [ ] No duplicate nodes (same meaning => one node, union of sources, max confidence).
-- [ ] confidence reflects evidence strength (lower for indirect/multi-sentence inference).`;
+- [ ] confidence reflects evidence strength (lower for indirect/multi-sentence inference).
+- [ ] Every seed-block expectation (if a seed is present) is mapped to an output item or
+      consciously skipped for lack of document support.
+- [ ] Descriptions <= 2 short sentences; snippets <= 40 words; zero padding anywhere.`;
 
 /** Pretty-print a value for embedding in a prompt; tolerates undefined. */
 function asJson(v: unknown): string {
@@ -113,20 +171,49 @@ function fence(label: string, body: string): string {
 
 export function buildObjectsPrompt(args: { docName: string; chunkText: string }): PromptPair {
   const { docName, chunkText } = args;
-  const system = `You are an expert enterprise data architect performing ONTOLOGY EXTRACTION,
-Stage 1 of 5: OBJECT TYPES (business entities). This is the MOST important stage — every
-downstream rule, action, event, and process references the objects you define here, so be
-precise and conservative.
+  const system = `You are a PRINCIPAL ENTERPRISE DATA ARCHITECT with two decades of experience
+turning policy and operations documents into production data models, performing ONTOLOGY
+EXTRACTION, Stage 1 of 5: OBJECT TYPES (business entities). The stakes are concrete:
+downstream autonomous agents EXECUTE against this ontology — an entity you miss does not
+exist for them. No rule can constrain it, no action can read or write it, no event can
+report on it, no process can route it. Every downstream stage references the objects you
+define here. Your mandate is COMPLETE coverage of the evidence with verbatim receipts.
 
 ${SHARED_RULES}
+
+${SWEEP_METHOD}
 
 WHAT TO EXTRACT
 - Every business ENTITY the document treats as a thing with identity and attributes
   (Customer, Order, Invoice, Claim, LoanFacility, Patient, Shipment, Part, Policy).
+  If the business names it, stores it, numbers it, assigns it a status, or routes it
+  between people, it is an object candidate — enumerate it.
 - DO NOT create objects for: verbs/operations (those are Actions, Stage 3), events
   (Stage 4), one-off values, report names, UI labels, or section headings.
 - For each object: PascalCase singular "name" (+ "nameZh"), a one-sentence "description"
   (+ "descriptionZh"), its ATTRIBUTES, and its RELATIONSHIPS to other objects in THIS output.
+
+COMMONLY MISSED — sweep for ALL of these explicitly (extractors systematically under-report them):
+- LOOKUP / REFERENCE / MASTER DATA: tiers, categories, regions, rate tables, code lists,
+  product catalogs — model them when the document gives them identity or a value set.
+- PARTIES AND ORGANIZATIONS: vendors, carriers, departments, regulators, brokers,
+  beneficiaries, third-party service providers — any party with a role in the domain.
+- DOCUMENTS-AS-ENTITIES: invoices, applications, certificates, contracts, claim forms,
+  purchase orders — if the business stores, numbers, versions, or routes a document, it
+  is an object with attributes, not just paperwork.
+- LINE ITEMS / JUNCTION ENTITIES: OrderLine, PolicyCoverage, ShipmentItem — anything that
+  links two objects and carries its own data (quantity, price, dates).
+- CONFIGURATION / POLICY ENTITIES: fee schedules, approval matrices, plan definitions,
+  threshold tables — when the document treats configuration as managed data.
+- STATUSES WORTH MODELING: a lifecycle spelled out in prose ("draft, submitted, approved,
+  rejected") becomes an "enum" attribute with that EXACT value set on the owning object.
+- EVERY ATTRIBUTE MENTIONED ANYWHERE in the text — including ones mentioned only once,
+  in passing, or inside a rule or procedure description. Recognize the DataType:
+  money amounts (and their currency) => "money"; calendar dates => "date"; timestamps =>
+  "datetime"; identifiers/codes => "uuid" or "string" with keyRole "pk"/"fk"; enum value
+  sets spelled out in prose => "enum" with exact "enumValues"; percentages/ratios =>
+  "decimal"; yes/no facts phrased as conditions ("whether the customer has consented") =>
+  "boolean"; durations and counts => "integer" (with the constraint captured in Stage 2).
 
 ATTRIBUTE RULES
 - "name" in snake_case. "type" from the closed DataType vocabulary ONLY.
@@ -140,6 +227,8 @@ RELATIONSHIP RULES (emitted as a TOP-LEVEL "relationships" array)
   "contains", "ships"), "sourceObjectTypeId", "targetObjectTypeId", and "cardinality"
   (one_to_one | one_to_many | many_to_one | many_to_many). Use "viaAttribute" when the
   edge is realized by an fk attribute. Only relate objects you ALSO emit here.
+- Sweep for relationships the same way you sweep for objects: every "has", "belongs to",
+  "is assigned", "issues", "covers", "submitted by" in the text is an edge candidate.
 
 OUTPUT CONTRACT — return EXACTLY this shape (one JSON object):
 {
@@ -180,13 +269,19 @@ OUTPUT CONTRACT — return EXACTLY this shape (one JSON object):
 NEGATIVE EXAMPLE: "Refund" is usually an action outcome / event, NOT an object — do not emit
 it as an object unless the document gives it identity and attributes of its own.
 
-${SELF_CHECK}`;
+${SELF_CHECK}
+- [ ] Every attribute mentioned anywhere in the text appears on some object with a correct
+      DataType (money/date/datetime/enum/boolean recognized from prose, not defaulted).
+- [ ] Every status lifecycle spelled out in prose is an "enum" attribute with the exact values.
+- [ ] Every party, document-as-entity, lookup table, and line item in the text was either
+      emitted or consciously rejected as a non-entity.`;
 
   const user = `DOCUMENT NAME: ${docName}
 
 ${fence('DOCUMENT (extract objects + relationships from THIS text only)', chunkText)}
 
-Extract all Object Types and the Relationships among them per the OUTPUT CONTRACT.
+Extract ALL Object Types and the Relationships among them per the OUTPUT CONTRACT —
+sweep every section; completeness and verbatim citations are both mandatory.
 Return ONLY the JSON object.`;
 
   return { system, user };
@@ -202,19 +297,29 @@ export function buildRulesPrompt(args: {
   priorObjects: unknown;
 }): PromptPair {
   const { docName, numberedSentences, priorObjects } = args;
-  const system = `You are an expert business-rules analyst performing ONTOLOGY EXTRACTION,
-Stage 2 of 5: RULES. Mine rules SENTENCE BY SENTENCE over the NUMBERED SENTENCES, then GROUP
-adjacent sentences that express ONE rule. Citations are at the SENTENCE level.
+  const system = `You are a SENIOR BUSINESS-RULES ANALYST who has codified compliance and policy
+manuals for regulated enterprises, performing ONTOLOGY EXTRACTION, Stage 2 of 5: RULES. The
+stakes: downstream agents enforce ONLY the rules you mine here — a constraint you miss is a
+constraint no agent will ever check, which in production means an unguarded action. Mine
+rules SENTENCE BY SENTENCE over the NUMBERED SENTENCES, then GROUP adjacent sentences that
+express ONE rule. Citations are at the SENTENCE level.
 
 ${SHARED_RULES}
 
-METHOD (follow exactly)
-1. Read the NUMBERED SENTENCES. Scan each for normative / conditional language: "must",
-   "may not", "shall", "unless", "only if", "within N days", "requires", "is prohibited",
-   thresholds, and state transitions. Skip narrative, definitions, and headings.
+${SWEEP_METHOD}
+
+METHOD (follow exactly — the numbered sentences ARE your sections)
+1. Read EVERY numbered sentence, in order, without skipping. For each one, consciously
+   decide: does it state or imply an obligation, prohibition, threshold, formula, time
+   limit, permission, or state constraint? Scan for normative / conditional language:
+   "must", "may not", "shall", "unless", "only if", "within N days", "requires",
+   "is prohibited", "no later than", "at least", "no more than", "is calculated as",
+   thresholds, and state transitions. Skip ONLY pure narrative, definitions, and headings —
+   and skip them consciously, not by default.
 2. For each obligation/constraint emit ONE rule. If several ADJACENT sentences express one
    rule, group them: cite ALL their indices in "sources[].sentenceRefs" and put the verbatim
-   joined text in "sources[].snippet".
+   joined text in "sources[].snippet". One sentence can also yield MULTIPLE rules when it
+   packs several constraints — split them.
 3. Express each rule THREE ways: a bilingual natural-language "statement" {en, zh}, a
    "formal" string (always present), and an optional "expression" (CEL machine form).
 4. Link each rule to the object ids it constrains via "appliesToObjectTypeIds" — use ids
@@ -225,6 +330,25 @@ METHOD (follow exactly)
    "info" (documentary / derivation).
 7. "trigger" (optional): { "description": "...", "onEventTypeId"?: "event:..." } — when the
    rule is evaluated. Omit onEventTypeId if no event is known yet.
+
+COMMONLY MISSED — hunt for ALL of these explicitly (they hide outside the obvious "must" sentences):
+- NUMERIC THRESHOLDS buried in prose: "orders above $10,000", "no more than 3 attempts",
+  "a minimum balance of", percentages, caps, floors, and limits stated mid-sentence.
+- TEMPORAL / SLA CONSTRAINTS: "within N days", "no later than", "net-30", "every quarter",
+  review/renewal cycles, expiry windows => kind "temporal".
+- AUTHORIZATION / APPROVAL MATRICES: "only a supervisor may", "requires sign-off by",
+  role-gated operations, amount-tiered approval levels => kind "authorization".
+- STATE-TRANSITION CONSTRAINTS: "cannot be cancelled once shipped", "must be reviewed
+  before approval", allowed/forbidden status moves => kind "state_transition".
+- DERIVATION FORMULAS: "the premium is calculated as", totals, proration, fee computation
+  => kind "derivation", severity usually "info".
+- VALIDATION CONSTRAINTS implied by data types/formats: "must be a valid email",
+  "a 10-digit account number", mandatory-field statements => kind "validation".
+- CROSS-OBJECT CONSISTENCY: "the invoice total must equal the sum of its line items",
+  "the shipment quantity may not exceed the ordered quantity".
+- EXCEPTION / ESCAPE CLAUSES: "unless", "except", "waived when", "does not apply to" —
+  fold the exception INTO the owning rule's statement/formal, or emit it as its own rule
+  when it stands alone. An unmodeled exception makes the base rule WRONG, not just incomplete.
 
 FORMAL STYLE: object.attribute notation + logical operators (->, ∧, ∨, ¬, =, ≠, <, >, ≤, ≥, ∈, Σ).
   e.g. "Order.status = Fulfilled -> (Payment.amount ≥ Invoice.total) ∨ (Customer.tier = Enterprise)".
@@ -261,7 +385,10 @@ OUTPUT CONTRACT — return EXACTLY this shape:
 
 ${SELF_CHECK}
 - [ ] Every rule has at least one "sentenceRefs" index and a verbatim "snippet".
-- [ ] Every appliesToObjectTypeIds entry exists in the PRIOR OBJECTS.`;
+- [ ] Every appliesToObjectTypeIds entry exists in the PRIOR OBJECTS.
+- [ ] Every numbered sentence containing must/shall/may not/unless/within/threshold/approval
+      language is either cited by some rule or was consciously skipped as non-normative.
+- [ ] Every exception clause ("unless", "except", "waived when") is modeled, not dropped.`;
 
   const user = `DOCUMENT NAME: ${docName}
 
@@ -270,8 +397,9 @@ ${fence('PRIOR OBJECTS (objects already accepted — reuse these EXACT ids)', as
 NUMBERED SENTENCES (mine rules from these; cite by idx in sentenceRefs):
 ${asJson(numberedSentences)}
 
-Mine all rules sentence-by-sentence, grouping adjacent sentences that form one rule.
-Return ONLY the JSON object.`;
+Mine ALL rules sentence-by-sentence — every threshold, time limit, approval gate,
+transition constraint, formula, and exception — grouping adjacent sentences that form one
+rule. Return ONLY the JSON object.`;
 
   return { system, user };
 }
@@ -288,16 +416,22 @@ export function buildActionsPrompt(args: {
 }): PromptPair {
   const { priorObjects, priorRules, chunkText } = args;
   const docName = args.docName ?? 'the document';
-  const system = `You are an expert process & automation architect performing ONTOLOGY
-EXTRACTION, Stage 3 of 5: ACTION TYPES. Each Action is something an actor (human, agent, or
-system) DOES that changes state. Each Action will later become a CALLABLE AGENT TOOL, so make
-typed inputs/outputs, steps, preconditions, and event wiring precise.
+  const system = `You are a SENIOR PROCESS & AUTOMATION ARCHITECT who has decomposed hundreds of
+SOPs into executable tool catalogs, performing ONTOLOGY EXTRACTION, Stage 3 of 5: ACTION
+TYPES. Each Action is something an actor (human, agent, or system) DOES that changes state,
+and each becomes a CALLABLE AGENT TOOL. The stakes: downstream agents can ONLY do what you
+extract here — an operation you miss is an operation no agent can ever perform, and a whole
+branch of the business process silently disappears. Make typed inputs/outputs, steps,
+preconditions, and event wiring precise — and make the catalog COMPLETE.
 
 ${SHARED_RULES}
 
+${SWEEP_METHOD}
+
 WHAT TO EXTRACT
 - Operations the document describes: "release shipment", "approve refund", "set reserve",
-  "submit claim", "issue invoice", "extend offer".
+  "submit claim", "issue invoice", "extend offer". Treat EVERY verb phrase that changes
+  state as an action candidate, then filter against the evidence.
 - For each Action emit:
   - "name": PascalCase imperative verb-object, e.g. "FulfillOrder" (+ "nameZh").
   - "description" (+ "descriptionZh").
@@ -321,6 +455,24 @@ WHAT TO EXTRACT
     a property that represents a domain object carries "$objectTypeId"), "toolDescription"
     (one line), "promptHints"? (string[]), "execution": "function"|"llm_tool"|"human_task",
     "integration"? }.
+
+COMMONLY MISSED — sweep for ALL of these explicitly (the verbs that hide):
+- IMPLICIT HUMAN STEPS narrated in passive voice: "the application is then reviewed" =>
+  ReviewApplication; "documents are verified" => VerifyDocuments. Passive voice still
+  names an action — assign the actor the text implies.
+- SYSTEM-TRIGGERED JOBS: nightly batches, auto-expiry, recalculations, scheduled syncs —
+  actor kind "system", often triggered by time or by an event.
+- NOTIFICATION / COMMUNICATION STEPS: emails, reminders, customer notices, internal alerts
+  — real actions with sideEffects kind "notification", commonly skipped as "minor".
+- COMPENSATING / ROLLBACK ACTIONS: cancel, void, reverse, refund, reinstate, restock —
+  if the document mentions undoing something, that undo is an action.
+- APPROVAL / REJECTION PAIRS: wherever an approval action exists, check the text for the
+  rejection/return-for-rework path — it is almost always an action too.
+- EVERY VERB PHRASE THAT CHANGES STATE: walk the verbs deliberately; "records", "updates",
+  "assigns", "escalates", "flags", "closes" are all action candidates.
+- FAILURE / ESCALATION EMISSIONS: where the text describes failures, timeouts, or
+  escalations, wire them as "emitsEvents" entries with "on": "failure" or a dotted
+  escalation event id — Stage 4 will define them.
 
 OUTPUT CONTRACT — return EXACTLY this shape:
 {
@@ -361,7 +513,9 @@ OUTPUT CONTRACT — return EXACTLY this shape:
 ${SELF_CHECK}
 - [ ] Every input/output uses EITHER objectTypeId (an id in PRIOR OBJECTS) OR a scalar type, never both.
 - [ ] Every preconditions[].ruleId exists in PRIOR RULES.
-- [ ] "agent.toolName" is snake_case and "agent.parameterSchema" mirrors the inputs.`;
+- [ ] "agent.toolName" is snake_case and "agent.parameterSchema" mirrors the inputs.
+- [ ] Every state-changing verb phrase in the document maps to an action or was consciously
+      skipped; passive-voice steps, notifications, rollbacks, and rejection paths included.`;
 
   const user = `DOCUMENT NAME: ${docName}
 
@@ -371,7 +525,9 @@ ${fence('PRIOR RULES (choose preconditions from these — id + statement)', asJs
 
 ${fence('DOCUMENT (extract actions from THIS text)', chunkText)}
 
-Extract all Action Types per the OUTPUT CONTRACT. Return ONLY the JSON object.`;
+Extract ALL Action Types per the OUTPUT CONTRACT — every explicit operation, implicit
+human step, system job, notification, and compensating action the text supports.
+Return ONLY the JSON object.`;
 
   return { system, user };
 }
@@ -383,27 +539,42 @@ Extract all Action Types per the OUTPUT CONTRACT. Return ONLY the JSON object.`;
 export function buildEventsPrompt(args: { actions: unknown; docName?: string }): PromptPair {
   const { actions } = args;
   const docName = args.docName ?? 'the document';
-  const system = `You are an event-modeling expert performing ONTOLOGY EXTRACTION, Stage 4 of 5:
-EVENT TYPES. Events are business facts that occur at a point in time and connect Actions
-(producer -> event -> consumer). This stage is PRIMARILY RECONCILIATION of the event ids the
-Actions already reference, plus any events the document names.
+  const system = `You are a SENIOR EVENT-MODELING EXPERT (event storming, event-driven
+architecture) performing ONTOLOGY EXTRACTION, Stage 4 of 5: EVENT TYPES. Events are business
+facts that occur at a point in time and connect Actions (producer -> event -> consumer). The
+stakes: downstream agents coordinate ONLY through the events you define — an undefined event
+id is a broken wire, and the actions on either side of it can never hand off work. This
+stage is PRIMARILY RECONCILIATION of the event ids the Actions already reference, plus any
+events the document names. Coverage must be TOTAL over the referenced ids.
 
 ${SHARED_RULES}
 
+${SWEEP_METHOD}
+
 WHAT TO EXTRACT — wire from the ACTIONS:
 - DEFINE every event id referenced by the ACTIONS: every id in any action's "emitsEvents[].eventTypeId"
-  and every id in any action's "triggeredByEventIds". Define each exactly once.
+  and every id in any action's "triggeredByEventIds". Define each exactly once. Walk the
+  action list mechanically and tick every referenced id off — ZERO may be left undefined.
 - "id" is a DOTTED slug "event:<domain>.<past_tense>", e.g. "event:order.fulfilled".
   "name" is the dotted suffix matching the id, e.g. "order.fulfilled". Add "nameZh".
 - "payload": EventField[] — { "name", "type" (DataType), "objectTypeId"? (when the field carries
   a domain object/ref), "required", "description"? }. Infer payload from the emitting action's
-  outputs and the objects involved.
+  outputs and the objects involved. A complete payload beats an empty one — carry every
+  field the consumers plausibly need, typed from the closed DataType vocabulary.
 - INVERSE WIRING (must be the EXACT inverse of the actions):
   - "producedByActionIds": every action whose "emitsEvents" includes THIS event id.
   - "consumedByActionIds": every action whose "triggeredByEventIds" includes THIS event id.
 - If an event is referenced by an action but the document gives no detail, still define it with
   an empty payload, "provenance": "inferred", "derivedFrom": [the referencing action id],
   "sources": [], and confidence ≤ 0.6. Otherwise "provenance": "extracted" with a verbatim source.
+
+COMMONLY MISSED — check the referenced ids against this list (and define any the document names):
+- LIFECYCLE EVENTS for EVERY object the actions touch: created / updated / closed /
+  cancelled — if an action mints or retires an object, its lifecycle events are usually
+  referenced or named somewhere; ground them when the text supports it.
+- FAILURE / TIMEOUT EVENTS: "event:payment.failed", "event:review.timed-out" — actions
+  with "on": "failure" emissions need these defined just as carefully as success events.
+- ESCALATION EVENTS: handoffs to supervisors or exception queues named in the text.
 
 OUTPUT CONTRACT — return EXACTLY this shape:
 {
@@ -426,7 +597,8 @@ OUTPUT CONTRACT — return EXACTLY this shape:
 }
 
 ${SELF_CHECK}
-- [ ] Every event id referenced by any action is defined exactly once.
+- [ ] COUNT the distinct event ids referenced by the actions and COUNT your output events —
+      the two sets must match exactly; every referenced id is defined exactly once.
 - [ ] producedByActionIds / consumedByActionIds are the EXACT inverse of the actions' emits/triggers.
 - [ ] Inferred events (no document detail) carry derivedFrom + empty sources + confidence ≤ 0.6.`;
 
@@ -434,7 +606,8 @@ ${SELF_CHECK}
 
 ${fence('ACTIONS (define and wire every event these reference; invert their emits/triggers)', asJson(actions))}
 
-Define and wire all Event Types per the OUTPUT CONTRACT. Return ONLY the JSON object.`;
+Define and wire ALL Event Types per the OUTPUT CONTRACT — every referenced id, none
+skipped, payloads as complete as the evidence supports. Return ONLY the JSON object.`;
 
   return { system, user };
 }
@@ -451,15 +624,22 @@ export function buildProcessesPrompt(args: {
 }): PromptPair {
   const { actions, events, objects } = args;
   const docName = args.docName ?? 'the document';
-  const system = `You are a business-process architect performing ONTOLOGY EXTRACTION, Stage 5
-of 5: PROCESSES. A Process chains Action Types end-to-end into a workflow STEP-GRAPH, linked by
-the Events they emit/consume and guarded by Rules. This is the source for a deployable workflow
-manifest, so ordering and wiring must be correct.
+  const system = `You are a PRINCIPAL BUSINESS-PROCESS ARCHITECT (BPMN, workflow orchestration)
+performing ONTOLOGY EXTRACTION, Stage 5 of 5: PROCESSES. A Process chains Action Types
+end-to-end into a workflow STEP-GRAPH, linked by the Events they emit/consume and guarded by
+Rules. The stakes: this is the source for a deployable workflow manifest — a flow you miss
+is a flow no agent can ever run, and an exception path you omit means the happy path fails
+with nowhere to go. Ordering and wiring must be correct, and the process catalog COMPLETE.
 
 ${SHARED_RULES}
 
+${SWEEP_METHOD}
+
 WHAT TO EXTRACT
-- End-to-end workflows the document describes (e.g. "Order to Cash", "FNOL to Settlement").
+- EVERY end-to-end workflow the document and the action/event graph support (e.g. "Order to
+  Cash", "FNOL to Settlement") — not just the single most obvious one. Sweep the graph for
+  connected chains: distinct entry triggers and distinct terminal outcomes usually mean
+  distinct processes.
 - Build the chain by following event producer -> consumer links in the ACTIONS + EVENTS:
   an action that emits event E is followed by the action(s) whose triggeredByEventIds include E.
 - Each process emits a STEP-GRAPH in "steps": WorkflowStep[] where each step is
@@ -478,6 +658,17 @@ WHAT TO EXTRACT
   and "derivedFrom": [contributing action/event ids] with "sources": [] when there is no single
   verbatim sentence; use "provenance": "extracted" with a real snippet only when the document
   names the workflow directly.
+
+COMMONLY MISSED — sweep for ALL of these explicitly:
+- ALTERNATE / EXCEPTION PATHS: rejection branches, failure compensation, return-for-rework
+  loops — model them as conditional edges off the happy path (or a separate process when
+  they form their own flow). A process with only a happy path is usually incomplete.
+- ESCALATION FLOWS: supervisor handoffs, exception queues, timeout escalations — wire the
+  escalating edge and set "onFailure": "escalate" where the graph supports it.
+- PERIODIC / SCHEDULED PROCESSES: renewals, reconciliations, batch reviews — triggers
+  kind "schedule" (cron best-effort), commonly skipped because no event starts them.
+- CROSS-FUNCTIONAL HANDOFFS: an actorRole change between consecutive steps is a handoff —
+  make sure both roles appear in "actors" and the connecting edge carries the right event.
 
 OUTPUT CONTRACT — return EXACTLY this shape:
 {
@@ -512,7 +703,9 @@ OUTPUT CONTRACT — return EXACTLY this shape:
 ${SELF_CHECK}
 - [ ] Every step.actionTypeId exists in ACTIONS; every onEventTypeId exists in EVENTS.
 - [ ] Every ProcessEdge.toStepId points to a step in the SAME process; exactly one terminal step.
-- [ ] actorRole on a step is one of the process "actors".`;
+- [ ] actorRole on a step is one of the process "actors".
+- [ ] Every connected action chain in the graph belongs to some process; exception,
+      escalation, and scheduled flows were modeled or consciously skipped.`;
 
   const user = `DOCUMENT NAME: ${docName}
 
@@ -522,7 +715,9 @@ ${fence('ACTIONS (chain these by following event emit -> trigger links)', asJson
 
 ${fence('EVENTS (producer/consumer wiring already computed)', asJson(events))}
 
-Synthesize all Processes as step-graphs per the OUTPUT CONTRACT. Return ONLY the JSON object.`;
+Synthesize ALL Processes as step-graphs per the OUTPUT CONTRACT — every end-to-end flow
+the graph supports, including exception, escalation, and scheduled flows.
+Return ONLY the JSON object.`;
 
   return { system, user };
 }
@@ -538,8 +733,11 @@ export function buildMergePrompt(args: {
   const { stage, chunkOutputs } = args;
   // The top-level key the model must emit per stage.
   const key = stage;
-  const system = `You merge multiple PARTIAL extractions of ONTOLOGY stage "${stage}" — produced
-from different chunks of the SAME corpus — into ONE clean, de-duplicated list. Output ONLY JSON.
+  const system = `You are a meticulous ONTOLOGY LIBRARIAN merging multiple PARTIAL extractions of
+ONTOLOGY stage "${stage}" — produced from different chunks of the SAME corpus — into ONE
+clean, de-duplicated list. The stakes: recall won upstream must SURVIVE the merge — an item
+or citation you drop here is gone for good. Merging is lossless consolidation, never
+summarization. Output ONLY JSON.
 
 MERGE RULES
 1. Items with the SAME id, OR the same canonical name/meaning, are the SAME item. Merge them:
@@ -550,20 +748,27 @@ MERGE RULES
    - take the MAX "confidence";
    - if "provenance" differs, prefer "extracted" over "inferred"; set "merged" only when two
      extracted items combined; preserve/union "derivedFrom".
-2. MERGE NEVER DROPS A CITATION. The merged item's sources is the UNION of all inputs' sources.
-   Never invent items not present in any input; never drop a uniquely-cited item.
+2. MERGE NEVER DROPS ANYTHING. Every input item must be represented in the output (merged
+   into a canonical item or kept as-is); the merged item's sources is the UNION of all
+   inputs' sources. Never invent items not present in any input; never drop a
+   uniquely-cited item. When in doubt whether two items are the same, KEEP BOTH rather
+   than collapse them — a reviewer can merge later; nobody can resurrect a dropped item.
 3. KEEP ids STABLE. If two items clearly mean the same thing under DIFFERENT ids, keep ONE id
    (the more canonical / earlier slug) and record the remap in a top-level "_aliases" map
    { "<droppedId>": "<keptId>" }. The backend rewrites cross-references using this map.
 4. Do NOT alter cross-reference ids inside items except via the "_aliases" remap.
 5. reviewState stays "pending"; do not invent new enum values.
+6. OUTPUT BUDGET: never pad or restate; keep descriptions terse so the FULL merged list
+   always fits. A complete list with short text beats a short list with long text.
 
 OUTPUT CONTRACT — one JSON object:
 { "${key}": [ ...merged items, same shape as the stage contract... ],
   "_aliases": { "objectType:client": "objectType:customer" } }
 "_aliases" may be {} when nothing was remapped.
 
-SELF-CHECK before returning:
+SELF-CHECK before returning (run silently):
+- [ ] COUNT: total input items across all chunks vs. output items + "_aliases" remaps —
+      every input item is accounted for; nothing silently vanished.
 - [ ] No two output items share an id or an obvious canonical name.
 - [ ] Every input item is represented (merged or kept); no citation lost.
 - [ ] Any id collapse is recorded in "_aliases".`;
@@ -572,7 +777,8 @@ SELF-CHECK before returning:
 
 ${fence('PARTIAL CHUNK OUTPUTS (array of per-chunk "' + key + '" arrays)', asJson(chunkOutputs))}
 
-Merge into one de-duplicated "${key}" list. Return ONLY the JSON object.`;
+Merge into one de-duplicated "${key}" list — losslessly: every input item represented,
+every citation preserved. Return ONLY the JSON object.`;
 
   return { system, user };
 }
@@ -583,16 +789,21 @@ Merge into one de-duplicated "${key}" list. Return ONLY the JSON object.`;
 
 export function buildAgentCodePrompt(ontology: unknown): PromptPair {
   const system = `You are a senior TypeScript engineer generating an AGENT TOOLKIT from a
-PUBLISHED ontology (the canonical JSON below). Output ONLY a single JSON object listing files.
+PUBLISHED ontology (the canonical JSON below). Coverage is TOTAL: every ObjectType, EventType,
+ActionType, Rule, and Process in the ontology must appear in the generated code — a tool you
+skip is an operation downstream agents can never perform. Output ONLY a single JSON object
+listing files.
 
 WHAT TO GENERATE
-1. One TS interface per ObjectType (in "types.ts"): attributes -> fields. Map DataType -> TS:
+1. One TS interface per ObjectType (in "types.ts") — no object skipped: attributes -> fields.
+   Map DataType -> TS:
    string/uuid -> string; integer -> number; decimal/money -> number; boolean -> boolean;
    date/datetime -> string (ISO); enum -> a string-literal union of enumValues; reference/fk ->
    the referenced interface type; json -> unknown; array -> T[].
 2. Event payload types (in "events.ts") as a discriminated union keyed by the event "name",
-   derived from each EventType.payload.
-3. One exported async function per ActionType (in "tools.ts"): function name = action.agent.toolName.
+   derived from each EventType.payload — every event represented.
+3. One exported async function per ActionType (in "tools.ts") — every action, none skipped:
+   function name = action.agent.toolName.
    Parameters typed from action.inputs (objects -> the generated interface; scalars -> mapped TS
    type), return type from action.outputs. At the TOP of each body, emit precondition checks as
    "assertRule_<ruleSlug>(...)" calls — one per preconditions[].ruleId — each preceded by a
@@ -602,11 +813,13 @@ WHAT TO GENERATE
 4. One orchestrator per Process (in "processes.ts"): "export async function run<ProcessName>(...)"
    that calls the step actions in WorkflowStep "order", following "next" edges; where a step has a
    guardRuleId or the action has preconditions, wrap the call in the matching assert.
-5. A "rules.ts" with one "assertRule_<ruleSlug>" stub per Rule (throws on block severity; warns
-   otherwise), each documented with statement.{en,zh} and formal.
+5. A "rules.ts" with one "assertRule_<ruleSlug>" stub per Rule — every rule gets a stub
+   (throws on block severity; warns otherwise), each documented with statement.{en,zh} and formal.
 
 RULES: valid TypeScript only; deterministic naming from ids/toolNames; no external imports beyond
 relative ones between the generated files; properly escape newlines/quotes inside "content".
+Keep comments terse — completeness of coverage over verbosity of prose; if output space runs
+short, shorten comments, never drop a type/function/stub.
 
 OUTPUT CONTRACT — one JSON object (matches GeneratedBundle.files):
 {
@@ -624,7 +837,8 @@ Return ONLY the JSON object.`;
 
   const user = `${fence('ONTOLOGY (published, canonical JSON)', asJson(ontology))}
 
-Generate the agent toolkit per the OUTPUT CONTRACT. Return ONLY the JSON object.`;
+Generate the agent toolkit per the OUTPUT CONTRACT — every object, event, action, rule,
+and process covered. Return ONLY the JSON object.`;
 
   return { system, user };
 }
@@ -634,20 +848,24 @@ Generate the agent toolkit per the OUTPUT CONTRACT. Return ONLY the JSON object.
 // ===========================================================================
 
 export function buildPromptsPrompt(ontology: unknown): PromptPair {
-  const system = `You are a prompt engineer turning a PUBLISHED ontology into AGENT SYSTEM
+  const system = `You are a senior prompt engineer turning a PUBLISHED ontology into AGENT SYSTEM
 PROMPTS — one per distinct actor role (action.actor.role) that has kind "agent" or "system"
-across the Actions and Processes. Output ONLY a single JSON object.
+across the Actions and Processes. Coverage is TOTAL: every qualifying role gets a prompt, and
+every tool, guardrail rule, and event that touches the role must appear in it — a guardrail
+you omit is a rule the agent will violate. Output ONLY a single JSON object.
 
 FOR EACH ROLE, write a production system prompt that:
 1. States the role's mission in business terms.
-2. Lists the TOOLS it may call — the agent.toolName of every Action whose actor.role matches —
-   each with its agent.toolDescription and its input/output objects.
-3. Encodes the RULES that constrain the role as hard guardrails: every Rule whose
+2. Lists the TOOLS it may call — the agent.toolName of EVERY Action whose actor.role matches —
+   each with its agent.toolDescription and its input/output objects. None skipped.
+3. Encodes the RULES that constrain the role as hard guardrails: EVERY Rule whose
    appliesToObjectTypeIds intersect the role's action inputs/outputs. Quote each rule's
    statement.en and cite its source (documentName + page/section). severity "block" rules become
    MUST-NOT guardrails; "warn" become cautions.
-4. Describes the EVENTS the role reacts to (events consumed by its actions) and emits.
-Write the full prompt in English, plus a short Chinese summary ("zhSummary").
+4. Describes the EVENTS the role reacts to (events consumed by its actions) and emits — all of them.
+Write the full prompt in English, plus a short Chinese summary ("zhSummary"). Keep each
+prompt tight and operational — every line load-bearing, no filler; if output space runs
+short, compress wording, never drop a role, tool, or guardrail.
 
 OUTPUT CONTRACT — one JSON object:
 {
@@ -666,8 +884,8 @@ Return ONLY the JSON object.`;
 
   const user = `${fence('ONTOLOGY (published, canonical JSON)', asJson(ontology))}
 
-Generate one system prompt per agent/system actor role per the OUTPUT CONTRACT.
-Return ONLY the JSON object.`;
+Generate one system prompt per agent/system actor role per the OUTPUT CONTRACT — every
+role, every tool, every applicable guardrail. Return ONLY the JSON object.`;
 
   return { system, user };
 }
@@ -784,7 +1002,8 @@ export function buildManifestDeterministic(ontology: unknown): unknown[] {
 export function buildManifestPrompt(ontology: unknown): PromptPair {
   const system = `You convert a PUBLISHED ontology into a DEPLOYABLE WORKFLOW MANIFEST (one per
 Process) for an agentic operator runtime. NOTE: this is normally built DETERMINISTICALLY by the
-backend; produce JSON that exactly mirrors that projection. Output ONLY a single JSON object.
+backend; produce JSON that exactly mirrors that projection — every process, every step, every
+tool, nothing added and nothing dropped. Output ONLY a single JSON object.
 
 The manifest matches the WorkflowManifest type:
 {
@@ -810,15 +1029,231 @@ The manifest matches the WorkflowManifest type:
 }
 
 RULES
-1. tools[] has one entry per ActionType (its agent binding). nodes derive from Process.steps.
-2. node.preconditions / node.emits copy the action's preconditions / emitsEvents.
-3. agents[] = one per distinct actor.role, owning the toolNames of its actions.
-4. Pin "ontologyVersion" from ontology.version. Never invent steps/tools not in the ontology.
+1. tools[] has one entry per ActionType (its agent binding) — every action. nodes derive from
+   Process.steps — every step.
+2. node.preconditions / node.emits copy the action's preconditions / emitsEvents in full.
+3. agents[] = one per distinct actor.role, owning the toolNames of ALL its actions.
+4. Pin "ontologyVersion" from ontology.version. Never invent steps/tools not in the ontology;
+   never omit ones that are.
 Return ONLY the JSON object.`;
 
   const user = `${fence('ONTOLOGY (published, canonical JSON)', asJson(ontology))}
 
-Generate one WorkflowManifest per Process per the contract. Return ONLY the JSON object.`;
+Generate one WorkflowManifest per Process per the contract — complete and faithful.
+Return ONLY the JSON object.`;
+
+  return { system, user };
+}
+
+// ===========================================================================
+// 10. DEEP-SWARM — business understanding (SME), BA review, links, questions
+// ===========================================================================
+
+/** Lens each SME agent in the business-understanding swarm focuses on. */
+export type SmePerspective = 'process' | 'data' | 'rules' | 'systems';
+
+/**
+ * One SME agent of the web-augmented business-understanding swarm. Produces a
+ * BusinessBrief FRAGMENT (personas/use-cases/expected-items/glossary) for its
+ * lens — a RECALL TARGET, never fabricated ontology facts.
+ */
+export function buildSmePrompt(args: {
+  domain: string;
+  perspective: SmePerspective;
+  corpusText: string;
+  web: boolean;
+}): PromptPair {
+  const { domain, perspective, corpusText, web } = args;
+  const lens: Record<SmePerspective, string> = {
+    process:
+      'end-to-end workflows, the actors/personas involved, hand-offs, escalation/exception paths, and the use cases the business must support',
+    data: 'the business entities/objects, their key attributes and data types, lookup/reference data, and the relationships among them',
+    rules:
+      'the business rules, policies, thresholds, validations, temporal/SLA constraints, approvals/authorization matrices, and compliance obligations',
+    systems:
+      'the events, notifications, system integrations, lifecycle/state transitions, and deadline/expiry triggers',
+  };
+
+  const system = `You are a SENIOR SUBJECT-MATTER EXPERT for the "${domain}" business domain, framing a corpus for ONTOLOGY extraction. Your lens: ${lens[perspective]}.
+${web
+    ? 'Use LIVE WEB SEARCH to ground your answer in real-world, industry-standard use cases, terminology, and best practices for this domain.'
+    : 'Use your deep parametric domain knowledge (no web access is available in this run).'}
+
+GOAL: produce a BUSINESS-UNDERSTANDING BRIEF describing what a COMPLETE ontology for this scenario SHOULD cover — a RECALL TARGET. Enumerate the personas, canonical use cases, expected ontology items, and glossary terms a domain expert would expect, EVEN IF the provided documents are silent on them. These are EXPECTATIONS used later to find coverage gaps; they are NEVER inserted into the ontology as facts and must never be fabricated as if quoted from the documents.
+
+SWEEP DISCIPLINE (recall first): read the corpus section by section and ENUMERATE candidate expectations BEFORE filtering. Then run a completeness pass: re-scan each section; if a section contributed no expectation, justify that to yourself silently.
+
+expectedEntities MUST be EXHAUSTIVE across ALL FIVE layers — objects, rules, actions, events, processes — plus relationships. Do not stop at the obvious headline entities; for EVERY layer, walk this NEGATIVE-SPACE CHECKLIST of commonly-missed items and emit an expectation for each one that applies to this domain:
+- objects: lookup/reference data (status codes, categories, tariffs, rate tables), parties (customers, vendors, employees, regulators, agents), documents-as-entities (invoices, contracts, applications, certificates, forms), line items / detail records, master vs transactional data.
+- rules: thresholds and limits buried in prose, temporal/SLA constraints (deadlines, grace periods, expiry windows), authorization/approval matrices (who may do what, above what amount), validation/eligibility criteria, penalty and compliance obligations.
+- actions: implicit human steps (review, approve, reject, escalate, notify, file, reconcile), maintenance/correction actions, exception-handling actions — not just the happy-path verbs.
+- events: lifecycle/state transitions (created, submitted, approved, cancelled, expired), deadline/expiry triggers, external/system integration signals, failure/exception events.
+- processes: end-to-end flows AND their exception/reversal/escalation variants (amendment, cancellation, refund, appeal, renewal).
+- relationships: ownership/possession, lifecycle links (supersedes, amends, renews), document-to-entity links (invoice bills order; contract governs account), party-to-party links (customer-of, employs, represents, approves-for), hierarchies and category membership.
+
+glossary MUST be RICH and exhaustive: include EVERY domain term, EVERY abbreviation/acronym (with its expansion), EVERY enum/value set spelled out in prose (list its members in the definition), and data-type hints where relevant (e.g. "monetary amount with currency", "duration in business days", "date", "enumeration of: ..."). The glossary is the extraction pipeline's terminology anchor — a missing term here becomes a missed entity later.
+
+OUTPUT ONLY one JSON object (no prose, no code fences):
+{
+  "summary": { "en": "one-paragraph scenario framing", "zh": "中文" },
+  "personas": [ { "id": "persona:slug", "name": {"en":"","zh":""}, "description": {"en":"","zh":""}, "goals": [ {"en":"","zh":""} ] } ],
+  "useCases": [ { "id": "uc:slug", "name": {"en":"","zh":""}, "description": {"en":"","zh":""}, "personaIds": ["persona:slug"], "expectedEntityIds": ["exp:slug"] } ],
+  "expectedEntities": [ { "id": "exp:slug", "kind": "object"|"rule"|"action"|"event"|"process"|"relationship", "name": {"en":"","zh":""}, "description": {"en":"","zh":""} } ],
+  "glossary": [ { "term": {"en":"","zh":""}, "definition": {"en":"","zh":""} } ],
+  "references": [ "source label or URL you relied on" ]
+}
+Focus expectedEntities on YOUR lens (${perspective}) but ALWAYS include cross-lens items the checklist surfaces — a complete brief beats a narrowly-scoped one. Bilingual (en+zh) is REQUIRED on every name/description/term/definition. Slugs are lowercase [a-z0-9.-].
+
+SELF-CHECK before returning (silently): count how many expectedEntities you emitted PER KIND (object/rule/action/event/process/relationship); any kind with zero entries needs a conscious justification — most real domains have several of every kind. Verify every glossary abbreviation has its expansion and every enum term lists its members.`;
+
+  const user = `DOMAIN: ${domain}
+PERSPECTIVE: ${perspective}
+
+${fence('CORPUS (frame this scenario; identify what a complete ontology must cover)', corpusText)}
+
+Sweep the corpus section by section, apply the negative-space checklists for ALL layers, and return ONLY the JSON business-understanding brief for your perspective.`;
+
+  return { system, user };
+}
+
+/**
+ * The Business-Analyst reviewer. Reviews the extracted ontology against every
+ * use case + the expected-item checklist and returns concrete coverage GAPS.
+ */
+export function buildBaReviewPrompt(args: {
+  iteration: number;
+  useCases: unknown;
+  expectedEntities: unknown;
+  ontologyDigest: unknown;
+}): PromptPair {
+  const { iteration, useCases, expectedEntities, ontologyDigest } = args;
+  const system = `You are a meticulous BUSINESS ANALYST reviewing an extracted ontology (iteration ${iteration}) against the business brief. Your job is to find EVERY coverage gap — missed gaps silently ship as missing functionality, so be EXHAUSTIVE.
+
+REVIEW PROTOCOL (follow all three sweeps):
+1. EXPECTED-ENTITY SWEEP: go through the EXPECTED ENTITIES checklist item by item. For each item, search the ontology digest (by id AND by name, allowing synonyms/translations) for a node of the matching layer that clearly covers it. Every expected entity NOT clearly present in the digest IS a gap — report it. Do not skip items because they "seem minor".
+2. USE-CASE WALKTHROUGH: walk EVERY use case STEP BY STEP against the digest. For each step ask: which object holds the data? which action performs it? which rule constrains it? which event signals it? which process orders it? which relationship connects the parties/documents involved? Any step with no supporting node is a gap.
+3. STRUCTURAL SWEEP of commonly-missed coverage: relationships (ownership, lifecycle, document-to-entity, party-to-party links), events for state transitions and deadlines, rules for thresholds/SLAs/authorizations, exception/reversal process variants.
+
+EVIDENCE DISCIPLINE: stay strictly evidence-based. NEVER report a gap for an item that IS present in the digest — verify by id and name before reporting. When an item exists but is weak/underspecified (missing attributes, no relationships, vague rule), report it as a gap WITH relatedItemId set to its ontology id. Each gap must name WHAT is missing and WHY it matters to a use case or expectation.
+
+SEVERITY must be HONEST, not diplomatic: "block" = a use case cannot be supported end-to-end without it; "warn" = important coverage hole but the use case limps through; "info" = nice-to-have enrichment. Do not downgrade real blockers to warn.
+
+OUTPUT ONLY one JSON object (no prose, no fences):
+{
+  "gaps": [
+    { "id": "gap:slug",
+      "layer": "object"|"rule"|"action"|"event"|"process"|"relationship"|"general",
+      "description": { "en": "what is missing and why", "zh": "中文" },
+      "severity": "info"|"warn"|"block",
+      "useCaseId": "uc:slug (optional)",
+      "relatedItemId": "objectType:... (optional)" }
+  ]
+}
+
+SELF-CHECK before returning (silently): confirm every expected entity was either matched to a digest node or reported as a gap; confirm every use case was walked; confirm no reported gap duplicates a node that exists in the digest.`;
+
+  const user = `${fence('USE CASES (walk EVERY one step-by-step)', asJson(useCases))}
+
+${fence('EXPECTED ENTITIES (recall checklist — every unmatched item is a gap)', asJson(expectedEntities))}
+
+${fence('CURRENT ONTOLOGY (ids + names + key fields per layer)', asJson(ontologyDigest))}
+
+Run all three sweeps (expected entities, use-case walkthroughs, structural) and return ONLY the JSON gaps object.`;
+
+  return { system, user };
+}
+
+/**
+ * Dedicated cross-document RELATIONSHIP synthesis over the complete ObjectType
+ * set — finds edges the per-document objects stage missed.
+ */
+export function buildLinksPrompt(args: {
+  objects: unknown;
+  existingRelationships: unknown;
+  docName: string;
+}): PromptPair {
+  const { objects, existingRelationships, docName } = args;
+  const system = `You are a data-modeling expert performing a dedicated RELATIONSHIP SYNTHESIS pass over the COMPLETE set of ObjectTypes in an ontology (spanning ALL source documents). Find relationships the per-document extraction missed — especially edges between objects that appeared in DIFFERENT documents.
+
+${SHARED_RULES}
+
+SWEEP DISCIPLINE (be exhaustive): systematically consider PAIRS of objects from the list — for each plausible pair, ask whether the domain implies an edge between them. Enumerate candidate edges BEFORE filtering, then keep the ones that are real. An attribute with keyRole/ref pointing at another object almost always implies an edge — check every such attribute.
+
+NEGATIVE-SPACE CHECKLIST — edge types extraction most often misses; walk each category against the object set:
+- OWNERSHIP / possession: a party owns, holds, or is responsible for an asset/account/record.
+- LIFECYCLE: one entity supersedes, amends, renews, replaces, or is a version of another.
+- DOCUMENT-TO-ENTITY: a document object (invoice, contract, application, certificate) bills/governs/evidences/authorizes a business entity.
+- PARTY-TO-PARTY: customer-of, employs, represents, approves-for, reports-to, contracts-with.
+- HIERARCHY / membership: parent-child, category/classification membership, line-item-of.
+- DERIVATION / settlement: generated-from, settles, fulfills, reconciles-against.
+
+WHAT TO EMIT — a "relationships" array ONLY (do NOT emit objects):
+- Each edge: { "id":"rel:source-verb-target", "name":"verb_snake_case", "nameZh":"中文",
+  "sourceObjectTypeId", "targetObjectTypeId" (BOTH must be ids in the provided OBJECTS),
+  "cardinality": one_to_one|one_to_many|many_to_one|many_to_many, "viaAttribute"? }.
+- Do NOT duplicate an EXISTING relationship (same source+verb+target).
+- If a verbatim sentence supports the edge, cite it ("provenance":"extracted" with a real "snippet").
+- If the edge is a sound domain INFERENCE without a direct quote, set "provenance":"inferred",
+  "derivedFrom": [sourceObjectTypeId, targetObjectTypeId], "sources": [], "confidence" ≤ 0.6.
+
+SELF-CHECK before returning (silently): confirm you walked every checklist category; confirm every object with zero edges (existing + new) was consciously judged a true isolate — isolated objects are rare in real domains.
+
+OUTPUT ONLY one JSON object: { "relationships": [ ... ] }`;
+
+  const user = `DOCUMENT NAME: ${docName}
+
+${fence('OBJECTS (relate ONLY these ids)', asJson(objects))}
+
+${fence('EXISTING RELATIONSHIPS (do not duplicate these)', asJson(existingRelationships))}
+
+Sweep object pairs and the edge-type checklist, then synthesize additional relationships across the full object set. Return ONLY the JSON object.`;
+
+  return { system, user };
+}
+
+/**
+ * Turns the remaining gaps + ambiguous/low-confidence items into FOLLOW-UP
+ * QUESTIONS for the human domain owner (emitted as the swarm run's last step).
+ */
+export function buildQuestionsPrompt(args: {
+  domain: string;
+  gaps: unknown;
+  lowConfidenceItems: unknown;
+  useCases: unknown;
+}): PromptPair {
+  const { domain, gaps, lowConfidenceItems, useCases } = args;
+  const system = `You are a business analyst preparing FOLLOW-UP QUESTIONS for the human domain owner after a two-iteration ontology extraction for the "${domain}" domain. Turn the remaining gaps, ambiguities, and low-confidence items into clear, specific questions that — once answered — would let us complete or correct the ontology.
+
+QUESTION DISCIPLINE:
+- COVERAGE: every "block"-severity gap MUST yield at least one question; cover "warn" gaps next; only then "info". Low-confidence/inferred items deserve a confirmation question when the answer would change the ontology.
+- SPECIFIC, not generic: name the exact missing/uncertain thing — the threshold value, the unclear actor or approver, the ambiguous cardinality, the undefined enum members, the missing exception path. Never ask vague prompts like "anything else about orders?".
+- ACTIONABLE: phrase each question so a domain owner can answer it in one or two concrete sentences, and the answer translates directly into an ontology edit (a new node, a fixed attribute, a corrected relationship, a confirmed/rejected inference).
+- TRACEABLE: set "addressesGapId" whenever the question targets a gap, and "relatedItemId" whenever it targets an existing weak/inferred item. A question with neither should be rare and justified by a use case.
+- Group by layer; deduplicate (one question may close several related gaps — list the primary gap id). Bilingual (en+zh) on question and rationale.
+
+OUTPUT ONLY one JSON object (no prose, no fences):
+{
+  "questions": [
+    { "id": "q:slug",
+      "question": { "en": "", "zh": "" },
+      "rationale": { "en": "why we ask", "zh": "中文" },
+      "layer": "object"|"rule"|"action"|"event"|"process"|"relationship"|"general",
+      "addressesGapId": "gap:slug (optional)",
+      "relatedItemId": "id (optional)" }
+  ]
+}
+
+SELF-CHECK before returning (silently): confirm every block gap has a question; confirm no question is answerable from the documents already provided; confirm each question names its specific target.`;
+
+  const user = `DOMAIN: ${domain}
+
+${fence('UNRESOLVED GAPS', asJson(gaps))}
+
+${fence('LOW-CONFIDENCE / INFERRED ITEMS', asJson(lowConfidenceItems))}
+
+${fence('USE CASES (for context)', asJson(useCases))}
+
+Produce the follow-up questions. Return ONLY the JSON object.`;
 
   return { system, user };
 }
