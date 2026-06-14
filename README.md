@@ -85,6 +85,14 @@ returning a bilingual answer plus an explicit hop-by-hop reasoning chain.
 Thirty ready-made multi-hop use cases (3 per sample domain, each ≥3 hops) live
 in [docs/INFERENCE_USE_CASES.md](./docs/INFERENCE_USE_CASES.md).
 
+**JSON editor.** The braces icon (`{ }`) in the top bar opens a VS Code-style
+JSON editor (Monaco, bundled offline) with a tab per ontology layer — Data
+Objects, Rules, Actions, Events, Workflow. Pick any saved ontology, edit its
+layers as JSON with live syntax + schema validation, one-click **Auto-fix** for
+broken JSON, and inline suggestions; cross-tab semantics are checked with the
+same `validateOntology` the pipeline uses, and Save persists a new version.
+See [docs/JSON_EDITOR.md](./docs/JSON_EDITOR.md).
+
 The full requirements and architecture live in
 [docs/HYPER_AUTOMATION_SPEC.md](./docs/HYPER_AUTOMATION_SPEC.md) and
 [docs/HYPER_AUTOMATION_DESIGN.md](./docs/HYPER_AUTOMATION_DESIGN.md).

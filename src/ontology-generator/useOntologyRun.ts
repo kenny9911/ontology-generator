@@ -96,12 +96,24 @@ export interface OntologyRunController {
 
   // ---- review (Objects/Rules/Actions/Events/Processes screens) ----
   setReview: (kind: EntityKind, id: string, status: ReviewStatus) => void;
+  /** Set one node's review status AND persist it (per-item Accept/Reject). */
+  reviewOne: (kind: EntityKind, id: string, status: ReviewStatus) => Promise<void>;
+  /** Accept every still-pending node of one layer in a single persisted write. */
+  acceptAll: (kind: EntityKind) => Promise<void>;
   editEntity: (kind: EntityKind, id: string, patch: Record<string, unknown>) => void;
+  /** Replace whole layers of the working ontology (JSON Editor). Synchronous via
+   *  the ontology ref so a following save() persists the new layers. No-op when
+   *  no ontology is loaded. */
+  applyLayers: (
+    layers: Partial<Pick<Ontology, 'objects' | 'rules' | 'actions' | 'events' | 'processes'>>,
+  ) => void;
   mergeObjects: (keepId: string, mergeId: string) => void;
   reRunStage: (stage: Stage) => Promise<void>;
 
   // ---- persist (PublishScreen) ----
-  save: () => Promise<void>;
+  /** Persist the working ontology. Resolves `true` on success, `false` if the
+   *  save failed (the error is also surfaced on `error`); demo resolves `true`. */
+  save: () => Promise<boolean>;
   publish: () => Promise<{ mirrored: boolean }>;
   reset: () => void;
 
@@ -275,6 +287,19 @@ export function useOntologyRun(): OntologyRunController {
   const [terminology, setTerminology] = useState<TerminologyExtraction | null>(null);
   const [documentCoverage, setDocumentCoverage] = useState<DocumentCoverageEval | null>(null);
 
+  // The authoritative, always-current working ontology. React's `ontology`
+  // state is one render behind inside an event handler, so a mutation followed
+  // by an immediate `save()` (e.g. Accept → persist) would otherwise persist the
+  // PRE-mutation value (stale closure) and then overwrite the optimistic update
+  // — making review actions silently revert. Every write goes through
+  // `commitOntology`, which updates this ref SYNCHRONOUSLY alongside the state,
+  // so `save`/`publish`/`reRunStage`/`acceptAll` always read the freshest model.
+  const ontologyRef = useRef<Ontology | null>(null);
+  const commitOntology = useCallback((next: Ontology | null) => {
+    ontologyRef.current = next;
+    setOntology(next);
+  }, []);
+
   // ---- setup ---------------------------------------------------------------
 
   const startDemo = useCallback(() => {
@@ -282,7 +307,7 @@ export function useOntologyRun(): OntologyRunController {
     setRun(null);
     setGenerated(null);
     setMode('demo');
-    setOntology(datasetToOntology(DATASETS.commerce));
+    commitOntology(datasetToOntology(DATASETS.commerce));
   }, []);
 
   const startUpload = useCallback(async (files: File[]) => {
@@ -301,7 +326,7 @@ export function useOntologyRun(): OntologyRunController {
       };
       const { ontology: o, run: r } = await api.runStart(input);
       setMode('live');
-      setOntology(o);
+      commitOntology(o);
       setRun(r);
     } catch (cause) {
       setError(errMessage(cause));
@@ -328,7 +353,7 @@ export function useOntologyRun(): OntologyRunController {
       };
       const { ontology: o, run: r } = await api.runStart(input);
       setMode('live');
-      setOntology(o);
+      commitOntology(o);
       setRun(r);
     } catch (cause) {
       setError(errMessage(cause));
@@ -364,7 +389,7 @@ export function useOntologyRun(): OntologyRunController {
       }
       const { ontology: o, run: r } = await api.runSwarmStart(runInput);
       setMode('swarm');
-      setOntology(o);
+      commitOntology(o);
       setRun(r);
     } catch (cause) {
       setError(errMessage(cause));
@@ -400,7 +425,7 @@ export function useOntologyRun(): OntologyRunController {
       }
       const { ontology: o, run: r } = await api.startHyperRun(runInput);
       setMode('hyper');
-      setOntology(o);
+      commitOntology(o);
       setRun(r);
     } catch (cause) {
       setError(errMessage(cause));
@@ -445,12 +470,12 @@ export function useOntologyRun(): OntologyRunController {
               res.ontology,
               mode === 'hyper' ? 'Auto-saved on hyper completion' : 'Auto-saved on swarm completion',
             );
-            setOntology(saved);
+            commitOntology(saved);
           } catch {
-            setOntology(res.ontology);
+            commitOntology(res.ontology);
           }
         } else {
-          setOntology(res.ontology);
+          commitOntology(res.ontology);
         }
       } catch (cause) {
         setError(errMessage(cause));
@@ -474,12 +499,12 @@ export function useOntologyRun(): OntologyRunController {
         // local JSON file and shows up under "previous sessions".
         try {
           const saved = await api.saveOntology(o, 'Auto-saved on completion');
-          setOntology(saved);
+          commitOntology(saved);
         } catch {
-          setOntology(o); // persistence failed — keep the freshly generated draft
+          commitOntology(o); // persistence failed — keep the freshly generated draft
         }
       } else {
-        setOntology(o);
+        commitOntology(o);
       }
     } catch (cause) {
       setError(errMessage(cause));
@@ -505,40 +530,53 @@ export function useOntologyRun(): OntologyRunController {
 
   // ---- review --------------------------------------------------------------
 
-  const setReview = useCallback((kind: EntityKind, id: string, status: ReviewStatus) => {
-    setOntology((current) => {
-      if (!current) return current;
+  const setReview = useCallback(
+    (kind: EntityKind, id: string, status: ReviewStatus) => {
+      const current = ontologyRef.current;
+      if (!current) return;
       const next = patchNode(current, kind, id, (node) => ({ ...node, reviewState: status }));
-      return next === current ? current : touchUpdatedAt(next);
-    });
-  }, []);
+      if (next === current) return;
+      commitOntology(touchUpdatedAt(next));
+    },
+    [commitOntology],
+  );
 
   const editEntity = useCallback(
     (kind: EntityKind, id: string, patch: Record<string, unknown>) => {
-      setOntology((current) => {
-        if (!current) return current;
-        const next = patchNode(current, kind, id, (node) => ({
-          ...node,
-          ...patch,
-          // A human edit flips an untouched node to 'edited' (accepts explicit override).
-          reviewState:
-            (patch.reviewState as ReviewStatus | undefined) ??
-            (node.reviewState === 'pending' ? 'edited' : node.reviewState),
-        }));
-        return next === current ? current : touchUpdatedAt(next);
-      });
+      const current = ontologyRef.current;
+      if (!current) return;
+      const next = patchNode(current, kind, id, (node) => ({
+        ...node,
+        ...patch,
+        // A human edit flips an untouched node to 'edited' (accepts explicit override).
+        reviewState:
+          (patch.reviewState as ReviewStatus | undefined) ??
+          (node.reviewState === 'pending' ? 'edited' : node.reviewState),
+      }));
+      if (next === current) return;
+      commitOntology(touchUpdatedAt(next));
     },
-    [],
+    [commitOntology],
   );
 
-  const mergeObjects = useCallback((keepId: string, mergeId: string) => {
-    if (keepId === mergeId) return;
-    setOntology((current) => {
-      if (!current) return current;
+  const applyLayers = useCallback(
+    (layers: Partial<Pick<Ontology, 'objects' | 'rules' | 'actions' | 'events' | 'processes'>>) => {
+      const current = ontologyRef.current;
+      if (!current) return;
+      commitOntology(touchUpdatedAt({ ...current, ...layers }));
+    },
+    [commitOntology],
+  );
+
+  const mergeObjects = useCallback(
+    (keepId: string, mergeId: string) => {
+      if (keepId === mergeId) return;
+      const current = ontologyRef.current;
+      if (!current) return;
 
       const merged = current.objects.find((o) => o.id === mergeId);
       const keeper = current.objects.find((o) => o.id === keepId);
-      if (!merged || !keeper) return current;
+      if (!merged || !keeper) return;
 
       // 1. Mark the absorbed object 'merged' and record the keeper as its origin,
       //    then drop it from the active objects list.
@@ -578,71 +616,117 @@ export function useOntologyRun(): OntologyRunController {
         relationships,
         rules,
       };
-      return touchUpdatedAt(next);
-    });
-  }, []);
+      commitOntology(touchUpdatedAt(next));
+    },
+    [commitOntology],
+  );
+
+  /**
+   * Bulk-accept every still-pending (and 'edited') node of one layer in a single
+   * write. Already-rejected nodes are left untouched; already-accepted ones are
+   * no-ops. Persists ONCE (live/swarm/hyper) so a whole layer is confirmed
+   * without N version bumps; demo stays optimistic/offline.
+   */
+  const acceptAll = useCallback(
+    async (kind: EntityKind) => {
+      const current = ontologyRef.current;
+      if (!current) return;
+      const field = KIND_TO_FIELD[kind];
+      const arr = current[field] as unknown as ReviewableNode[] | undefined;
+      if (!Array.isArray(arr)) return;
+      let changed = false;
+      const nextArr = arr.map((node) => {
+        if (node.reviewState === 'accepted' || node.reviewState === 'rejected') return node;
+        changed = true;
+        return { ...node, reviewState: 'accepted' as ReviewStatus };
+      });
+      if (!changed) return;
+      const updated = touchUpdatedAt({ ...current, [field]: nextArr } as Ontology);
+      commitOntology(updated);
+      if (mode === 'demo') return; // offline — optimistic only
+      setError(null);
+      setRunning(true);
+      try {
+        const saved = await api.saveOntology(updated, `Accepted all ${field}`);
+        commitOntology(saved);
+      } catch (cause) {
+        setError(errMessage(cause));
+      } finally {
+        setRunning(false);
+      }
+    },
+    [mode, commitOntology],
+  );
 
   const reRunStage = useCallback(
     async (stage: Stage) => {
       if (mode !== 'live' && mode !== 'swarm' && mode !== 'hyper') return; // demo stages are fixed
+      const current = ontologyRef.current;
+      if (!current) return;
       setError(null);
       setRunning(true);
       try {
-        setOntology((current) => {
-          if (!current) return current;
-          // Fire the stage re-run against the CURRENT draft; merge its items in.
-          void api
-            .reRunStage(current, stage)
-            .then((result) => {
-              setOntology((latest) => {
-                if (!latest) return latest;
-                const field = KIND_TO_FIELD[stage as unknown as EntityKind] ?? stage;
-                return touchUpdatedAt({
-                  ...latest,
-                  [field]: result.items,
-                } as Ontology);
-              });
-            })
-            .catch((cause: unknown) => setError(errMessage(cause)))
-            .finally(() => setRunning(false));
-          return current;
-        });
+        // Re-run this stage against the CURRENT draft, then merge its fresh items
+        // back into the latest model (a parallel edit may have landed meanwhile).
+        const result = await api.reRunStage(current, stage);
+        const latest = ontologyRef.current ?? current;
+        const field = KIND_TO_FIELD[stage as unknown as EntityKind] ?? stage;
+        commitOntology(touchUpdatedAt({ ...latest, [field]: result.items } as Ontology));
       } catch (cause) {
         setError(errMessage(cause));
+      } finally {
         setRunning(false);
       }
     },
-    [mode],
+    [mode, commitOntology],
   );
 
   // ---- persist -------------------------------------------------------------
 
-  const save = useCallback(async () => {
-    if (!ontology) return;
-    if (mode === 'demo') return; // demo is offline — no persistence
+  const save = useCallback(async (): Promise<boolean> => {
+    // Read the freshest model from the ref, NOT the closure `ontology` (which is
+    // a render behind a just-applied review/edit) — otherwise an Accept→save
+    // would persist the pre-Accept state and the change would silently revert.
+    const current = ontologyRef.current;
+    if (!current) return false;
+    if (mode === 'demo') return true; // demo is offline — treat as a no-op success
     setError(null);
     setRunning(true);
     try {
-      const saved = await api.saveOntology(ontology, 'Reviewed via Ontology Generator');
-      setOntology(saved);
+      const saved = await api.saveOntology(current, 'Reviewed via Ontology Generator');
+      commitOntology(saved);
+      return true;
     } catch (cause) {
       setError(errMessage(cause));
+      return false; // surface failure so callers don't claim "Saved"
     } finally {
       setRunning(false);
     }
-  }, [ontology, mode]);
+  }, [mode, commitOntology]);
+
+  /** Optimistically set one node's review status AND persist it (live/swarm/
+   *  hyper). Used by the per-item Accept/Reject buttons so a single decision
+   *  sticks to disk; demo stays offline. */
+  const reviewOne = useCallback(
+    async (kind: EntityKind, id: string, status: ReviewStatus) => {
+      setReview(kind, id, status);
+      await save();
+    },
+    [setReview, save],
+  );
 
   const publish = useCallback(async (): Promise<{ mirrored: boolean }> => {
-    if (!ontology) return { mirrored: false };
+    const current = ontologyRef.current;
+    if (!current) return { mirrored: false };
 
     if (mode === 'demo') {
       // Offline publish — flip to published locally + locally-computed bundles.
       const published: Ontology = touchUpdatedAt({
-        ...ontology,
+        ...current,
         status: 'published',
-        metadata: { ...ontology.metadata, publishedAt: new Date().toISOString() },
+        metadata: { ...current.metadata, publishedAt: new Date().toISOString() },
       });
-      setOntology(published);
+      commitOntology(published);
       setGenerated(demoGenerate(published));
       return { mirrored: false };
     }
@@ -650,8 +734,8 @@ export function useOntologyRun(): OntologyRunController {
     setError(null);
     setRunning(true);
     try {
-      const { ontology: pub, neo4j } = await api.publishOntology(ontology.id, ontology.version);
-      setOntology(pub);
+      const { ontology: pub, neo4j } = await api.publishOntology(current.id, current.version);
+      commitOntology(pub);
       const bundles = await api.generate(pub.id, 'all', pub.version);
       setGenerated(Array.isArray(bundles) ? bundles : [bundles]);
       return { mirrored: neo4j.mirrored };
@@ -661,11 +745,11 @@ export function useOntologyRun(): OntologyRunController {
     } finally {
       setRunning(false);
     }
-  }, [ontology, mode]);
+  }, [mode, commitOntology]);
 
   const reset = useCallback(() => {
     setMode('idle');
-    setOntology(null);
+    commitOntology(null);
     setRun(null);
     setRunning(false);
     setError(null);
@@ -696,7 +780,7 @@ export function useOntologyRun(): OntologyRunController {
       const isHyper = Boolean(o.metadata?.hyper || o.metadata?.documentCoverage);
       const isSwarm = Boolean(o.metadata?.businessBrief);
       setMode(isHyper ? 'hyper' : isSwarm ? 'swarm' : 'live');
-      setOntology(o);
+      commitOntology(o);
       // No live pipeline for a stored snapshot — synthesize a complete run so the
       // stepper unlocks every step (the container jumps straight to the graph).
       setRun(completedRunFor(o));
@@ -719,13 +803,14 @@ export function useOntologyRun(): OntologyRunController {
   }, []);
 
   const regenerate = useCallback(async () => {
-    if (!ontology) return;
+    const current = ontologyRef.current;
+    if (!current) return;
     if (mode === 'demo') {
       // Demo has no backend sources — just re-seed the canned ontology.
       startDemo();
       return;
     }
-    const sourceIds = ontology.sourceDocuments
+    const sourceIds = current.sourceDocuments
       .map((s) => s.parsedRef)
       .filter((r): r is string => typeof r === 'string' && r.length > 0);
     if (sourceIds.length === 0) {
@@ -739,19 +824,19 @@ export function useOntologyRun(): OntologyRunController {
     setGenerated(null);
     try {
       const input: RunStartInput = {
-        name: { en: ontology.name, zh: ontology.nameZh ?? ontology.name },
+        name: { en: current.name, zh: current.nameZh ?? current.name },
         sourceIds,
       };
       const { ontology: o, run: r } = await api.runStart(input);
       setMode('live');
-      setOntology(o);
+      commitOntology(o);
       setRun(r);
     } catch (cause) {
       setError(errMessage(cause));
     } finally {
       setRunning(false);
     }
-  }, [ontology, mode, startDemo, reset]);
+  }, [mode, startDemo, reset]);
 
   return useMemo<OntologyRunController>(
     () => ({
@@ -775,7 +860,10 @@ export function useOntologyRun(): OntologyRunController {
       listSamples,
       step,
       setReview,
+      reviewOne,
+      acceptAll,
       editEntity,
+      applyLayers,
       mergeObjects,
       reRunStage,
       save,
@@ -807,7 +895,10 @@ export function useOntologyRun(): OntologyRunController {
       listSamples,
       step,
       setReview,
+      reviewOne,
+      acceptAll,
       editEntity,
+      applyLayers,
       mergeObjects,
       reRunStage,
       save,

@@ -71,6 +71,9 @@ function reviewLabel(t: Strings, status: Rule['reviewState']): string {
 export default function RulesScreen({ t, lang, ctrl }: RulesScreenProps) {
   const { ontology } = ctrl;
   const rules = useMemo<Rule[]>(() => ontology?.rules ?? [], [ontology]);
+  const pendingCount = rules.filter(
+    (r) => r.reviewState !== 'accepted' && r.reviewState !== 'rejected',
+  ).length;
 
   const [expanded, setExpanded] = useState<string | null>(rules[0]?.id ?? null);
 
@@ -116,20 +119,47 @@ export default function RulesScreen({ t, lang, ctrl }: RulesScreenProps) {
 
   return (
     <div className="screen" style={{ display: 'grid', gridTemplateRows: 'auto 1fr', padding: 0 }}>
-      <div style={{ padding: 'var(--s-6) var(--s-7) var(--s-4)' }}>
-        <div className="mono-cap">{lang === 'zh' ? '04 · 规则' : '04 · RULES'}</div>
-        <h2
-          style={{
-            margin: '6px 0 4px',
-            fontFamily: 'var(--font-display)',
-            fontSize: 28,
-            fontWeight: 600,
-            letterSpacing: '-0.02em',
-          }}
-        >
-          {t.rulesTitle}
-        </h2>
-        <p style={{ color: 'var(--fg-3)', margin: 0, fontSize: 13, maxWidth: 720 }}>{t.rulesSub}</p>
+      <div
+        style={{
+          padding: 'var(--s-6) var(--s-7) var(--s-4)',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 'var(--s-4)',
+          flexWrap: 'wrap',
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 240 }}>
+          <div className="mono-cap">{lang === 'zh' ? '04 · 规则' : '04 · RULES'}</div>
+          <h2
+            style={{
+              margin: '6px 0 4px',
+              fontFamily: 'var(--font-display)',
+              fontSize: 28,
+              fontWeight: 600,
+              letterSpacing: '-0.02em',
+            }}
+          >
+            {t.rulesTitle}
+          </h2>
+          <p style={{ color: 'var(--fg-3)', margin: 0, fontSize: 13, maxWidth: 720 }}>{t.rulesSub}</p>
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
+          <button
+            className="btn ghost"
+            disabled={ctrl.running || pendingCount === 0}
+            onClick={() => void ctrl.acceptAll('rule')}
+          >
+            ✓ {t.acceptAll}
+            {pendingCount > 0 && <span style={{ color: 'var(--fg-4)', marginLeft: 6 }}>· {pendingCount}</span>}
+          </button>
+          <button
+            className="btn ghost"
+            disabled={ctrl.running || ctrl.mode === 'demo'}
+            onClick={() => void ctrl.reRunStage('rules')}
+          >
+            ↻ {t.reRunStage}
+          </button>
+        </div>
       </div>
 
       <div
@@ -475,7 +505,7 @@ function RuleCard({ t, lang, ctrl, rule, index, open, sev, objectName, onToggle 
               <>
                 <button
                   className="btn ghost"
-                  onClick={() => ctrl.setReview('rule', rule.id, 'rejected')}
+                  onClick={() => void ctrl.reviewOne('rule', rule.id, 'rejected')}
                 >
                   {t.reject}
                 </button>
@@ -485,7 +515,7 @@ function RuleCard({ t, lang, ctrl, rule, index, open, sev, objectName, onToggle 
                 <button
                   className={accepted ? 'btn' : 'btn primary'}
                   onClick={() =>
-                    ctrl.setReview('rule', rule.id, accepted ? 'pending' : 'accepted')
+                    void ctrl.reviewOne('rule', rule.id, accepted ? 'pending' : 'accepted')
                   }
                 >
                   {accepted ? '✓ ' + t.accepted : t.accept}

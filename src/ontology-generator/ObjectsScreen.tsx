@@ -89,6 +89,9 @@ export default function ObjectsScreen({ t, lang, ctrl }: ObjectsScreenProps) {
   };
 
   const acceptedCount = objects.filter((o) => o.reviewState === 'accepted').length;
+  const pendingCount = objects.filter(
+    (o) => o.reviewState !== 'accepted' && o.reviewState !== 'rejected',
+  ).length;
 
   // Relationships incident to the selected object (either endpoint).
   const selRels = sel
@@ -130,8 +133,7 @@ export default function ObjectsScreen({ t, lang, ctrl }: ObjectsScreenProps) {
 
   async function review(status: ReviewStatus) {
     if (!sel) return;
-    ctrl.setReview('object', sel.id, status);
-    await ctrl.save();
+    await ctrl.reviewOne('object', sel.id, status);
   }
 
   async function mergeInto(targetId: string) {
@@ -166,6 +168,15 @@ export default function ObjectsScreen({ t, lang, ctrl }: ObjectsScreenProps) {
           <div style={{ fontSize: 12, color: 'var(--fg-3)' }}>
             {acceptedCount} {t.of} {objects.length} {t.accepted.toLowerCase()}
           </div>
+          <button
+            className="btn ghost"
+            style={{ marginTop: 'var(--s-3)', width: '100%', padding: '6px 10px', fontSize: 12 }}
+            disabled={ctrl.running || pendingCount === 0}
+            onClick={() => void ctrl.acceptAll('object')}
+          >
+            ✓ {t.acceptAll}
+            {pendingCount > 0 && <span style={{ color: 'var(--fg-4)', marginLeft: 6 }}>· {pendingCount}</span>}
+          </button>
         </div>
         <div className="scroll" style={{ padding: 'var(--s-2)', flex: 1 }}>
           {objects.map((o) => {
@@ -549,9 +560,8 @@ export default function ObjectsScreen({ t, lang, ctrl }: ObjectsScreenProps) {
             <button
               className="btn ghost"
               style={{ padding: '5px 10px', fontSize: 11 }}
-              disabled={ctrl.running || ctrl.mode !== 'live'}
+              disabled={ctrl.running || ctrl.mode === 'demo'}
               onClick={() => void ctrl.reRunStage('objects')}
-              title={ctrl.mode !== 'live' ? t.reRunStage : undefined}
             >
               ↻ {t.reRunStage}
             </button>

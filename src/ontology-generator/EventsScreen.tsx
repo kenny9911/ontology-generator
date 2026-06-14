@@ -116,6 +116,9 @@ export default function EventsScreen({ t, lang, ctrl }: EventsScreenProps) {
   }
 
   const acceptedCount = events.filter((e) => e.reviewState === 'accepted').length;
+  const pendingCount = events.filter(
+    (e) => e.reviewState !== 'accepted' && e.reviewState !== 'rejected',
+  ).length;
 
   return (
     <div className="screen" style={{ gridTemplateColumns: '300px 1fr 320px', gap: 0 }}>
@@ -143,6 +146,26 @@ export default function EventsScreen({ t, lang, ctrl }: EventsScreenProps) {
           </h2>
           <div style={{ fontSize: 12, color: 'var(--fg-3)' }}>
             {acceptedCount} {t.of} {events.length} {t.accepted.toLowerCase()}
+          </div>
+          <div style={{ display: 'flex', gap: 6, marginTop: 'var(--s-3)', flexWrap: 'wrap' }}>
+            <button
+              className="btn ghost"
+              style={{ flex: 1, padding: '6px 10px', fontSize: 12 }}
+              disabled={ctrl.running || pendingCount === 0}
+              onClick={() => void ctrl.acceptAll('event')}
+            >
+              ✓ {t.acceptAll}
+              {pendingCount > 0 && <span style={{ color: 'var(--fg-4)', marginLeft: 6 }}>· {pendingCount}</span>}
+            </button>
+            <button
+              className="btn ghost"
+              style={{ padding: '6px 10px', fontSize: 12 }}
+              disabled={ctrl.running || ctrl.mode === 'demo'}
+              onClick={() => void ctrl.reRunStage('events')}
+              title={t.reRunStage}
+            >
+              ↻
+            </button>
           </div>
         </div>
 
@@ -348,7 +371,7 @@ function EventHeader({
       <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
         <button
           className="btn ghost"
-          onClick={() => ctrl.setReview('event', event.id, 'rejected')}
+          onClick={() => void ctrl.reviewOne('event', event.id, 'rejected')}
         >
           {t.reject}
         </button>
@@ -357,7 +380,7 @@ function EventHeader({
         </button>
         <button
           className={accepted ? 'btn' : 'btn primary'}
-          onClick={() => ctrl.setReview('event', event.id, accepted ? 'pending' : 'accepted')}
+          onClick={() => void ctrl.reviewOne('event', event.id, accepted ? 'pending' : 'accepted')}
         >
           {accepted ? '✓ ' + t.accepted : t.accept}
         </button>

@@ -111,6 +111,9 @@ function triggerLabel(tr: ProcessTrigger, lang: Lang, evName: (id: string) => st
 export default function ProcessesScreen({ t, lang, ctrl }: ProcessesScreenProps) {
   const ontology: Ontology | null = ctrl.ontology;
   const processes: Process[] = ontology?.processes ?? [];
+  const pendingCount = processes.filter(
+    (p) => p.reviewState !== 'accepted' && p.reviewState !== 'rejected',
+  ).length;
 
   const [selectedId, setSelectedId] = useState<string | undefined>(processes[0]?.id);
 
@@ -213,6 +216,15 @@ export default function ProcessesScreen({ t, lang, ctrl }: ProcessesScreenProps)
           <div style={{ fontSize: 12, color: 'var(--fg-3)' }}>
             {processes.length} {lang === 'zh' ? '条流程' : 'processes'}
           </div>
+          <button
+            className="btn ghost"
+            style={{ marginTop: 'var(--s-3)', width: '100%', padding: '6px 10px', fontSize: 12 }}
+            disabled={ctrl.running || pendingCount === 0}
+            onClick={() => void ctrl.acceptAll('process')}
+          >
+            ✓ {t.acceptAll}
+            {pendingCount > 0 && <span style={{ color: 'var(--fg-4)', marginLeft: 6 }}>· {pendingCount}</span>}
+          </button>
         </div>
         <div className="scroll" style={{ padding: 'var(--s-2)', flex: 1 }}>
           {processes.map((p) => {
@@ -334,16 +346,27 @@ export default function ProcessesScreen({ t, lang, ctrl }: ProcessesScreenProps)
               <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
                 <button
                   className="btn ghost"
-                  onClick={() => ctrl.setReview('process', sel.id, 'rejected')}
+                  onClick={() => void ctrl.reviewOne('process', sel.id, 'rejected')}
                 >
                   {t.reject}
                 </button>
-                <button className="btn ghost" onClick={() => void ctrl.reRunStage('processes')}>
+                <button
+                  className="btn ghost"
+                  disabled={ctrl.running || ctrl.mode === 'demo'}
+                  onClick={() => void ctrl.reRunStage('processes')}
+                  title={t.reRunStage}
+                >
                   {t.reRun}
                 </button>
                 <button
                   className={sel.reviewState === 'accepted' ? 'btn' : 'btn primary'}
-                  onClick={() => ctrl.setReview('process', sel.id, 'accepted')}
+                  onClick={() =>
+                    void ctrl.reviewOne(
+                      'process',
+                      sel.id,
+                      sel.reviewState === 'accepted' ? 'pending' : 'accepted',
+                    )
+                  }
                 >
                   {sel.reviewState === 'accepted' ? '✓ ' + t.accepted : t.accept}
                 </button>

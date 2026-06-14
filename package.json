@@ -15,12 +15,16 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck:api": "tsc -p tsconfig.api.json",
-    "test:hyper": "tsx scripts/test-hyper.mts"
+    "test:hyper": "tsx scripts/test-hyper.mts",
+    "test:editor": "tsx scripts/test-json-editor.mts"
   },
   "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
     "@supabase/supabase-js": "^2.87.0",
+    "jsonc-parser": "^3.3.1",
     "jsonwebtoken": "^9.0.3",
     "mammoth": "^1.11.0",
+    "monaco-editor": "^0.55.1",
     "neo4j-driver": "^5.28.3",
     "pdf-parse": "^1.1.1",
     "react": "^18.3.1",

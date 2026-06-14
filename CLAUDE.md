@@ -29,6 +29,7 @@ npm run build        # tsc -b (typechecks src/) && vite build → dist/
 npm run preview      # serve the production build
 npm run typecheck:api  # typecheck api/ (NOT covered by `npm run build`)
 npm run test:hyper     # deterministic hyper-automation tests (tsx scripts/test-hyper.mts, no LLM)
+npm run test:editor    # deterministic JSON-editor tests (tsx scripts/test-json-editor.mts, no LLM)
 ```
 
 There is **no test framework and no lint script** in this repo. Verification is:
@@ -37,10 +38,15 @@ There is **no test framework and no lint script** in this repo. Verification is:
 (`scripts/test-hyper.mts`) — a deterministic, no-LLM test script covering the
 hyper-automation surfaces (triples / router precedence / sentence numbering /
 coverage pre-pass / settings round-trip / agent-registry completeness /
-inference-use-case fixture integrity). `fixtures/ontology-golden/` holds
-reference ontologies consumed by that script. When you finish a backend change,
-run `npm run typecheck:api` and `npm run test:hyper`; for a frontend change,
-run `npm run build`.
+inference-use-case fixture integrity) — + `npm run test:editor`
+(`scripts/test-json-editor.mts`) — a deterministic, no-LLM suite (139 checks)
+covering the JSON Editor's pure logic (auto-repair / string-aware adversarial
+cases / parseLayer / extract-serialize-merge round-trips / id+bilingual coercion
+/ schema suggestions / candidate assembly / validateOntology integration /
+layer-schema drift). `fixtures/ontology-golden/` holds reference ontologies
+consumed by both scripts. When you finish a backend change, run
+`npm run typecheck:api` and `npm run test:hyper`; for a frontend change, run
+`npm run build` (and `npm run test:editor` when touching `src/ontology-generator/json-editor/`).
 
 ## Two TypeScript build worlds — the import-suffix rule
 
@@ -260,7 +266,7 @@ publish** (a Neo4j failure never fails publish).
 
 The container threads a single controller, [useOntologyRun](src/ontology-generator/useOntologyRun.ts),
 as the `ctrl` prop to every screen (Input/Discover/Brief/Objects/Rules/Actions/
-Events/Processes/Coverage/Questions/Graph/Publish/Settings). Screens are locked
+Events/Processes/Coverage/Questions/Graph/Publish/Editor/Settings). Screens are locked
 to the `{ t, lang, ctrl }` prop contract — they carry no navigation callbacks; a
 screen requests a step change by dispatching an `ontogen:goto` CustomEvent. The
 controller exposes the fixed `OntologyRunController` interface and runs in four
@@ -293,6 +299,31 @@ Reopen-mode detection on load is **hyper-first**: a saved ontology carrying
 no wizard step order and `canVisit` always allows it. It renders the agent
 table from `llm.agents` (resolved model + source badge per agent) and saves
 via `llm.settings`; it works in demo mode too (no LLM key needed).
+
+[JsonEditorScreen](src/ontology-generator/JsonEditorScreen.tsx) (StepId
+`'editor'`) is the **JSON Editor** — a VS Code-style Monaco editor reachable
+**only** via the TopBar braces button (like settings: in no wizard order,
+`canVisit` always true, and reachable with or without a run via its own
+historical-ontology picker). Five tabs (Data Objects / Rules / Actions / Events /
+**Workflow** == `processes`) each edit one ontology layer's JSON in a single
+Monaco instance backed by five persistent models. Validation is two-tier: Monaco's
+JSON language service gives inline syntax + per-layer JSON-Schema squiggles, and
+our own `validateOntology` runs over a reassembled candidate for cross-tab
+semantics — both feed one diagnostics panel with click-to-locate and one-click
+fixes. "Auto-fix" runs the deterministic `repairJson`; Save reassembles the layers
+via `ctrl.applyLayers` + `ctrl.save` (append-only version bump; demo keeps edits
+in memory). All editor logic lives under
+[src/ontology-generator/json-editor/](src/ontology-generator/json-editor/): the
+pure modules (`json-repair`, `layers`, `json-suggest`, `assemble`) are **alias-free
+at runtime** (schema imports are type-only) so `scripts/test-json-editor.mts` can
+import them directly under tsx; `monaco-setup.ts` bundles Monaco's workers offline
+via Vite `?worker` (no CDN). The screen is **lazy-loaded** (`React.lazy`) so
+Monaco ships as its own chunk, off the main bundle. **Two hand-maintained mirrors
+of `types.ts` live here** (same convention as the schema mirror above):
+`layer-schemas.ts` (the Monaco JSON-Schema enums) and `json-suggest.ts` (the
+closed-vocab `as const` arrays) — keep their `DataType`/`Severity`/`KeyRole`/
+`Provenance`/`ReviewStatus`/`RuleKind` copies in sync with `types.ts`;
+`test-json-editor.mts` §15 drift-guards the DataType/Severity copies.
 
 All UI styling is the scoped [ontology-generator.css](src/ontology-generator/ontology-generator.css)
 (every selector under `.ontogen`); there is no Tailwind, router, or component

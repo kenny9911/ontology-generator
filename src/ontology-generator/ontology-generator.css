@@ -65,6 +65,14 @@
   --glow-accent: 0 0 0 1px rgba(91, 140, 255, 0.4), 0 0 24px rgba(91, 140, 255, 0.25);
   --glow-ai: 0 0 0 1px rgba(164, 123, 255, 0.5), 0 0 28px rgba(164, 123, 255, 0.3);
 
+  /* Elevation — tokenized so light/dark themes can swap the whole shadow ramp.
+     Base values reproduce the original dark look byte-for-byte; the `light`
+     theme overrides them with allmeta's soft, low-opacity shadows. */
+  --shadow-card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.45), 0 8px 28px rgba(0, 0, 0, 0.35);
+  --shadow-btn: 0 4px 14px rgba(0, 0, 0, 0.35);
+  --shadow-drawer: -24px 0 60px rgba(0, 0, 0, 0.5);
+
   /* Density (set on root) */
   --density-pad: var(--s-4);
   --density-row: 36px;
@@ -186,6 +194,80 @@
   --danger: #ff8d9d;
 }
 
+/* ───────────────────────────────────────────────────────────────────────────
+   allmeta themes — the Ontology Studio palette (packages/theme/tokens.css),
+   ported into the ontogen token vocabulary. OKLCH for perceptual uniformity.
+
+   "light" is the app's only LIGHT surface: near-white cool-tinted background,
+   confident enterprise-blue primary, signature agent-violet secondary. The
+   app-wide ink-on-accent convention (`color: var(--bg)`) keeps button/chip text
+   readable because the light accents are dark enough to carry a near-white ink.
+   "dark" is allmeta's blue-undertoned dark, a sibling to the deep-space themes.
+   ─────────────────────────────────────────────────────────────────────────── */
+.ontogen[data-theme="light"] {
+  /* Surfaces — background → card → secondary/muted → accent-surface */
+  --bg: oklch(0.995 0.002 260);
+  --bg-1: oklch(1 0 0);
+  --bg-2: oklch(0.965 0.006 260);
+  --bg-3: oklch(0.94 0.015 260);
+  --line: oklch(0.92 0.006 260);
+  --line-strong: oklch(0.86 0.008 260);
+  --line-soft: rgba(15, 23, 42, 0.06);
+
+  /* Text — foreground (near-black) ramping lighter (less contrast) for muted.
+     Verified on --bg-1: fg 19:1, fg-2 13.6:1, fg-3 7.1:1, fg-4 ~5.7:1 — all
+     clear the app's documented caption floor (>=4.8:1 AA). */
+  --fg: oklch(0.16 0.012 265);
+  --fg-2: oklch(0.30 0.012 265);
+  --fg-3: oklch(0.46 0.012 265);
+  --fg-4: oklch(0.50 0.010 265);
+
+  /* Accents — primary blue / agent violet / success green, each dark enough to
+     read as text on white (>=4.8:1, used in small .tag pills) AND to carry a
+     near-white ink when used as a fill (the var(--bg) ink convention). */
+  --accent: oklch(0.52 0.20 258);
+  --accent-2: oklch(0.54 0.22 293);
+  --accent-3: oklch(0.51 0.13 162);
+  --warn: oklch(0.52 0.13 70);
+  --danger: oklch(0.55 0.22 25);
+
+  --node-attr: oklch(0.62 0.15 75);
+
+  --glow-accent: 0 0 0 1px oklch(0.52 0.20 258 / 0.30), 0 2px 12px oklch(0.52 0.20 258 / 0.16);
+  --glow-ai: 0 0 0 1px oklch(0.54 0.22 293 / 0.34), 0 3px 16px oklch(0.54 0.22 293 / 0.18);
+
+  /* Soft, restrained elevation (borders do most of the work). */
+  --shadow-card-inset: inset 0 1px 0 oklch(1 0 0 / 0.8);
+  --shadow-card: 0 1px 2px oklch(0.20 0.03 265 / 0.06), 0 8px 24px oklch(0.20 0.03 265 / 0.08);
+  --shadow-btn: 0 4px 14px oklch(0.20 0.03 265 / 0.12);
+  --shadow-drawer: -24px 0 60px oklch(0.20 0.03 265 / 0.18);
+}
+.ontogen[data-theme="dark"] {
+  --bg: oklch(0.14 0.015 265);
+  --bg-1: oklch(0.17 0.015 265);
+  --bg-2: oklch(0.22 0.015 265);
+  --bg-3: oklch(0.26 0.018 265);
+  --line: oklch(0.28 0.018 265);
+  --line-strong: oklch(0.36 0.020 265);
+  --line-soft: rgba(255, 255, 255, 0.07);
+  --fg: oklch(0.96 0.005 260);
+  --fg-2: oklch(0.86 0.008 260);
+  --fg-3: oklch(0.68 0.012 260);
+  --fg-4: oklch(0.58 0.012 260);
+  --accent: oklch(0.72 0.17 258);
+  --accent-2: oklch(0.72 0.20 293);
+  --accent-3: oklch(0.76 0.14 168);
+  --warn: oklch(0.80 0.14 75);
+  --danger: oklch(0.68 0.20 25);
+  --node-attr: oklch(0.80 0.14 75);
+  --glow-accent: 0 0 0 1px oklch(0.72 0.17 258 / 0.45), 0 0 24px oklch(0.72 0.17 258 / 0.28);
+  --glow-ai: 0 0 0 1px oklch(0.72 0.20 293 / 0.50), 0 0 28px oklch(0.72 0.20 293 / 0.32);
+  --shadow-card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.40), 0 8px 28px rgba(0, 0, 0, 0.45);
+  --shadow-btn: 0 4px 14px rgba(0, 0, 0, 0.40);
+  --shadow-drawer: -24px 0 60px rgba(0, 0, 0, 0.60);
+}
+
 .ontogen button { font-family: inherit; cursor: pointer; }
 /* Focus = ring + soft luminous halo: visible on every surface (a11y). */
 .ontogen button:focus-visible,
@@ -200,8 +282,16 @@
 /* ===== App layout ===== */
 .ontogen .topbar {
   display: grid;
-  grid-template-columns: 280px 1fr auto;
+  /* Three zones share one row: brand · stepper · actions. The middle column is
+     minmax(0, 1fr) — NOT a bare 1fr — so it may shrink BELOW the stepper's
+     intrinsic width. A bare 1fr keeps min-width:auto, which forces the steps to
+     overflow into the neighbouring zones (the "jammed" bar). Brand & actions
+     size to content and collapse progressively (see the top-bar media queries
+     below); the stepper scroll-clips as the last resort so nothing ever
+     overlaps. */
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
+  column-gap: var(--s-4);
   border-bottom: 1px solid var(--line);
   padding: 0 var(--s-5);
   background: color-mix(in oklab, var(--bg) 90%, transparent);
@@ -232,13 +322,25 @@
 
 .ontogen .stepper {
   display: flex;
-  justify-content: center;
+  /* `safe center` centers the steps when they fit, but falls back to start
+     alignment once they overflow — so the FIRST step stays reachable when the
+     row scrolls (plain `center` would clip the overflow equally on both sides
+     and hide the start). */
+  justify-content: safe center;
   gap: 2px;
+  min-width: 0;
+  overflow-x: auto;
+  /* Hide the horizontal scrollbar — the row scrolls on trackpad/shift-wheel and
+     the steps are also reachable via the numbered nav, so a visible bar would
+     just add chrome. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
+.ontogen .stepper::-webkit-scrollbar { display: none; }
 .ontogen .step {
   display: flex; align-items: center; gap: var(--s-2);
   padding: 6px 12px;
@@ -263,7 +365,10 @@
 .ontogen .step.active .step-num {
   background: var(--accent);
   border-color: var(--accent);
-  color: #0a0e1a;
+  /* ink tracks --bg per theme (the app-wide ink-on-accent convention): a
+     near-black on the bright dark-theme accents, near-white on the darker
+     light-theme accent. */
+  color: var(--bg);
 }
 .ontogen .step.done .step-num {
   background: transparent;
@@ -272,9 +377,29 @@
 }
 .ontogen .step.done { color: var(--fg-2); }
 
-/* 9-step stepper: below 1100px collapse labels to step-numbers, keeping the
-   active step's label visible so the current stage stays legible. CSS-only. */
-@media (max-width: 1100px) {
+/* ── Responsive top bar ───────────────────────────────────────────────────
+   The brand · 9–12-step stepper · actions cluster all live on one row. As the
+   viewport narrows we shed the least-essential text in stages so the steps
+   rarely need to scroll; the stepper's overflow-scroll (above) is the final
+   guarantee that nothing ever overlaps. CSS-only — no JS resize listeners. */
+
+/* Stage 1 — the stepper is the primary nav, so reclaim space from the brand and
+   ACTIONS first (keeping the step labels legible as long as possible): drop the
+   brand subtitle, collapse the saved-sessions dropdown to its clock icon +
+   caret, and shrink the "AI online" status to its dot. */
+@media (max-width: 1280px) {
+  .ontogen .brand-sub { display: none; }
+  .ontogen .top-actions { gap: var(--s-2); }
+  .ontogen .top-actions .ctl-text,
+  .ontogen .pill .pill-text { display: none; }
+  .ontogen .pill { padding: 5px; }
+}
+
+/* Stage 2 — once the full label row no longer fits (≈1240px for the 9-step
+   fast flow), collapse labels to their numbers, keeping only the ACTIVE step's
+   label so the current stage stays named. Below this the numbered row scrolls
+   if it still overflows (the 12-step swarm/hyper flow on very small windows). */
+@media (max-width: 1240px) {
   .ontogen .stepper .step .step-label { display: none; }
   .ontogen .stepper .step.active .step-label { display: inline; }
   .ontogen .stepper .step { padding: 6px 8px; }
@@ -314,6 +439,12 @@
 .ontogen .ctl:hover { color: var(--fg); border-color: var(--line-strong); }
 .ontogen select.ctl { padding-right: 8px; }
 .ontogen .ctl-active { color: var(--accent); border-color: var(--accent); }
+/* A `.ctl` that holds an icon + collapsible label + caret (the saved-sessions
+   dropdown). When `.ctl-text` is hidden on narrow screens it falls back to just
+   the icon + caret, staying a tidy pill. */
+.ontogen .ctl-combo { display: inline-flex; align-items: center; gap: 6px; }
+.ontogen .ctl-combo svg { display: block; flex-shrink: 0; }
+.ontogen .ctl-caret { font-size: 10px; line-height: 1; opacity: 0.7; }
 
 /* ===== Main viewport ===== */
 .ontogen .viewport {
@@ -340,10 +471,7 @@
   border-radius: var(--r-3);
   /* Two-layer elevation (claude.ai/design review): inner top highlight +
      tight contact shadow + soft ambient — cards read as LIT surfaces. */
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.045),
-    0 1px 2px rgba(0, 0, 0, 0.45),
-    0 8px 28px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow-card-inset), var(--shadow-card);
 }
 .ontogen .card-h {
   padding: var(--s-3) var(--s-4);
@@ -374,7 +502,7 @@
   background: var(--bg-3);
   border-color: var(--accent);
   transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow-btn);
 }
 .ontogen .btn:active { transform: translateY(0); box-shadow: none; }
 .ontogen .btn.primary {
@@ -722,4 +850,496 @@
 @media (max-width: 1000px) {
   .ontogen .llm-agent-row { grid-template-columns: 1fr; gap: var(--s-2); }
   .ontogen .llm-global { grid-template-columns: 1fr; }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   Thinking & activity — top-bar toggle, docked panel, grouped timeline.
+   Reuses .card/.tag/.recall-bar/.mono-cap/.scroll; everything new is prefixed
+   .thinkpanel-* / .actlog-* / .ctl-icon.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* Square icon-only control (thinking toggle + gear), with a live pulse dot. */
+.ontogen .ctl-icon {
+  display: inline-grid;
+  place-items: center;
+  padding: 5px;
+  width: 28px;
+  height: 28px;
+  position: relative;
+}
+.ontogen .ctl-live {
+  border-color: color-mix(in oklab, var(--accent-2) 55%, var(--line));
+  color: var(--accent-2);
+}
+.ontogen .ctl-live::after {
+  content: "";
+  position: absolute;
+  top: 2px; right: 2px;
+  width: 6px; height: 6px;
+  border-radius: 999px;
+  background: var(--accent-2);
+  box-shadow: 0 0 8px var(--accent-2);
+  animation: og-pulse-soft 1.3s ease-in-out infinite;
+}
+
+/* ── Docked panel ───────────────────────────────────────────────────────── */
+.ontogen .thinkpanel {
+  position: fixed;
+  top: 56px;            /* sit flush below the 56px top bar */
+  right: 0;
+  bottom: 0;
+  width: min(420px, 92vw);
+  display: flex;
+  flex-direction: column;
+  background:
+    linear-gradient(180deg, color-mix(in oklab, var(--accent-2) 5%, transparent), transparent 140px),
+    var(--bg-1);
+  border-left: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-drawer);
+  z-index: 30;
+  transform: translateX(110%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease;
+}
+.ontogen .thinkpanel.open {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.ontogen .thinkpanel-h {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in oklab, var(--bg-2) 70%, transparent);
+  backdrop-filter: blur(6px);
+}
+.ontogen .thinkpanel-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+.ontogen .thinkpanel-titles { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+.ontogen .thinkpanel-titles strong {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.ontogen .thinkpanel-titles .mono-cap { font-size: 9.5px; color: var(--fg-4); }
+
+.ontogen .thinkpanel-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+}
+.ontogen .thinkpanel-status .dot { width: 6px; height: 6px; border-radius: 999px; }
+.ontogen .thinkpanel-status.live { color: var(--accent-2); border-color: color-mix(in oklab, var(--accent-2) 35%, transparent); }
+.ontogen .thinkpanel-status.live .dot { background: var(--accent-2); box-shadow: 0 0 8px var(--accent-2); animation: og-pulse-soft 1.2s ease-in-out infinite; }
+.ontogen .thinkpanel-status.done { color: var(--accent-3); border-color: color-mix(in oklab, var(--accent-3) 35%, transparent); }
+.ontogen .thinkpanel-status.done .dot { background: var(--accent-3); box-shadow: 0 0 8px var(--accent-3); }
+.ontogen .thinkpanel-status.error { color: var(--warn); border-color: color-mix(in oklab, var(--warn) 35%, transparent); }
+.ontogen .thinkpanel-status.error .dot { background: var(--warn); }
+
+.ontogen .thinkpanel-x {
+  display: grid;
+  place-items: center;
+  width: 26px; height: 26px;
+  border-radius: var(--r-2);
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  color: var(--fg-3);
+  font-size: 12px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.ontogen .thinkpanel-x:hover { color: var(--fg); border-color: var(--line-strong); background: var(--bg-3); }
+
+.ontogen .thinkpanel-b {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Activity log (stat strip + timeline) ───────────────────────────────── */
+.ontogen .actlog { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+
+.ontogen .actlog-stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  border-bottom: 1px solid var(--line);
+}
+.ontogen .actlog-prog { display: flex; align-items: center; gap: 10px; }
+.ontogen .actlog-prog .recall-bar { flex: 1; margin-top: 0; }
+.ontogen .actlog-pct { color: var(--fg-2); font-size: 11px; min-width: 34px; text-align: right; }
+
+.ontogen .actlog-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ontogen .actlog-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--chip) 10%, var(--bg-2));
+  border: 1px solid color-mix(in oklab, var(--chip) 28%, transparent);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.ontogen .actlog-chip i { color: var(--chip); font-style: normal; font-size: 11px; }
+.ontogen .actlog-chip b { color: var(--fg); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.ontogen .actlog-scroll { flex: 1; min-height: 0; padding: var(--s-4) var(--s-4) var(--s-3); }
+.ontogen .actlog-empty {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  text-align: center;
+  color: var(--fg-4);
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1.6;
+  padding: 0 24px;
+}
+
+.ontogen .actlog-timeline { display: flex; flex-direction: column; }
+
+.ontogen .actlog-group {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: 10px;
+}
+/* The rail: a continuous vertical line behind every group, node pinned at top. */
+.ontogen .actlog-rail { position: relative; }
+.ontogen .actlog-rail::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(180deg, color-mix(in oklab, var(--scope) 45%, var(--line)), var(--line));
+}
+.ontogen .actlog-group:first-child .actlog-rail::before { top: 11px; }
+.ontogen .actlog-group:last-child .actlog-rail::before { bottom: auto; height: 14px; }
+.ontogen .actlog-node {
+  position: absolute;
+  left: 2px;
+  top: 1px;
+  width: 21px; height: 21px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--bg-1);
+  border: 1.5px solid color-mix(in oklab, var(--scope) 70%, transparent);
+  color: var(--scope);
+  font-size: 11px;
+  line-height: 1;
+  z-index: 1;
+}
+.ontogen .actlog-group[data-status="complete"] .actlog-node {
+  background: color-mix(in oklab, var(--scope) 16%, var(--bg-1));
+  color: var(--scope);
+}
+.ontogen .actlog-group[data-status="error"] .actlog-node {
+  border-color: var(--warn);
+  color: var(--warn);
+  background: color-mix(in oklab, var(--warn) 14%, var(--bg-1));
+}
+.ontogen .actlog-group[data-status="running"] .actlog-node {
+  box-shadow: 0 0 0 0 color-mix(in oklab, var(--scope) 60%, transparent);
+  animation: og-node-ring 1.6s ease-out infinite;
+}
+
+.ontogen .actlog-gbody { padding-bottom: var(--s-4); min-width: 0; }
+.ontogen .actlog-ghead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 23px;
+  flex-wrap: wrap;
+}
+.ontogen .actlog-gtitle {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--fg);
+}
+.ontogen .actlog-gcount {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--scope);
+  background: color-mix(in oklab, var(--scope) 12%, transparent);
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-variant-numeric: tabular-nums;
+}
+.ontogen .actlog-ghead .tag { font-size: 9px; padding: 2px 7px; }
+.ontogen .actlog-gclock { margin-left: auto; font-size: 10px; color: var(--fg-4); }
+
+.ontogen .actlog-lines {
+  margin-top: 7px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border-left: 1px solid transparent;
+}
+.ontogen .actlog-line {
+  display: grid;
+  grid-template-columns: 14px 1fr;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--fg-3);
+}
+.ontogen .actlog-lglyph { color: var(--fg-4); text-align: center; user-select: none; }
+.ontogen .actlog-ltext { word-break: break-word; }
+.ontogen .actlog-line[data-kind="complete"] .actlog-lglyph { color: var(--accent-3); }
+.ontogen .actlog-line[data-kind="complete"] .actlog-ltext { color: var(--fg-2); }
+.ontogen .actlog-line[data-kind="extract"] .actlog-lglyph { color: var(--accent); }
+.ontogen .actlog-line[data-kind="critique"] .actlog-lglyph { color: var(--accent-2); }
+.ontogen .actlog-line[data-kind="coverage"] .actlog-lglyph { color: var(--accent-2); }
+.ontogen .actlog-line[data-kind="start"] .actlog-lglyph { color: var(--accent); }
+.ontogen .actlog-line[data-kind="warn"] .actlog-lglyph { color: var(--warn); }
+.ontogen .actlog-line[data-kind="warn"] .actlog-ltext { color: color-mix(in oklab, var(--warn) 70%, var(--fg-3)); }
+
+.ontogen .actlog-cursor {
+  display: inline-block;
+  margin-left: 2px;
+  color: var(--accent-2);
+  animation: og-pulse-soft 1s steps(2, start) infinite;
+}
+.ontogen .actlog-working {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--accent-2);
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+.ontogen .actlog-spinner {
+  width: 11px; height: 11px;
+  border-radius: 999px;
+  border: 1.5px solid color-mix(in oklab, var(--accent-2) 30%, transparent);
+  border-top-color: var(--accent-2);
+  animation: og-spin 0.7s linear infinite;
+}
+
+.ontogen .actlog-foot {
+  padding: 8px var(--s-4);
+  border-top: 1px solid var(--line);
+  color: var(--fg-4);
+  font-size: 10px;
+  background: color-mix(in oklab, var(--bg-2) 50%, transparent);
+}
+
+@keyframes og-node-ring {
+  0%   { box-shadow: 0 0 0 0 color-mix(in oklab, var(--scope) 55%, transparent); }
+  70%  { box-shadow: 0 0 0 7px color-mix(in oklab, var(--scope) 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--scope) 0%, transparent); }
+}
+
+/* ========================================================================
+   JSON Editor (Monaco) — per-layer tabs, toolbar, diagnostics panel.
+   ======================================================================== */
+.ontogen .screen.json-editor {
+  grid-template-rows: auto auto auto 1fr;
+  gap: var(--s-3);
+  padding: var(--s-5) var(--s-6);
+  overflow: hidden;
+}
+
+.ontogen .json-ed-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+}
+.ontogen .json-ed-head .screen-title {
+  margin: 0;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--fg);
+}
+.ontogen .json-ed-head .screen-sub {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--fg-3);
+  max-width: 60ch;
+}
+.ontogen .json-ed-picker {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+.ontogen .json-ed-picker .ctl { max-width: 320px; }
+
+.ontogen .json-ed-tabs {
+  display: flex;
+  gap: var(--s-1);
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+}
+.ontogen .json-ed-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 8px 14px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--fg-3);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ontogen .json-ed-tab:hover { color: var(--fg); }
+.ontogen .json-ed-tab.active {
+  color: var(--fg);
+  border-bottom-color: var(--accent);
+}
+.ontogen .json-ed-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--warn);
+  flex-shrink: 0;
+}
+.ontogen .json-ed-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: color-mix(in oklab, var(--danger) 22%, transparent);
+  color: var(--danger);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.ontogen .json-ed-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+.ontogen .json-ed-spacer { flex: 1; }
+.ontogen .json-ed-flash { animation: og-screen-in 0.25s ease both; }
+.ontogen .json-ed-demo { color: var(--fg-4); }
+.ontogen .btn.tiny {
+  padding: 3px 9px;
+  font-size: 11px;
+  border-radius: var(--r-1);
+}
+
+.ontogen .json-ed-body {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: var(--s-3);
+  min-height: 0;
+}
+.ontogen .json-ed-monaco {
+  position: relative;
+  min-height: 0;
+  height: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--r-2);
+  overflow: hidden;
+  background: #0f1426;
+}
+.ontogen .json-ed-empty {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--s-6);
+  color: var(--fg-4);
+  background: color-mix(in oklab, var(--bg-1) 80%, transparent);
+  pointer-events: none;
+}
+
+.ontogen .json-ed-issues {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--s-3);
+  overflow-y: auto;
+}
+.ontogen .json-ed-noissues {
+  padding: var(--s-4) var(--s-2);
+  text-align: center;
+  color: var(--fg-4);
+}
+.ontogen .json-ed-issue {
+  position: relative;
+  padding: 8px 10px;
+  border-radius: var(--r-2);
+  border-left: 3px solid var(--line-strong);
+  cursor: pointer;
+}
+.ontogen .json-ed-issue:hover { background: var(--bg-2); }
+.ontogen .json-ed-issue[data-sev="error"] { border-left-color: var(--danger); }
+.ontogen .json-ed-issue[data-sev="warn"] { border-left-color: var(--warn); }
+.ontogen .json-ed-issue-msg {
+  font-size: 12.5px;
+  color: var(--fg-2);
+  line-height: 1.35;
+}
+.ontogen .json-ed-issue-line {
+  margin-top: 3px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  color: var(--fg-4);
+}
+.ontogen .json-ed-related {
+  margin-left: 4px;
+  padding: 1px 6px;
+  border-radius: var(--r-1);
+  background: color-mix(in oklab, var(--accent) 16%, transparent);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+}
+.ontogen .json-ed-apply { margin-top: 6px; }
+.ontogen .json-ed-gate {
+  margin-top: var(--s-2);
+  padding: var(--s-2);
+  border-top: 1px dashed var(--line);
+  color: var(--fg-4);
+}
+
+@media (max-width: 980px) {
+  .ontogen .json-ed-body { grid-template-columns: 1fr; }
+  .ontogen .json-ed-issues { max-height: 240px; }
 }

@@ -133,6 +133,9 @@ export default function ActionsScreen({ t, lang, ctrl }: ActionsScreenProps) {
   }
 
   const acceptedCount = actions.filter((a) => a.reviewState === 'accepted').length;
+  const pendingCount = actions.filter(
+    (a) => a.reviewState !== 'accepted' && a.reviewState !== 'rejected',
+  ).length;
 
   return (
     <div className="screen" style={{ gridTemplateColumns: '300px 1fr 320px', gap: 0 }}>
@@ -145,6 +148,26 @@ export default function ActionsScreen({ t, lang, ctrl }: ActionsScreenProps) {
           </h2>
           <div style={{ fontSize: 12, color: 'var(--fg-3)' }}>
             {acceptedCount} {t.of} {actions.length} {t.accepted.toLowerCase()}
+          </div>
+          <div style={{ display: 'flex', gap: 6, marginTop: 'var(--s-3)', flexWrap: 'wrap' }}>
+            <button
+              className="btn ghost"
+              style={{ flex: 1, padding: '6px 10px', fontSize: 12 }}
+              disabled={ctrl.running || pendingCount === 0}
+              onClick={() => void ctrl.acceptAll('action')}
+            >
+              ✓ {t.acceptAll}
+              {pendingCount > 0 && <span style={{ color: 'var(--fg-4)', marginLeft: 6 }}>· {pendingCount}</span>}
+            </button>
+            <button
+              className="btn ghost"
+              style={{ padding: '6px 10px', fontSize: 12 }}
+              disabled={ctrl.running || ctrl.mode === 'demo'}
+              onClick={() => void ctrl.reRunStage('actions')}
+              title={t.reRunStage}
+            >
+              ↻
+            </button>
           </div>
         </div>
 
@@ -331,10 +354,9 @@ function ActionHeader({
         </div>
       </div>
       <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
-        <button className="btn ghost" onClick={() => ctrl.reRunStage('actions')} title={t.reRunStage}>{t.reRun}</button>
-        <button className="btn ghost" onClick={() => ctrl.setReview('action', action.id, 'rejected')}>{t.reject}</button>
+        <button className="btn ghost" onClick={() => void ctrl.reviewOne('action', action.id, 'rejected')}>{t.reject}</button>
         <button className="btn ghost" onClick={onEditName}>{t.edit}</button>
-        <button className={accepted ? 'btn' : 'btn primary'} onClick={() => ctrl.setReview('action', action.id, accepted ? 'pending' : 'accepted')}>
+        <button className={accepted ? 'btn' : 'btn primary'} onClick={() => void ctrl.reviewOne('action', action.id, accepted ? 'pending' : 'accepted')}>
           {accepted ? '✓ ' + t.accepted : t.accept}
         </button>
       </div>

@@ -6,8 +6,9 @@ import type { Lang } from './data';
 import type { Strings, StepId } from './i18n';
 import type { OntologySummary } from './api';
 import type { OntologyRunController } from './useOntologyRun';
+import { ThinkingIcon } from './ThinkingPanel';
 
-export type ThemeName = 'lumen' | 'midnight' | 'forest' | 'ember' | 'mono';
+export type ThemeName = 'light' | 'dark' | 'lumen' | 'midnight' | 'forest' | 'ember' | 'mono';
 export type LayoutMode = 'force' | 'radial' | 'hierarchical' | 'clustered';
 
 export const STEP_ORDER: StepId[] = ['input', 'discover', 'objects', 'rules', 'actions', 'events', 'processes', 'graph', 'publish'];
@@ -62,15 +63,31 @@ interface TopBarProps {
   setLang: (l: Lang) => void;
   layout: LayoutMode;
   setLayout: (l: LayoutMode) => void;
+  /** Show the thinking-log toggle (only when a run exists). */
+  showLog: boolean;
+  /** Whether the thinking-log panel is currently open. */
+  logOpen: boolean;
+  /** Toggle the thinking-log panel. */
+  onToggleLog: () => void;
+  /** A run is actively streaming — lights the toggle's live indicator. */
+  logLive: boolean;
 }
 
-const THEME_OPTIONS: { value: ThemeName; label: string }[] = [
+const THEME_OPTIONS: { value: ThemeName; label: string; labelZh?: string }[] = [
+  { value: 'light', label: 'Light', labelZh: '浅色' },
+  { value: 'dark', label: 'Dark', labelZh: '深色' },
   { value: 'lumen', label: 'Lumen' },
   { value: 'midnight', label: 'Midnight' },
   { value: 'forest', label: 'Forest' },
   { value: 'ember', label: 'Ember' },
   { value: 'mono', label: 'Mono' },
 ];
+
+/** Type-guard for a persisted theme string (used by the container to validate
+ *  a `localStorage` value before adopting it). */
+export function isThemeName(s: string | null | undefined): s is ThemeName {
+  return !!s && THEME_OPTIONS.some((o) => o.value === s);
+}
 
 const LAYOUT_OPTIONS: { value: LayoutMode; label: string }[] = [
   { value: 'force', label: 'Force' },
@@ -79,7 +96,7 @@ const LAYOUT_OPTIONS: { value: LayoutMode; label: string }[] = [
   { value: 'clustered', label: 'Cluster' },
 ];
 
-export default function TopBar({ step, setStep, steps, onHome, ctrl, t, lang, completed, theme, setTheme, setLang, layout, setLayout }: TopBarProps) {
+export default function TopBar({ step, setStep, steps, onHome, ctrl, t, lang, completed, theme, setTheme, setLang, layout, setLayout, showLog, logOpen, onToggleLog, logLive }: TopBarProps) {
   return (
     <header className="topbar">
       <button
@@ -129,9 +146,9 @@ export default function TopBar({ step, setStep, steps, onHome, ctrl, t, lang, co
           className="ctl"
           value={theme}
           onChange={(e) => setTheme(e.target.value as ThemeName)}
-          title="Theme"
+          title={lang === 'zh' ? '主题' : 'Theme'}
         >
-          {THEME_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          {THEME_OPTIONS.map((o) => <option key={o.value} value={o.value}>{lang === 'zh' && o.labelZh ? o.labelZh : o.label}</option>)}
         </select>
         <button
           className="ctl"
@@ -140,20 +157,50 @@ export default function TopBar({ step, setStep, steps, onHome, ctrl, t, lang, co
         >
           {lang === 'zh' ? 'EN' : '中文'}
         </button>
+        {showLog && (
+          <button
+            className={`ctl ctl-icon ${logOpen ? 'ctl-active' : ''} ${logLive ? 'ctl-live' : ''}`}
+            onClick={onToggleLog}
+            title={t.activityToggle}
+            aria-label={t.activityToggle}
+            aria-pressed={logOpen}
+          >
+            <ThinkingIcon size={14} live={logLive} />
+          </button>
+        )}
         <button
-          className={`ctl ${step === 'settings' ? 'ctl-active' : ''}`}
+          className={`ctl ctl-icon ${step === 'editor' ? 'ctl-active' : ''}`}
+          onClick={() => setStep('editor')}
+          title={t.jsonEditor.title}
+          aria-label={t.jsonEditor.title}
+        >
+          <BracesIcon />
+        </button>
+        <button
+          className={`ctl ctl-icon ${step === 'settings' ? 'ctl-active' : ''}`}
           onClick={() => setStep('settings')}
           title={t.settingsNav}
           aria-label={t.settingsNav}
         >
           <GearIcon />
         </button>
-        <span className="pill">
+        <span className="pill" title={lang === 'zh' ? 'AI 在线' : 'AI online'}>
           <span className="dot" />
-          {lang === 'zh' ? 'AI 在线' : 'AI online'}
+          <span className="pill-text">{lang === 'zh' ? 'AI 在线' : 'AI online'}</span>
         </span>
       </div>
     </header>
+  );
+}
+
+/** Compact clock/history glyph for the saved-sessions dropdown — lets the
+ *  control collapse to an icon (its label hides on narrow screens). */
+function HistoryIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" style={{ display: 'block' }}>
+      <circle cx="7" cy="7" r="5.4" stroke="currentColor" strokeWidth="1.2" fill="none" />
+      <path d="M7 3.9 V7 L9.1 8.4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    </svg>
   );
 }
 
@@ -172,6 +219,18 @@ function GearIcon() {
         <line x1="10.1" y1="10.1" x2="11.4" y2="11.4" />
         <line x1="11.4" y1="2.6" x2="10.1" y2="3.9" />
         <line x1="3.9" y1="10.1" x2="2.6" y2="11.4" />
+      </g>
+    </svg>
+  );
+}
+
+/** Compact curly-braces glyph for the JSON-editor button (matches GearIcon's idiom). */
+function BracesIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" style={{ display: 'block' }}>
+      <g stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none">
+        <path d="M5 1.4C3.6 1.4 3.4 2.2 3.4 3.2v1.4c0 0.9-0.6 1.4-1.4 1.4 0.8 0 1.4 0.5 1.4 1.4v1.4c0 1 0.2 1.8 1.6 1.8" />
+        <path d="M9 1.4c1.4 0 1.6 0.8 1.6 1.8v1.4c0 0.9 0.6 1.4 1.4 1.4-0.8 0-1.4 0.5-1.4 1.4v1.4c0 1-0.2 1.8-1.6 1.8" />
       </g>
     </svg>
   );
@@ -248,13 +307,16 @@ function SavedOntologyMenu({ t, lang, ctrl }: { t: Strings; lang: Lang; ctrl: On
     <div ref={wrapRef} style={{ position: 'relative' }}>
       <button
         type="button"
-        className={`ctl ${open ? 'ctl-active' : ''}`}
+        className={`ctl ctl-combo ${open ? 'ctl-active' : ''}`}
         onClick={() => setOpen((o) => !o)}
         title={t.previousSessionsHint}
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-label={t.previousSessions}
       >
-        {t.previousSessions} ▾
+        <HistoryIcon />
+        <span className="ctl-text">{t.previousSessions}</span>
+        <span className="ctl-caret" aria-hidden="true">▾</span>
       </button>
       {open && (
         <div

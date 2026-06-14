@@ -1,5 +1,7 @@
 // Bilingual strings keyed by feature. Ported from OntologyGen_design/src/i18n.js.
 import type { Lang } from './data';
+import type { RepairKind } from './json-editor/json-repair';
+import type { SchemaSuggestionKind } from './json-editor/json-suggest';
 
 export type StepId =
   | 'input'
@@ -14,6 +16,7 @@ export type StepId =
   | 'questions'
   | 'graph'
   | 'publish'
+  | 'editor'
   | 'settings';
 
 const I18N = {
@@ -34,8 +37,69 @@ const I18N = {
       brief: 'Business',
       coverage: 'Coverage',
       questions: 'Questions',
+      editor: 'JSON Editor',
       settings: 'Settings',
     } as Record<StepId, string>,
+
+    // JSON Editor (Monaco-based per-layer editor)
+    jsonEditor: {
+      title: 'JSON Editor',
+      subtitle: 'View and edit ontology layers as JSON, with live validation and auto-fix.',
+      tabs: {
+        objects: 'Data Objects',
+        rules: 'Rules',
+        actions: 'Actions',
+        events: 'Events',
+        workflow: 'Workflow',
+      } as Record<'objects' | 'rules' | 'actions' | 'events' | 'workflow', string>,
+      pickOntology: 'Load an ontology…',
+      reload: 'Reload',
+      save: 'Save',
+      saving: 'Saving…',
+      saved: 'Saved',
+      saveFailed: 'Save failed — your edits are kept',
+      revert: 'Revert',
+      autofix: 'Auto-fix',
+      format: 'Format',
+      fixed: 'fixed',
+      noIssues: 'No issues',
+      issuesTitle: 'Issues & suggestions',
+      applyFix: 'Apply',
+      applyAllFixes: 'Fix all',
+      invalidJson: 'Invalid JSON — fix before saving',
+      dirtyBadge: 'Unsaved',
+      demoNotPersisted: 'Demo mode — edits stay in memory, not persisted',
+      discardConfirm: 'Discard unsaved edits and load another ontology?',
+      empty: 'Load a saved ontology above (or generate one first) to edit its JSON here.',
+      expectedIn: 'expected in',
+      cantCheck: "Can't semantic-check until every tab parses",
+      errors: 'errors',
+      warnings: 'warnings',
+      nodes: 'nodes',
+      loadError: 'Could not load the ontology list',
+    },
+    repairKinds: {
+      strip_bom: 'Removed byte-order mark',
+      strip_block_comment: 'Stripped block comment',
+      strip_line_comment: 'Stripped line comment',
+      smart_quote: 'Normalized smart quotes',
+      single_quote: 'Converted single to double quotes',
+      unquoted_key: 'Quoted unquoted keys',
+      python_literal: 'Replaced Python literal',
+      js_literal: 'Replaced non-JSON literal',
+      trailing_semicolon: 'Removed stray semicolons',
+      trailing_comma: 'Removed trailing comma',
+      missing_comma: 'Inserted missing comma',
+    } satisfies Record<RepairKind, string>,
+    suggestKinds: {
+      missing_field: 'Missing field',
+      bad_id_prefix: 'Wrong id prefix',
+      bad_enum: 'Invalid enum value',
+      missing_bilingual_zh: 'Missing Chinese text',
+      enum_without_values: 'Enum without values',
+      reference_without_target: 'Reference without target',
+      item_not_object: 'Not an object',
+    } satisfies Record<SchemaSuggestionKind, string>,
 
     // Input
     inputTitle: 'Feed it your business',
@@ -75,6 +139,24 @@ const I18N = {
     resume: 'Resume',
     seeResults: 'See results',
 
+    // Thinking & activity panel (toggleable from the top bar)
+    activityTitle: 'Thinking & activity',
+    activityToggle: 'Thinking & activity log',
+    activityEmpty: 'The thinking log fills in as the AI works through each task.',
+    activitySub: 'Live reasoning · grouped by task',
+    actLive: 'LIVE',
+    actDone: 'DONE',
+    actErrored: 'ERROR',
+    actRunning: 'running',
+    actComplete: 'done',
+    actError: 'error',
+    actPending: 'queued',
+    actWorking: 'working…',
+    actScopeParse: 'Parsing',
+    actScopeGeneral: 'Activity',
+    actScopeSwarm: 'Swarm',
+    actScopeHyper: 'Hyper',
+
     // Objects
     objectsTitle: 'Discovered objects',
     objectsSub: 'Review entities the AI found. Accept, edit, or merge.',
@@ -83,6 +165,7 @@ const I18N = {
     relations: 'Relations',
     confidence: 'Confidence',
     accept: 'Accept',
+    acceptAll: 'Accept all',
     edit: 'Edit',
     merge: 'Merge',
     reject: 'Reject',
@@ -403,8 +486,69 @@ const I18N = {
       brief: '业务理解',
       coverage: '覆盖度',
       questions: '待确认',
+      editor: 'JSON 编辑器',
       settings: '设置',
     } as Record<StepId, string>,
+
+    // JSON 编辑器（基于 Monaco 的分层编辑器）
+    jsonEditor: {
+      title: 'JSON 编辑器',
+      subtitle: '以 JSON 方式查看与编辑本体各层，支持实时校验与自动修复。',
+      tabs: {
+        objects: '数据对象',
+        rules: '规则',
+        actions: '动作',
+        events: '事件',
+        workflow: '工作流',
+      } as Record<'objects' | 'rules' | 'actions' | 'events' | 'workflow', string>,
+      pickOntology: '加载本体…',
+      reload: '重新加载',
+      save: '保存',
+      saving: '保存中…',
+      saved: '已保存',
+      saveFailed: '保存失败 —— 已保留你的修改',
+      revert: '还原',
+      autofix: '自动修复',
+      format: '格式化',
+      fixed: '已修复',
+      noIssues: '无问题',
+      issuesTitle: '问题与建议',
+      applyFix: '应用',
+      applyAllFixes: '全部修复',
+      invalidJson: 'JSON 无效 —— 保存前请修复',
+      dirtyBadge: '未保存',
+      demoNotPersisted: '演示模式 —— 修改仅保存在内存中，不会持久化',
+      discardConfirm: '放弃未保存的修改并加载其他本体？',
+      empty: '请在上方加载一个已保存的本体（或先生成一个）以在此编辑其 JSON。',
+      expectedIn: '应位于',
+      cantCheck: '所有标签页解析成功前无法进行语义校验',
+      errors: '错误',
+      warnings: '警告',
+      nodes: '节点',
+      loadError: '无法加载本体列表',
+    },
+    repairKinds: {
+      strip_bom: '移除字节序标记',
+      strip_block_comment: '移除块注释',
+      strip_line_comment: '移除行注释',
+      smart_quote: '规范化智能引号',
+      single_quote: '单引号转双引号',
+      unquoted_key: '为无引号键名加引号',
+      python_literal: '替换 Python 字面量',
+      js_literal: '替换非 JSON 字面量',
+      trailing_semicolon: '移除多余分号',
+      trailing_comma: '移除多余逗号',
+      missing_comma: '补全缺失逗号',
+    } satisfies Record<RepairKind, string>,
+    suggestKinds: {
+      missing_field: '缺少字段',
+      bad_id_prefix: 'id 前缀错误',
+      bad_enum: '枚举值无效',
+      missing_bilingual_zh: '缺少中文文本',
+      enum_without_values: '枚举缺少取值',
+      reference_without_target: '引用缺少目标',
+      item_not_object: '不是对象',
+    } satisfies Record<SchemaSuggestionKind, string>,
 
     inputTitle: '为本体提供业务原始文档',
     inputSub: '上传原始业务文档或接入企业数据库。生成器将通读全部内容，识别对象、挖掘规则，并提议一个可供审阅的企业本体。',
@@ -442,6 +586,24 @@ const I18N = {
     resume: '继续',
     seeResults: '查看结果',
 
+    // Thinking & activity panel (toggleable from the top bar)
+    activityTitle: '思考与活动',
+    activityToggle: '思考与活动日志',
+    activityEmpty: 'AI 逐步处理各项任务时，思考日志会实时填充。',
+    activitySub: '实时推理 · 按任务分组',
+    actLive: '实时',
+    actDone: '完成',
+    actErrored: '出错',
+    actRunning: '运行中',
+    actComplete: '已完成',
+    actError: '出错',
+    actPending: '排队中',
+    actWorking: '处理中…',
+    actScopeParse: '解析',
+    actScopeGeneral: '活动',
+    actScopeSwarm: '群体',
+    actScopeHyper: '超级',
+
     objectsTitle: '已发现的业务对象',
     objectsSub: '审阅 AI 识别出的业务对象。可接受、编辑或合并。',
     attributes: '属性',
@@ -449,6 +611,7 @@ const I18N = {
     relations: '关联',
     confidence: '置信度',
     accept: '接受',
+    acceptAll: '全部接受',
     edit: '编辑',
     merge: '合并',
     reject: '拒绝',
