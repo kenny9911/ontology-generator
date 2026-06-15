@@ -5,12 +5,16 @@ rules, actions, events, and processes — using a multi-stage LLM pipeline. Uplo
 your own PDFs / DOCX / text, or start from a bundled sample corpus, then review
 and refine each layer and explore the result as an interactive graph.
 
-- **Bilingual UI** (English / 中文)
+- **Bilingual UI** (English / 中文) with a responsive top bar that collapses
+  gracefully from wide screens down to narrow windows
 - **5-stage extraction pipeline:** objects → rules → actions → events → processes
 - **Three extraction modes:** fast (one LLM call per stage), swarm (multi-agent
   SME pipeline), and **hyper** (swarm + terminology scan + sentence-level
   coverage verification + automatic gap remediation)
 - **Grounded extraction** with per-item source snippets and confidence
+- **Human-in-the-loop review** — accept / reject / edit / merge each node,
+  **Accept all** of a layer at once, or **re-run** any single stage; every
+  decision is persisted as a new append-only version
 - **Interactive graph** (force / radial / hierarchical / clustered layouts)
 - **Publish** to a versioned store, optionally mirrored to **Neo4j**
 - **Code/prompt/manifest generators** from the published ontology
@@ -42,6 +46,25 @@ documents, then watch the pipeline extract each layer.
 The UI ships a **demo mode** that fabricates a complete ontology entirely in the
 browser — no backend, no LLM key — so you can explore the interface before
 configuring anything. Choose "Demo" on the input screen.
+
+---
+
+## Review & refine
+
+Extraction produces a **draft** — the deliverable is the ontology you've reviewed.
+Each layer (objects, rules, actions, events, processes) opens in its own screen
+where every node shows its verbatim source citations and confidence. From there you
+can:
+
+- **Accept / Reject / Edit / Merge** individual nodes — each decision is saved
+  immediately.
+- **Accept all** still-unreviewed nodes of a layer in one click (a single saved
+  version, not one per node).
+- **Re-run this stage** to regenerate just that layer against the current draft,
+  without rerunning the whole pipeline.
+
+Every change is persisted as a new **append-only version**, so history is never
+lost, and a node's review state gates what finally publishes.
 
 ---
 

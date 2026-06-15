@@ -53,7 +53,8 @@ Numbered walk-through, from input documents to a published ontology:
 5. **Per-stage pipeline** — `runStage` ([orchestrator.ts:109](api/ontology-gen/pipeline/orchestrator.ts#L109)) composes the deterministic sequence: enforce order → extract (one LLM call) → ground citations → drop ungrounded extracted nodes → score confidence → (events only) derive the Action↔Event inverse → merge → optional critique → validate.
 6. **Resume / inspect** — `run.get` ([index.ts:823](api/ontology-gen/index.ts#L823)) is a pure read that rehydrates `{ run, ontology }` so a refreshed client never loses progress.
 7. **Completion** — when all five `StageProgress` rows are `complete`, the run flips to `status='complete'`. The accumulated `Ontology` is the deliverable.
-8. **Compile** — `generate(ontology, target)` ([generators/index.ts:34](api/ontology-gen/generators/index.ts#L34)) projects the finished ontology into agent code, prompts, and manifests.
+8. **Review & refine** — the finished ontology is a *draft*. It surfaces in the five per-layer review screens, where each node carries a `reviewState`. The reviewer accepts, edits, merges, or rejects individual nodes, **Accepts all** still-unreviewed nodes of a layer in one write, or **Re-runs** any single stage (`stage.<x>`) to regenerate just that layer. Each decision persists through `save` (append-only versioning). See §4 ("Human review & persistence").
+9. **Compile** — `generate(ontology, target)` ([generators/index.ts:34](api/ontology-gen/generators/index.ts#L34)) projects the finished ontology into agent code, prompts, and manifests.
 
 ---
 
@@ -189,6 +190,14 @@ There is **no dedicated column** for the in-progress ontology. `persistRunState`
 `run.get` ([index.ts:823](api/ontology-gen/index.ts#L823)) is a pure GET that returns `{ run, ontology }` verbatim — the resume primitive.
 
 `stage.<x>` ([actionStage, index.ts:837](api/ontology-gen/index.ts#L837)) is a **run-less** single-stage re-run against an inline `body.ontology` draft. Because `runStage` replaces the layer wholesale, re-invoking it regenerates that one layer idempotently. It returns only that stage's items (`stage.objects` also returns `relationships`; `stage.rules` also returns `ruleGroups`), the stage-scoped validation issues, and the log.
+
+### Human review & persistence
+
+A completed run is a **draft**, not the final word: every extracted node lands `reviewState:'pending'`, and the deliverable is the *reviewed* ontology. The five review screens are bound to the one frontend controller hook, `useOntologyRun` ([src/ontology-generator/useOntologyRun.ts](src/ontology-generator/useOntologyRun.ts)), which mediates each human decision against the backend `save` and `stage.<x>` actions:
+
+- **`reviewOne(kind, id, status)`** — optimistically sets one node's `reviewState` (`accepted`/`rejected`/`edited`/`pending`) **and** persists it. **`acceptAll(kind)`** flips every node of a layer that isn't already `accepted` or `rejected` to `accepted` in a **single** `save` — confirming a whole layer costs one version, not N. Both read an authoritative in-memory ontology **ref** that is updated synchronously on every mutation, so a review immediately followed by `save` persists the *new* state rather than a render-stale snapshot (the subtle bug this contract exists to prevent).
+- **`reRunStage(stage)`** — the per-layer **"Re-run this stage"** control on the Objects/Rules/Actions/Events/Processes screens. It calls `stage.<x>` against the current draft and merges the regenerated layer back in (the same wholesale, idempotent replacement as the run-less re-run above), discarding that layer's prior review states by design.
+- **`save`** (`actionSave`, [index.ts](api/ontology-gen/index.ts)) — re-validates the draft (`validateOntology`), recomputes `metadata.danglingRefs`, and writes a new **append-only** version. `reviewState` is what gates publish and weights aggregate confidence (§8, §15); `rejected` nodes are retained in the version history but excluded downstream.
 
 ### Status transitions
 
