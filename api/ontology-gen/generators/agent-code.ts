@@ -101,33 +101,6 @@ function strLit(text: string): string {
  * caller (it needs `enumValues`); `reference` is resolved by the caller (needs
  * the referenced ObjectType's interface name). Both fall back to `string`.
  */
-function scalarDataTypeToTs(type: DataType): string {
-  switch (type) {
-    case 'money':
-    case 'decimal':
-    case 'integer':
-      return 'number';
-    case 'boolean':
-      return 'boolean';
-    case 'uuid':
-    case 'string':
-    case 'date':
-    case 'datetime':
-      return 'string';
-    case 'json':
-      return 'unknown';
-    case 'array':
-      return 'unknown[]';
-    case 'enum':
-      // Resolved by caller when enumValues are present.
-      return 'string';
-    case 'reference':
-      // Resolved by caller when refObjectTypeId is present.
-      return 'string';
-    default:
-      return 'unknown';
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Index builders — resolve cross-references by id deterministically.
@@ -284,7 +257,7 @@ function actionIoTsType(io: ActionIO, idx: CodeIndex): string {
   if (io.objectTypeId) {
     base = idx.objectInterfaceById.get(io.objectTypeId) ?? 'unknown';
   } else if (io.type) {
-    base = scalarDataTypeToTs(io.type);
+    base = propertyTypeToTs(io.type as PropertyType);
   } else {
     base = 'unknown';
   }
@@ -363,7 +336,7 @@ function generateToolFile(action: ActionType, idx: CodeIndex, warnings: string[]
   const adesc = commentSafe(action.description);
   if (adesc) lines.push(` * ${adesc}`);
   lines.push(` * @actionId ${action.id}`);
-  lines.push(` * @actor ${commentSafe(action.actor?.role) || 'unknown'} (${action.actor?.kind ?? 'system'})`);
+  lines.push(` * @actor ${commentSafe(action.actorRef?.role) || 'unknown'} (${action.actorRef?.kind ?? 'system'})`);
   lines.push(` * @execution ${action.agent?.execution ?? 'function'}`);
   const cite = action.sources && action.sources.length > 0 ? action.sources[0] : undefined;
   if (cite) {

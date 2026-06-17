@@ -222,6 +222,20 @@ export default function ActionsScreen({ t, lang, ctrl }: ActionsScreenProps) {
         <div className="scroll" style={{ padding: 'var(--s-6)', display: 'flex', flexDirection: 'column', gap: 'var(--s-5)' }}>
           <ActionHeader action={sel} title={actionName(sel)} description={actionDesc(sel)} t={t} lang={lang} ctrl={ctrl} />
 
+          {/* Spec-format strip: category + submission criteria + target objects */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+            {sel.category && <span className="tag">{sel.category}</span>}
+            {(sel.target_objects ?? []).map((o) => (
+              <span key={o} className="tag" title={t.targetObjects}>{o}</span>
+            ))}
+          </div>
+          {sel.submission_criteria && (
+            <div style={{ fontSize: 12, color: 'var(--fg-2)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
+              <span className="mono-cap" style={{ color: 'var(--fg-4)' }}>{t.submissionCriteria}: </span>
+              {sel.submission_criteria}
+            </div>
+          )}
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s-5)' }}>
             <IOSection title={t.inputs} io={sel.inputs} t={t} objectName={objectName} />
             <IOSection title={t.outputs} io={sel.outputs} t={t} objectName={objectName} />
@@ -292,8 +306,9 @@ export default function ActionsScreen({ t, lang, ctrl }: ActionsScreenProps) {
 }
 
 function actorLabel(a: ActionType, lang: Lang): string {
-  const role = (lang === 'zh' ? a.actor.roleZh || a.actor.role : a.actor.role) || a.actor.role;
-  return `${role} · ${a.actor.kind}`;
+  const ref = a.actorRef;
+  const role = (lang === 'zh' ? ref?.roleZh || ref?.role : ref?.role) || ref?.role || (a.actor?.[0] ?? '');
+  return `${role} · ${ref?.kind ?? a.actor?.[0] ?? ''}`;
 }
 
 // ===========================================================================
@@ -336,7 +351,7 @@ function ActionHeader({
           {lang === 'zh' && action.nameZh && action.nameZh !== title && (
             <span style={{ color: 'var(--fg-3)', fontSize: 16 }}>{action.nameZh}</span>
           )}
-          <span className="tag ai" style={{ whiteSpace: 'nowrap' }}>{action.actor.kind}</span>
+          <span className="tag ai" style={{ whiteSpace: 'nowrap' }}>{action.actorRef?.kind ?? action.actor?.[0]}</span>
           <span className={tag.cls} style={{ whiteSpace: 'nowrap' }}>{tag.label}</span>
         </div>
         <div className="mono-cap" style={{ marginTop: 4, fontSize: 11, color: 'var(--accent)' }}>

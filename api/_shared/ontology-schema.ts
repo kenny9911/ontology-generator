@@ -395,14 +395,17 @@ export interface RuleGroup {
 export interface ActionIO {
   /** snake_case local param name, e.g. "order". */
   name: string;
-  /** Set when the param IS a domain object. */
+  /** Human-facing type ("String" / "Integer" / "List<String>" / ...). */
+  type?: string;
+  /** Generic description of the parameter. */
+  description?: string;
+  /** For an object-typed param: "ObjectId.primary_key" (the spec source_object). */
+  source_object?: string;
+  required?: boolean;
+  /** Retained: the ObjectType id when this param IS a domain object. */
   objectTypeId?: string;
-  /** Set when the param is a scalar (mutually exclusive with objectTypeId). */
-  type?: DataType;
-  required: boolean;
   isArray?: boolean;
   cardinality?: 'one' | 'many';
-  description?: string;
 }
 
 export interface ActionStep {
@@ -487,30 +490,99 @@ export interface AgentBinding {
   integration?: string;
 }
 
+/** Who/what performs an action or workflow step (spec-format). */
+export type SpecActor = 'Human' | 'Agent' | 'System';
+
+/** A rule referenced inside an action step (spec-format). */
+export interface SpecActionStepRule {
+  id: string;
+  name: string;
+  submission_criteria: string;
+  description: string;
+}
+
+/** One step of an action's plan (spec-format). */
+export interface SpecActionStep {
+  order: string;
+  name: string;
+  description: string;
+  object_type: string;
+  submission_criteria: string;
+  rules?: SpecActionStepRule[];
+}
+
+export type DataChangeAction = 'CREATE' | 'MODIFY' | 'DELETE';
+
+export interface SpecDataChange {
+  object_type: string;
+  action: DataChangeAction;
+  property_impacted: string[];
+  description: string;
+}
+
+export interface SpecNotification {
+  recipient: string;
+  channel: string | string[];
+  condition: string;
+  message: string;
+  triggered_event: string;
+}
+
+export interface SpecSideEffects {
+  data_changes: SpecDataChange[];
+  notifications: SpecNotification[];
+}
+
 export interface ActionType extends NodeProvenance {
   /** Slug id, e.g. "action:fulfill-order". Prefix "action:". */
   id: string;
   uuid: string;
-  /** Imperative verb-object name, e.g. "FulfillOrder". */
+  /** camelCase function-style name, e.g. "fulfillOrder". */
   name: string;
   nameZh?: string;
   description: string;
   descriptionZh?: string;
-  /** Typed inputs/outputs referencing ObjectTypes — the action's signature. */
+  // ---- spec-format fields (the published action shape) ----
+  /** Preconditions / events that must be met before running. */
+  submission_criteria: string;
+  /** Always "action". */
+  object_type: 'action';
+  /** Short category label. */
+  category: string;
+  /** Who performs it (spec form). */
+  actor: SpecActor[];
+  /** Event names that trigger this action. */
+  trigger: string[];
+  /** Spec object ids this action reads/writes. */
+  target_objects: string[];
+  /** Ordered logic steps (spec form). */
+  action_steps: SpecActionStep[];
+  /** Agent system prompt. */
+  system_prompt: string;
+  /** Agent user prompt. */
+  user_prompt: string;
+  /** External tools/integrations the action calls. */
+  tool_use: string[];
+  /** Data changes + notifications (spec form). */
+  side_effects: SpecSideEffects;
+  /** Event names this action emits. */
+  triggered_event: string[];
+  // ---- retained engine structure (receipts) ----
+  /** Typed inputs/outputs (enriched: type + source_object + retained objectTypeId). */
   inputs: ActionIO[];
   outputs: ActionIO[];
-  /** Ordered, human-readable execution plan — the spine of actionability. */
+  /** Ordered, human-readable execution plan. */
   steps: ActionStep[];
-  /** Rules that MUST pass before the action runs. 'block' among these abort. */
+  /** Rules that MUST pass before the action runs. */
   preconditions: PreconditionRef[];
   /** EventType ids that cause this action to run. */
   triggeredByEventIds: string[];
   /** Events this action emits (on success/failure/always). */
   emitsEvents: EmitSpec[];
-  /** Observable side-effects. */
+  /** Observable side-effects (structured). */
   sideEffects?: SideEffect[];
-  /** Who is allowed/expected to perform it. */
-  actor: ActorRef;
+  /** Who is allowed/expected to perform it (structured; `actor` is the spec form). */
+  actorRef: ActorRef;
   /** Capability strings, e.g. "order:fulfill". */
   permissions?: string[];
   /** AGENTIC binding — the callable tool contract. */

@@ -2535,25 +2535,92 @@
       "nameZh": "提交申请",
       "description": "Applicant submits a draft Application and Document set via the portal, producing a Submitted Application and opening a Case.",
       "descriptionZh": "申请人通过门户提交申请草稿及文件集，生成已提交申请并开立案件。",
+      "submission_criteria": "",
+      "object_type": "action",
+      "category": "提交申请",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [],
+      "target_objects": [
+        "Applicant",
+        "Application",
+        "Document",
+        "Case"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "captureApplicantProfileAndDraftApplication",
+          "description": "Capture Applicant profile and draft Application in PORTAL.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "attachUploadedDocumentSetAndPOST",
+          "description": "Attach uploaded Document set and POST to PBE-CMS.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "3",
+          "name": "setApplicationStatusToSubmittedAnd",
+          "description": "Set Application status to Submitted and open a new Case; start the statutory clock.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"SubmitApplication\" action. Applicant submits a draft Application and Document set via the portal, producing a Submitted Application and opening a Case. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"SubmitApplication\" using applicant, draft_application, documents. Applicant submits a draft Application and Document set via the portal, producing a Submitted Application and opening a Case. Produce application, case and emit the appropriate events.",
+      "tool_use": [
+        "PORTAL"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Application",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create Application and Case records."
+          },
+          {
+            "object_type": "Application",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Application.status := Submitted"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "APPLICATION_SUBMITTED"
+      ],
       "inputs": [
         {
           "name": "applicant",
           "objectTypeId": "objectType:applicant",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Applicant.applicant_id"
         },
         {
           "name": "draft_application",
           "objectTypeId": "objectType:application",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Application.application_id"
         },
         {
           "name": "documents",
           "objectTypeId": "objectType:document",
           "required": true,
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String",
+          "source_object": "Document.document_id"
         }
       ],
       "outputs": [
@@ -2561,13 +2628,15 @@
           "name": "application",
           "objectTypeId": "objectType:application",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String"
         },
         {
           "name": "case",
           "objectTypeId": "objectType:case",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2626,11 +2695,6 @@
           "objectTypeId": "objectType:application"
         }
       ],
-      "actor": {
-        "role": "Applicant",
-        "roleZh": "申请人",
-        "kind": "human"
-      },
       "permissions": [
         "application:submit"
       ],
@@ -2682,7 +2746,12 @@
       ],
       "confidence": 0.95,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Applicant",
+        "roleZh": "申请人",
+        "kind": "human"
+      }
     },
     {
       "id": "action:screen-completeness",
@@ -2691,19 +2760,87 @@
       "nameZh": "完整性审查",
       "description": "Intake Clerk checks the submitted Document set against the required-Document list, accepting or returning the Application.",
       "descriptionZh": "受理员将提交的文件集与必需文件清单比对，受理或退回申请。",
+      "submission_criteria": "1. Event APPLICATION_SUBMITTED has been received",
+      "object_type": "action",
+      "category": "完整性审查",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "APPLICATION_SUBMITTED"
+      ],
+      "target_objects": [
+        "Application",
+        "Document"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "pullDocumentInventoryFromDMSFor",
+          "description": "Pull Document inventory from DMS for the Application.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "compareAgainstTheProgramSRequired",
+          "description": "Compare against the program's required-Document list.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "3",
+          "name": "ifAnyRequiredDocumentIsMissing",
+          "description": "If any required Document is missing set status ReturnedIncomplete and suspend the clock; otherwise set Accepted.",
+          "object_type": "logic",
+          "submission_criteria": "on Application.status → ReturnedIncomplete",
+          "rules": [
+            {
+              "id": "clock-suspend-on-return",
+              "name": "Suspend the clock on ReturnedIncomplete",
+              "submission_criteria": "on Application.status → ReturnedIncomplete",
+              "description": "The processing clock shall be suspended on the date an Application is set to ReturnedIncomplete and shall resume on the date the missing Document is received."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"ScreenCompleteness\" action. Intake Clerk checks the submitted Document set against the required-Document list, accepting or returning the Application. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ScreenCompleteness\" using application, documents. Intake Clerk checks the submitted Document set against the required-Document list, accepting or returning the Application. Produce application and emit the appropriate events.",
+      "tool_use": [
+        "PBE-CMS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Application",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Application.status := Accepted | ReturnedIncomplete"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "APPLICATION_ACCEPTED",
+        "APPLICATION_RETURNED"
+      ],
       "inputs": [
         {
           "name": "application",
           "objectTypeId": "objectType:application",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Application.application_id"
         },
         {
           "name": "documents",
           "objectTypeId": "objectType:document",
           "required": true,
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String",
+          "source_object": "Document.document_id"
         }
       ],
       "outputs": [
@@ -2711,7 +2848,8 @@
           "name": "application",
           "objectTypeId": "objectType:application",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2771,11 +2909,6 @@
           "objectTypeId": "objectType:application"
         }
       ],
-      "actor": {
-        "role": "Intake Clerk",
-        "roleZh": "受理员",
-        "kind": "human"
-      },
       "permissions": [
         "application:screen"
       ],
@@ -2821,7 +2954,12 @@
       ],
       "confidence": 0.94,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Intake Clerk",
+        "roleZh": "受理员",
+        "kind": "human"
+      }
     },
     {
       "id": "action:verify-document",
@@ -2830,12 +2968,86 @@
       "nameZh": "核验文件",
       "description": "Caseworker verifies each Document content from DMS, marking it Verified or Rejected with a reason code.",
       "descriptionZh": "个案工作者从 DMS 核验每份文件内容，标记为已核验或已拒绝并附原因码。",
+      "submission_criteria": "1. Event APPLICATION_ACCEPTED has been received\n2. Event RECERTIFICATION_DUE has been received\n3. Rule \"Separation of duties on Document verification\" is satisfied",
+      "object_type": "action",
+      "category": "核验文件",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "APPLICATION_ACCEPTED",
+        "RECERTIFICATION_DUE"
+      ],
+      "target_objects": [
+        "Document"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "readDocumentContentFromDMS",
+          "description": "Read Document content from DMS.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "verifyByACaseworkerOtherThan",
+          "description": "Verify by a Caseworker other than the Intake Clerk who logged it.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "separation-of-duties-verification",
+              "name": "Separation of duties on Document verification",
+              "submission_criteria": "",
+              "description": "Each required Document must be verified by a Caseworker other than the Intake Clerk who logged it."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "markVerifiedOrRejectedWithA",
+          "description": "Mark Verified or Rejected with a reason code; residency Documents must be within recency.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "residency-document-recency",
+              "name": "Residency Document recency",
+              "submission_criteria": "",
+              "description": "An Applicant is required to demonstrate residency within the jurisdiction by a Document dated no more than 90 days before the ApplicationSubmitted event."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"VerifyDocument\" action. Caseworker verifies each Document content from DMS, marking it Verified or Rejected with a reason code. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"VerifyDocument\" using document. Caseworker verifies each Document content from DMS, marking it Verified or Rejected with a reason code. Produce document and emit the appropriate events.",
+      "tool_use": [
+        "DMS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Document",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Document.status := Verified | Rejected"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "DOCUMENT_VERIFIED",
+        "DOCUMENT_REJECTED"
+      ],
       "inputs": [
         {
           "name": "document",
           "objectTypeId": "objectType:document",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Document.document_id"
         }
       ],
       "outputs": [
@@ -2843,7 +3055,8 @@
           "name": "document",
           "objectTypeId": "objectType:document",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2904,11 +3117,6 @@
           "objectTypeId": "objectType:document"
         }
       ],
-      "actor": {
-        "role": "Caseworker",
-        "roleZh": "个案工作者",
-        "kind": "human"
-      },
       "permissions": [
         "document:verify"
       ],
@@ -2946,7 +3154,12 @@
       ],
       "confidence": 0.94,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Caseworker",
+        "roleZh": "个案工作者",
+        "kind": "human"
+      }
     },
     {
       "id": "action:evaluate-eligibility",
@@ -2955,32 +3168,114 @@
       "nameZh": "评估资格",
       "description": "Caseworker (via the eligibility engine) tests verified Application and Household data against the active EligibilityCriterion set, producing a draft Determination.",
       "descriptionZh": "个案工作者通过资格引擎，将已核验的申请与家庭数据与生效资格条件集比对，生成裁定草稿。",
+      "submission_criteria": "1. Event DOCUMENT_VERIFIED has been received\n2. Rule \"All required Documents verified before Determination\" is satisfied\n3. Rule \"Income over threshold is ineligible\" is satisfied\n4. Rule \"Residency Document recency\" is satisfied",
+      "object_type": "action",
+      "category": "评估资格",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "DOCUMENT_VERIFIED"
+      ],
+      "target_objects": [
+        "Application",
+        "Household",
+        "Document",
+        "Eligibility_Criterion",
+        "Determination"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "confirmEveryRequiredDocumentIsVerified",
+          "description": "Confirm every required Document is Verified before evaluating.",
+          "object_type": "logic",
+          "submission_criteria": "before EvaluateEligibility / RecordDetermination",
+          "rules": [
+            {
+              "id": "document-verified-before-determination",
+              "name": "All required Documents verified before Determination",
+              "submission_criteria": "before EvaluateEligibility / RecordDetermination",
+              "description": "An Application may not reach Determination until every required Document has been verified and is on file."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "testHouseholdIncomeAgainstTheThreshold",
+          "description": "Test Household income against the threshold for its size.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "income-threshold-ineligible",
+              "name": "Income over threshold is ineligible",
+              "submission_criteria": "",
+              "description": "An Applicant whose Household income exceeds the published program threshold for their Household size is ineligible, and the resulting Determination must be Denied."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "produceADraftDeterminationWithThe",
+          "description": "Produce a draft Determination with the decisive criterion attached.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"EvaluateEligibility\" action. Caseworker (via the eligibility engine) tests verified Application and Household data against the active EligibilityCriterion set, producing a draft Determination. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"EvaluateEligibility\" using application, household, verified_documents, criteria. Caseworker (via the eligibility engine) tests verified Application and Household data against the active EligibilityCriterion set, producing a draft Determination. Produce draft_determination and emit the appropriate events.",
+      "tool_use": [
+        "PBE-CMS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Determination",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create draft Determination."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "ELIGIBILITY_EVALUATED"
+      ],
       "inputs": [
         {
           "name": "application",
           "objectTypeId": "objectType:application",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Application.application_id"
         },
         {
           "name": "household",
           "objectTypeId": "objectType:household",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Household.household_id"
         },
         {
           "name": "verified_documents",
           "objectTypeId": "objectType:document",
           "required": true,
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String",
+          "source_object": "Document.document_id"
         },
         {
           "name": "criteria",
           "objectTypeId": "objectType:eligibility-criterion",
           "required": true,
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String",
+          "source_object": "Eligibility_Criterion.criterion_id"
         }
       ],
       "outputs": [
@@ -2988,7 +3283,8 @@
           "name": "draft_determination",
           "objectTypeId": "objectType:determination",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3056,11 +3352,6 @@
           "objectTypeId": "objectType:determination"
         }
       ],
-      "actor": {
-        "role": "Caseworker",
-        "roleZh": "个案工作者",
-        "kind": "agent"
-      },
       "permissions": [
         "eligibility:evaluate"
       ],
@@ -3117,7 +3408,12 @@
       ],
       "confidence": 0.94,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Caseworker",
+        "roleZh": "个案工作者",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:record-determination",
@@ -3126,12 +3422,93 @@
       "nameZh": "记录裁定",
       "description": "Caseworker finalizes the draft Determination as Approved or Denied, snapshotting the ruleset version and citation.",
       "descriptionZh": "个案工作者将裁定草稿定案为批准或拒绝，并快照规则集版本与引用。",
+      "submission_criteria": "1. Event ELIGIBILITY_EVALUATED has been received\n2. Event APPROVAL_REQUESTED has been received\n3. Rule \"Supervisor approval over value thresholds\" is satisfied\n4. Rule \"Denied Determination must cite criterion and rule\" is satisfied\n5. Rule \"Determination records ruleset version in force\" is satisfied\n6. Rule \"Override requires Supervisor justification, not retroactive\" is satisfied",
+      "object_type": "action",
+      "category": "记录裁定",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "ELIGIBILITY_EVALUATED",
+        "APPROVAL_REQUESTED"
+      ],
+      "target_objects": [
+        "Determination"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "ifBenefitValueOrFeeExceeds",
+          "description": "If benefit value or fee exceeds caseworker authority, escalate to Supervisor first.",
+          "object_type": "logic",
+          "submission_criteria": "threshold breach routes to EscalateForApproval",
+          "rules": [
+            {
+              "id": "supervisor-approval-threshold",
+              "name": "Supervisor approval over value thresholds",
+              "submission_criteria": "threshold breach routes to EscalateForApproval",
+              "description": "A Caseworker may not record a Determination whose associated benefit value exceeds $25,000 annually or whose permit fee exceeds $5,000 without Supervisor approval."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "finalizeOutcomeAsApprovedOrDenied",
+          "description": "Finalize outcome as Approved or Denied; record ruleset version in force.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "determination-records-ruleset-version",
+              "name": "Determination records ruleset version in force",
+              "submission_criteria": "",
+              "description": "A Determination must record the version of the EligibilityCriterion rule set that was in force on the determination date."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "forADenialAttachTheSpecific",
+          "description": "For a Denial, attach the specific EligibilityCriterion and rule citation.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "denial-must-cite-criterion",
+              "name": "Denied Determination must cite criterion and rule",
+              "submission_criteria": "",
+              "description": "A Denied Determination shall include the specific EligibilityCriterion and the rule citation that was the basis for denial."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"RecordDetermination\" action. Caseworker finalizes the draft Determination as Approved or Denied, snapshotting the ruleset version and citation. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"RecordDetermination\" using draft_determination. Caseworker finalizes the draft Determination as Approved or Denied, snapshotting the ruleset version and citation. Produce determination and emit the appropriate events.",
+      "tool_use": [
+        "PBE-CMS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Determination",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Determination.outcome := Approved | Denied"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "DETERMINATION_RECORDED"
+      ],
       "inputs": [
         {
           "name": "draft_determination",
           "objectTypeId": "objectType:determination",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Determination.determination_id"
         }
       ],
       "outputs": [
@@ -3139,7 +3516,8 @@
           "name": "determination",
           "objectTypeId": "objectType:determination",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3210,11 +3588,6 @@
           "objectTypeId": "objectType:determination"
         }
       ],
-      "actor": {
-        "role": "Caseworker",
-        "roleZh": "个案工作者",
-        "kind": "human"
-      },
       "permissions": [
         "determination:record"
       ],
@@ -3251,7 +3624,12 @@
       ],
       "confidence": 0.94,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Caseworker",
+        "roleZh": "个案工作者",
+        "kind": "human"
+      }
     },
     {
       "id": "action:escalate-for-approval",
@@ -3260,12 +3638,68 @@
       "nameZh": "升级审批",
       "description": "Routes a Determination exceeding caseworker authority to a Supervisor for sign-off.",
       "descriptionZh": "将超过个案工作者权限的裁定路由至主管签核。",
+      "submission_criteria": "1. Rule \"Supervisor approval over value thresholds\" is satisfied",
+      "object_type": "action",
+      "category": "升级审批",
+      "actor": [
+        "System"
+      ],
+      "trigger": [],
+      "target_objects": [
+        "Determination"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "setDeterminationStatusToPendingApproval",
+          "description": "Set Determination status to PendingApproval and route to the Supervisor queue.",
+          "object_type": "logic",
+          "submission_criteria": "threshold breach routes to EscalateForApproval",
+          "rules": [
+            {
+              "id": "supervisor-approval-threshold",
+              "name": "Supervisor approval over value thresholds",
+              "submission_criteria": "threshold breach routes to EscalateForApproval",
+              "description": "A Caseworker may not record a Determination whose associated benefit value exceeds $25,000 annually or whose permit fee exceeds $5,000 without Supervisor approval."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"EscalateForApproval\" action. Routes a Determination exceeding caseworker authority to a Supervisor for sign-off. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"EscalateForApproval\" using determination. Routes a Determination exceeding caseworker authority to a Supervisor for sign-off. Produce determination and emit the appropriate events.",
+      "tool_use": [
+        "PBE-CMS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Determination",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Determination.outcome := PendingApproval"
+          }
+        ],
+        "notifications": [
+          {
+            "recipient": "Caseworker",
+            "channel": "InApp",
+            "condition": "",
+            "message": "Notify Supervisor queue.",
+            "triggered_event": ""
+          }
+        ]
+      },
+      "triggered_event": [
+        "APPROVAL_REQUESTED"
+      ],
       "inputs": [
         {
           "name": "determination",
           "objectTypeId": "objectType:determination",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Determination.determination_id"
         }
       ],
       "outputs": [
@@ -3273,7 +3707,8 @@
           "name": "determination",
           "objectTypeId": "objectType:determination",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3313,11 +3748,6 @@
           "description": "Notify Supervisor queue."
         }
       ],
-      "actor": {
-        "role": "Caseworker",
-        "roleZh": "个案工作者",
-        "kind": "system"
-      },
       "permissions": [
         "determination:escalate"
       ],
@@ -3350,7 +3780,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Caseworker",
+        "roleZh": "个案工作者",
+        "kind": "system"
+      }
     },
     {
       "id": "action:collect-payment",
@@ -3359,16 +3794,73 @@
       "nameZh": "收取缴费",
       "description": "Collects the permit fee through the payment gateway, producing a Cleared (or Failed) Payment.",
       "descriptionZh": "通过支付网关收取许可费，生成已结清（或失败）的缴费。",
+      "submission_criteria": "1. Event DETERMINATION_RECORDED has been received",
+      "object_type": "action",
+      "category": "收取缴费",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "DETERMINATION_RECORDED"
+      ],
+      "target_objects": [
+        "Applicant",
+        "Payment"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "presentTheFeeScheduleAndCollect",
+          "description": "Present the fee schedule and collect the Applicant payment instrument via PAY.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "authorizeAndClearThePaymentSet",
+          "description": "Authorize and clear the Payment; set status Cleared on success.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"CollectPayment\" action. Collects the permit fee through the payment gateway, producing a Cleared (or Failed) Payment. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"CollectPayment\" using applicant, fee_amount. Collects the permit fee through the payment gateway, producing a Cleared (or Failed) Payment. Produce payment and emit the appropriate events.",
+      "tool_use": [
+        "PAY"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Payment",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Charge the permit fee."
+          },
+          {
+            "object_type": "Payment",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Payment.status := Cleared | Failed"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "PAYMENT_CLEARED",
+        "PAYMENT_FAILED"
+      ],
       "inputs": [
         {
           "name": "applicant",
           "objectTypeId": "objectType:applicant",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Applicant.applicant_id"
         },
         {
           "name": "fee_amount",
-          "type": "money",
+          "type": "Float",
           "required": true
         }
       ],
@@ -3377,7 +3869,8 @@
           "name": "payment",
           "objectTypeId": "objectType:payment",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3428,11 +3921,6 @@
           "objectTypeId": "objectType:payment"
         }
       ],
-      "actor": {
-        "role": "Applicant",
-        "roleZh": "申请人",
-        "kind": "human"
-      },
       "permissions": [
         "payment:collect"
       ],
@@ -3470,7 +3958,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Applicant",
+        "roleZh": "申请人",
+        "kind": "human"
+      }
     },
     {
       "id": "action:issue-permit",
@@ -3479,18 +3972,94 @@
       "nameZh": "核发许可",
       "description": "Issues an Active Permit from an approved Determination and a cleared Payment, with issue and expiry dates.",
       "descriptionZh": "凭已批准裁定与已结清缴费核发活动许可，并设定核发与到期日。",
+      "submission_criteria": "1. Event PAYMENT_CLEARED has been received\n2. Event DETERMINATION_RECORDED has been received\n3. Rule \"Payment cleared before Permit issuance\" is satisfied\n4. Rule \"Permit expiry within 12 months\" is satisfied",
+      "object_type": "action",
+      "category": "核发许可",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "PAYMENT_CLEARED",
+        "DETERMINATION_RECORDED"
+      ],
+      "target_objects": [
+        "Determination",
+        "Payment",
+        "Permit"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "confirmTheDeterminationIsApprovedAnd",
+          "description": "Confirm the Determination is Approved and the Payment is Cleared (or fee waiver).",
+          "object_type": "logic",
+          "submission_criteria": "on IssuePermit",
+          "rules": [
+            {
+              "id": "payment-cleared-before-issuance",
+              "name": "Payment cleared before Permit issuance",
+              "submission_criteria": "on IssuePermit",
+              "description": "A Permit may not be issued until its associated Payment has cleared in full, unless the Applicant qualifies for a documented fee waiver."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "issueThePermitAsActiveWith",
+          "description": "Issue the Permit as Active with an expiry no later than 12 months unless permanent.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "permit-expiry-12-months",
+              "name": "Permit expiry within 12 months",
+              "submission_criteria": "",
+              "description": "An issued Permit shall carry an expiry date no later than 12 months after its issue date, unless the permit class is designated permanent in the Program Eligibility Manual."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"IssuePermit\" action. Issues an Active Permit from an approved Determination and a cleared Payment, with issue and expiry dates. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"IssuePermit\" using determination, payment. Issues an Active Permit from an approved Determination and a cleared Payment, with issue and expiry dates. Produce permit and emit the appropriate events.",
+      "tool_use": [
+        "PBE-CMS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Permit",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create Permit record."
+          },
+          {
+            "object_type": "Permit",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Permit.status := Active"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "PERMIT_ISSUED"
+      ],
       "inputs": [
         {
           "name": "determination",
           "objectTypeId": "objectType:determination",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Determination.determination_id"
         },
         {
           "name": "payment",
           "objectTypeId": "objectType:payment",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Payment.payment_id"
         }
       ],
       "outputs": [
@@ -3498,7 +4067,8 @@
           "name": "permit",
           "objectTypeId": "objectType:permit",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3558,11 +4128,6 @@
           "objectTypeId": "objectType:permit"
         }
       ],
-      "actor": {
-        "role": "PBE-CMS",
-        "roleZh": "案件管理系统",
-        "kind": "system"
-      },
       "permissions": [
         "permit:issue"
       ],
@@ -3603,7 +4168,12 @@
       ],
       "confidence": 0.94,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "PBE-CMS",
+        "roleZh": "案件管理系统",
+        "kind": "system"
+      }
     },
     {
       "id": "action:schedule-inspection",
@@ -3612,12 +4182,70 @@
       "nameZh": "安排验收",
       "description": "Creates a Scheduled Inspection for permit classes requiring a physical check.",
       "descriptionZh": "为须实地检查的许可类别创建已排期验收。",
+      "submission_criteria": "1. Event PERMIT_ISSUED has been received\n2. Rule \"Inspectable Permit requires passed Inspection\" is satisfied",
+      "object_type": "action",
+      "category": "安排验收",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "PERMIT_ISSUED"
+      ],
+      "target_objects": [
+        "Permit",
+        "Inspection"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "determineWhetherThePermitClassIs",
+          "description": "Determine whether the permit class is inspectable.",
+          "object_type": "logic",
+          "submission_criteria": "on RecordInspectionResult",
+          "rules": [
+            {
+              "id": "inspection-required-before-verified",
+              "name": "Inspectable Permit requires passed Inspection",
+              "submission_criteria": "on RecordInspectionResult",
+              "description": "A Permit in an inspectable class is required to undergo a physical Inspection, and may not move to Active-Verified status until that Inspection is recorded as Passed."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "createAnInspectionInStatusScheduled",
+          "description": "Create an Inspection in status Scheduled and assign an Inspector.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"ScheduleInspection\" action. Creates a Scheduled Inspection for permit classes requiring a physical check. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ScheduleInspection\" using permit. Creates a Scheduled Inspection for permit classes requiring a physical check. Produce inspection and emit the appropriate events.",
+      "tool_use": [
+        "PBE-CMS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Inspection",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create Inspection record."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "INSPECTION_SCHEDULED"
+      ],
       "inputs": [
         {
           "name": "permit",
           "objectTypeId": "objectType:permit",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Permit.permit_id"
         }
       ],
       "outputs": [
@@ -3625,7 +4253,8 @@
           "name": "inspection",
           "objectTypeId": "objectType:inspection",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3673,11 +4302,6 @@
           "objectTypeId": "objectType:inspection"
         }
       ],
-      "actor": {
-        "role": "PBE-CMS",
-        "roleZh": "案件管理系统",
-        "kind": "system"
-      },
       "permissions": [
         "inspection:schedule"
       ],
@@ -3710,7 +4334,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "PBE-CMS",
+        "roleZh": "案件管理系统",
+        "kind": "system"
+      }
     },
     {
       "id": "action:record-inspection-result",
@@ -3719,12 +4348,71 @@
       "nameZh": "记录验收结果",
       "description": "Records an Inspection as Passed or Failed; a Failed result moves the Permit to ConditionalHold and sets a re-inspection window.",
       "descriptionZh": "将验收记录为通过或不通过；不通过则将许可置为条件保留并设定复检窗口。",
+      "submission_criteria": "1. Event INSPECTION_SCHEDULED has been received\n2. Rule \"Re-inspect failed Permit within 30 days or revoke\" is satisfied",
+      "object_type": "action",
+      "category": "记录验收结果",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "INSPECTION_SCHEDULED"
+      ],
+      "target_objects": [
+        "Inspection",
+        "Permit"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "recordFindingsAndSetStatusPassed",
+          "description": "Record findings and set status Passed or Failed.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "onFailedMovePermitToConditional",
+          "description": "On Failed, move Permit to ConditionalHold and require re-inspection within 30 days.",
+          "object_type": "logic",
+          "submission_criteria": "on InspectionFailed",
+          "rules": [
+            {
+              "id": "failed-inspection-reinspect-window",
+              "name": "Re-inspect failed Permit within 30 days or revoke",
+              "submission_criteria": "on InspectionFailed",
+              "description": "A Permit whose Inspection is recorded as Failed must be re-inspected within 30 calendar days, after which an unresolved failure moves the Permit to Revoked."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"RecordInspectionResult\" action. Records an Inspection as Passed or Failed; a Failed result moves the Permit to ConditionalHold and sets a re-inspection window. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"RecordInspectionResult\" using inspection. Records an Inspection as Passed or Failed; a Failed result moves the Permit to ConditionalHold and sets a re-inspection window. Produce inspection and emit the appropriate events.",
+      "tool_use": [
+        "PBE-CMS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Permit",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Inspection.status := Passed | Failed; Permit.status := Active-Verified | ConditionalHold"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "INSPECTION_PASSED",
+        "INSPECTION_FAILED"
+      ],
       "inputs": [
         {
           "name": "inspection",
           "objectTypeId": "objectType:inspection",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Inspection.inspection_id"
         }
       ],
       "outputs": [
@@ -3732,7 +4420,8 @@
           "name": "inspection",
           "objectTypeId": "objectType:inspection",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3784,11 +4473,6 @@
           "objectTypeId": "objectType:permit"
         }
       ],
-      "actor": {
-        "role": "Inspector",
-        "roleZh": "检查员",
-        "kind": "human"
-      },
       "permissions": [
         "inspection:record"
       ],
@@ -3821,7 +4505,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Inspector",
+        "roleZh": "检查员",
+        "kind": "human"
+      }
     },
     {
       "id": "action:notify-determination",
@@ -3830,18 +4519,80 @@
       "nameZh": "送达裁定通知",
       "description": "Renders the recorded Determination into a decision notice with appeal rights and deadline, and sends it to the Applicant.",
       "descriptionZh": "将已记录裁定渲染为含申诉权利与期限的决定通知并发送给申请人。",
+      "submission_criteria": "1. Event DETERMINATION_RECORDED has been received\n2. Event APPEAL_DECIDED has been received\n3. Rule \"Appeal filing window of 30 days\" is satisfied",
+      "object_type": "action",
+      "category": "送达裁定通知",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "DETERMINATION_RECORDED",
+        "APPEAL_DECIDED"
+      ],
+      "target_objects": [
+        "Determination",
+        "Applicant"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "renderTheDecisionNoticeIncludingAppeal",
+          "description": "Render the decision notice including appeal rights and the 30-day deadline.",
+          "object_type": "logic",
+          "submission_criteria": "window starts at DeterminationNotified",
+          "rules": [
+            {
+              "id": "appeal-filing-window",
+              "name": "Appeal filing window of 30 days",
+              "submission_criteria": "window starts at DeterminationNotified",
+              "description": "An Appeal must be filed within 30 calendar days of the DeterminationNotified event, after which the Determination is final."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "sendTheNoticeToTheApplicant",
+          "description": "Send the notice to the Applicant via NOTIFY.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"NotifyDetermination\" action. Renders the recorded Determination into a decision notice with appeal rights and deadline, and sends it to the Applicant. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"NotifyDetermination\" using determination, applicant. Renders the recorded Determination into a decision notice with appeal rights and deadline, and sends it to the Applicant. Produce determination and emit the appropriate events.",
+      "tool_use": [
+        "NOTIFY"
+      ],
+      "side_effects": {
+        "data_changes": [],
+        "notifications": [
+          {
+            "recipient": "PBE-CMS",
+            "channel": "InApp",
+            "condition": "",
+            "message": "Send decision notice to Applicant.",
+            "triggered_event": ""
+          }
+        ]
+      },
+      "triggered_event": [
+        "DETERMINATION_NOTIFIED"
+      ],
       "inputs": [
         {
           "name": "determination",
           "objectTypeId": "objectType:determination",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Determination.determination_id"
         },
         {
           "name": "applicant",
           "objectTypeId": "objectType:applicant",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Applicant.applicant_id"
         }
       ],
       "outputs": [
@@ -3849,7 +4600,8 @@
           "name": "determination",
           "objectTypeId": "objectType:determination",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3897,11 +4649,6 @@
           "description": "Send decision notice to Applicant."
         }
       ],
-      "actor": {
-        "role": "PBE-CMS",
-        "roleZh": "案件管理系统",
-        "kind": "system"
-      },
       "permissions": [
         "notice:send"
       ],
@@ -3939,7 +4686,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "PBE-CMS",
+        "roleZh": "案件管理系统",
+        "kind": "system"
+      }
     },
     {
       "id": "action:file-appeal",
@@ -3948,16 +4700,89 @@
       "nameZh": "提出申诉",
       "description": "Applicant files an Appeal against a contested Determination within 30 calendar days, pausing any benefit reduction.",
       "descriptionZh": "申请人在 30 个日历日内对争议裁定提出申诉，并暂停任何福利削减。",
+      "submission_criteria": "1. Event DETERMINATION_NOTIFIED has been received\n2. Rule \"Appeal filing window of 30 days\" is satisfied\n3. Rule \"Pause benefit reduction once Appeal filed\" is satisfied",
+      "object_type": "action",
+      "category": "提出申诉",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "DETERMINATION_NOTIFIED"
+      ],
+      "target_objects": [
+        "Determination",
+        "Appeal",
+        "Case"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "confirmTheAppealIsFiledWithin",
+          "description": "Confirm the Appeal is filed within 30 calendar days of DeterminationNotified.",
+          "object_type": "logic",
+          "submission_criteria": "window starts at DeterminationNotified",
+          "rules": [
+            {
+              "id": "appeal-filing-window",
+              "name": "Appeal filing window of 30 days",
+              "submission_criteria": "window starts at DeterminationNotified",
+              "description": "An Appeal must be filed within 30 calendar days of the DeterminationNotified event, after which the Determination is final."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "createTheAppealInStatusFiled",
+          "description": "Create the Appeal in status Filed and pause any benefit reduction.",
+          "object_type": "logic",
+          "submission_criteria": "on AppealFiled until AppealDecided",
+          "rules": [
+            {
+              "id": "pause-reduction-on-appeal",
+              "name": "Pause benefit reduction once Appeal filed",
+              "submission_criteria": "on AppealFiled until AppealDecided",
+              "description": "A benefit reduction or suspension shall be paused once an Appeal is filed and may not resume until the AppealDecided event."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"FileAppeal\" action. Applicant files an Appeal against a contested Determination within 30 calendar days, pausing any benefit reduction. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"FileAppeal\" using determination, grounds. Applicant files an Appeal against a contested Determination within 30 calendar days, pausing any benefit reduction. Produce appeal and emit the appropriate events.",
+      "tool_use": [
+        "PORTAL"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Appeal",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create Appeal record."
+          },
+          {
+            "object_type": "Case",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Pause benefit reduction."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "APPEAL_FILED"
+      ],
       "inputs": [
         {
           "name": "determination",
           "objectTypeId": "objectType:determination",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Determination.determination_id"
         },
         {
           "name": "grounds",
-          "type": "string",
+          "type": "String",
           "required": true
         }
       ],
@@ -3966,7 +4791,8 @@
           "name": "appeal",
           "objectTypeId": "objectType:appeal",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4021,11 +4847,6 @@
           "objectTypeId": "objectType:case"
         }
       ],
-      "actor": {
-        "role": "Applicant",
-        "roleZh": "申请人",
-        "kind": "human"
-      },
       "permissions": [
         "appeal:file"
       ],
@@ -4066,7 +4887,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Applicant",
+        "roleZh": "申请人",
+        "kind": "human"
+      }
     },
     {
       "id": "action:decide-appeal",
@@ -4075,18 +4901,88 @@
       "nameZh": "裁决申诉",
       "description": "Appeals Officer records the Appeal outcome as Upheld or Overturned within 45 calendar days; an overturn revises the Determination.",
       "descriptionZh": "申诉官在 45 个日历日内将申诉结果记录为维持或推翻；推翻则修订裁定。",
+      "submission_criteria": "1. Event APPEAL_FILED has been received\n2. Rule \"Appeal decision within 45 days\" is satisfied\n3. Rule \"Determination records ruleset version in force\" is satisfied",
+      "object_type": "action",
+      "category": "裁决申诉",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "APPEAL_FILED"
+      ],
+      "target_objects": [
+        "Appeal",
+        "Case",
+        "Determination",
+        "Eligibility_Criterion"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "reviewTheOriginalCaseRecordAnd",
+          "description": "Review the original Case record and the ruleset version in force on the determination date.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "determination-records-ruleset-version",
+              "name": "Determination records ruleset version in force",
+              "submission_criteria": "",
+              "description": "A Determination must record the version of the EligibilityCriterion rule set that was in force on the determination date."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "recordUpheldStandsOrOverturnedRevise",
+          "description": "Record Upheld (stands) or Overturned (revise Determination in place, preserving prior version) within 45 days.",
+          "object_type": "logic",
+          "submission_criteria": "window starts at AppealFiled",
+          "rules": [
+            {
+              "id": "appeal-decision-time-limit",
+              "name": "Appeal decision within 45 days",
+              "submission_criteria": "window starts at AppealFiled",
+              "description": "An Appeals Officer is required to issue the AppealDecided outcome within 45 calendar days of the AppealFiled event."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"DecideAppeal\" action. Appeals Officer records the Appeal outcome as Upheld or Overturned within 45 calendar days; an overturn revises the Determination. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"DecideAppeal\" using appeal, case. Appeals Officer records the Appeal outcome as Upheld or Overturned within 45 calendar days; an overturn revises the Determination. Produce appeal, determination and emit the appropriate events.",
+      "tool_use": [
+        "PBE-CMS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Appeal",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Appeal.status := Upheld | Overturned; revise Determination on overturn."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "APPEAL_DECIDED"
+      ],
       "inputs": [
         {
           "name": "appeal",
           "objectTypeId": "objectType:appeal",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Appeal.appeal_id"
         },
         {
           "name": "case",
           "objectTypeId": "objectType:case",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Case.case_id"
         }
       ],
       "outputs": [
@@ -4094,13 +4990,15 @@
           "name": "appeal",
           "objectTypeId": "objectType:appeal",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String"
         },
         {
           "name": "determination",
           "objectTypeId": "objectType:determination",
           "required": false,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4156,11 +5054,6 @@
           "objectTypeId": "objectType:appeal"
         }
       ],
-      "actor": {
-        "role": "Appeals Officer",
-        "roleZh": "申诉官",
-        "kind": "human"
-      },
       "permissions": [
         "appeal:decide"
       ],
@@ -4201,7 +5094,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Appeals Officer",
+        "roleZh": "申诉官",
+        "kind": "human"
+      }
     },
     {
       "id": "action:trigger-recertification",
@@ -4210,12 +5108,85 @@
       "nameZh": "触发复核",
       "description": "At the recertification interval the system generates a recertification task and notifies the Applicant; lapses suspend the Case.",
       "descriptionZh": "在复核间隔到期时系统生成复核任务并通知申请人；逾期失效则中止案件。",
+      "submission_criteria": "1. Rule \"Recertify benefit Case every 12 months\" is satisfied\n2. Rule \"Suspend Case on recertification lapse past grace\" is satisfied",
+      "object_type": "action",
+      "category": "触发复核",
+      "actor": [
+        "System"
+      ],
+      "trigger": [],
+      "target_objects": [
+        "Case",
+        "Permit"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "atTheRecertificationIntervalGenerateA",
+          "description": "At the recertification interval, generate a recertification task for the Case.",
+          "object_type": "logic",
+          "submission_criteria": "on recertification interval",
+          "rules": [
+            {
+              "id": "recertification-interval",
+              "name": "Recertify benefit Case every 12 months",
+              "submission_criteria": "on recertification interval",
+              "description": "A benefit Case must be recertified at least every 12 months, and a Household may not continue receiving benefits past the recertification due date without a renewed Determination."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "ifRecertificationLapsesPastThe14",
+          "description": "If recertification lapses past the 14-day grace, suspend the Case and expire any Permit.",
+          "object_type": "logic",
+          "submission_criteria": "on grace period lapse",
+          "rules": [
+            {
+              "id": "recert-lapse-suspend",
+              "name": "Suspend Case on recertification lapse past grace",
+              "submission_criteria": "on grace period lapse",
+              "description": "A Case whose recertification lapses beyond a 14-day grace period shall be suspended automatically, and the associated Permit, if any, shall move to Expired."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"TriggerRecertification\" action. At the recertification interval the system generates a recertification task and notifies the Applicant; lapses suspend the Case. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"TriggerRecertification\" using case. At the recertification interval the system generates a recertification task and notifies the Applicant; lapses suspend the Case. Produce case and emit the appropriate events.",
+      "tool_use": [
+        "PBE-CMS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Case",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Case.status := Suspended on lapse; Permit.status := Expired."
+          }
+        ],
+        "notifications": [
+          {
+            "recipient": "PBE-CMS",
+            "channel": "InApp",
+            "condition": "",
+            "message": "Notify Applicant of recertification due.",
+            "triggered_event": ""
+          }
+        ]
+      },
+      "triggered_event": [
+        "RECERTIFICATION_DUE",
+        "CASE_SUSPENDED"
+      ],
       "inputs": [
         {
           "name": "case",
           "objectTypeId": "objectType:case",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Case.case_id"
         }
       ],
       "outputs": [
@@ -4223,7 +5194,8 @@
           "name": "case",
           "objectTypeId": "objectType:case",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4284,11 +5256,6 @@
           "description": "Notify Applicant of recertification due."
         }
       ],
-      "actor": {
-        "role": "PBE-CMS",
-        "roleZh": "案件管理系统",
-        "kind": "system"
-      },
       "permissions": [
         "case:recertify"
       ],
@@ -4321,7 +5288,12 @@
       ],
       "confidence": 0.91,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "PBE-CMS",
+        "roleZh": "案件管理系统",
+        "kind": "system"
+      }
     }
   ],
   "events": [

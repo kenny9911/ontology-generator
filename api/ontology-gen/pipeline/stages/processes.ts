@@ -141,7 +141,7 @@ export async function extractProcesses(
   const eventIds = new Set(ctx.events.map((e) => e.id));
   const objectIds = new Set(ctx.objects.map((o) => o.id));
   // Default actor role per action (for actorRole fallback / inference).
-  const actionActorRole = new Map(ctx.actions.map((a) => [a.id, a.actor?.role]));
+  const actionActorRole = new Map(ctx.actions.map((a) => [a.id, a.actorRef?.role]));
 
   const processes: Process[] = [];
   for (const rp of rawProcesses) {

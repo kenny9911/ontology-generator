@@ -325,7 +325,7 @@ export function actionCompleteness(a: ActionType): number {
     Array.isArray(a.inputs),
     Array.isArray(a.outputs),
     Array.isArray(a.steps) && a.steps.length > 0,
-    !!a.actor && nonEmpty(a.actor.role) && nonEmpty(a.actor.kind),
+    !!a.actorRef && nonEmpty(a.actorRef.role) && nonEmpty(a.actorRef.kind),
     !!a.agent && nonEmpty(a.agent.toolName) && !!a.agent.parameterSchema,
   ];
   return ratio(checks.filter(Boolean).length, checks.length);

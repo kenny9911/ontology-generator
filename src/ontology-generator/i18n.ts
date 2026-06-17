@@ -192,6 +192,7 @@ const I18N = {
     submissionCriteria: 'Submission criteria',
     businessBackgroundReason: 'Background',
     ruleSource: 'Source',
+    targetObjects: 'Target objects',
 
     // Rules
     rulesTitle: 'Extracted business rules',
@@ -655,6 +656,7 @@ const I18N = {
     submissionCriteria: '触发条件',
     businessBackgroundReason: '业务背景',
     ruleSource: '来源',
+    targetObjects: '目标对象',
 
     rulesTitle: '已抽取的业务规则',
     rulesSub: '从您的业务文档中挖掘的自然语言规则 —— 每一条都可回溯至原文。',

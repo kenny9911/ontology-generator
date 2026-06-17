@@ -2259,24 +2259,75 @@
       "nameZh": "登记投保申请",
       "description": "Record a broker application package as a new Submission linked to an Applicant.",
       "descriptionZh": "将经纪人申请包登记为关联到申请人的新投保申请。",
+      "submission_criteria": "1. Event SUBMISSION_RECEIVED has been received",
+      "object_type": "action",
+      "category": "登记投保申请",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "SUBMISSION_RECEIVED"
+      ],
+      "target_objects": [
+        "Applicant",
+        "Submission"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "receiveTheBrokerSApplicationPackage",
+          "description": "Receive the broker's application package (ACORD form + loss runs).",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "createASubmissionInClearedFalse",
+          "description": "Create a Submission in Cleared = false and link it to the Applicant.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"RecordSubmission\" action. Record a broker application package as a new Submission linked to an Applicant. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"RecordSubmission\" using application_package, applicant. Record a broker application package as a new Submission linked to an Applicant. Produce submission and emit the appropriate events.",
+      "tool_use": [
+        "PolicyCenter"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Submission",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Insert Submission record in PolicyCenter."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "SUBMISSION_CLEARED"
+      ],
       "inputs": [
         {
           "name": "application_package",
-          "type": "json",
+          "type": "String",
           "required": true,
           "description": "ACORD form + loss runs."
         },
         {
           "name": "applicant",
           "objectTypeId": "objectType:applicant",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Applicant.applicant_id"
         }
       ],
       "outputs": [
         {
           "name": "submission",
           "objectTypeId": "objectType:submission",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -2318,11 +2369,6 @@
           "objectTypeId": "objectType:submission"
         }
       ],
-      "actor": {
-        "role": "Broker",
-        "roleZh": "经纪人",
-        "kind": "human"
-      },
       "permissions": [
         "submission:create"
       ],
@@ -2360,7 +2406,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Broker",
+        "roleZh": "经纪人",
+        "kind": "human"
+      }
     },
     {
       "id": "action:assess-risk",
@@ -2369,25 +2420,94 @@
       "nameZh": "风险评估",
       "description": "Evaluate a cleared submission and produce a risk assessment with proposed coverages, flagging referrals.",
       "descriptionZh": "评估已查重的投保申请，产出含拟议险别的风险评估，并标记需转交项。",
+      "submission_criteria": "1. Event SUBMISSION_CLEARED has been received\n2. Rule \"Duplicate clearance within 2 business days\" is satisfied\n3. Rule \"TIV over $50M needs facultative reinsurance\" is satisfied\n4. Rule \"Decline on 2+ total losses in 36m\" is satisfied",
+      "object_type": "action",
+      "category": "风险评估",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "SUBMISSION_CLEARED"
+      ],
+      "target_objects": [
+        "Submission",
+        "Risk_Assessment",
+        "Coverage"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeTheSubmissionPlusLossRun",
+          "description": "Consume the Submission plus loss-run history and property characteristics.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "produceARiskAssessmentWithA",
+          "description": "Produce a RiskAssessment with a risk score and proposed Coverage list.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "3",
+          "name": "flagForReferralWhenAnEligibility",
+          "description": "Flag for referral when an eligibility threshold is hit.",
+          "object_type": "logic",
+          "submission_criteria": "on AssessRisk, raises ReferralRaised",
+          "rules": [
+            {
+              "id": "br-03-referral-threshold",
+              "name": "Tier-1 cat zone or limit over $10M referral",
+              "submission_criteria": "on AssessRisk, raises ReferralRaised",
+              "description": "A Submission whose property is located in a Tier-1 catastrophe-exposed zone, or whose proposed limit exceeds $10,000,000, is required to be referred to an Underwriting Manager for approval before a Quote is issued."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"AssessRisk\" action. Evaluate a cleared submission and produce a risk assessment with proposed coverages, flagging referrals. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"AssessRisk\" using submission. Evaluate a cleared submission and produce a risk assessment with proposed coverages, flagging referrals. Produce risk_assessment, proposed_coverages and emit the appropriate events.",
+      "tool_use": [
+        "PolicyCenter"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Risk_Assessment",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Insert RiskAssessment."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "UNDERWRITING_REFERRAL_RAISED",
+        "UNDERWRITING_RISK_ASSESSED"
+      ],
       "inputs": [
         {
           "name": "submission",
           "objectTypeId": "objectType:submission",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Submission.submission_id"
         }
       ],
       "outputs": [
         {
           "name": "risk_assessment",
           "objectTypeId": "objectType:risk-assessment",
-          "required": true
+          "required": true,
+          "type": "String"
         },
         {
           "name": "proposed_coverages",
           "objectTypeId": "objectType:coverage",
           "required": false,
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2456,11 +2576,6 @@
           "objectTypeId": "objectType:risk-assessment"
         }
       ],
-      "actor": {
-        "role": "Underwriter",
-        "roleZh": "核保人",
-        "kind": "agent"
-      },
       "permissions": [
         "submission:assess"
       ],
@@ -2494,7 +2609,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Underwriter",
+        "roleZh": "核保人",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:approve-referral",
@@ -2503,17 +2623,68 @@
       "nameZh": "审批转交",
       "description": "Underwriting Manager decision on a referred submission, producing an Approval.",
       "descriptionZh": "核保经理对转交的投保申请作出决定并产生批准记录。",
+      "submission_criteria": "1. Event UNDERWRITING_REFERRAL_RAISED has been received\n2. Rule \"Tier-1 cat zone or limit over $10M referral\" is satisfied",
+      "object_type": "action",
+      "category": "审批转交",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "UNDERWRITING_REFERRAL_RAISED"
+      ],
+      "target_objects": [
+        "Risk_Assessment",
+        "Submission"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "reviewTheRiskAssessmentForThe",
+          "description": "Review the RiskAssessment for the referred Submission.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "produceAnApprovalApprovedDeclinedAttached",
+          "description": "Produce an Approval (Approved / Declined) attached to the Submission.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"ApproveReferral\" action. Underwriting Manager decision on a referred submission, producing an Approval. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ApproveReferral\" using risk_assessment. Underwriting Manager decision on a referred submission, producing an Approval. Produce approval_decision and emit the appropriate events.",
+      "tool_use": [
+        "PolicyCenter"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Submission",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Submission.status := Referred → Quoted/Declined."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "UNDERWRITING_REFERRAL_APPROVED",
+        "UNDERWRITING_SUBMISSION_DECLINED"
+      ],
       "inputs": [
         {
           "name": "risk_assessment",
           "objectTypeId": "objectType:risk-assessment",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Risk_Assessment.risk_assessment_id"
         }
       ],
       "outputs": [
         {
           "name": "approval_decision",
-          "type": "enum",
+          "type": "List<String>",
           "required": true,
           "description": "Approved or Declined."
         }
@@ -2568,11 +2739,6 @@
           "objectTypeId": "objectType:submission"
         }
       ],
-      "actor": {
-        "role": "Underwriting Manager",
-        "roleZh": "核保经理",
-        "kind": "human"
-      },
       "permissions": [
         "referral:approve"
       ],
@@ -2606,7 +2772,12 @@
       ],
       "confidence": 0.9,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Underwriting Manager",
+        "roleZh": "核保经理",
+        "kind": "human"
+      }
     },
     {
       "id": "action:generate-quote",
@@ -2615,30 +2786,111 @@
       "nameZh": "生成报价",
       "description": "Compute premium via RatingEngine and produce a Quote with line-item premiums, deductibles, and limits.",
       "descriptionZh": "通过费率引擎计算保费并产出含分项保费、免赔额与限额的报价。",
+      "submission_criteria": "1. Event UNDERWRITING_RISK_ASSESSED has been received\n2. Event UNDERWRITING_REFERRAL_APPROVED has been received\n3. Rule \"Minimum annual premium $2,500\" is satisfied\n4. Rule \"Deductible minimum $5,000\" is satisfied",
+      "object_type": "action",
+      "category": "生成报价",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "UNDERWRITING_RISK_ASSESSED",
+        "UNDERWRITING_REFERRAL_APPROVED"
+      ],
+      "target_objects": [
+        "Risk_Assessment",
+        "Coverage",
+        "Quote",
+        "Premium"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeTheApprovedRiskAssessmentAnd",
+          "description": "Consume the approved RiskAssessment and Coverage selections.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "callRatingEngineToComputePremium",
+          "description": "Call RatingEngine to compute Premium, applying the minimum-premium floor.",
+          "object_type": "logic",
+          "submission_criteria": "on GenerateQuote / BindPolicy",
+          "rules": [
+            {
+              "id": "br-06-minimum-premium",
+              "name": "Minimum annual premium $2,500",
+              "submission_criteria": "on GenerateQuote / BindPolicy",
+              "description": "A bound Policy must carry an annual Premium of at least the minimum-premium floor of $2,500, regardless of computed rate."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "produceAQuoteWithLineItem",
+          "description": "Produce a Quote with line-item premiums, deductibles, and limits.",
+          "object_type": "logic",
+          "submission_criteria": "on GenerateQuote / BindPolicy",
+          "rules": [
+            {
+              "id": "br-15-deductible-minimum",
+              "name": "Deductible minimum $5,000",
+              "submission_criteria": "on GenerateQuote / BindPolicy",
+              "description": "A Coverage deductible may not be set below the underwriting-guideline minimum of $5,000 for any commercial property peril."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"GenerateQuote\" action. Compute premium via RatingEngine and produce a Quote with line-item premiums, deductibles, and limits. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"GenerateQuote\" using risk_assessment, coverage_selections. Compute premium via RatingEngine and produce a Quote with line-item premiums, deductibles, and limits. Produce quote, premium and emit the appropriate events.",
+      "tool_use": [
+        "RatingEngine",
+        "Synchronous REST to RatingEngine to compute Premium."
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Quote",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Insert Quote + Premium."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "QUOTE_ISSUED"
+      ],
       "inputs": [
         {
           "name": "risk_assessment",
           "objectTypeId": "objectType:risk-assessment",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Risk_Assessment.risk_assessment_id"
         },
         {
           "name": "coverage_selections",
           "objectTypeId": "objectType:coverage",
           "required": true,
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String",
+          "source_object": "Coverage.coverage_id"
         }
       ],
       "outputs": [
         {
           "name": "quote",
           "objectTypeId": "objectType:quote",
-          "required": true
+          "required": true,
+          "type": "String"
         },
         {
           "name": "premium",
           "objectTypeId": "objectType:premium",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -2707,11 +2959,6 @@
           "objectTypeId": "objectType:quote"
         }
       ],
-      "actor": {
-        "role": "Underwriter",
-        "roleZh": "核保人",
-        "kind": "agent"
-      },
       "permissions": [
         "quote:generate"
       ],
@@ -2753,7 +3000,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Underwriter",
+        "roleZh": "核保人",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:bind-policy",
@@ -2762,18 +3014,85 @@
       "nameZh": "承保保单",
       "description": "Bind an accepted Quote into a Policy in Bound status, materializing coverages and premium.",
       "descriptionZh": "将已接受的报价承保为Bound状态的保单，落实各险别与保费。",
+      "submission_criteria": "1. Event QUOTE_ACCEPTED has been received\n2. Rule \"Backdating / forward-dating window\" is satisfied\n3. Rule \"Quote valid 60 days\" is satisfied",
+      "object_type": "action",
+      "category": "承保保单",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "QUOTE_ACCEPTED"
+      ],
+      "target_objects": [
+        "Quote",
+        "Policy",
+        "Coverage",
+        "Premium"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeAnAcceptedQuoteAndValidate",
+          "description": "Consume an accepted Quote and validate the effective-date window and quote validity.",
+          "object_type": "logic",
+          "submission_criteria": "on BindPolicy",
+          "rules": [
+            {
+              "id": "br-07-binding-effective-date-window",
+              "name": "Backdating / forward-dating window",
+              "submission_criteria": "on BindPolicy",
+              "description": "A Policy may not be bound with an effective date more than 30 days in the past, and may not be bound with an effective date in the future beyond 90 days."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "produceAPolicyInBoundStatus",
+          "description": "Produce a Policy in Bound status with effective and expiry dates, materializing Coverage and bound Premium.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"BindPolicy\" action. Bind an accepted Quote into a Policy in Bound status, materializing coverages and premium. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"BindPolicy\" using quote. Bind an accepted Quote into a Policy in Bound status, materializing coverages and premium. Produce policy and emit the appropriate events.",
+      "tool_use": [
+        "PolicyCenter"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Policy",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Policy.status := Bound."
+          },
+          {
+            "object_type": "Coverage",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Materialize Coverage and bound Premium."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "POLICY_BOUND"
+      ],
       "inputs": [
         {
           "name": "quote",
           "objectTypeId": "objectType:quote",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Quote.quote_id"
         }
       ],
       "outputs": [
         {
           "name": "policy",
           "objectTypeId": "objectType:policy",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -2832,11 +3151,6 @@
           "objectTypeId": "objectType:coverage"
         }
       ],
-      "actor": {
-        "role": "Underwriter",
-        "roleZh": "核保人",
-        "kind": "agent"
-      },
       "permissions": [
         "policy:bind"
       ],
@@ -2870,7 +3184,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Underwriter",
+        "roleZh": "核保人",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:issue-policy-documents",
@@ -2879,17 +3198,60 @@
       "nameZh": "出具保单文件",
       "description": "Generate declarations page and policy wording as a PolicyDocument stored in DocVault.",
       "descriptionZh": "生成声明页与保单条款作为存入DocVault的保单文件。",
+      "submission_criteria": "1. Event POLICY_BOUND has been received",
+      "object_type": "action",
+      "category": "出具保单文件",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "POLICY_BOUND"
+      ],
+      "target_objects": [
+        "Policy"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeTheBoundPolicy",
+          "description": "Consume the bound Policy.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "produceTheDeclarationsPageAndPolicy",
+          "description": "Produce the declarations page and policy wording in DocVault.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"IssuePolicyDocuments\" action. Generate declarations page and policy wording as a PolicyDocument stored in DocVault. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"IssuePolicyDocuments\" using policy. Generate declarations page and policy wording as a PolicyDocument stored in DocVault. Produce policy_document and emit the appropriate events.",
+      "tool_use": [
+        "DocVault",
+        "Async upload of PolicyDocument to DocVault."
+      ],
+      "side_effects": {
+        "data_changes": [],
+        "notifications": []
+      },
+      "triggered_event": [
+        "POLICY_ISSUED"
+      ],
       "inputs": [
         {
           "name": "policy",
           "objectTypeId": "objectType:policy",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Policy.policy_id"
         }
       ],
       "outputs": [
         {
           "name": "policy_document",
-          "type": "reference",
+          "type": "String",
           "required": true,
           "description": "PolicyDocument in DocVault."
         }
@@ -2929,11 +3291,6 @@
           "description": "Async upload of PolicyDocument to DocVault."
         }
       ],
-      "actor": {
-        "role": "PolicyCenter",
-        "roleZh": "保单系统",
-        "kind": "system"
-      },
       "permissions": [
         "policy:issue-docs"
       ],
@@ -2967,7 +3324,12 @@
       ],
       "confidence": 0.9,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "PolicyCenter",
+        "roleZh": "保单系统",
+        "kind": "system"
+      }
     },
     {
       "id": "action:record-fnol",
@@ -2976,10 +3338,66 @@
       "nameZh": "登记报案",
       "description": "Record First Notice of Loss, creating a Claim linked to the matched Policy and opening exposures.",
       "descriptionZh": "登记首次报损，创建关联到匹配保单的理赔案件并开立赔付项。",
+      "submission_criteria": "1. Event LOSS_REPORTED has been received",
+      "object_type": "action",
+      "category": "登记报案",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "LOSS_REPORTED"
+      ],
+      "target_objects": [
+        "Claim",
+        "Exposure"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeTheReportedLossDetailsDate",
+          "description": "Consume the reported loss details (date of loss, cause, claimant).",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "createAClaimLinkedToThe",
+          "description": "Create a Claim linked to the matched Policy.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "3",
+          "name": "openAtLeastOneExposurePer",
+          "description": "Open at least one Exposure per affected Coverage.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"RecordFNOL\" action. Record First Notice of Loss, creating a Claim linked to the matched Policy and opening exposures. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"RecordFNOL\" using loss_details. Record First Notice of Loss, creating a Claim linked to the matched Policy and opening exposures. Produce claim, exposures and emit the appropriate events.",
+      "tool_use": [
+        "ClaimCenter"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Claim",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Insert Claim and one Exposure per Coverage."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "FNOL_RECORDED",
+        "EXPOSURE_OPENED"
+      ],
       "inputs": [
         {
           "name": "loss_details",
-          "type": "json",
+          "type": "String",
           "required": true,
           "description": "Date of loss, cause, claimant."
         }
@@ -2988,14 +3406,16 @@
         {
           "name": "claim",
           "objectTypeId": "objectType:claim",
-          "required": true
+          "required": true,
+          "type": "String"
         },
         {
           "name": "exposures",
           "objectTypeId": "objectType:exposure",
           "required": true,
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3048,11 +3468,6 @@
           "objectTypeId": "objectType:claim"
         }
       ],
-      "actor": {
-        "role": "Claims Intake Agent",
-        "roleZh": "理赔受理专员",
-        "kind": "human"
-      },
       "permissions": [
         "claim:create"
       ],
@@ -3085,7 +3500,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Claims Intake Agent",
+        "roleZh": "理赔受理专员",
+        "kind": "human"
+      }
     },
     {
       "id": "action:verify-coverage",
@@ -3094,22 +3514,85 @@
       "nameZh": "核实承保",
       "description": "Determine whether coverage was in force at the date of loss against the linked policy.",
       "descriptionZh": "依据关联保单判定出险日期是否在保险期间内。",
+      "submission_criteria": "1. Event FNOL_RECORDED has been received\n2. Rule \"No coverage outside policy period\" is satisfied",
+      "object_type": "action",
+      "category": "核实承保",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "FNOL_RECORDED"
+      ],
+      "target_objects": [
+        "Claim",
+        "Policy",
+        "Coverage",
+        "Exposure"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeTheClaimDateOfLoss",
+          "description": "Consume the Claim date of loss and the linked Policy effective/expiry dates and Coverage terms.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "produceACoverageDecisionApplyingBR",
+          "description": "Produce a coverage decision applying BR-08 in-force date check.",
+          "object_type": "logic",
+          "submission_criteria": "on VerifyCoverage",
+          "rules": [
+            {
+              "id": "br-08-coverage-in-force-dates",
+              "name": "No coverage outside policy period",
+              "submission_criteria": "on VerifyCoverage",
+              "description": "No Coverage applies to a loss whose date of loss precedes the Policy effective date or follows the Policy expiry date."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"VerifyCoverage\" action. Determine whether coverage was in force at the date of loss against the linked policy. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"VerifyCoverage\" using claim, policy. Determine whether coverage was in force at the date of loss against the linked policy. Produce coverage_decision and emit the appropriate events.",
+      "tool_use": [
+        "ClaimCenter"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Exposure",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Exposure.coverage_decision set."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "COVERAGE_CONFIRMED",
+        "COVERAGE_DENIED"
+      ],
       "inputs": [
         {
           "name": "claim",
           "objectTypeId": "objectType:claim",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Claim.claim_id"
         },
         {
           "name": "policy",
           "objectTypeId": "objectType:policy",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Policy.policy_id"
         }
       ],
       "outputs": [
         {
           "name": "coverage_decision",
-          "type": "enum",
+          "type": "List<String>",
           "required": true,
           "description": "InForce / OutOfForce / NeedsReview."
         }
@@ -3167,11 +3650,6 @@
           "objectTypeId": "objectType:exposure"
         }
       ],
-      "actor": {
-        "role": "ClaimCenter",
-        "roleZh": "理赔系统",
-        "kind": "system"
-      },
       "permissions": [
         "coverage:verify"
       ],
@@ -3210,7 +3688,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "ClaimCenter",
+        "roleZh": "理赔系统",
+        "kind": "system"
+      }
     },
     {
       "id": "action:assign-adjuster",
@@ -3219,18 +3702,78 @@
       "nameZh": "指派理算员",
       "description": "Assign an adjuster to a claim and its open exposures, routing severe losses to senior adjusters.",
       "descriptionZh": "为理赔案件及其未结赔付项指派理算员，重大损失分配给资深理算员。",
+      "submission_criteria": "1. Event COVERAGE_CONFIRMED has been received\n2. Rule \"Large loss to senior adjuster in 24h\" is satisfied",
+      "object_type": "action",
+      "category": "指派理算员",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "COVERAGE_CONFIRMED"
+      ],
+      "target_objects": [
+        "Claim",
+        "Adjuster",
+        "Exposure"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeTheClaimSeverityAndLine",
+          "description": "Consume the Claim severity and line of business.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "produceAnAdjusterAssignmentOnThe",
+          "description": "Produce an Adjuster assignment on the Claim and its open Exposures; route severe losses to senior adjusters.",
+          "object_type": "logic",
+          "submission_criteria": "on CoverageConfirmed, before AssignAdjuster completes",
+          "rules": [
+            {
+              "id": "br-12-senior-adjuster-assignment",
+              "name": "Large loss to senior adjuster in 24h",
+              "submission_criteria": "on CoverageConfirmed, before AssignAdjuster completes",
+              "description": "A Claim with an estimated total incurred loss at or above $500,000 must be assigned to a senior Adjuster within 24 hours of coverage confirmation."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"AssignAdjuster\" action. Assign an adjuster to a claim and its open exposures, routing severe losses to senior adjusters. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"AssignAdjuster\" using claim. Assign an adjuster to a claim and its open exposures, routing severe losses to senior adjusters. Produce adjuster and emit the appropriate events.",
+      "tool_use": [
+        "ClaimCenter"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Claim",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Claim.status := Assigned."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "CLAIM_ASSIGNED"
+      ],
       "inputs": [
         {
           "name": "claim",
           "objectTypeId": "objectType:claim",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Claim.claim_id"
         }
       ],
       "outputs": [
         {
           "name": "adjuster",
           "objectTypeId": "objectType:adjuster",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3279,11 +3822,6 @@
           "objectTypeId": "objectType:claim"
         }
       ],
-      "actor": {
-        "role": "ClaimCenter",
-        "roleZh": "理赔系统",
-        "kind": "system"
-      },
       "permissions": [
         "claim:assign"
       ],
@@ -3317,7 +3855,12 @@
       ],
       "confidence": 0.91,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "ClaimCenter",
+        "roleZh": "理赔系统",
+        "kind": "system"
+      }
     },
     {
       "id": "action:set-reserve",
@@ -3326,15 +3869,89 @@
       "nameZh": "设立准备金",
       "description": "Set an initial reserve amount on each open exposure, escalating large-loss reserves for approval.",
       "descriptionZh": "为每个未结赔付项设立初始准备金，大额损失准备金升级审批。",
+      "submission_criteria": "1. Event EXPOSURE_OPENED has been received\n2. Rule \"Reserve >= $250,000 needs manager approval\" is satisfied\n3. Rule \"Reserve set within 48 hours of FNOL\" is satisfied",
+      "object_type": "action",
+      "category": "设立准备金",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "EXPOSURE_OPENED"
+      ],
+      "target_objects": [
+        "Exposure",
+        "Reserve"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeTheAdjusterSLossEstimate",
+          "description": "Consume the Adjuster's loss estimate.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "produceAReserveAmountOnEach",
+          "description": "Produce a Reserve amount on each open Exposure within 48 hours of FNOL.",
+          "object_type": "logic",
+          "submission_criteria": "on ExposureOpened",
+          "rules": [
+            {
+              "id": "br-09-reserve-within-48h",
+              "name": "Reserve set within 48 hours of FNOL",
+              "submission_criteria": "on ExposureOpened",
+              "description": "A Reserve must be set within 48 hours of First Notice of Loss on every open Exposure."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "escalateReservesAtOrAbove250",
+          "description": "Escalate reserves at or above $250,000 for Claims Manager approval.",
+          "object_type": "logic",
+          "submission_criteria": "on SetReserve, raises ReserveApprovalRequested",
+          "rules": [
+            {
+              "id": "br-11-large-loss-reserve-approval",
+              "name": "Reserve >= $250,000 needs manager approval",
+              "submission_criteria": "on SetReserve, raises ReserveApprovalRequested",
+              "description": "A Reserve set at or above $250,000 on any single Exposure is required to receive Claims Manager approval before it is posted."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"SetReserve\" action. Set an initial reserve amount on each open exposure, escalating large-loss reserves for approval. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"SetReserve\" using exposure, loss_estimate. Set an initial reserve amount on each open exposure, escalating large-loss reserves for approval. Produce reserve and emit the appropriate events.",
+      "tool_use": [
+        "ClaimCenter"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Reserve",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Insert Reserve; audit prior value per BR-20."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "RESERVE_SET",
+        "RESERVE_APPROVAL_REQUESTED"
+      ],
       "inputs": [
         {
           "name": "exposure",
           "objectTypeId": "objectType:exposure",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Exposure.exposure_id"
         },
         {
           "name": "loss_estimate",
-          "type": "money",
+          "type": "Float",
           "required": true
         }
       ],
@@ -3342,7 +3959,8 @@
         {
           "name": "reserve",
           "objectTypeId": "objectType:reserve",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3407,11 +4025,6 @@
           "objectTypeId": "objectType:reserve"
         }
       ],
-      "actor": {
-        "role": "Adjuster",
-        "roleZh": "理算员",
-        "kind": "agent"
-      },
       "permissions": [
         "reserve:set"
       ],
@@ -3449,7 +4062,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Adjuster",
+        "roleZh": "理算员",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:adjust-claim",
@@ -3458,15 +4076,82 @@
       "nameZh": "理算案件",
       "description": "Investigate and adjust an exposure, producing updated reserves and a recommended settlement amount.",
       "descriptionZh": "调查并理算赔付项，产出更新的准备金与建议结算金额。",
+      "submission_criteria": "1. Event CLAIM_ASSIGNED has been received\n2. Rule \"Immutable audit of payments and reserve changes\" is satisfied",
+      "object_type": "action",
+      "category": "理算案件",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "CLAIM_ASSIGNED"
+      ],
+      "target_objects": [
+        "Claim",
+        "Reserve",
+        "Exposure"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeInvestigationFindingsEstimatesAndSupporting",
+          "description": "Consume investigation findings, estimates, and supporting ClaimDocuments.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "produceUpdatedReserveValuesVersionedFor",
+          "description": "Produce updated Reserve values (versioned for audit) per Exposure.",
+          "object_type": "logic",
+          "submission_criteria": "on any ClaimPayment or Reserve write",
+          "rules": [
+            {
+              "id": "br-20-immutable-audit-trail",
+              "name": "Immutable audit of payments and reserve changes",
+              "submission_criteria": "on any ClaimPayment or Reserve write",
+              "description": "Every ClaimPayment and every Reserve change shall be recorded with the acting user, timestamp, and prior value, and such audit records may not be altered or deleted."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "produceARecommendedSettlementAmountPer",
+          "description": "Produce a recommended settlement amount per Exposure.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"AdjustClaim\" action. Investigate and adjust an exposure, producing updated reserves and a recommended settlement amount. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"AdjustClaim\" using claim, claim_documents. Investigate and adjust an exposure, producing updated reserves and a recommended settlement amount. Produce reserve, recommended_settlement and emit the appropriate events.",
+      "tool_use": [
+        "ClaimCenter"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Reserve",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Versioned Reserve update."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "RESERVE_ADJUSTED",
+        "SETTLEMENT_RECOMMENDED"
+      ],
       "inputs": [
         {
           "name": "claim",
           "objectTypeId": "objectType:claim",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Claim.claim_id"
         },
         {
           "name": "claim_documents",
-          "type": "reference",
+          "type": "String",
           "required": false,
           "isArray": true,
           "cardinality": "many",
@@ -3477,11 +4162,12 @@
         {
           "name": "reserve",
           "objectTypeId": "objectType:reserve",
-          "required": true
+          "required": true,
+          "type": "String"
         },
         {
           "name": "recommended_settlement",
-          "type": "money",
+          "type": "Float",
           "required": true
         }
       ],
@@ -3542,11 +4228,6 @@
           "objectTypeId": "objectType:reserve"
         }
       ],
-      "actor": {
-        "role": "Adjuster",
-        "roleZh": "理算员",
-        "kind": "agent"
-      },
       "permissions": [
         "claim:adjust"
       ],
@@ -3580,7 +4261,12 @@
       ],
       "confidence": 0.91,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Adjuster",
+        "roleZh": "理算员",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:issue-claim-payment",
@@ -3589,15 +4275,90 @@
       "nameZh": "签发理赔赔款",
       "description": "Authorize and issue a claim payment, decrementing the reserve, subject to authority limits.",
       "descriptionZh": "在授权限额约束下授权并签发理赔赔款，并冲减准备金。",
+      "submission_criteria": "1. Event SETTLEMENT_RECOMMENDED has been received\n2. Rule \"Adjuster payment authority $25,000\" is satisfied\n3. Rule \"Supervisor / Manager payment escalation\" is satisfied\n4. Rule \"No payment when coverage out of force / denied\" is satisfied",
+      "object_type": "action",
+      "category": "签发理赔赔款",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "SETTLEMENT_RECOMMENDED"
+      ],
+      "target_objects": [
+        "Exposure",
+        "Claim_Payment",
+        "Reserve"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "verifyTheExposureCoverageDecisionPermits",
+          "description": "Verify the exposure coverage decision permits payment.",
+          "object_type": "logic",
+          "submission_criteria": "on IssueClaimPayment",
+          "rules": [
+            {
+              "id": "br-17-no-payment-out-of-force",
+              "name": "No payment when coverage out of force / denied",
+              "submission_criteria": "on IssueClaimPayment",
+              "description": "A ClaimPayment may not be issued on an Exposure whose coverage decision is OutOfForce or CoverageDenied."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "checkAuthorityPaymentsAbove25000",
+          "description": "Check authority: payments above $25,000 need Supervisor, above $100,000 need Claims Manager.",
+          "object_type": "logic",
+          "submission_criteria": "on IssueClaimPayment, raises PaymentAuthorizationRequested",
+          "rules": [
+            {
+              "id": "br-05-payment-escalation",
+              "name": "Supervisor / Manager payment escalation",
+              "submission_criteria": "on IssueClaimPayment, raises PaymentAuthorizationRequested",
+              "description": "A ClaimPayment above the Adjuster authority limit must be approved by a Claims Supervisor, and a ClaimPayment above the Supervisor limit of $100,000 shall be escalated to the Claims Manager."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "produceAClaimPaymentAndDecrement",
+          "description": "Produce a ClaimPayment and decrement the Reserve on the paying Exposure.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"IssueClaimPayment\" action. Authorize and issue a claim payment, decrementing the reserve, subject to authority limits. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"IssueClaimPayment\" using exposure, settlement_amount. Authorize and issue a claim payment, decrementing the reserve, subject to authority limits. Produce claim_payment and emit the appropriate events.",
+      "tool_use": [
+        "BillingCenter"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Reserve",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Decrement Reserve on paying Exposure."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "PAYMENT_AUTHORIZATION_REQUESTED",
+        "PAYMENT_ISSUED"
+      ],
       "inputs": [
         {
           "name": "exposure",
           "objectTypeId": "objectType:exposure",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Exposure.exposure_id"
         },
         {
           "name": "settlement_amount",
-          "type": "money",
+          "type": "Float",
           "required": true
         }
       ],
@@ -3605,7 +4366,8 @@
         {
           "name": "claim_payment",
           "objectTypeId": "objectType:claim-payment",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3679,11 +4441,6 @@
           "objectTypeId": "objectType:reserve"
         }
       ],
-      "actor": {
-        "role": "Adjuster",
-        "roleZh": "理算员",
-        "kind": "agent"
-      },
       "permissions": [
         "payment:issue"
       ],
@@ -3721,7 +4478,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Adjuster",
+        "roleZh": "理算员",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:close-exposure",
@@ -3730,18 +4492,79 @@
       "nameZh": "关闭赔付项",
       "description": "Close a fully-paid exposure (reserve zeroed); close the claim when all exposures are closed.",
       "descriptionZh": "关闭已全额赔付的赔付项（准备金归零）；当所有赔付项关闭时关闭案件。",
+      "submission_criteria": "1. Event PAYMENT_ISSUED has been received\n2. Rule \"No exposure closure with open reserve\" is satisfied",
+      "object_type": "action",
+      "category": "关闭赔付项",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "PAYMENT_ISSUED"
+      ],
+      "target_objects": [
+        "Exposure",
+        "Reserve",
+        "Claim"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeTheFullyPaidExposureBlock",
+          "description": "Consume the fully-paid Exposure; block while any Reserve balance remains.",
+          "object_type": "logic",
+          "submission_criteria": "on CloseExposure",
+          "rules": [
+            {
+              "id": "br-13-no-close-with-reserve",
+              "name": "No exposure closure with open reserve",
+              "submission_criteria": "on CloseExposure",
+              "description": "An Exposure may not be closed while any Reserve balance remains greater than zero on that Exposure."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "produceAClosedExposureReserveZeroed",
+          "description": "Produce a closed Exposure (Reserve zeroed); close the Claim when all Exposures are closed.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"CloseExposure\" action. Close a fully-paid exposure (reserve zeroed); close the claim when all exposures are closed. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"CloseExposure\" using exposure. Close a fully-paid exposure (reserve zeroed); close the claim when all exposures are closed. Produce exposure and emit the appropriate events.",
+      "tool_use": [
+        "ClaimCenter"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Exposure",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Exposure.status := Closed; Claim.status := Closed when last."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "EXPOSURE_CLOSED",
+        "CLAIM_CLOSED"
+      ],
       "inputs": [
         {
           "name": "exposure",
           "objectTypeId": "objectType:exposure",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Exposure.exposure_id"
         }
       ],
       "outputs": [
         {
           "name": "exposure",
           "objectTypeId": "objectType:exposure",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3796,11 +4619,6 @@
           "objectTypeId": "objectType:exposure"
         }
       ],
-      "actor": {
-        "role": "Adjuster",
-        "roleZh": "理算员",
-        "kind": "agent"
-      },
       "permissions": [
         "exposure:close"
       ],
@@ -3834,7 +4652,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Adjuster",
+        "roleZh": "理算员",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:review-reserve",
@@ -3843,18 +4666,78 @@
       "nameZh": "复核准备金",
       "description": "Periodically review reserve adequacy on an open exposure, confirming or revising the reserve.",
       "descriptionZh": "定期复核未结赔付项的准备金充足性，确认或修订准备金。",
+      "submission_criteria": "1. Event RESERVE_REVIEW_DUE has been received\n2. Rule \"Reserve reviewed every 90 days\" is satisfied",
+      "object_type": "action",
+      "category": "复核准备金",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "RESERVE_REVIEW_DUE"
+      ],
+      "target_objects": [
+        "Exposure",
+        "Reserve"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeTheOpenExposureAndElapsed",
+          "description": "Consume the open Exposure and elapsed time.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "produceAConfirmedOrRevisedReserve",
+          "description": "Produce a confirmed or revised Reserve; every open Exposure reviewed at least every 90 days.",
+          "object_type": "logic",
+          "submission_criteria": "on ReserveReviewDue",
+          "rules": [
+            {
+              "id": "br-10-reserve-review-90d",
+              "name": "Reserve reviewed every 90 days",
+              "submission_criteria": "on ReserveReviewDue",
+              "description": "Every open Exposure is required to have its Reserve reviewed for adequacy at least every 90 days."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"ReviewReserve\" action. Periodically review reserve adequacy on an open exposure, confirming or revising the reserve. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ReviewReserve\" using exposure. Periodically review reserve adequacy on an open exposure, confirming or revising the reserve. Produce reserve and emit the appropriate events.",
+      "tool_use": [
+        "ClaimCenter"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Reserve",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Update Reserve.last_reviewed_date (versioned)."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "RESERVE_ADJUSTED",
+        "RESERVE_CONFIRMED"
+      ],
       "inputs": [
         {
           "name": "exposure",
           "objectTypeId": "objectType:exposure",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Exposure.exposure_id"
         }
       ],
       "outputs": [
         {
           "name": "reserve",
           "objectTypeId": "objectType:reserve",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3909,11 +4792,6 @@
           "objectTypeId": "objectType:reserve"
         }
       ],
-      "actor": {
-        "role": "Adjuster",
-        "roleZh": "理算员",
-        "kind": "agent"
-      },
       "permissions": [
         "reserve:review"
       ],
@@ -3947,7 +4825,12 @@
       ],
       "confidence": 0.91,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Adjuster",
+        "roleZh": "理算员",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:open-subrogation",
@@ -3956,18 +4839,77 @@
       "nameZh": "开立代位求偿",
       "description": "Open a recovery against an identified liable third party on a settled, closed claim.",
       "descriptionZh": "对已结案且有已识别责任第三方的案件开立追偿。",
+      "submission_criteria": "1. Event CLAIM_CLOSED has been received\n2. Rule \"Recovery only on closed claim with liable party\" is satisfied",
+      "object_type": "action",
+      "category": "开立代位求偿",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "CLAIM_CLOSED"
+      ],
+      "target_objects": [
+        "Claim",
+        "Recovery"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeASettledClaimWithIdentified",
+          "description": "Consume a settled Claim with identified third-party liability.",
+          "object_type": "logic",
+          "submission_criteria": "on OpenSubrogation",
+          "rules": [
+            {
+              "id": "br-19-recovery-preconditions",
+              "name": "Recovery only on closed claim with liable party",
+              "submission_criteria": "on OpenSubrogation",
+              "description": "A Recovery may only be opened on a Claim that is closed and carries an identified liable third party."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "produceARecoveryRecordTargetingThe",
+          "description": "Produce a Recovery record targeting the liable party.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"OpenSubrogation\" action. Open a recovery against an identified liable third party on a settled, closed claim. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"OpenSubrogation\" using claim. Open a recovery against an identified liable third party on a settled, closed claim. Produce recovery and emit the appropriate events.",
+      "tool_use": [
+        "ClaimCenter"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Recovery",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Insert Recovery record."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "SUBROGATION_OPENED"
+      ],
       "inputs": [
         {
           "name": "claim",
           "objectTypeId": "objectType:claim",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Claim.claim_id"
         }
       ],
       "outputs": [
         {
           "name": "recovery",
           "objectTypeId": "objectType:recovery",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -4015,11 +4957,6 @@
           "objectTypeId": "objectType:recovery"
         }
       ],
-      "actor": {
-        "role": "Subrogation Specialist",
-        "roleZh": "代位求偿专员",
-        "kind": "human"
-      },
       "permissions": [
         "recovery:open"
       ],
@@ -4053,7 +4990,12 @@
       ],
       "confidence": 0.9,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Subrogation Specialist",
+        "roleZh": "代位求偿专员",
+        "kind": "human"
+      }
     },
     {
       "id": "action:record-recovery",
@@ -4062,15 +5004,65 @@
       "nameZh": "登记追偿入账",
       "description": "Record funds received from the liable party and offset net incurred loss on the claim.",
       "descriptionZh": "登记从责任方收到的款项并冲抵案件净已发生损失。",
+      "submission_criteria": "1. Event RECOVERY_RECEIVED has been received",
+      "object_type": "action",
+      "category": "登记追偿入账",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "RECOVERY_RECEIVED"
+      ],
+      "target_objects": [
+        "Recovery",
+        "Claim"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeFundsReceivedFromTheLiable",
+          "description": "Consume funds received from the liable party.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "produceAnUpdatedRecoveryAmountAnd",
+          "description": "Produce an updated Recovery amount and offset net incurred loss on the Claim.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"RecordRecovery\" action. Record funds received from the liable party and offset net incurred loss on the claim. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"RecordRecovery\" using recovery, funds_received. Record funds received from the liable party and offset net incurred loss on the claim. Produce recovery and emit the appropriate events.",
+      "tool_use": [
+        "BillingCenter"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Recovery",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Update Recovery and Claim net incurred loss."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "RECOVERY_RECORDED"
+      ],
       "inputs": [
         {
           "name": "recovery",
           "objectTypeId": "objectType:recovery",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Recovery.recovery_id"
         },
         {
           "name": "funds_received",
-          "type": "money",
+          "type": "Float",
           "required": true
         }
       ],
@@ -4078,7 +5070,8 @@
         {
           "name": "recovery",
           "objectTypeId": "objectType:recovery",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -4121,11 +5114,6 @@
           "objectTypeId": "objectType:recovery"
         }
       ],
-      "actor": {
-        "role": "Subrogation Specialist",
-        "roleZh": "代位求偿专员",
-        "kind": "human"
-      },
       "permissions": [
         "recovery:record"
       ],
@@ -4163,7 +5151,12 @@
       ],
       "confidence": 0.9,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Subrogation Specialist",
+        "roleZh": "代位求偿专员",
+        "kind": "human"
+      }
     }
   ],
   "events": [

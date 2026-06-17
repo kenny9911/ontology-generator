@@ -226,7 +226,7 @@ function buildCtx(o: Ontology): SpecCtx {
         set = new Set<string>();
         ruleActorKinds.set(pc.ruleId, set);
       }
-      if (a.actor?.kind) set.add(a.actor.kind);
+      if (a.actorRef?.kind) set.add(a.actorRef.kind);
     }
   }
 
@@ -396,7 +396,7 @@ function collectTargetObjects(a: ActionType, ctx: SpecCtx): string[] {
 function projectInput(io: ActionType['inputs'][number], ctx: SpecCtx): SpecActionIO {
   const out: SpecActionIO = {
     name: io.name,
-    type: io.objectTypeId ? 'String' : mapDataType(io.type),
+    type: io.objectTypeId ? 'String' : io.type || 'String',
     description: io.description?.trim() || `${humanize(io.name)}.`,
     required: io.required === true,
   };
@@ -409,7 +409,7 @@ function projectInput(io: ActionType['inputs'][number], ctx: SpecCtx): SpecActio
 function projectOutput(io: ActionType['outputs'][number]): SpecActionIO {
   return {
     name: io.name,
-    type: io.objectTypeId ? 'String' : mapDataType(io.type),
+    type: io.objectTypeId ? 'String' : io.type || 'String',
     description: io.description?.trim() || `${humanize(io.name)}.`,
   };
 }
@@ -462,7 +462,7 @@ function projectSideEffects(a: ActionType, ctx: SpecCtx): SpecAction['side_effec
   for (const se of a.sideEffects ?? []) {
     if (se.kind === 'notification') {
       notifications.push({
-        recipient: a.actor?.role || 'User',
+        recipient: a.actorRef?.role || 'User',
         channel: 'InApp',
         condition: '',
         message: se.description?.trim() || '',
@@ -506,7 +506,7 @@ function projectAction(a: ActionType, ctx: SpecCtx): SpecAction {
     submission_criteria: synthSubmissionCriteria(a, ctx),
     object_type: 'action',
     category: a.nameZh?.trim() || humanize(a.name),
-    actor: a.actor?.kind ? [capActorKind(a.actor.kind)] : ['Agent'],
+    actor: a.actorRef?.kind ? [capActorKind(a.actorRef.kind)] : ['Agent'],
     trigger: (a.triggeredByEventIds ?? [])
       .filter((eid) => ctx.eventName.has(eid))
       .map((eid) => ctx.eventName.get(eid)!),
@@ -515,7 +515,7 @@ function projectAction(a: ActionType, ctx: SpecCtx): SpecAction {
     outputs,
     action_steps: (a.steps ?? []).map((s) => projectActionStep(s, ctx)),
     system_prompt:
-      `You are an automated ${actorLabel(a.actor?.kind)} responsible for the "${a.name}" action. ` +
+      `You are an automated ${actorLabel(a.actorRef?.kind)} responsible for the "${a.name}" action. ` +
       `${a.description?.trim() ?? ''} Read the required objects from the ontology, honor every ` +
       `precondition, and perform the steps in order.`,
     user_prompt:
@@ -589,7 +589,7 @@ function projectEvent(e: EventType, ctx: SpecCtx): SpecEvent {
 
 function workflowStepType(a: ActionType | undefined): SpecWorkflowStepType {
   if (!a) return 'logic';
-  if (a.actor?.kind === 'human') return 'manual';
+  if (a.actorRef?.kind === 'human') return 'manual';
   const external =
     !!a.agent?.integration || (a.sideEffects ?? []).some((se) => se.kind === 'external_call');
   if (external) return 'tool';

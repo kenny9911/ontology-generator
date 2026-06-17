@@ -2473,28 +2473,82 @@
       "nameZh": "创建招聘需求",
       "description": "Create a draft Requisition in Greenhouse linked to a Workday Position and SalaryBand.",
       "descriptionZh": "在 Greenhouse 中创建草稿招聘需求，并关联至 Workday 职位与薪资范围。",
+      "submission_criteria": "1. Event HIRING_NEED_IDENTIFIED has been received",
+      "object_type": "action",
+      "category": "创建招聘需求",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "HIRING_NEED_IDENTIFIED"
+      ],
+      "target_objects": [
+        "Position",
+        "Salary_Band",
+        "Requisition"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "captureTheHiringManagerSRole",
+          "description": "Capture the hiring manager's role definition and target SalaryBand.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "createTheRequisitionInDraftLinked",
+          "description": "Create the Requisition in Draft, linked to the Workday Position.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"CreateRequisition\" action. Create a draft Requisition in Greenhouse linked to a Workday Position and SalaryBand. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"CreateRequisition\" using position, salary_band, hiring_manager_id. Create a draft Requisition in Greenhouse linked to a Workday Position and SalaryBand. Produce requisition and emit the appropriate events.",
+      "tool_use": [
+        "Greenhouse ATS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Requisition",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create a Requisition record in status Draft."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "REQUISITION_CREATED"
+      ],
       "inputs": [
         {
           "name": "position",
           "required": true,
-          "objectTypeId": "objectType:position"
+          "objectTypeId": "objectType:position",
+          "type": "String",
+          "source_object": "Position.position_id"
         },
         {
           "name": "salary_band",
           "required": true,
-          "objectTypeId": "objectType:salary-band"
+          "objectTypeId": "objectType:salary-band",
+          "type": "String",
+          "source_object": "Salary_Band.salary_band_id"
         },
         {
           "name": "hiring_manager_id",
           "required": true,
-          "type": "string"
+          "type": "String"
         }
       ],
       "outputs": [
         {
           "name": "requisition",
           "required": true,
-          "objectTypeId": "objectType:requisition"
+          "objectTypeId": "objectType:requisition",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2537,11 +2591,6 @@
           "objectTypeId": "objectType:requisition"
         }
       ],
-      "actor": {
-        "role": "Hiring Manager",
-        "roleZh": "招聘经理",
-        "kind": "human"
-      },
       "permissions": [
         "requisition:create"
       ],
@@ -2589,7 +2638,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Hiring Manager",
+        "roleZh": "招聘经理",
+        "kind": "human"
+      }
     },
     {
       "id": "action:validate-headcount",
@@ -2598,28 +2652,90 @@
       "nameZh": "校验编制",
       "description": "Validate Requisition headcount and budget against the funded Position and route an Approval task.",
       "descriptionZh": "依据已拨款职位校验招聘需求的编制与预算，并路由审批任务。",
+      "submission_criteria": "1. Event REQUISITION_CREATED has been received\n2. Rule \"Over-budget requisition escalates to VP\" is satisfied",
+      "object_type": "action",
+      "category": "校验编制",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "REQUISITION_CREATED"
+      ],
+      "target_objects": [
+        "Requisition",
+        "Position",
+        "Approval"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "readTheFundedPositionHeadcountAnd",
+          "description": "Read the funded Position headcount and budget from Workday.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "setTheHeadcountValidatedFlagAnd",
+          "description": "Set the headcountValidated flag and open an Approval task to the chain; return unfunded Requisitions to the Hiring Manager.",
+          "object_type": "logic",
+          "submission_criteria": "During Requisition approval, before publish.",
+          "rules": [
+            {
+              "id": "over-budget-vp-escalation",
+              "name": "Over-budget requisition escalates to VP",
+              "submission_criteria": "During Requisition approval, before publish.",
+              "description": "A Requisition whose proposed annualized cost exceeds the funded Position budget by more than 10% must be escalated to VP approval before it may be published."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"ValidateHeadcount\" action. Validate Requisition headcount and budget against the funded Position and route an Approval task. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ValidateHeadcount\" using requisition, position. Validate Requisition headcount and budget against the funded Position and route an Approval task. Produce approval, headcount_validated and emit the appropriate events.",
+      "tool_use": [
+        "Workday"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Approval",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Open an Approval task routed to the approval chain."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "REQUISITION_SUBMITTED_FOR_APPROVAL"
+      ],
       "inputs": [
         {
           "name": "requisition",
           "required": true,
-          "objectTypeId": "objectType:requisition"
+          "objectTypeId": "objectType:requisition",
+          "type": "String",
+          "source_object": "Requisition.requisition_id"
         },
         {
           "name": "position",
           "required": true,
-          "objectTypeId": "objectType:position"
+          "objectTypeId": "objectType:position",
+          "type": "String",
+          "source_object": "Position.position_id"
         }
       ],
       "outputs": [
         {
           "name": "approval",
           "required": true,
-          "objectTypeId": "objectType:approval"
+          "objectTypeId": "objectType:approval",
+          "type": "String"
         },
         {
           "name": "headcount_validated",
           "required": true,
-          "type": "boolean"
+          "type": "Boolean"
         }
       ],
       "steps": [
@@ -2667,11 +2783,6 @@
           "objectTypeId": "objectType:approval"
         }
       ],
-      "actor": {
-        "role": "HR Business Partner",
-        "roleZh": "HR业务伙伴",
-        "kind": "system"
-      },
       "permissions": [
         "requisition:validate"
       ],
@@ -2714,7 +2825,12 @@
       ],
       "confidence": 0.91,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "HR Business Partner",
+        "roleZh": "HR业务伙伴",
+        "kind": "system"
+      }
     },
     {
       "id": "action:approve-requisition",
@@ -2723,28 +2839,90 @@
       "nameZh": "审批招聘需求",
       "description": "Record an Approval decision and transition the Requisition to Approved or Rejected.",
       "descriptionZh": "记录审批决定并将招聘需求转为已批准或已拒绝。",
+      "submission_criteria": "1. Event REQUISITION_SUBMITTED_FOR_APPROVAL has been received\n2. Rule \"Over-budget requisition escalates to VP\" is satisfied",
+      "object_type": "action",
+      "category": "审批招聘需求",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "REQUISITION_SUBMITTED_FOR_APPROVAL"
+      ],
+      "target_objects": [
+        "Requisition",
+        "Approval"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "reviewTheOpenApprovalTaskAnd",
+          "description": "Review the open Approval task and the budget check; escalate to VP if over budget.",
+          "object_type": "logic",
+          "submission_criteria": "During Requisition approval, before publish.",
+          "rules": [
+            {
+              "id": "over-budget-vp-escalation",
+              "name": "Over-budget requisition escalates to VP",
+              "submission_criteria": "During Requisition approval, before publish.",
+              "description": "A Requisition whose proposed annualized cost exceeds the funded Position budget by more than 10% must be escalated to VP approval before it may be published."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "recordTheDecisionApproverLevelAnd",
+          "description": "Record the decision, approver, level, and timestamp; transition the Requisition.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"ApproveRequisition\" action. Record an Approval decision and transition the Requisition to Approved or Rejected. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ApproveRequisition\" using requisition, approval. Record an Approval decision and transition the Requisition to Approved or Rejected. Produce requisition, approval and emit the appropriate events.",
+      "tool_use": [
+        "Workday"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Requisition",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Requisition.status := Approved | Rejected."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "REQUISITION_APPROVED"
+      ],
       "inputs": [
         {
           "name": "requisition",
           "required": true,
-          "objectTypeId": "objectType:requisition"
+          "objectTypeId": "objectType:requisition",
+          "type": "String",
+          "source_object": "Requisition.requisition_id"
         },
         {
           "name": "approval",
           "required": true,
-          "objectTypeId": "objectType:approval"
+          "objectTypeId": "objectType:approval",
+          "type": "String",
+          "source_object": "Approval.approval_id"
         }
       ],
       "outputs": [
         {
           "name": "requisition",
           "required": true,
-          "objectTypeId": "objectType:requisition"
+          "objectTypeId": "objectType:requisition",
+          "type": "String"
         },
         {
           "name": "approval",
           "required": true,
-          "objectTypeId": "objectType:approval"
+          "objectTypeId": "objectType:approval",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2794,11 +2972,6 @@
           "objectTypeId": "objectType:requisition"
         }
       ],
-      "actor": {
-        "role": "Approval chain",
-        "roleZh": "审批链",
-        "kind": "human"
-      },
       "permissions": [
         "requisition:approve"
       ],
@@ -2841,7 +3014,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Approval chain",
+        "roleZh": "审批链",
+        "kind": "human"
+      }
     },
     {
       "id": "action:publish-job",
@@ -2850,18 +3028,84 @@
       "nameZh": "发布职位",
       "description": "Publish an approved Requisition as Job Posts and open the application funnel.",
       "descriptionZh": "将已审批通过的招聘需求发布为职位帖并开启申请漏斗。",
+      "submission_criteria": "1. Event REQUISITION_APPROVED has been received\n2. Rule \"Minimum 5 business day posting period\" is satisfied",
+      "object_type": "action",
+      "category": "发布职位",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "REQUISITION_APPROVED"
+      ],
+      "target_objects": [
+        "Requisition"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "verifyTheRequisitionIsApprovedAnd",
+          "description": "Verify the Requisition is Approved and has met the minimum posting period.",
+          "object_type": "logic",
+          "submission_criteria": "Before extending an Offer against a Requisition.",
+          "rules": [
+            {
+              "id": "minimum-posting-period",
+              "name": "Minimum 5 business day posting period",
+              "submission_criteria": "Before extending an Offer against a Requisition.",
+              "description": "A Requisition must remain open for a minimum posting period of 5 business days before any Offer may be extended against it."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "publishOneOrMorePublicInternal",
+          "description": "Publish one or more public/internal Job Posts and open the funnel.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"PublishJob\" action. Publish an approved Requisition as Job Posts and open the application funnel. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"PublishJob\" using requisition. Publish an approved Requisition as Job Posts and open the application funnel. Produce requisition and emit the appropriate events.",
+      "tool_use": [
+        "Greenhouse ATS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Requisition",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Requisition.status := Open."
+          }
+        ],
+        "notifications": [
+          {
+            "recipient": "Recruiter",
+            "channel": "InApp",
+            "condition": "",
+            "message": "Distribute Job Posts to sourcing channels.",
+            "triggered_event": ""
+          }
+        ]
+      },
+      "triggered_event": [
+        "JOB_PUBLISHED"
+      ],
       "inputs": [
         {
           "name": "requisition",
           "required": true,
-          "objectTypeId": "objectType:requisition"
+          "objectTypeId": "objectType:requisition",
+          "type": "String",
+          "source_object": "Requisition.requisition_id"
         }
       ],
       "outputs": [
         {
           "name": "requisition",
           "required": true,
-          "objectTypeId": "objectType:requisition"
+          "objectTypeId": "objectType:requisition",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2913,11 +3157,6 @@
           "description": "Distribute Job Posts to sourcing channels."
         }
       ],
-      "actor": {
-        "role": "Recruiter",
-        "roleZh": "招聘官",
-        "kind": "agent"
-      },
       "permissions": [
         "job:publish"
       ],
@@ -2954,7 +3193,12 @@
       ],
       "confidence": 0.91,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Recruiter",
+        "roleZh": "招聘官",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:source-candidate",
@@ -2963,18 +3207,69 @@
       "nameZh": "寻源候选人",
       "description": "Source a passive Candidate against Requisition criteria, deduplicated by email.",
       "descriptionZh": "依据招聘需求条件寻源被动候选人，并按邮箱去重。",
+      "submission_criteria": "1. Event JOB_PUBLISHED has been received",
+      "object_type": "action",
+      "category": "寻源候选人",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "JOB_PUBLISHED"
+      ],
+      "target_objects": [
+        "Requisition",
+        "Candidate"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "readSearchCriteriaFromTheRequisition",
+          "description": "Read search criteria from the Requisition.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "createOrUpdateACandidateRecord",
+          "description": "Create or update a Candidate record, deduplicated by email.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"SourceCandidate\" action. Source a passive Candidate against Requisition criteria, deduplicated by email. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"SourceCandidate\" using requisition. Source a passive Candidate against Requisition criteria, deduplicated by email. Produce candidate and emit the appropriate events.",
+      "tool_use": [
+        "Greenhouse ATS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Candidate",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create or update a Candidate record."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "CANDIDATE_SOURCED"
+      ],
       "inputs": [
         {
           "name": "requisition",
           "required": true,
-          "objectTypeId": "objectType:requisition"
+          "objectTypeId": "objectType:requisition",
+          "type": "String",
+          "source_object": "Requisition.requisition_id"
         }
       ],
       "outputs": [
         {
           "name": "candidate",
           "required": true,
-          "objectTypeId": "objectType:candidate"
+          "objectTypeId": "objectType:candidate",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3016,11 +3311,6 @@
           "objectTypeId": "objectType:candidate"
         }
       ],
-      "actor": {
-        "role": "Sourcer",
-        "roleZh": "寻源专员",
-        "kind": "human"
-      },
       "permissions": [
         "candidate:source"
       ],
@@ -3057,7 +3347,12 @@
       ],
       "confidence": 0.9,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Sourcer",
+        "roleZh": "寻源专员",
+        "kind": "human"
+      }
     },
     {
       "id": "action:create-application",
@@ -3066,23 +3361,78 @@
       "nameZh": "创建申请",
       "description": "Create an Application linking exactly one Candidate to one Requisition in stage Application Review.",
       "descriptionZh": "创建一份申请，将恰好一名候选人与一项招聘需求关联，状态为申请评审。",
+      "submission_criteria": "1. Event JOB_PUBLISHED has been received\n2. Event CANDIDATE_SOURCED has been received",
+      "object_type": "action",
+      "category": "创建申请",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "JOB_PUBLISHED",
+        "CANDIDATE_SOURCED"
+      ],
+      "target_objects": [
+        "Candidate",
+        "Requisition",
+        "Application"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "bindTheCandidateToThePublished",
+          "description": "Bind the Candidate to the published Requisition.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "createTheApplicationInStageApplication",
+          "description": "Create the Application in stage Application Review.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"CreateApplication\" action. Create an Application linking exactly one Candidate to one Requisition in stage Application Review. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"CreateApplication\" using candidate, requisition. Create an Application linking exactly one Candidate to one Requisition in stage Application Review. Produce application and emit the appropriate events.",
+      "tool_use": [
+        "Greenhouse ATS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Application",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create an Application in stage Application Review."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "APPLICATION_RECEIVED"
+      ],
       "inputs": [
         {
           "name": "candidate",
           "required": true,
-          "objectTypeId": "objectType:candidate"
+          "objectTypeId": "objectType:candidate",
+          "type": "String",
+          "source_object": "Candidate.candidate_id"
         },
         {
           "name": "requisition",
           "required": true,
-          "objectTypeId": "objectType:requisition"
+          "objectTypeId": "objectType:requisition",
+          "type": "String",
+          "source_object": "Requisition.requisition_id"
         }
       ],
       "outputs": [
         {
           "name": "application",
           "required": true,
-          "objectTypeId": "objectType:application"
+          "objectTypeId": "objectType:application",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3126,11 +3476,6 @@
           "objectTypeId": "objectType:application"
         }
       ],
-      "actor": {
-        "role": "Recruiter",
-        "roleZh": "招聘官",
-        "kind": "system"
-      },
       "permissions": [
         "application:create"
       ],
@@ -3173,7 +3518,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Recruiter",
+        "roleZh": "招聘官",
+        "kind": "system"
+      }
     },
     {
       "id": "action:screen-application",
@@ -3182,18 +3532,78 @@
       "nameZh": "初筛申请",
       "description": "Screen an Application against Requisition criteria, advancing or rejecting with a disposition reason.",
       "descriptionZh": "依据招聘需求条件初筛申请，推进或附处置原因拒绝。",
+      "submission_criteria": "1. Event APPLICATION_RECEIVED has been received\n2. Rule \"Rejection requires disposition reason\" is satisfied\n3. Rule \"Qualified internal candidate gets interview\" is satisfied",
+      "object_type": "action",
+      "category": "初筛申请",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "APPLICATION_RECEIVED"
+      ],
+      "target_objects": [
+        "Application",
+        "Requisition"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "compareTheApplicationAgainstRequisitionCriteria",
+          "description": "Compare the Application against Requisition criteria.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "advanceToRecruiterScreenOrReject",
+          "description": "Advance to Recruiter Screen or Reject; record a disposition reason on rejection; guarantee an interview for qualified internal candidates.",
+          "object_type": "logic",
+          "submission_criteria": "When rejecting/closing an Application.",
+          "rules": [
+            {
+              "id": "rejection-disposition-reason",
+              "name": "Rejection requires disposition reason",
+              "submission_criteria": "When rejecting/closing an Application.",
+              "description": "Every Application that is rejected is required to record a standardized disposition reason code before it may be closed."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"ScreenApplication\" action. Screen an Application against Requisition criteria, advancing or rejecting with a disposition reason. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ScreenApplication\" using application. Screen an Application against Requisition criteria, advancing or rejecting with a disposition reason. Produce application and emit the appropriate events.",
+      "tool_use": [
+        "Greenhouse ATS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Application",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Application.current_stage := Recruiter Screen | Rejected."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "APPLICATION_ADVANCED",
+        "APPLICATION_REJECTED"
+      ],
       "inputs": [
         {
           "name": "application",
           "required": true,
-          "objectTypeId": "objectType:application"
+          "objectTypeId": "objectType:application",
+          "type": "String",
+          "source_object": "Application.application_id"
         }
       ],
       "outputs": [
         {
           "name": "application",
           "required": true,
-          "objectTypeId": "objectType:application"
+          "objectTypeId": "objectType:application",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3252,11 +3662,6 @@
           "objectTypeId": "objectType:application"
         }
       ],
-      "actor": {
-        "role": "Recruiter",
-        "roleZh": "招聘官",
-        "kind": "agent"
-      },
       "permissions": [
         "application:screen"
       ],
@@ -3294,7 +3699,12 @@
       ],
       "confidence": 0.9,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Recruiter",
+        "roleZh": "招聘官",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:request-assessment",
@@ -3303,18 +3713,78 @@
       "nameZh": "发起技术测评",
       "description": "Send a HackerRank Assessment invitation and write back the score, gating on the 70% threshold.",
       "descriptionZh": "发送 HackerRank 测评邀请并回写得分，以70%门槛设限。",
+      "submission_criteria": "1. Event APPLICATION_ADVANCED has been received\n2. Rule \"Engineering assessment 70% threshold\" is satisfied",
+      "object_type": "action",
+      "category": "发起技术测评",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "APPLICATION_ADVANCED"
+      ],
+      "target_objects": [
+        "Application",
+        "Assessment"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "sendTheAssessmentInvitationForThe",
+          "description": "Send the Assessment invitation for the Application.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "onCompletionWriteTheAssessmentScore",
+          "description": "On completion, write the Assessment score back to the Application and enforce the engineering threshold.",
+          "object_type": "logic",
+          "submission_criteria": "After Assessment completion for engineering roles.",
+          "rules": [
+            {
+              "id": "engineering-assessment-threshold",
+              "name": "Engineering assessment 70% threshold",
+              "submission_criteria": "After Assessment completion for engineering roles.",
+              "description": "For engineering roles, a Candidate whose Assessment score is below 70% may not advance past the Recruiter Screen stage."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"RequestAssessment\" action. Send a HackerRank Assessment invitation and write back the score, gating on the 70% threshold. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"RequestAssessment\" using application. Send a HackerRank Assessment invitation and write back the score, gating on the 70% threshold. Produce assessment and emit the appropriate events.",
+      "tool_use": [
+        "HackerRank",
+        "Invite candidate to a HackerRank assessment."
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Assessment",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Write Assessment score back to the Application."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "ASSESSMENT_COMPLETED"
+      ],
       "inputs": [
         {
           "name": "application",
           "required": true,
-          "objectTypeId": "objectType:application"
+          "objectTypeId": "objectType:application",
+          "type": "String",
+          "source_object": "Application.application_id"
         }
       ],
       "outputs": [
         {
           "name": "assessment",
           "required": true,
-          "objectTypeId": "objectType:assessment"
+          "objectTypeId": "objectType:assessment",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3367,11 +3837,6 @@
           "objectTypeId": "objectType:assessment"
         }
       ],
-      "actor": {
-        "role": "Recruiter",
-        "roleZh": "招聘官",
-        "kind": "system"
-      },
       "permissions": [
         "assessment:request"
       ],
@@ -3408,7 +3873,12 @@
       ],
       "confidence": 0.9,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Recruiter",
+        "roleZh": "招聘官",
+        "kind": "system"
+      }
     },
     {
       "id": "action:schedule-interview",
@@ -3417,11 +3887,94 @@
       "nameZh": "安排面试",
       "description": "Schedule a structured InterviewPanel of at least three Interviewers including a Bar Raiser; advance to Onsite.",
       "descriptionZh": "安排由至少三名面试官（含Bar Raiser）组成的结构化面试小组；推进至现场阶段。",
+      "submission_criteria": "1. Event ASSESSMENT_COMPLETED has been received\n2. Event APPLICATION_ADVANCED has been received\n3. Rule \"Minimum panel of three interviewers\" is satisfied\n4. Rule \"Panel must include independent Bar Raiser\" is satisfied\n5. Rule \"Interviewer with personal relationship must recuse\" is satisfied",
+      "object_type": "action",
+      "category": "安排面试",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "ASSESSMENT_COMPLETED",
+        "APPLICATION_ADVANCED"
+      ],
+      "target_objects": [
+        "Application",
+        "Worker",
+        "Interview_Stage"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "readTheApplicationAndTheRoster",
+          "description": "Read the Application and the roster of available Interviewers.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "formOneInterviewPanelOf3",
+          "description": "Form one InterviewPanel of >=3 Interviewers with an independent Bar Raiser; recuse conflicted interviewers.",
+          "object_type": "logic",
+          "submission_criteria": "Before an Application reaches the Offer stage.",
+          "rules": [
+            {
+              "id": "min-panel-three",
+              "name": "Minimum panel of three interviewers",
+              "submission_criteria": "Before an Application reaches the Offer stage.",
+              "description": "Every Application must clear a structured InterviewPanel of at least three Interviewers before it may reach the Offer stage."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "bindThePanelToOneInterview",
+          "description": "Bind the panel to one InterviewStage and advance the Application to Onsite.",
+          "object_type": "logic",
+          "submission_criteria": "When forming the InterviewPanel.",
+          "rules": [
+            {
+              "id": "panel-bar-raiser",
+              "name": "Panel must include independent Bar Raiser",
+              "submission_criteria": "When forming the InterviewPanel.",
+              "description": "At least one member of every InterviewPanel is required to be a trained Bar Raiser independent of the hiring team."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"ScheduleInterview\" action. Schedule a structured InterviewPanel of at least three Interviewers including a Bar Raiser; advance to Onsite. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ScheduleInterview\" using application, interviewers. Schedule a structured InterviewPanel of at least three Interviewers including a Bar Raiser; advance to Onsite. Produce interview_stage and emit the appropriate events.",
+      "tool_use": [
+        "Greenhouse ATS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Application",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Application.current_stage := Onsite."
+          }
+        ],
+        "notifications": [
+          {
+            "recipient": "Recruiter",
+            "channel": "InApp",
+            "condition": "",
+            "message": "Send calendar invites to panel Interviewers.",
+            "triggered_event": ""
+          }
+        ]
+      },
+      "triggered_event": [
+        "INTERVIEW_SCHEDULED"
+      ],
       "inputs": [
         {
           "name": "application",
           "required": true,
-          "objectTypeId": "objectType:application"
+          "objectTypeId": "objectType:application",
+          "type": "String",
+          "source_object": "Application.application_id"
         },
         {
           "name": "interviewers",
@@ -3429,14 +3982,17 @@
           "objectTypeId": "objectType:worker",
           "isArray": true,
           "cardinality": "many",
-          "description": "Roster of available interviewers."
+          "description": "Roster of available interviewers.",
+          "type": "String",
+          "source_object": "Worker.worker_id"
         }
       ],
       "outputs": [
         {
           "name": "interview_stage",
           "required": true,
-          "objectTypeId": "objectType:interview-stage"
+          "objectTypeId": "objectType:interview-stage",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3510,11 +4066,6 @@
           "description": "Send calendar invites to panel Interviewers."
         }
       ],
-      "actor": {
-        "role": "Recruiter",
-        "roleZh": "招聘官",
-        "kind": "agent"
-      },
       "permissions": [
         "interview:schedule"
       ],
@@ -3561,7 +4112,12 @@
       ],
       "confidence": 0.9,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Recruiter",
+        "roleZh": "招聘官",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:submit-scorecard",
@@ -3570,23 +4126,83 @@
       "nameZh": "提交评分表",
       "description": "Submit one Scorecard per Interviewer with a structured recommendation; emit InterviewCompleted when all are in.",
       "descriptionZh": "每名面试官提交一张含结构化推荐意见的评分表；全部齐备时发出面试完成事件。",
+      "submission_criteria": "1. Event INTERVIEW_SCHEDULED has been received\n2. Rule \"One scorecard per interviewer per application\" is satisfied\n3. Rule \"Interviewer with personal relationship must recuse\" is satisfied",
+      "object_type": "action",
+      "category": "提交评分表",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "INTERVIEW_SCHEDULED"
+      ],
+      "target_objects": [
+        "Interview_Stage",
+        "Scorecard"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "completeTheStructuredInterviewKitFor",
+          "description": "Complete the structured interview kit for the InterviewStage.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "submitExactlyOneScorecardPerInterviewer",
+          "description": "Submit exactly one Scorecard per Interviewer with a recommendation.",
+          "object_type": "logic",
+          "submission_criteria": "On Scorecard submission.",
+          "rules": [
+            {
+              "id": "one-scorecard-per-interviewer",
+              "name": "One scorecard per interviewer per application",
+              "submission_criteria": "On Scorecard submission.",
+              "description": "No single Interviewer may submit more than one Scorecard for the same Application."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"SubmitScorecard\" action. Submit one Scorecard per Interviewer with a structured recommendation; emit InterviewCompleted when all are in. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"SubmitScorecard\" using interview_stage, interviewer_id. Submit one Scorecard per Interviewer with a structured recommendation; emit InterviewCompleted when all are in. Produce scorecard and emit the appropriate events.",
+      "tool_use": [
+        "Greenhouse ATS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Scorecard",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create a Scorecard record."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "SCORECARD_SUBMITTED",
+        "INTERVIEW_COMPLETED"
+      ],
       "inputs": [
         {
           "name": "interview_stage",
           "required": true,
-          "objectTypeId": "objectType:interview-stage"
+          "objectTypeId": "objectType:interview-stage",
+          "type": "String",
+          "source_object": "Interview_Stage.stage_id"
         },
         {
           "name": "interviewer_id",
           "required": true,
-          "type": "string"
+          "type": "String"
         }
       ],
       "outputs": [
         {
           "name": "scorecard",
           "required": true,
-          "objectTypeId": "objectType:scorecard"
+          "objectTypeId": "objectType:scorecard",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3643,11 +4259,6 @@
           "objectTypeId": "objectType:scorecard"
         }
       ],
-      "actor": {
-        "role": "Interviewer",
-        "roleZh": "面试官",
-        "kind": "human"
-      },
       "permissions": [
         "scorecard:submit"
       ],
@@ -3689,7 +4300,12 @@
       ],
       "confidence": 0.9,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Interviewer",
+        "roleZh": "面试官",
+        "kind": "human"
+      }
     },
     {
       "id": "action:record-hiring-decision",
@@ -3698,25 +4314,97 @@
       "nameZh": "记录招聘决定",
       "description": "Record an Advance to Offer or Reject decision from a complete panel of Scorecards.",
       "descriptionZh": "依据齐备的评分表小组记录“推进至录用”或“拒绝”的决定。",
+      "submission_criteria": "1. Event INTERVIEW_COMPLETED has been received\n2. Rule \"All scorecards before advance decision\" is satisfied\n3. Rule \"Minimum panel of three interviewers\" is satisfied",
+      "object_type": "action",
+      "category": "记录招聘决定",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "INTERVIEW_COMPLETED"
+      ],
+      "target_objects": [
+        "Application",
+        "Scorecard",
+        "Interview_Stage"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "verifyACompletePanelAndThat",
+          "description": "Verify a complete panel and that every assigned Interviewer submitted a Scorecard.",
+          "object_type": "logic",
+          "submission_criteria": "On recording the hiring decision.",
+          "rules": [
+            {
+              "id": "all-scorecards-before-advance",
+              "name": "All scorecards before advance decision",
+              "submission_criteria": "On recording the hiring decision.",
+              "description": "A hiring decision of Advance to Offer shall not be recorded until every assigned Interviewer has submitted a Scorecard for the Application."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "recordAdvanceToOfferOrReject",
+          "description": "Record Advance to Offer or Reject on the Application.",
+          "object_type": "logic",
+          "submission_criteria": "Before an Application reaches the Offer stage.",
+          "rules": [
+            {
+              "id": "min-panel-three",
+              "name": "Minimum panel of three interviewers",
+              "submission_criteria": "Before an Application reaches the Offer stage.",
+              "description": "Every Application must clear a structured InterviewPanel of at least three Interviewers before it may reach the Offer stage."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"RecordHiringDecision\" action. Record an Advance to Offer or Reject decision from a complete panel of Scorecards. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"RecordHiringDecision\" using application, scorecards. Record an Advance to Offer or Reject decision from a complete panel of Scorecards. Produce application and emit the appropriate events.",
+      "tool_use": [
+        "Greenhouse ATS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Application",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Application decision recorded; stage advances to Offer or Rejected."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "HIRING_DECISION_RECORDED",
+        "OFFER_REQUESTED",
+        "APPLICATION_REJECTED"
+      ],
       "inputs": [
         {
           "name": "application",
           "required": true,
-          "objectTypeId": "objectType:application"
+          "objectTypeId": "objectType:application",
+          "type": "String",
+          "source_object": "Application.application_id"
         },
         {
           "name": "scorecards",
           "required": true,
           "objectTypeId": "objectType:scorecard",
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String",
+          "source_object": "Scorecard.scorecard_id"
         }
       ],
       "outputs": [
         {
           "name": "application",
           "required": true,
-          "objectTypeId": "objectType:application"
+          "objectTypeId": "objectType:application",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3780,11 +4468,6 @@
           "objectTypeId": "objectType:application"
         }
       ],
-      "actor": {
-        "role": "Hiring Manager",
-        "roleZh": "招聘经理",
-        "kind": "human"
-      },
       "permissions": [
         "hiring:decide"
       ],
@@ -3830,7 +4513,12 @@
       ],
       "confidence": 0.9,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Hiring Manager",
+        "roleZh": "招聘经理",
+        "kind": "human"
+      }
     },
     {
       "id": "action:draft-offer",
@@ -3839,28 +4527,93 @@
       "nameZh": "拟定录用",
       "description": "Draft an Offer with base salary, bonus, equity, and start date against the role's SalaryBand.",
       "descriptionZh": "依据该职位薪资范围拟定含基本薪资、奖金、股权与入职日期的录用通知。",
+      "submission_criteria": "1. Event OFFER_REQUESTED has been received\n2. Rule \"Below-band salary needs comp exception\" is satisfied\n3. Rule \"Sign-on bonus capped at 20% without VP\" is satisfied",
+      "object_type": "action",
+      "category": "拟定录用",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "OFFER_REQUESTED"
+      ],
+      "target_objects": [
+        "Application",
+        "Requisition",
+        "Salary_Band",
+        "Offer"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "readTheApplicationRequisitionAndSalary",
+          "description": "Read the Application, Requisition, and SalaryBand.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "createTheOfferInDraftEnforce",
+          "description": "Create the Offer in Draft; enforce below-band exception and sign-on bonus cap.",
+          "object_type": "logic",
+          "submission_criteria": "When entering base salary on a Draft Offer.",
+          "rules": [
+            {
+              "id": "below-band-needs-exception",
+              "name": "Below-band salary needs comp exception",
+              "submission_criteria": "When entering base salary on a Draft Offer.",
+              "description": "A proposed base salary that is below the role's SalaryBand minimum may not be entered on an Offer without a documented Compensation Analyst exception."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"DraftOffer\" action. Draft an Offer with base salary, bonus, equity, and start date against the role's SalaryBand. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"DraftOffer\" using application, requisition, salary_band. Draft an Offer with base salary, bonus, equity, and start date against the role's SalaryBand. Produce offer and emit the appropriate events.",
+      "tool_use": [
+        "Greenhouse ATS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Offer",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create an Offer record in Draft."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "OFFER_DRAFTED"
+      ],
       "inputs": [
         {
           "name": "application",
           "required": true,
-          "objectTypeId": "objectType:application"
+          "objectTypeId": "objectType:application",
+          "type": "String",
+          "source_object": "Application.application_id"
         },
         {
           "name": "requisition",
           "required": true,
-          "objectTypeId": "objectType:requisition"
+          "objectTypeId": "objectType:requisition",
+          "type": "String",
+          "source_object": "Requisition.requisition_id"
         },
         {
           "name": "salary_band",
           "required": true,
-          "objectTypeId": "objectType:salary-band"
+          "objectTypeId": "objectType:salary-band",
+          "type": "String",
+          "source_object": "Salary_Band.salary_band_id"
         }
       ],
       "outputs": [
         {
           "name": "offer",
           "required": true,
-          "objectTypeId": "objectType:offer"
+          "objectTypeId": "objectType:offer",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3914,11 +4667,6 @@
           "objectTypeId": "objectType:offer"
         }
       ],
-      "actor": {
-        "role": "Recruiter",
-        "roleZh": "招聘官",
-        "kind": "agent"
-      },
       "permissions": [
         "offer:draft"
       ],
@@ -3968,7 +4716,12 @@
       ],
       "confidence": 0.9,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Recruiter",
+        "roleZh": "招聘官",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:validate-offer-band",
@@ -3977,23 +4730,84 @@
       "nameZh": "校验录用薪资范围",
       "description": "Determine inBand/aboveBand for an Offer and block if the Requisition is not Approved.",
       "descriptionZh": "判定录用通知为范围内/超范围，若招聘需求未批准则拦截。",
+      "submission_criteria": "1. Event OFFER_DRAFTED has been received\n2. Rule \"Offer requires approved requisition\" is satisfied",
+      "object_type": "action",
+      "category": "校验录用薪资范围",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "OFFER_DRAFTED"
+      ],
+      "target_objects": [
+        "Offer",
+        "Salary_Band"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "compareProposedSalaryToThePublished",
+          "description": "Compare proposed salary to the published SalaryBand for role and location.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "setInBandAboveBandOn",
+          "description": "Set inBand/aboveBand on the Offer; block if the Requisition is not Approved.",
+          "object_type": "logic",
+          "submission_criteria": "Before an Offer transitions to Extended.",
+          "rules": [
+            {
+              "id": "offer-requires-approved-requisition",
+              "name": "Offer requires approved requisition",
+              "submission_criteria": "Before an Offer transitions to Extended.",
+              "description": "An Offer may not be extended unless its linked Requisition is in status Approved."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"ValidateOfferBand\" action. Determine inBand/aboveBand for an Offer and block if the Requisition is not Approved. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ValidateOfferBand\" using offer, salary_band. Determine inBand/aboveBand for an Offer and block if the Requisition is not Approved. Produce offer and emit the appropriate events.",
+      "tool_use": [
+        "Workday"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Offer",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Offer.band_status := InBand | AboveBand | BelowBand."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "OFFER_VALIDATED"
+      ],
       "inputs": [
         {
           "name": "offer",
           "required": true,
-          "objectTypeId": "objectType:offer"
+          "objectTypeId": "objectType:offer",
+          "type": "String",
+          "source_object": "Offer.offer_id"
         },
         {
           "name": "salary_band",
           "required": true,
-          "objectTypeId": "objectType:salary-band"
+          "objectTypeId": "objectType:salary-band",
+          "type": "String",
+          "source_object": "Salary_Band.salary_band_id"
         }
       ],
       "outputs": [
         {
           "name": "offer",
           "required": true,
-          "objectTypeId": "objectType:offer"
+          "objectTypeId": "objectType:offer",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4042,11 +4856,6 @@
           "objectTypeId": "objectType:offer"
         }
       ],
-      "actor": {
-        "role": "Compensation Analyst",
-        "roleZh": "薪酬分析师",
-        "kind": "system"
-      },
       "permissions": [
         "offer:validate-band"
       ],
@@ -4089,7 +4898,12 @@
       ],
       "confidence": 0.91,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Compensation Analyst",
+        "roleZh": "薪酬分析师",
+        "kind": "system"
+      }
     },
     {
       "id": "action:approve-offer",
@@ -4098,28 +4912,105 @@
       "nameZh": "审批录用",
       "description": "Route the validated Offer for approval; above-band offers additionally require VP approval.",
       "descriptionZh": "将已校验录用通知路由审批；超范围录用须另获VP审批。",
+      "submission_criteria": "1. Event OFFER_VALIDATED has been received\n2. Rule \"In-band offer needs HM and HRBP approval\" is satisfied\n3. Rule \"Above-band offer needs VP approval\" is satisfied",
+      "object_type": "action",
+      "category": "审批录用",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "OFFER_VALIDATED"
+      ],
+      "target_objects": [
+        "Offer",
+        "Requisition",
+        "Approval"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "routeToHiringManagerHRBPFor",
+          "description": "Route to Hiring Manager + HRBP for in-band offers.",
+          "object_type": "logic",
+          "submission_criteria": "On routing an in-band Offer for approval.",
+          "rules": [
+            {
+              "id": "in-band-hm-hrbp-approval",
+              "name": "In-band offer needs HM and HRBP approval",
+              "submission_criteria": "On routing an in-band Offer for approval.",
+              "description": "An in-band Offer shall be approved by both the Hiring Manager and the HR Business Partner before extension."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "forAboveBandOffersAdditionallyRequire",
+          "description": "For above-band offers, additionally require VP approval recorded against the Requisition.",
+          "object_type": "logic",
+          "submission_criteria": "When drafting/extending an above-band Offer.",
+          "rules": [
+            {
+              "id": "above-band-vp-approval",
+              "name": "Above-band offer needs VP approval",
+              "submission_criteria": "When drafting/extending an above-band Offer.",
+              "description": "An Offer whose proposed base salary falls above the role's published SalaryBand maximum is required to obtain VP approval recorded against the Requisition before it may be extended."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"ApproveOffer\" action. Route the validated Offer for approval; above-band offers additionally require VP approval. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ApproveOffer\" using offer, requisition. Route the validated Offer for approval; above-band offers additionally require VP approval. Produce approval, offer and emit the appropriate events.",
+      "tool_use": [
+        "Workday"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Approval",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create an Approval record for the Offer."
+          },
+          {
+            "object_type": "Offer",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Offer.status := Approved | Pending Approval."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "OFFER_APPROVED"
+      ],
       "inputs": [
         {
           "name": "offer",
           "required": true,
-          "objectTypeId": "objectType:offer"
+          "objectTypeId": "objectType:offer",
+          "type": "String",
+          "source_object": "Offer.offer_id"
         },
         {
           "name": "requisition",
           "required": true,
-          "objectTypeId": "objectType:requisition"
+          "objectTypeId": "objectType:requisition",
+          "type": "String",
+          "source_object": "Requisition.requisition_id"
         }
       ],
       "outputs": [
         {
           "name": "approval",
           "required": true,
-          "objectTypeId": "objectType:approval"
+          "objectTypeId": "objectType:approval",
+          "type": "String"
         },
         {
           "name": "offer",
           "required": true,
-          "objectTypeId": "objectType:offer"
+          "objectTypeId": "objectType:offer",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4178,11 +5069,6 @@
           "objectTypeId": "objectType:offer"
         }
       ],
-      "actor": {
-        "role": "Approval chain",
-        "roleZh": "审批链",
-        "kind": "human"
-      },
       "permissions": [
         "offer:approve"
       ],
@@ -4225,7 +5111,12 @@
       ],
       "confidence": 0.91,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Approval chain",
+        "roleZh": "审批链",
+        "kind": "human"
+      }
     },
     {
       "id": "action:extend-offer",
@@ -4234,23 +5125,94 @@
       "nameZh": "发出录用",
       "description": "Send an approved Offer to the Candidate via a DocuSign envelope with a valid expiry window.",
       "descriptionZh": "通过 DocuSign 信封向候选人发出已审批录用通知，并设置有效到期窗口。",
+      "submission_criteria": "1. Event OFFER_APPROVED has been received\n2. Rule \"Offer requires approved requisition\" is satisfied\n3. Rule \"Offer expiry within 7 business days\" is satisfied\n4. Rule \"Minimum 5 business day posting period\" is satisfied\n5. Rule \"Regulated-role offer needs export-control clearance\" is satisfied",
+      "object_type": "action",
+      "category": "发出录用",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "OFFER_APPROVED"
+      ],
+      "target_objects": [
+        "Offer",
+        "Candidate",
+        "Requisition"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "confirmTheOfferIsApprovedThe",
+          "description": "Confirm the Offer is Approved, the Requisition is Approved and met the posting period, and any export-control screening cleared.",
+          "object_type": "logic",
+          "submission_criteria": "Before an Offer transitions to Extended.",
+          "rules": [
+            {
+              "id": "offer-requires-approved-requisition",
+              "name": "Offer requires approved requisition",
+              "submission_criteria": "Before an Offer transitions to Extended.",
+              "description": "An Offer may not be extended unless its linked Requisition is in status Approved."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "sendADocuSignEnvelopeWith",
+          "description": "Send a DocuSign envelope with an expiry no more than 7 business days out; transition Offer to Extended.",
+          "object_type": "logic",
+          "submission_criteria": "On Offer extension and at expiry.",
+          "rules": [
+            {
+              "id": "offer-expiry-window",
+              "name": "Offer expiry within 7 business days",
+              "submission_criteria": "On Offer extension and at expiry.",
+              "description": "An Offer is required to specify an expiry date no more than 7 business days after it is extended, and an Offer not accepted by its expiry date shall transition to status Expired."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"ExtendOffer\" action. Send an approved Offer to the Candidate via a DocuSign envelope with a valid expiry window. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ExtendOffer\" using offer, candidate. Send an approved Offer to the Candidate via a DocuSign envelope with a valid expiry window. Produce offer and emit the appropriate events.",
+      "tool_use": [
+        "DocuSign",
+        "Send a DocuSign envelope to the Candidate."
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Offer",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Offer.status := Extended."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "OFFER_EXTENDED"
+      ],
       "inputs": [
         {
           "name": "offer",
           "required": true,
-          "objectTypeId": "objectType:offer"
+          "objectTypeId": "objectType:offer",
+          "type": "String",
+          "source_object": "Offer.offer_id"
         },
         {
           "name": "candidate",
           "required": true,
-          "objectTypeId": "objectType:candidate"
+          "objectTypeId": "objectType:candidate",
+          "type": "String",
+          "source_object": "Candidate.candidate_id"
         }
       ],
       "outputs": [
         {
           "name": "offer",
           "required": true,
-          "objectTypeId": "objectType:offer"
+          "objectTypeId": "objectType:offer",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4316,11 +5278,6 @@
           "objectTypeId": "objectType:offer"
         }
       ],
-      "actor": {
-        "role": "Recruiter",
-        "roleZh": "招聘官",
-        "kind": "agent"
-      },
       "permissions": [
         "offer:extend"
       ],
@@ -4364,7 +5321,12 @@
       ],
       "confidence": 0.91,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Recruiter",
+        "roleZh": "招聘官",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:record-offer-response",
@@ -4373,18 +5335,76 @@
       "nameZh": "记录录用回复",
       "description": "Record the Candidate's Accept or Decline from the DocuSign signature event.",
       "descriptionZh": "依据 DocuSign 签署事件记录候选人的接受或拒绝。",
+      "submission_criteria": "1. Event OFFER_EXTENDED has been received\n2. Rule \"Offer expiry within 7 business days\" is satisfied",
+      "object_type": "action",
+      "category": "记录录用回复",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "OFFER_EXTENDED"
+      ],
+      "target_objects": [
+        "Offer"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeTheDocuSignSignatureEvent",
+          "description": "Consume the DocuSign signature event.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "setOfferStatusToAcceptedOr",
+          "description": "Set Offer status to Accepted or Declined; expire if past the window.",
+          "object_type": "logic",
+          "submission_criteria": "On Offer extension and at expiry.",
+          "rules": [
+            {
+              "id": "offer-expiry-window",
+              "name": "Offer expiry within 7 business days",
+              "submission_criteria": "On Offer extension and at expiry.",
+              "description": "An Offer is required to specify an expiry date no more than 7 business days after it is extended, and an Offer not accepted by its expiry date shall transition to status Expired."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"RecordOfferResponse\" action. Record the Candidate's Accept or Decline from the DocuSign signature event. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"RecordOfferResponse\" using offer. Record the Candidate's Accept or Decline from the DocuSign signature event. Produce offer and emit the appropriate events.",
+      "tool_use": [
+        "DocuSign"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Offer",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Offer.status := Accepted | Declined | Expired."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "OFFER_ACCEPTED"
+      ],
       "inputs": [
         {
           "name": "offer",
           "required": true,
-          "objectTypeId": "objectType:offer"
+          "objectTypeId": "objectType:offer",
+          "type": "String",
+          "source_object": "Offer.offer_id"
         }
       ],
       "outputs": [
         {
           "name": "offer",
           "required": true,
-          "objectTypeId": "objectType:offer"
+          "objectTypeId": "objectType:offer",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4433,11 +5453,6 @@
           "objectTypeId": "objectType:offer"
         }
       ],
-      "actor": {
-        "role": "Candidate",
-        "roleZh": "候选人",
-        "kind": "human"
-      },
       "permissions": [
         "offer:respond"
       ],
@@ -4474,7 +5489,12 @@
       ],
       "confidence": 0.9,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Candidate",
+        "roleZh": "候选人",
+        "kind": "human"
+      }
     },
     {
       "id": "action:initiate-background-check",
@@ -4483,23 +5503,78 @@
       "nameZh": "发起背景调查",
       "description": "Order a Checkr BackgroundCheck on candidate consent for an accepted Offer.",
       "descriptionZh": "在候选人同意下，针对已接受录用向 Checkr 下单发起背景调查。",
+      "submission_criteria": "1. Event OFFER_ACCEPTED has been received",
+      "object_type": "action",
+      "category": "发起背景调查",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "OFFER_ACCEPTED"
+      ],
+      "target_objects": [
+        "Offer",
+        "Candidate",
+        "Background_Check"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "confirmTheOfferIsAcceptedAnd",
+          "description": "Confirm the Offer is Accepted and obtain Candidate consent.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "orderTheBackgroundCheckAndRecord",
+          "description": "Order the BackgroundCheck and record the result.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"InitiateBackgroundCheck\" action. Order a Checkr BackgroundCheck on candidate consent for an accepted Offer. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"InitiateBackgroundCheck\" using offer, candidate. Order a Checkr BackgroundCheck on candidate consent for an accepted Offer. Produce background_check and emit the appropriate events.",
+      "tool_use": [
+        "Checkr",
+        "Order a Checkr background screening."
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Background_Check",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create a BackgroundCheck record."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "BACKGROUND_CHECK_COMPLETED"
+      ],
       "inputs": [
         {
           "name": "offer",
           "required": true,
-          "objectTypeId": "objectType:offer"
+          "objectTypeId": "objectType:offer",
+          "type": "String",
+          "source_object": "Offer.offer_id"
         },
         {
           "name": "candidate",
           "required": true,
-          "objectTypeId": "objectType:candidate"
+          "objectTypeId": "objectType:candidate",
+          "type": "String",
+          "source_object": "Candidate.candidate_id"
         }
       ],
       "outputs": [
         {
           "name": "background_check",
           "required": true,
-          "objectTypeId": "objectType:background-check"
+          "objectTypeId": "objectType:background-check",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4546,11 +5621,6 @@
           "objectTypeId": "objectType:background-check"
         }
       ],
-      "actor": {
-        "role": "Recruiter",
-        "roleZh": "招聘官",
-        "kind": "system"
-      },
       "permissions": [
         "background-check:initiate"
       ],
@@ -4593,7 +5663,12 @@
       ],
       "confidence": 0.9,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Recruiter",
+        "roleZh": "招聘官",
+        "kind": "system"
+      }
     },
     {
       "id": "action:convert-to-hire",
@@ -4602,28 +5677,100 @@
       "nameZh": "转为入职",
       "description": "Create a Workday Worker on a Clear BackgroundCheck, close the Requisition as Filled, and decrement headcount.",
       "descriptionZh": "在背调结果为Clear时创建 Workday 员工，将招聘需求关闭为已填补，并扣减编制。",
+      "submission_criteria": "1. Event BACKGROUND_CHECK_COMPLETED has been received\n2. Rule \"Clear background check before hire\" is satisfied",
+      "object_type": "action",
+      "category": "转为入职",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "BACKGROUND_CHECK_COMPLETED"
+      ],
+      "target_objects": [
+        "Offer",
+        "Background_Check",
+        "Worker",
+        "Requisition",
+        "Position"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "verifyTheOfferIsAcceptedAnd",
+          "description": "Verify the Offer is Accepted and the BackgroundCheck result is Clear; suspend on Consider.",
+          "object_type": "logic",
+          "submission_criteria": "Before converting an accepted Candidate to a Worker.",
+          "rules": [
+            {
+              "id": "clear-background-before-hire",
+              "name": "Clear background check before hire",
+              "submission_criteria": "Before converting an accepted Candidate to a Worker.",
+              "description": "A Candidate may not be converted to a Worker until a BackgroundCheck with result Clear is on file; a result of Consider shall suspend the hire pending individualized adjudication."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "createAWorkerCloseTheRequisition",
+          "description": "Create a Worker, close the Requisition as Filled, and decrement the Position headcount.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"ConvertToHire\" action. Create a Workday Worker on a Clear BackgroundCheck, close the Requisition as Filled, and decrement headcount. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ConvertToHire\" using offer, background_check. Create a Workday Worker on a Clear BackgroundCheck, close the Requisition as Filled, and decrement headcount. Produce worker, requisition and emit the appropriate events.",
+      "tool_use": [
+        "Workday"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Worker",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create a Worker record in Workday."
+          },
+          {
+            "object_type": "Requisition",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Requisition.status := Filled; Position headcount decremented."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "CANDIDATE_HIRED",
+        "REQUISITION_CLOSED"
+      ],
       "inputs": [
         {
           "name": "offer",
           "required": true,
-          "objectTypeId": "objectType:offer"
+          "objectTypeId": "objectType:offer",
+          "type": "String",
+          "source_object": "Offer.offer_id"
         },
         {
           "name": "background_check",
           "required": true,
-          "objectTypeId": "objectType:background-check"
+          "objectTypeId": "objectType:background-check",
+          "type": "String",
+          "source_object": "Background_Check.check_id"
         }
       ],
       "outputs": [
         {
           "name": "worker",
           "required": true,
-          "objectTypeId": "objectType:worker"
+          "objectTypeId": "objectType:worker",
+          "type": "String"
         },
         {
           "name": "requisition",
           "required": true,
-          "objectTypeId": "objectType:requisition"
+          "objectTypeId": "objectType:requisition",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4683,11 +5830,6 @@
           "objectTypeId": "objectType:requisition"
         }
       ],
-      "actor": {
-        "role": "HR Business Partner",
-        "roleZh": "HR业务伙伴",
-        "kind": "system"
-      },
       "permissions": [
         "hire:convert"
       ],
@@ -4731,7 +5873,12 @@
       ],
       "confidence": 0.91,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "HR Business Partner",
+        "roleZh": "HR业务伙伴",
+        "kind": "system"
+      }
     }
   ],
   "events": [

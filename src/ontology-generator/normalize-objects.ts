@@ -14,6 +14,7 @@
 // ============================================================================
 
 import type {
+  ActionType,
   DataType,
   ObjectProperty,
   ObjectType,
@@ -22,6 +23,7 @@ import type {
   Relationship,
   Rule,
   SourceRef,
+  SpecActor,
 } from '@/ontology/schema/types';
 
 const SYSTEM_RE =
@@ -179,6 +181,78 @@ function normalizeRule(r: Rule, nameById: Map<string, string>, ruleActorKinds: M
 }
 
 // ---------------------------------------------------------------------------
+// Actions.
+// ---------------------------------------------------------------------------
+
+function eventSpecName(id: string): string {
+  return (id || '').replace(/^event:/, '').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '').toUpperCase();
+}
+function specPropType(t: string | undefined): PropertyType {
+  // already spec? pass through; else map a legacy DataType.
+  if (t === 'String' || t === 'Integer' || t === 'Float' || t === 'Boolean' || t === 'Date' || t === 'Timestamp' || t === 'List<String>') return t;
+  return dataTypeToPropertyType(t as DataType);
+}
+function capActor(kind: string | undefined): SpecActor {
+  if (kind === 'human') return 'Human';
+  if (kind === 'system') return 'System';
+  return 'Agent';
+}
+
+function actionNeedsMigration(a: ActionType): boolean {
+  return a.object_type !== 'action' || !Array.isArray(a.actor) || !Array.isArray(a.action_steps);
+}
+
+function normalizeAction(a: ActionType, objById: Map<string, ObjectType>): ActionType {
+  if (!actionNeedsMigration(a)) return a;
+  // Legacy stored actions carry `actor` as an ActorRef object; lift it to actorRef.
+  const legacyActor = a.actorRef ?? (a as unknown as { actor?: { role?: string; kind?: string } }).actor;
+  const actorRef = legacyActor && !Array.isArray(legacyActor) ? legacyActor : { role: '', kind: 'agent' as const };
+  const pk = (oid: string): string => objById.get(oid)?.primary_key || `${specObjectId(oid).toLowerCase()}_id`;
+
+  const inputs = (a.inputs ?? []).map((io) => {
+    const next = { ...io, type: io.objectTypeId ? 'String' : specPropType(io.type) };
+    if (io.objectTypeId && objById.has(io.objectTypeId)) next.source_object = `${specObjectId(io.objectTypeId)}.${pk(io.objectTypeId)}`;
+    return next;
+  });
+  const outputs = (a.outputs ?? []).map((io) => ({ ...io, type: io.objectTypeId ? 'String' : specPropType(io.type) }));
+
+  const targets: string[] = [];
+  const addT = (oid: string | undefined): void => { if (oid && objById.has(oid)) targets.push(specObjectId(oid)); };
+  for (const io of a.inputs ?? []) addT(io.objectTypeId);
+  for (const io of a.outputs ?? []) addT(io.objectTypeId);
+  for (const s of a.steps ?? []) { (s.readsObjectTypeIds ?? []).forEach(addT); (s.writesObjectTypeIds ?? []).forEach(addT); }
+
+  const next = { ...a } as unknown as Record<string, unknown>;
+  delete next.actor;
+  return {
+    ...(next as unknown as ActionType),
+    inputs,
+    outputs,
+    actorRef,
+    submission_criteria: a.submission_criteria ?? '',
+    object_type: 'action',
+    category: a.category ?? a.nameZh ?? a.name,
+    actor: Array.isArray(a.actor) ? a.actor : [capActor(actorRef.kind)],
+    trigger: a.trigger ?? Array.from(new Set((a.triggeredByEventIds ?? []).map(eventSpecName))),
+    target_objects: a.target_objects ?? Array.from(new Set(targets)),
+    action_steps:
+      a.action_steps ??
+      (a.steps ?? []).map((s) => ({
+        order: String(s.order),
+        name: `step${s.order}`,
+        description: s.text?.en?.trim() || s.text?.zh?.trim() || '',
+        object_type: 'logic',
+        submission_criteria: '',
+      })),
+    system_prompt: a.system_prompt ?? '',
+    user_prompt: a.user_prompt ?? '',
+    tool_use: a.tool_use ?? (a.agent?.integration ? [a.agent.integration] : []),
+    side_effects: a.side_effects ?? { data_changes: [], notifications: [] },
+    triggered_event: a.triggered_event ?? Array.from(new Set((a.emitsEvents ?? []).map((e) => eventSpecName(e.eventTypeId)))),
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Public entry.
 // ---------------------------------------------------------------------------
 
@@ -190,13 +264,16 @@ export function normalizeOntologyObjects(o: Ontology): Ontology {
     (x) => !Array.isArray(x.properties) || x.type === undefined || !x.primary_key || !x.relationship_description,
   );
   const needsRules = Array.isArray(o.rules) && o.rules.some(ruleNeedsMigration);
-  if (!needsObjects && !needsRules) return o;
+  const needsActions = Array.isArray(o.actions) && o.actions.some(actionNeedsMigration);
+  if (!needsObjects && !needsRules && !needsActions) return o;
 
   const rels = o.relationships ?? [];
   const nameById = new Map(objs.map((x) => [x.id, x.name] as const));
   const idSet = new Set(objs.map((x) => x.id));
+  const objById = new Map(objs.map((x) => [x.id, x] as const));
   const next: Ontology = { ...o };
   if (needsObjects) next.objects = objs.map((obj) => normalizeObject(obj, rels, nameById, idSet));
+  if (needsActions) next.actions = (o.actions ?? []).map((a) => normalizeAction(a, objById));
   if (needsRules) {
     const ruleActorKinds = new Map<string, Set<string>>();
     for (const a of o.actions ?? []) {
@@ -207,7 +284,7 @@ export function normalizeOntologyObjects(o: Ontology): Ontology {
           set = new Set<string>();
           ruleActorKinds.set(pc.ruleId, set);
         }
-        if (a.actor?.kind) set.add(a.actor.kind);
+        if (a.actorRef?.kind) set.add(a.actorRef.kind);
       }
     }
     next.rules = (o.rules ?? []).map((r) => normalizeRule(r, nameById, ruleActorKinds));

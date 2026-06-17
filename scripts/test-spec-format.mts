@@ -529,6 +529,36 @@ async function main(): Promise<void> {
     });
   }
 
+  const ACTORS = new Set(['Human', 'Agent', 'System']);
+  for (const { file, ontology } of fixtures) {
+    await check(`${file}: every canonical action carries the spec fields`, () => {
+      const objSpecIds = new Set(ontology.objects.map((o) => specObjectId(o.id)));
+      const eventSpecNames = new Set(ontology.events.map((e) => eventSpecName(e.name || e.id)));
+      for (const a of ontology.actions) {
+        for (const k of ['submission_criteria', 'category', 'system_prompt', 'user_prompt']) {
+          assert(typeof (a as unknown as Record<string, unknown>)[k] === 'string', `${a.id}: action field "${k}" must be a string`);
+        }
+        assert(a.object_type === 'action', `${a.id}: object_type must be "action"`);
+        assert(Array.isArray(a.actor) && a.actor.every((x) => ACTORS.has(x)), `${a.id}: actor must be [Human|Agent|System]`);
+        for (const k of ['trigger', 'target_objects', 'tool_use', 'triggered_event']) {
+          const v = (a as unknown as Record<string, unknown>)[k];
+          assert(Array.isArray(v) && v.every((x) => typeof x === 'string'), `${a.id}: "${k}" must be string[]`);
+        }
+        assert(Array.isArray(a.action_steps), `${a.id}: action_steps must be an array`);
+        assert(a.side_effects && Array.isArray(a.side_effects.data_changes) && Array.isArray(a.side_effects.notifications), `${a.id}: side_effects shape`);
+        assert(!!a.actorRef && typeof a.actorRef.kind === 'string', `${a.id}: actorRef (retained) must be present`);
+        // cross-refs resolve
+        for (const oid of a.target_objects) assert(objSpecIds.has(oid), `${a.id}: target_objects "${oid}" does not resolve`);
+        for (const ev of a.trigger) assert(eventSpecNames.has(ev), `${a.id}: trigger "${ev}" does not resolve`);
+        for (const ev of a.triggered_event) assert(eventSpecNames.has(ev), `${a.id}: triggered_event "${ev}" does not resolve`);
+        // inputs are spec-typed
+        for (const io of a.inputs) {
+          assert(typeof io.type === 'string' && io.type.length > 0, `${a.id}.${io.name}: input type`);
+        }
+      }
+    });
+  }
+
   // -------------------------------------------------------------------------
   // Summary.
   // -------------------------------------------------------------------------

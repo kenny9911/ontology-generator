@@ -43,6 +43,7 @@ export const SEVERITY_ENUM = ['info', 'warn', 'block'] as const;
 const PROPERTY_TYPE_ENUM = ['String', 'Integer', 'Float', 'Boolean', 'Date', 'Timestamp', 'List<String>'] as const;
 const OBJECT_CLASS_ENUM = ['data', 'system'] as const;
 const EXECUTOR_ENUM = ['Human', 'Agent'] as const;
+const ACTOR_ENUM = ['Human', 'Agent', 'System'] as const;
 const ENFORCEMENT_ENUM = ['mandatory', 'optional'] as const;
 const FAILURE_POLICY_ENUM = ['warn', 'block'] as const;
 const PROVENANCE_ENUM = ['extracted', 'inferred', 'merged', 'human'] as const;
@@ -138,14 +139,33 @@ const rulesSchema = layerArray('^rule:', {
   },
 });
 
+const ioItem: JsonSchemaDoc = {
+  type: 'object',
+  properties: { name: str, type: enumOf(PROPERTY_TYPE_ENUM), description: str, source_object: str, required: bool },
+  additionalProperties: true,
+};
 const actionsSchema = layerArray('^action:', {
-  required: ['id', 'name'],
+  required: ['id', 'name', 'object_type', 'submission_criteria', 'actor', 'action_steps'],
   properties: {
     ...sharedProps,
     name: str,
     description: str,
-    inputs: { type: 'array', items: { type: 'object', properties: { name: str, type: enumOf(DATA_TYPE_ENUM), objectTypeId: str }, additionalProperties: true } },
-    outputs: { type: 'array', items: { type: 'object', properties: { name: str, type: enumOf(DATA_TYPE_ENUM), objectTypeId: str }, additionalProperties: true } },
+    // spec-format fields
+    submission_criteria: str,
+    object_type: { enum: ['action'] },
+    category: str,
+    actor: { type: 'array', items: enumOf(ACTOR_ENUM) },
+    trigger: strArray,
+    target_objects: strArray,
+    inputs: { type: 'array', items: ioItem },
+    outputs: { type: 'array', items: ioItem },
+    action_steps: { type: 'array', items: { type: 'object', properties: { order: str, name: str, description: str, object_type: str, submission_criteria: str }, additionalProperties: true } },
+    system_prompt: str,
+    user_prompt: str,
+    tool_use: strArray,
+    side_effects: { type: 'object', additionalProperties: true },
+    triggered_event: strArray,
+    // retained engine structure
     preconditions: { type: 'array', items: { type: 'object', properties: { ruleId: str, severity: enumOf(SEVERITY_ENUM) }, additionalProperties: true } },
     triggeredByEventIds: strArray,
     emitsEvents: { type: 'array' },

@@ -2301,10 +2301,57 @@
       "nameZh": "注册客户",
       "description": "Create a new Customer record from a submitted profile with default Standard tier and Active credit status.",
       "descriptionZh": "根据提交的资料创建新客户记录，默认标准等级与有效信用状态。",
+      "submission_criteria": "1. Event CUSTOMER_SIGNUP_SUBMITTED has been received",
+      "object_type": "action",
+      "category": "注册客户",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "CUSTOMER_SIGNUP_SUBMITTED"
+      ],
+      "target_objects": [
+        "Customer"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "captureSubmittedCustomerProfile",
+          "description": "Capture submitted customer profile.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "createCustomerWithTierStandardAnd",
+          "description": "Create Customer with tier = Standard and creditStatus = Active.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"RegisterCustomer\" action. Create a new Customer record from a submitted profile with default Standard tier and Active credit status. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"RegisterCustomer\" using profile. Create a new Customer record from a submitted profile with default Standard tier and Active credit status. Produce customer and emit the appropriate events.",
+      "tool_use": [
+        "Salesforce"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Customer",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Insert Customer record in Salesforce CRM."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "CUSTOMER_CREATED"
+      ],
       "inputs": [
         {
           "name": "profile",
-          "type": "json",
+          "type": "String",
           "required": true,
           "description": "Submitted profile: legal name, billing address, channel, requested tier."
         }
@@ -2313,7 +2360,8 @@
         {
           "name": "customer",
           "objectTypeId": "objectType:customer",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -2353,11 +2401,6 @@
           "objectTypeId": "objectType:customer"
         }
       ],
-      "actor": {
-        "role": "Customer Service Representative",
-        "roleZh": "客户服务代表",
-        "kind": "human"
-      },
       "permissions": [
         "customer:create"
       ],
@@ -2390,7 +2433,12 @@
       ],
       "confidence": 0.94,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Customer Service Representative",
+        "roleZh": "客户服务代表",
+        "kind": "human"
+      }
     },
     {
       "id": "action:assign-credit-limit",
@@ -2399,15 +2447,72 @@
       "nameZh": "分配信用额度",
       "description": "Set a customer's credit limit and confirm tier from a credit assessment.",
       "descriptionZh": "依据信用评估设定客户信用额度并确认等级。",
+      "submission_criteria": "1. Event CUSTOMER_CREATED has been received\n2. Rule \"Enterprise tier requires signed agreement + Finance approval\" is satisfied",
+      "object_type": "action",
+      "category": "分配信用额度",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "CUSTOMER_CREATED"
+      ],
+      "target_objects": [
+        "Customer"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "readCustomerCreatedAndCreditAssessment",
+          "description": "Read CustomerCreated and credit assessment.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "setCreditLimitDefault10000",
+          "description": "Set creditLimit (default $10,000 Standard; up to $250,000 Enterprise) and confirm tier.",
+          "object_type": "logic",
+          "submission_criteria": "On tier assignment",
+          "rules": [
+            {
+              "id": "enterprise-tier-requires-agreement",
+              "name": "Enterprise tier requires signed agreement + Finance approval",
+              "submission_criteria": "On tier assignment",
+              "description": "A customer may be assigned Enterprise tier only after a signed master agreement is on file and Finance approval is recorded."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"AssignCreditLimit\" action. Set a customer's credit limit and confirm tier from a credit assessment. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"AssignCreditLimit\" using customer, assessment. Set a customer's credit limit and confirm tier from a credit assessment. Produce customer and emit the appropriate events.",
+      "tool_use": [
+        "NetSuite"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Customer",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Update Customer.creditLimit in ERP (NetSuite)."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "CREDIT_LIMIT_ASSIGNED"
+      ],
       "inputs": [
         {
           "name": "customer",
           "objectTypeId": "objectType:customer",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Customer.customer_id"
         },
         {
           "name": "assessment",
-          "type": "json",
+          "type": "String",
           "required": true,
           "description": "Credit assessment input."
         }
@@ -2416,7 +2521,8 @@
         {
           "name": "customer",
           "objectTypeId": "objectType:customer",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -2464,11 +2570,6 @@
           "objectTypeId": "objectType:customer"
         }
       ],
-      "actor": {
-        "role": "Finance Analyst",
-        "roleZh": "财务分析师",
-        "kind": "human"
-      },
       "permissions": [
         "customer:assign_credit"
       ],
@@ -2507,7 +2608,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Finance Analyst",
+        "roleZh": "财务分析师",
+        "kind": "human"
+      }
     },
     {
       "id": "action:place-order",
@@ -2516,11 +2622,78 @@
       "nameZh": "下单",
       "description": "Capture a cart of products for an authenticated customer into a Pending order with line items and a calculated total.",
       "descriptionZh": "将已认证客户的购物车捕获为待处理订单，含行项与计算总额。",
+      "submission_criteria": "1. Event CHECKOUT_SUBMITTED has been received\n2. Rule \"Order references one Active Customer\" is satisfied",
+      "object_type": "action",
+      "category": "下单",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "CHECKOUT_SUBMITTED"
+      ],
+      "target_objects": [
+        "Customer",
+        "Product",
+        "Order",
+        "Line_Item"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "validateTheOrderReferencesOneActive",
+          "description": "Validate the order references one Active customer.",
+          "object_type": "logic",
+          "submission_criteria": "On order placement",
+          "rules": [
+            {
+              "id": "order-references-active-customer",
+              "name": "Order references one Active Customer",
+              "submission_criteria": "On order placement",
+              "description": "Every order must reference exactly one customer whose credit status is Active at the time of order placement."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "createOrderStatusPendingWithChild",
+          "description": "Create Order (status Pending) with child LineItem records.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "3",
+          "name": "calculateOrderTotalFromLineItems",
+          "description": "Calculate order total from line items.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"PlaceOrder\" action. Capture a cart of products for an authenticated customer into a Pending order with line items and a calculated total. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"PlaceOrder\" using customer, products. Capture a cart of products for an authenticated customer into a Pending order with line items and a calculated total. Produce order, line_items and emit the appropriate events.",
+      "tool_use": [
+        "OMS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Order",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Insert Order and LineItem records in OMS."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "ORDER_PLACED"
+      ],
       "inputs": [
         {
           "name": "customer",
           "objectTypeId": "objectType:customer",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Customer.customer_id"
         },
         {
           "name": "products",
@@ -2528,21 +2701,25 @@
           "required": true,
           "isArray": true,
           "cardinality": "many",
-          "description": "Cart of product selections."
+          "description": "Cart of product selections.",
+          "type": "String",
+          "source_object": "Product.product_id"
         }
       ],
       "outputs": [
         {
           "name": "order",
           "objectTypeId": "objectType:order",
-          "required": true
+          "required": true,
+          "type": "String"
         },
         {
           "name": "line_items",
           "objectTypeId": "objectType:lineItem",
           "required": true,
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2601,11 +2778,6 @@
           "objectTypeId": "objectType:order"
         }
       ],
-      "actor": {
-        "role": "Customer",
-        "roleZh": "客户",
-        "kind": "human"
-      },
       "permissions": [
         "order:create"
       ],
@@ -2648,7 +2820,12 @@
       ],
       "confidence": 0.95,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Customer",
+        "roleZh": "客户",
+        "kind": "human"
+      }
     },
     {
       "id": "action:screen-order-for-credit",
@@ -2657,33 +2834,121 @@
       "nameZh": "信用与付款筛查",
       "description": "Check invoice aging and available credit; either authorize payment and draft an invoice, or place a credit hold.",
       "descriptionZh": "检查发票账龄与可用信用；要么授权付款并起草发票，要么放置信用冻结。",
+      "submission_criteria": "1. Event ORDER_PLACED has been received\n2. Rule \"Block order on 60+ day overdue invoice\" is satisfied\n3. Rule \"No confirm over credit limit (non-Enterprise)\" is satisfied",
+      "object_type": "action",
+      "category": "信用与付款筛查",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "ORDER_PLACED"
+      ],
+      "target_objects": [
+        "Order",
+        "Customer",
+        "Payment",
+        "Invoice",
+        "Credit_Hold"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "checkOutstandingInvoiceAgingFor60",
+          "description": "Check outstanding Invoice aging for 60+ day overdue.",
+          "object_type": "logic",
+          "submission_criteria": "On credit screen at order placement",
+          "rules": [
+            {
+              "id": "no-order-when-invoice-overdue",
+              "name": "Block order on 60+ day overdue invoice",
+              "submission_criteria": "On credit screen at order placement",
+              "description": "A customer may not place an order if any of their invoice records are overdue by 60 or more days."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "checkAvailableCreditAgainstAssignedCredit",
+          "description": "Check available credit against assigned credit limit.",
+          "object_type": "logic",
+          "submission_criteria": "On credit screen at order placement",
+          "rules": [
+            {
+              "id": "no-confirm-over-credit-limit",
+              "name": "No confirm over credit limit (non-Enterprise)",
+              "submission_criteria": "On credit screen at order placement",
+              "description": "An order may not be confirmed if its total would cause the customer's open balance to exceed their assigned credit limit, unless the customer's tier is Enterprise."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "onPassAuthorizePaymentAndCreate",
+          "description": "On pass: authorize Payment and create draft Invoice. On fail: create CreditHold.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"ScreenOrderForCredit\" action. Check invoice aging and available credit; either authorize payment and draft an invoice, or place a credit hold. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ScreenOrderForCredit\" using order, customer. Check invoice aging and available credit; either authorize payment and draft an invoice, or place a credit hold. Produce payment, invoice, credit_hold and emit the appropriate events.",
+      "tool_use": [
+        "NetSuite"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Payment",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Authorize charge via Stripe."
+          },
+          {
+            "object_type": "Invoice",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create draft Invoice in ERP or CreditHold in OMS."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "PAYMENT_AUTHORIZED",
+        "CREDIT_HOLD_PLACED"
+      ],
       "inputs": [
         {
           "name": "order",
           "objectTypeId": "objectType:order",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Order.order_id"
         },
         {
           "name": "customer",
           "objectTypeId": "objectType:customer",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Customer.customer_id"
         }
       ],
       "outputs": [
         {
           "name": "payment",
           "objectTypeId": "objectType:payment",
-          "required": false
+          "required": false,
+          "type": "String"
         },
         {
           "name": "invoice",
           "objectTypeId": "objectType:invoice",
-          "required": false
+          "required": false,
+          "type": "String"
         },
         {
           "name": "credit_hold",
           "objectTypeId": "objectType:creditHold",
-          "required": false
+          "required": false,
+          "type": "String"
         }
       ],
       "steps": [
@@ -2758,11 +3023,6 @@
           "objectTypeId": "objectType:invoice"
         }
       ],
-      "actor": {
-        "role": "OMS Credit Gate",
-        "roleZh": "OMS信用门控",
-        "kind": "system"
-      },
       "permissions": [
         "order:screen_credit"
       ],
@@ -2802,7 +3062,12 @@
       ],
       "confidence": 0.94,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "OMS Credit Gate",
+        "roleZh": "OMS信用门控",
+        "kind": "system"
+      }
     },
     {
       "id": "action:allocate-inventory",
@@ -2811,18 +3076,88 @@
       "nameZh": "分配库存",
       "description": "Reserve inventory against the order's line items and set the order to Confirmed.",
       "descriptionZh": "针对订单行项预留库存并将订单置为已确认。",
+      "submission_criteria": "1. Event PAYMENT_AUTHORIZED has been received\n2. Event CREDIT_HOLD_RELEASED has been received\n3. Rule \"Allocation requires stock unless backorderable\" is satisfied\n4. Rule \"Credit limit required before confirm\" is satisfied",
+      "object_type": "action",
+      "category": "分配库存",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "PAYMENT_AUTHORIZED",
+        "CREDIT_HOLD_RELEASED"
+      ],
+      "target_objects": [
+        "Order",
+        "Line_Item",
+        "Inventory",
+        "Product"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "verifyOnHandInventoryCoversOrdered",
+          "description": "Verify on-hand inventory covers ordered quantity unless backorderable.",
+          "object_type": "logic",
+          "submission_criteria": "On inventory allocation",
+          "rules": [
+            {
+              "id": "allocate-requires-stock-or-backorder",
+              "name": "Allocation requires stock unless backorderable",
+              "submission_criteria": "On inventory allocation",
+              "description": "A line item may not be allocated against inventory unless on-hand quantity covers the ordered quantity, unless the referenced product is flagged backorderable."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "increaseInventoryReservedQtyAndSet",
+          "description": "Increase Inventory.reservedQty and set Order.status = Confirmed.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"AllocateInventory\" action. Reserve inventory against the order's line items and set the order to Confirmed. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"AllocateInventory\" using order, line_items. Reserve inventory against the order's line items and set the order to Confirmed. Produce inventory, order and emit the appropriate events.",
+      "tool_use": [
+        "NetSuite"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Order",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Order.status := Confirmed."
+          },
+          {
+            "object_type": "Inventory",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Inventory.reservedQty increased in ERP."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "INVENTORY_RESERVED",
+        "BACKORDER_RAISED"
+      ],
       "inputs": [
         {
           "name": "order",
           "objectTypeId": "objectType:order",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Order.order_id"
         },
         {
           "name": "line_items",
           "objectTypeId": "objectType:lineItem",
           "required": true,
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String",
+          "source_object": "Line_Item.line_item_id"
         }
       ],
       "outputs": [
@@ -2831,12 +3166,14 @@
           "objectTypeId": "objectType:inventory",
           "required": true,
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String"
         },
         {
           "name": "order",
           "objectTypeId": "objectType:order",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -2900,11 +3237,6 @@
           "objectTypeId": "objectType:inventory"
         }
       ],
-      "actor": {
-        "role": "OMS Allocation Engine",
-        "roleZh": "OMS分配引擎",
-        "kind": "system"
-      },
       "permissions": [
         "inventory:allocate"
       ],
@@ -2947,7 +3279,12 @@
       ],
       "confidence": 0.94,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "OMS Allocation Engine",
+        "roleZh": "OMS分配引擎",
+        "kind": "system"
+      }
     },
     {
       "id": "action:create-shipment",
@@ -2956,18 +3293,78 @@
       "nameZh": "创建发货",
       "description": "Create a Shipment in Picking status with a packing list and carrier assignment for a confirmed order.",
       "descriptionZh": "为已确认订单创建拣货状态的发货，含装箱单与承运商分配。",
+      "submission_criteria": "1. Event INVENTORY_RESERVED has been received\n2. Rule \"No fulfillment under active credit hold\" is satisfied\n3. Rule \"International shipping to approved countries only\" is satisfied",
+      "object_type": "action",
+      "category": "创建发货",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "INVENTORY_RESERVED"
+      ],
+      "target_objects": [
+        "Order",
+        "Shipment",
+        "Credit_Hold"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "confirmNoActiveCreditHoldAnd",
+          "description": "Confirm no active credit hold and international destination is approved.",
+          "object_type": "logic",
+          "submission_criteria": "On Order.status -> Fulfilled",
+          "rules": [
+            {
+              "id": "no-fulfill-under-credit-hold",
+              "name": "No fulfillment under active credit hold",
+              "submission_criteria": "On Order.status -> Fulfilled",
+              "description": "An order shall not be marked Fulfilled while an active credit hold exists against it."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "createShipmentStatusPickingWithPacking",
+          "description": "Create Shipment (status Picking) with packing list and carrier.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"CreateShipment\" action. Create a Shipment in Picking status with a packing list and carrier assignment for a confirmed order. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"CreateShipment\" using order. Create a Shipment in Picking status with a packing list and carrier assignment for a confirmed order. Produce shipment and emit the appropriate events.",
+      "tool_use": [
+        "ShipStation"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Shipment",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create Shipment record in ShipStation/3PL."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "SHIPMENT_CREATED"
+      ],
       "inputs": [
         {
           "name": "order",
           "objectTypeId": "objectType:order",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Order.order_id"
         }
       ],
       "outputs": [
         {
           "name": "shipment",
           "objectTypeId": "objectType:shipment",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3020,11 +3417,6 @@
           "objectTypeId": "objectType:shipment"
         }
       ],
-      "actor": {
-        "role": "Warehouse Operator",
-        "roleZh": "仓库操作员",
-        "kind": "human"
-      },
       "permissions": [
         "shipment:create"
       ],
@@ -3058,7 +3450,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Warehouse Operator",
+        "roleZh": "仓库操作员",
+        "kind": "human"
+      }
     },
     {
       "id": "action:dispatch-shipment",
@@ -3067,23 +3464,93 @@
       "nameZh": "发运发货",
       "description": "Produce a tracking number and set shipment In Transit and order Fulfilled.",
       "descriptionZh": "生成追踪号，并将发货置为在途、订单置为已履约。",
+      "submission_criteria": "1. Event SHIPMENT_CREATED has been received\n2. Rule \"No fulfillment under active credit hold\" is satisfied\n3. Rule \"Fulfill only after payment in full\" is satisfied",
+      "object_type": "action",
+      "category": "发运发货",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "SHIPMENT_CREATED"
+      ],
+      "target_objects": [
+        "Shipment",
+        "Order",
+        "Credit_Hold"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "ensureNoActiveCreditHoldBefore",
+          "description": "Ensure no active credit hold before marking Fulfilled.",
+          "object_type": "logic",
+          "submission_criteria": "On Order.status -> Fulfilled",
+          "rules": [
+            {
+              "id": "no-fulfill-under-credit-hold",
+              "name": "No fulfillment under active credit hold",
+              "submission_criteria": "On Order.status -> Fulfilled",
+              "description": "An order shall not be marked Fulfilled while an active credit hold exists against it."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "assignTrackingNumberSetShipmentStatus",
+          "description": "Assign tracking number; set Shipment.status = In Transit and Order.status = Fulfilled.",
+          "object_type": "logic",
+          "submission_criteria": "On Order.status -> Fulfilled",
+          "rules": [
+            {
+              "id": "fulfill-after-payment",
+              "name": "Fulfill only after payment in full",
+              "submission_criteria": "On Order.status -> Fulfilled",
+              "description": "An order may only be fulfilled after its payment is received in full, unless the customer's tier is Enterprise, in which case the order is fulfilled on net-30 invoice terms."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"DispatchShipment\" action. Produce a tracking number and set shipment In Transit and order Fulfilled. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"DispatchShipment\" using shipment. Produce a tracking number and set shipment In Transit and order Fulfilled. Produce shipment, order and emit the appropriate events.",
+      "tool_use": [
+        "ShipStation"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Order",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Order.status := Fulfilled; Shipment.status := In Transit."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "ORDER_FULFILLED",
+        "SHIPMENT_DISPATCHED"
+      ],
       "inputs": [
         {
           "name": "shipment",
           "objectTypeId": "objectType:shipment",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Shipment.shipment_id"
         }
       ],
       "outputs": [
         {
           "name": "shipment",
           "objectTypeId": "objectType:shipment",
-          "required": true
+          "required": true,
+          "type": "String"
         },
         {
           "name": "order",
           "objectTypeId": "objectType:order",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3141,11 +3608,6 @@
           "objectTypeId": "objectType:order"
         }
       ],
-      "actor": {
-        "role": "Carrier Integration",
-        "roleZh": "承运商集成",
-        "kind": "system"
-      },
       "permissions": [
         "shipment:dispatch"
       ],
@@ -3179,7 +3641,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Carrier Integration",
+        "roleZh": "承运商集成",
+        "kind": "system"
+      }
     },
     {
       "id": "action:confirm-delivery",
@@ -3188,18 +3655,68 @@
       "nameZh": "确认送达",
       "description": "Set shipment Delivered and record a deliveredAt timestamp from the carrier webhook.",
       "descriptionZh": "依据承运商回调将发货置为已送达并记录送达时间。",
+      "submission_criteria": "1. Event SHIPMENT_DISPATCHED has been received",
+      "object_type": "action",
+      "category": "确认送达",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "SHIPMENT_DISPATCHED"
+      ],
+      "target_objects": [
+        "Shipment"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeCarrierDeliveryWebhook",
+          "description": "Consume carrier delivery webhook.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "setShipmentStatusDeliveredAndRecord",
+          "description": "Set Shipment.status = Delivered and record deliveredAt (starts 30-day return clock).",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"ConfirmDelivery\" action. Set shipment Delivered and record a deliveredAt timestamp from the carrier webhook. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ConfirmDelivery\" using shipment. Set shipment Delivered and record a deliveredAt timestamp from the carrier webhook. Produce shipment and emit the appropriate events.",
+      "tool_use": [
+        "ShipStation"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Shipment",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Shipment.status := Delivered; set deliveredAt."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "ORDER_DELIVERED"
+      ],
       "inputs": [
         {
           "name": "shipment",
           "objectTypeId": "objectType:shipment",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Shipment.shipment_id"
         }
       ],
       "outputs": [
         {
           "name": "shipment",
           "objectTypeId": "objectType:shipment",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3241,11 +3758,6 @@
           "objectTypeId": "objectType:shipment"
         }
       ],
-      "actor": {
-        "role": "Carrier Integration",
-        "roleZh": "承运商集成",
-        "kind": "system"
-      },
       "permissions": [
         "shipment:confirm_delivery"
       ],
@@ -3279,7 +3791,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Carrier Integration",
+        "roleZh": "承运商集成",
+        "kind": "system"
+      }
     },
     {
       "id": "action:settle-invoice",
@@ -3288,28 +3805,98 @@
       "nameZh": "结清发票",
       "description": "Finalize the draft invoice and record the matched payment (up-front for Standard, net-30 for Enterprise).",
       "descriptionZh": "完结草稿发票并记录匹配付款（标准客户预付，企业客户净30天）。",
+      "submission_criteria": "1. Event ORDER_FULFILLED has been received",
+      "object_type": "action",
+      "category": "结清发票",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "ORDER_FULFILLED"
+      ],
+      "target_objects": [
+        "Order",
+        "Invoice",
+        "Payment"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "finalizeInvoiceStatusIssued",
+          "description": "Finalize Invoice (status Issued).",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "recordMatchedPaymentOnSettlementSet",
+          "description": "Record matched Payment; on settlement set Invoice.status = Paid.",
+          "object_type": "logic",
+          "submission_criteria": "On Order.status -> Fulfilled",
+          "rules": [
+            {
+              "id": "fulfill-after-payment",
+              "name": "Fulfill only after payment in full",
+              "submission_criteria": "On Order.status -> Fulfilled",
+              "description": "An order may only be fulfilled after its payment is received in full, unless the customer's tier is Enterprise, in which case the order is fulfilled on net-30 invoice terms."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"SettleInvoice\" action. Finalize the draft invoice and record the matched payment (up-front for Standard, net-30 for Enterprise). Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"SettleInvoice\" using order, invoice. Finalize the draft invoice and record the matched payment (up-front for Standard, net-30 for Enterprise). Produce invoice, payment and emit the appropriate events.",
+      "tool_use": [
+        "NetSuite"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Payment",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Capture/settle Payment via Stripe."
+          },
+          {
+            "object_type": "Invoice",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Invoice.status := Issued -> Paid."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "INVOICE_ISSUED",
+        "PAYMENT_SETTLED"
+      ],
       "inputs": [
         {
           "name": "order",
           "objectTypeId": "objectType:order",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Order.order_id"
         },
         {
           "name": "invoice",
           "objectTypeId": "objectType:invoice",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Invoice.invoice_id"
         }
       ],
       "outputs": [
         {
           "name": "invoice",
           "objectTypeId": "objectType:invoice",
-          "required": true
+          "required": true,
+          "type": "String"
         },
         {
           "name": "payment",
           "objectTypeId": "objectType:payment",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3362,11 +3949,6 @@
           "objectTypeId": "objectType:invoice"
         }
       ],
-      "actor": {
-        "role": "Finance Analyst",
-        "roleZh": "财务分析师",
-        "kind": "human"
-      },
       "permissions": [
         "invoice:settle"
       ],
@@ -3406,7 +3988,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Finance Analyst",
+        "roleZh": "财务分析师",
+        "kind": "human"
+      }
     },
     {
       "id": "action:close-order",
@@ -3415,28 +4002,85 @@
       "nameZh": "关闭订单",
       "description": "Reconcile settled payment and delivery to set the order Closed.",
       "descriptionZh": "对账已结算付款与送达，将订单置为已关闭。",
+      "submission_criteria": "1. Event PAYMENT_SETTLED has been received\n2. Event ORDER_DELIVERED has been received",
+      "object_type": "action",
+      "category": "关闭订单",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "PAYMENT_SETTLED",
+        "ORDER_DELIVERED"
+      ],
+      "target_objects": [
+        "Order",
+        "Invoice",
+        "Payment"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "reconcilePaymentSettledAndOrderDelivered",
+          "description": "Reconcile PaymentSettled and OrderDelivered.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "setOrderStatusClosed",
+          "description": "Set Order.status = Closed.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"CloseOrder\" action. Reconcile settled payment and delivery to set the order Closed. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"CloseOrder\" using order, invoice, payment. Reconcile settled payment and delivery to set the order Closed. Produce order and emit the appropriate events.",
+      "tool_use": [
+        "OMS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Order",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Order.status := Closed."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "ORDER_CLOSED"
+      ],
       "inputs": [
         {
           "name": "order",
           "objectTypeId": "objectType:order",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Order.order_id"
         },
         {
           "name": "invoice",
           "objectTypeId": "objectType:invoice",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Invoice.invoice_id"
         },
         {
           "name": "payment",
           "objectTypeId": "objectType:payment",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Payment.payment_id"
         }
       ],
       "outputs": [
         {
           "name": "order",
           "objectTypeId": "objectType:order",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3480,11 +4124,6 @@
           "objectTypeId": "objectType:order"
         }
       ],
-      "actor": {
-        "role": "OMS Reconciliation",
-        "roleZh": "OMS对账",
-        "kind": "system"
-      },
       "permissions": [
         "order:close"
       ],
@@ -3530,7 +4169,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "OMS Reconciliation",
+        "roleZh": "OMS对账",
+        "kind": "system"
+      }
     },
     {
       "id": "action:initiate-return",
@@ -3539,25 +4183,104 @@
       "nameZh": "发起退货",
       "description": "Create a Requested return against a delivered order's line items, checking eligibility windows and final-sale.",
       "descriptionZh": "针对已送达订单行项创建请求状态退货，校验资格窗口与最终特卖。",
+      "submission_criteria": "1. Event RETURN_REQUESTED has been received\n2. Rule \"30-day full-refund return window\" is satisfied\n3. Rule \"Final-sale products not returnable\" is satisfied\n4. Rule \"Defective product return within 90 days\" is satisfied",
+      "object_type": "action",
+      "category": "发起退货",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "RETURN_REQUESTED"
+      ],
+      "target_objects": [
+        "Order",
+        "Line_Item",
+        "Return",
+        "Shipment",
+        "Product"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "checkReturnWindow30DaysOr",
+          "description": "Check return window (30 days, or 90 for defective) vs deliveredAt.",
+          "object_type": "logic",
+          "submission_criteria": "On return initiation",
+          "rules": [
+            {
+              "id": "return-window-30-days",
+              "name": "30-day full-refund return window",
+              "submission_criteria": "On return initiation",
+              "description": "A return must be initiated within 30 days of the shipment delivery date for a full refund; after 30 days, the customer may receive store credit only."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "rejectFinalSaleProducts",
+          "description": "Reject final-sale products.",
+          "object_type": "logic",
+          "submission_criteria": "On return initiation",
+          "rules": [
+            {
+              "id": "final-sale-not-returnable",
+              "name": "Final-sale products not returnable",
+              "submission_criteria": "On return initiation",
+              "description": "A product marked final-sale may not be returned under any circumstances."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "createReturnStatusRequestedReferencingOriginal",
+          "description": "Create Return (status Requested) referencing original LineItem(s).",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"InitiateReturn\" action. Create a Requested return against a delivered order's line items, checking eligibility windows and final-sale. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"InitiateReturn\" using order, line_items. Create a Requested return against a delivered order's line items, checking eligibility windows and final-sale. Produce return and emit the appropriate events.",
+      "tool_use": [
+        "Salesforce"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Return",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Insert Return record (Requested) in OMS Returns."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "RETURN_INITIATED"
+      ],
       "inputs": [
         {
           "name": "order",
           "objectTypeId": "objectType:order",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Order.order_id"
         },
         {
           "name": "line_items",
           "objectTypeId": "objectType:lineItem",
           "required": true,
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String",
+          "source_object": "Line_Item.line_item_id"
         }
       ],
       "outputs": [
         {
           "name": "return",
           "objectTypeId": "objectType:return",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3625,11 +4348,6 @@
           "objectTypeId": "objectType:return"
         }
       ],
-      "actor": {
-        "role": "Customer",
-        "roleZh": "客户",
-        "kind": "human"
-      },
       "permissions": [
         "return:initiate"
       ],
@@ -3672,7 +4390,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Customer",
+        "roleZh": "客户",
+        "kind": "human"
+      }
     },
     {
       "id": "action:authorize-return",
@@ -3681,18 +4404,77 @@
       "nameZh": "授权退货",
       "description": "Validate eligibility and issue an RMA number on an approved return.",
       "descriptionZh": "校验资格并在批准的退货上签发RMA编号。",
+      "submission_criteria": "1. Event RETURN_INITIATED has been received\n2. Rule \"Return approval requires Delivered shipment\" is satisfied",
+      "object_type": "action",
+      "category": "授权退货",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "RETURN_INITIATED"
+      ],
+      "target_objects": [
+        "Return",
+        "Shipment"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "validateTheShipmentStatusIsDelivered",
+          "description": "Validate the shipment status is Delivered.",
+          "object_type": "logic",
+          "submission_criteria": "On return authorization",
+          "rules": [
+            {
+              "id": "return-requires-delivered-shipment",
+              "name": "Return approval requires Delivered shipment",
+              "submission_criteria": "On return authorization",
+              "description": "A return may not be approved unless it references a line item on an order whose shipment status is Delivered."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "setReturnStatusApprovedAndIssue",
+          "description": "Set Return.status = Approved and issue RMA number.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"AuthorizeReturn\" action. Validate eligibility and issue an RMA number on an approved return. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"AuthorizeReturn\" using return. Validate eligibility and issue an RMA number on an approved return. Produce return and emit the appropriate events.",
+      "tool_use": [
+        "OMS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Return",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Return.status := Approved; assign RMA."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "RETURN_AUTHORIZED"
+      ],
       "inputs": [
         {
           "name": "return",
           "objectTypeId": "objectType:return",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Return.return_id"
         }
       ],
       "outputs": [
         {
           "name": "return",
           "objectTypeId": "objectType:return",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3740,11 +4522,6 @@
           "objectTypeId": "objectType:return"
         }
       ],
-      "actor": {
-        "role": "Returns Specialist",
-        "roleZh": "退货专员",
-        "kind": "human"
-      },
       "permissions": [
         "return:authorize"
       ],
@@ -3778,7 +4555,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Returns Specialist",
+        "roleZh": "退货专员",
+        "kind": "human"
+      }
     },
     {
       "id": "action:receive-return",
@@ -3787,23 +4569,75 @@
       "nameZh": "接收退货",
       "description": "Inspect inbound returned goods against the RMA and restock sellable inventory.",
       "descriptionZh": "依据RMA检验入库退货商品，并将可售商品回补库存。",
+      "submission_criteria": "1. Event RETURN_AUTHORIZED has been received",
+      "object_type": "action",
+      "category": "接收退货",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "RETURN_AUTHORIZED"
+      ],
+      "target_objects": [
+        "Return",
+        "Inventory"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "receiveInboundShipmentAgainstTheRMA",
+          "description": "Receive inbound shipment against the RMA and inspect.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "ifSellableIncrementInventoryOnHand",
+          "description": "If sellable, increment Inventory.onHandQty and set Return.status = Received.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"ReceiveReturn\" action. Inspect inbound returned goods against the RMA and restock sellable inventory. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ReceiveReturn\" using return. Inspect inbound returned goods against the RMA and restock sellable inventory. Produce return, inventory and emit the appropriate events.",
+      "tool_use": [
+        "NetSuite"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Inventory",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Increment Inventory.onHandQty in ERP."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "RETURN_RECEIVED"
+      ],
       "inputs": [
         {
           "name": "return",
           "objectTypeId": "objectType:return",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Return.return_id"
         }
       ],
       "outputs": [
         {
           "name": "return",
           "objectTypeId": "objectType:return",
-          "required": true
+          "required": true,
+          "type": "String"
         },
         {
           "name": "inventory",
           "objectTypeId": "objectType:inventory",
-          "required": false
+          "required": false,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3846,11 +4680,6 @@
           "objectTypeId": "objectType:inventory"
         }
       ],
-      "actor": {
-        "role": "Warehouse Operator",
-        "roleZh": "仓库操作员",
-        "kind": "human"
-      },
       "permissions": [
         "return:receive"
       ],
@@ -3884,7 +4713,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Warehouse Operator",
+        "roleZh": "仓库操作员",
+        "kind": "human"
+      }
     },
     {
       "id": "action:issue-refund",
@@ -3893,33 +4727,119 @@
       "nameZh": "发放退款",
       "description": "Issue a refund payment within window or a store-credit adjustment outside window, plus a credit memo, closing the return.",
       "descriptionZh": "窗口内发放退款，窗口外发放店内信用调整，并出具贷项通知单，关闭退货。",
+      "submission_criteria": "1. Event RETURN_RECEIVED has been received\n2. Rule \"Finance Manager approval for refunds > $2,000\" is satisfied\n3. Rule \"30-day full-refund return window\" is satisfied\n4. Rule \"Store credit expires 12 months after issue\" is satisfied",
+      "object_type": "action",
+      "category": "发放退款",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "RETURN_RECEIVED"
+      ],
+      "target_objects": [
+        "Return",
+        "Invoice",
+        "Payment",
+        "Customer"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "requireFinanceManagerApprovalForRefunds",
+          "description": "Require Finance Manager approval for refunds over $2,000.",
+          "object_type": "logic",
+          "submission_criteria": "Before refund issuance",
+          "rules": [
+            {
+              "id": "large-refund-manager-approval",
+              "name": "Finance Manager approval for refunds > $2,000",
+              "submission_criteria": "Before refund issuance",
+              "description": "A refund payment exceeding $2,000 is required to have Finance Manager approval before it is issued."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "withinWindowCreatePaymentRefundOutside",
+          "description": "Within window: create Payment refund. Outside window: adjust Customer store credit.",
+          "object_type": "logic",
+          "submission_criteria": "On return initiation",
+          "rules": [
+            {
+              "id": "return-window-30-days",
+              "name": "30-day full-refund return window",
+              "submission_criteria": "On return initiation",
+              "description": "A return must be initiated within 30 days of the shipment delivery date for a full refund; after 30 days, the customer may receive store credit only."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "postCreditMemoAgainstInvoiceAnd",
+          "description": "Post credit memo against Invoice and set Return.status = Closed.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"IssueRefund\" action. Issue a refund payment within window or a store-credit adjustment outside window, plus a credit memo, closing the return. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"IssueRefund\" using return, invoice. Issue a refund payment within window or a store-credit adjustment outside window, plus a credit memo, closing the return. Produce payment, customer, return and emit the appropriate events.",
+      "tool_use": [
+        "Stripe"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Payment",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Issue refund via Stripe or adjust store credit."
+          },
+          {
+            "object_type": "Invoice",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Credit memo against Invoice in ERP."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "REFUND_ISSUED"
+      ],
       "inputs": [
         {
           "name": "return",
           "objectTypeId": "objectType:return",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Return.return_id"
         },
         {
           "name": "invoice",
           "objectTypeId": "objectType:invoice",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Invoice.invoice_id"
         }
       ],
       "outputs": [
         {
           "name": "payment",
           "objectTypeId": "objectType:payment",
-          "required": false
+          "required": false,
+          "type": "String"
         },
         {
           "name": "customer",
           "objectTypeId": "objectType:customer",
-          "required": false
+          "required": false,
+          "type": "String"
         },
         {
           "name": "return",
           "objectTypeId": "objectType:return",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3990,11 +4910,6 @@
           "objectTypeId": "objectType:invoice"
         }
       ],
-      "actor": {
-        "role": "Finance Analyst",
-        "roleZh": "财务分析师",
-        "kind": "human"
-      },
       "permissions": [
         "refund:issue"
       ],
@@ -4034,7 +4949,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Finance Analyst",
+        "roleZh": "财务分析师",
+        "kind": "human"
+      }
     },
     {
       "id": "action:place-credit-hold",
@@ -4043,23 +4963,78 @@
       "nameZh": "放置信用冻结",
       "description": "Create a CreditHold citing the violated rule and freeze the order following a failed credit screen.",
       "descriptionZh": "依据信用筛查失败创建引用违规规则的信用冻结并冻结订单。",
+      "submission_criteria": "1. Event CREDIT_HOLD_PLACED has been received\n2. Rule \"Block order on 60+ day overdue invoice\" is satisfied\n3. Rule \"No confirm over credit limit (non-Enterprise)\" is satisfied",
+      "object_type": "action",
+      "category": "放置信用冻结",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "CREDIT_HOLD_PLACED"
+      ],
+      "target_objects": [
+        "Order",
+        "Customer",
+        "Credit_Hold",
+        "Invoice"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeFailedCreditScreenResult",
+          "description": "Consume failed credit screen result.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "createCreditHoldCitingR03",
+          "description": "Create CreditHold citing R-03 or R-08 and freeze the Order.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"PlaceCreditHold\" action. Create a CreditHold citing the violated rule and freeze the order following a failed credit screen. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"PlaceCreditHold\" using order, customer. Create a CreditHold citing the violated rule and freeze the order following a failed credit screen. Produce credit_hold and emit the appropriate events.",
+      "tool_use": [
+        "OMS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Credit_Hold",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Insert CreditHold (Open) in OMS; freeze Order."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "CREDIT_HOLD_OPENED"
+      ],
       "inputs": [
         {
           "name": "order",
           "objectTypeId": "objectType:order",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Order.order_id"
         },
         {
           "name": "customer",
           "objectTypeId": "objectType:customer",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Customer.customer_id"
         }
       ],
       "outputs": [
         {
           "name": "credit_hold",
           "objectTypeId": "objectType:creditHold",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -4112,11 +5087,6 @@
           "objectTypeId": "objectType:creditHold"
         }
       ],
-      "actor": {
-        "role": "OMS Credit Gate",
-        "roleZh": "OMS信用门控",
-        "kind": "system"
-      },
       "permissions": [
         "credit_hold:place"
       ],
@@ -4156,7 +5126,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "OMS Credit Gate",
+        "roleZh": "OMS信用门控",
+        "kind": "system"
+      }
     },
     {
       "id": "action:resolve-credit-hold",
@@ -4165,28 +5140,91 @@
       "nameZh": "解决信用冻结",
       "description": "Credit Manager records overdue payment and releases the order, or cancels it, overriding the hold with a recorded reason.",
       "descriptionZh": "信用经理记录逾期付款并放行订单，或取消订单，并以记录理由解除冻结。",
+      "submission_criteria": "1. Event CREDIT_HOLD_OPENED has been received\n2. Rule \"Credit hold override requires Credit Manager + reason\" is satisfied",
+      "object_type": "action",
+      "category": "解决信用冻结",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "CREDIT_HOLD_OPENED"
+      ],
+      "target_objects": [
+        "Credit_Hold",
+        "Order"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "verifyOverrideAuthorityCreditManagerOr",
+          "description": "Verify override authority (Credit Manager or above) and record reason.",
+          "object_type": "logic",
+          "submission_criteria": "On credit hold override",
+          "rules": [
+            {
+              "id": "credit-hold-override-authority",
+              "name": "Credit hold override requires Credit Manager + reason",
+              "submission_criteria": "On credit hold override",
+              "description": "An active credit hold may not be overridden except by a Credit Manager or higher, and the override must record a written reason."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "recordOverdueInvoicePaymentAndRelease",
+          "description": "Record overdue Invoice payment and release Order, or cancel Order.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"ResolveCreditHold\" action. Credit Manager records overdue payment and releases the order, or cancels it, overriding the hold with a recorded reason. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ResolveCreditHold\" using credit_hold, order. Credit Manager records overdue payment and releases the order, or cancels it, overriding the hold with a recorded reason. Produce credit_hold, order and emit the appropriate events.",
+      "tool_use": [
+        "NetSuite"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Credit_Hold",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "CreditHold.status := Released or Order.status := Cancelled."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "CREDIT_HOLD_RELEASED",
+        "ORDER_CANCELLED"
+      ],
       "inputs": [
         {
           "name": "credit_hold",
           "objectTypeId": "objectType:creditHold",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Credit_Hold.credit_hold_id"
         },
         {
           "name": "order",
           "objectTypeId": "objectType:order",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Order.order_id"
         }
       ],
       "outputs": [
         {
           "name": "credit_hold",
           "objectTypeId": "objectType:creditHold",
-          "required": true
+          "required": true,
+          "type": "String"
         },
         {
           "name": "order",
           "objectTypeId": "objectType:order",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -4236,11 +5274,6 @@
           "objectTypeId": "objectType:creditHold"
         }
       ],
-      "actor": {
-        "role": "Credit Manager",
-        "roleZh": "信用经理",
-        "kind": "human"
-      },
       "permissions": [
         "credit_hold:override"
       ],
@@ -4280,7 +5313,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Credit Manager",
+        "roleZh": "信用经理",
+        "kind": "human"
+      }
     }
   ],
   "events": [

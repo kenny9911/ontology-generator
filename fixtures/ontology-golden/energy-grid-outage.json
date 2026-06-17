@@ -2481,6 +2481,56 @@
       "nameZh": "检测停电",
       "description": "Consume last-gasp meter signals and SCADA breaker-open telemetry; produce a candidate OutageEvent record in OMS with state Detected and a detectionTimestamp.",
       "descriptionZh": "消费末次喘息电表信号和SCADA断路器断开遥测；在OMS中产生状态为Detected且带检测时间戳的候选停电事件记录。",
+      "submission_criteria": "1. Event METER_LAST_GASP_RECEIVED has been received\n2. Event BREAKER_TRIPPED has been received",
+      "object_type": "action",
+      "category": "检测停电",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "METER_LAST_GASP_RECEIVED",
+        "BREAKER_TRIPPED"
+      ],
+      "target_objects": [
+        "Service_Point",
+        "Feeder",
+        "Outage_Event"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeLastGaspMeterSignalsAMI",
+          "description": "Consume last-gasp meter signals (AMI) and SCADA breaker-open telemetry.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "createCandidateOutageEventInOMS",
+          "description": "Create candidate OutageEvent in OMS with state Detected and a detectionTimestamp.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"DetectOutage\" action. Consume last-gasp meter signals and SCADA breaker-open telemetry; produce a candidate OutageEvent record in OMS with state Detected and a detectionTimestamp. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"DetectOutage\" using service_point, feeder. Consume last-gasp meter signals and SCADA breaker-open telemetry; produce a candidate OutageEvent record in OMS with state Detected and a detectionTimestamp. Produce outage_event and emit the appropriate events.",
+      "tool_use": [
+        "OMS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Outage_Event",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create OutageEvent record (state Detected)"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "OUTAGE_DETECTED"
+      ],
       "inputs": [
         {
           "name": "service_point",
@@ -2488,13 +2538,17 @@
           "required": true,
           "cardinality": "many",
           "isArray": true,
-          "description": "Dark meters / service points."
+          "description": "Dark meters / service points.",
+          "type": "String",
+          "source_object": "Service_Point.service_point_id"
         },
         {
           "name": "feeder",
           "objectTypeId": "objectType:feeder",
           "required": true,
-          "description": "Affected feeder."
+          "description": "Affected feeder.",
+          "type": "String",
+          "source_object": "Feeder.feeder_id"
         }
       ],
       "outputs": [
@@ -2502,7 +2556,8 @@
           "name": "outage_event",
           "objectTypeId": "objectType:outage-event",
           "required": true,
-          "description": "Candidate OutageEvent in state Detected."
+          "description": "Candidate OutageEvent in state Detected.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2546,11 +2601,6 @@
           "objectTypeId": "objectType:outage-event"
         }
       ],
-      "actor": {
-        "role": "AMI Head-End / SCADA",
-        "roleZh": "AMI主站/SCADA",
-        "kind": "system"
-      },
       "permissions": [
         "outage:detect"
       ],
@@ -2597,7 +2647,12 @@
       ],
       "confidence": 0.95,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "AMI Head-End / SCADA",
+        "roleZh": "AMI主站/SCADA",
+        "kind": "system"
+      }
     },
     {
       "id": "action:scope-outage",
@@ -2606,29 +2661,109 @@
       "nameZh": "确定停电范围",
       "description": "Consume the network topology from GIS and the set of dark meters; produce the predicted upstream device and the affected ServicePoint count, then advance the OutageEvent to state Confirmed.",
       "descriptionZh": "消费GIS网络拓扑和暗表集合；产生预测的上游设备和受影响供电点数量，然后将停电事件推进至Confirmed状态。",
+      "submission_criteria": "1. Event OUTAGE_DETECTED has been received\n2. Rule \"Critical-infrastructure highest restoration priority\" is satisfied",
+      "object_type": "action",
+      "category": "确定停电范围",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "OUTAGE_DETECTED"
+      ],
+      "target_objects": [
+        "Outage_Event",
+        "Feeder",
+        "Substation",
+        "Service_Point"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeGISTopologySubstationFeederService",
+          "description": "Consume GIS topology (Substation → Feeder → ServicePoint) and the set of dark meters.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "predictUpstreamDeviceAndComputeAffected",
+          "description": "Predict upstream device and compute affected ServicePoint count.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "3",
+          "name": "assignHighestRestorationPriorityIfAny",
+          "description": "Assign highest restoration priority if any affected ServicePoint is critical infrastructure.",
+          "object_type": "logic",
+          "submission_criteria": "On OutageConfirmed scoping",
+          "rules": [
+            {
+              "id": "critical-infrastructure-highest-priority",
+              "name": "Critical-infrastructure highest restoration priority",
+              "submission_criteria": "On OutageConfirmed scoping",
+              "description": "An OutageEvent affecting a critical-infrastructure ServicePoint (hospital, water plant, emergency services) shall be assigned the highest restoration priority regardless of the affected ServicePoint count."
+            }
+          ]
+        },
+        {
+          "order": "4",
+          "name": "advanceTheOutageEventToState",
+          "description": "Advance the OutageEvent to state Confirmed.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"ScopeOutage\" action. Consume the network topology from GIS and the set of dark meters; produce the predicted upstream device and the affected ServicePoint count, then advance the OutageEvent to state Confirmed. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ScopeOutage\" using outage_event, feeder, substation, service_point. Consume the network topology from GIS and the set of dark meters; produce the predicted upstream device and the affected ServicePoint count, then advance the OutageEvent to state Confirmed. Produce outage_event and emit the appropriate events.",
+      "tool_use": [
+        "OMS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Outage_Event",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "OutageEvent.state := Confirmed; set affectedServicePointCount"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "OUTAGE_CONFIRMED"
+      ],
       "inputs": [
         {
           "name": "outage_event",
           "objectTypeId": "objectType:outage-event",
           "required": true,
-          "description": "Detected OutageEvent."
+          "description": "Detected OutageEvent.",
+          "type": "String",
+          "source_object": "Outage_Event.outage_event_id"
         },
         {
           "name": "feeder",
           "objectTypeId": "objectType:feeder",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Feeder.feeder_id"
         },
         {
           "name": "substation",
           "objectTypeId": "objectType:substation",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Substation.substation_id"
         },
         {
           "name": "service_point",
           "objectTypeId": "objectType:service-point",
           "required": true,
           "cardinality": "many",
-          "isArray": true
+          "isArray": true,
+          "type": "String",
+          "source_object": "Service_Point.service_point_id"
         }
       ],
       "outputs": [
@@ -2636,7 +2771,8 @@
           "name": "outage_event",
           "objectTypeId": "objectType:outage-event",
           "required": true,
-          "description": "Confirmed OutageEvent with affectedServicePointCount."
+          "description": "Confirmed OutageEvent with affectedServicePointCount.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2706,11 +2842,6 @@
           "objectTypeId": "objectType:outage-event"
         }
       ],
-      "actor": {
-        "role": "DOC Operator",
-        "roleZh": "配电运营中心操作员",
-        "kind": "human"
-      },
       "permissions": [
         "outage:scope"
       ],
@@ -2754,7 +2885,12 @@
       ],
       "confidence": 0.94,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "DOC Operator",
+        "roleZh": "配电运营中心操作员",
+        "kind": "human"
+      }
     },
     {
       "id": "action:evaluate-reportability",
@@ -2763,11 +2899,76 @@
       "nameZh": "评估可报告性",
       "description": "Consume affectedServicePointCount and detectionTimestamp; apply the regulatory threshold (Rule R-07); produce a reportable flag and a reporting clock start time when the threshold is met.",
       "descriptionZh": "消费受影响供电点数量和检测时间戳；应用监管阈值（R-07规则）；当达到阈值时产生可报告标志和报告时钟起始时间。",
+      "submission_criteria": "1. Event OUTAGE_CONFIRMED has been received\n2. Rule \"Report outage over 50,000 ServicePoints within 1 hour\" is satisfied",
+      "object_type": "action",
+      "category": "评估可报告性",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "OUTAGE_CONFIRMED"
+      ],
+      "target_objects": [
+        "Outage_Event"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "readAffectedServicePointCountAnd",
+          "description": "Read affectedServicePointCount and detectionTimestamp.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "applyTheRegulatoryThresholdRuleR",
+          "description": "Apply the regulatory threshold (Rule R-07): reportable if over 50,000 ServicePoints.",
+          "object_type": "logic",
+          "submission_criteria": "On OutageConfirmed; starts the regulatory reporting clock",
+          "rules": [
+            {
+              "id": "outage-reportable-threshold-1h",
+              "name": "Report outage over 50,000 ServicePoints within 1 hour",
+              "submission_criteria": "On OutageConfirmed; starts the regulatory reporting clock",
+              "description": "An OutageEvent affecting more than 50,000 ServicePoints must be reported to the regulator within 1 hour of its detection timestamp."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "ifReportableStartTheReportingClock",
+          "description": "If reportable, start the reporting clock from the detection timestamp.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"EvaluateReportability\" action. Consume affectedServicePointCount and detectionTimestamp; apply the regulatory threshold (Rule R-07); produce a reportable flag and a reporting clock start time when the threshold is met. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"EvaluateReportability\" using outage_event. Consume affectedServicePointCount and detectionTimestamp; apply the regulatory threshold (Rule R-07); produce a reportable flag and a reporting clock start time when the threshold is met. Produce outage_event and emit the appropriate events.",
+      "tool_use": [
+        "OMS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Outage_Event",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Set reportable flag and reporting clock start"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "REPORTABILITY_DETERMINED",
+        "REGULATORY_CLOCK_STARTED"
+      ],
       "inputs": [
         {
           "name": "outage_event",
           "objectTypeId": "objectType:outage-event",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Outage_Event.outage_event_id"
         }
       ],
       "outputs": [
@@ -2775,7 +2976,8 @@
           "name": "outage_event",
           "objectTypeId": "objectType:outage-event",
           "required": true,
-          "description": "OutageEvent with reportable flag."
+          "description": "OutageEvent with reportable flag.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2835,11 +3037,6 @@
           "objectTypeId": "objectType:outage-event"
         }
       ],
-      "actor": {
-        "role": "OMS Compliance module",
-        "roleZh": "OMS合规模块",
-        "kind": "system"
-      },
       "permissions": [
         "outage:evaluate-reportability"
       ],
@@ -2875,7 +3072,12 @@
       ],
       "confidence": 0.94,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "OMS Compliance module",
+        "roleZh": "OMS合规模块",
+        "kind": "system"
+      }
     },
     {
       "id": "action:dispatch-crew",
@@ -2884,16 +3086,98 @@
       "nameZh": "派遣班组",
       "description": "Consume the confirmed outage scope and crew availability; produce a Crew assignment and, where field repair is needed, an emergency MaintenanceWorkOrder linked to the OutageEvent and the suspected Asset.",
       "descriptionZh": "消费已确认的停电范围和班组可用性；产生班组指派，并在需要现场维修时产生与停电事件和疑似资产关联的紧急维护工单。",
+      "submission_criteria": "1. Event OUTAGE_CONFIRMED has been received\n2. Rule \"Critical-care customer dispatch within 2 hours\" is satisfied\n3. Rule \"Emergency WO references outage and faulted asset\" is satisfied",
+      "object_type": "action",
+      "category": "派遣班组",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "OUTAGE_CONFIRMED"
+      ],
+      "target_objects": [
+        "Outage_Event",
+        "Crew",
+        "Maintenance_Work_Order"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "readConfirmedOutageScopeAndCrew",
+          "description": "Read confirmed outage scope and crew availability.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "dispatchCrewWithin2HoursWhen",
+          "description": "Dispatch crew within 2 hours when a critical-care Customer is affected.",
+          "object_type": "logic",
+          "submission_criteria": "On OutageConfirmed for critical-care customers",
+          "rules": [
+            {
+              "id": "critical-care-dispatch-2h",
+              "name": "Critical-care customer dispatch within 2 hours",
+              "submission_criteria": "On OutageConfirmed for critical-care customers",
+              "description": "A Crew must be dispatched to any confirmed OutageEvent affecting a critical-care Customer within 2 hours of the outage confirmation timestamp."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "whereFieldRepairIsNeededCreate",
+          "description": "Where field repair is needed, create an emergency MaintenanceWorkOrder referencing the OutageEvent and the suspected Asset.",
+          "object_type": "logic",
+          "submission_criteria": "On emergency MaintenanceWorkOrder creation during dispatch",
+          "rules": [
+            {
+              "id": "emergency-wo-references-outage-and-asset",
+              "name": "Emergency WO references outage and faulted asset",
+              "submission_criteria": "On emergency MaintenanceWorkOrder creation during dispatch",
+              "description": "An emergency MaintenanceWorkOrder created from an active OutageEvent must reference both the parent OutageEvent and the faulted Asset."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"DispatchCrew\" action. Consume the confirmed outage scope and crew availability; produce a Crew assignment and, where field repair is needed, an emergency MaintenanceWorkOrder linked to the OutageEvent and the suspected Asset. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"DispatchCrew\" using outage_event, crew. Consume the confirmed outage scope and crew availability; produce a Crew assignment and, where field repair is needed, an emergency MaintenanceWorkOrder linked to the OutageEvent and the suspected Asset. Produce crew, work_order and emit the appropriate events.",
+      "tool_use": [
+        "Maximo"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Crew",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Crew.availability := dispatched"
+          },
+          {
+            "object_type": "Maintenance_Work_Order",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create emergency MaintenanceWorkOrder when field repair needed"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "CREW_DISPATCHED"
+      ],
       "inputs": [
         {
           "name": "outage_event",
           "objectTypeId": "objectType:outage-event",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Outage_Event.outage_event_id"
         },
         {
           "name": "crew",
           "objectTypeId": "objectType:crew",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Crew.crew_id"
         }
       ],
       "outputs": [
@@ -2901,13 +3185,15 @@
           "name": "crew",
           "objectTypeId": "objectType:crew",
           "required": true,
-          "description": "Dispatched crew."
+          "description": "Dispatched crew.",
+          "type": "String"
         },
         {
           "name": "work_order",
           "objectTypeId": "objectType:maintenance-work-order",
           "required": false,
-          "description": "Emergency MaintenanceWorkOrder, where field repair is needed."
+          "description": "Emergency MaintenanceWorkOrder, where field repair is needed.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2976,11 +3262,6 @@
           "objectTypeId": "objectType:maintenance-work-order"
         }
       ],
-      "actor": {
-        "role": "DOC Dispatcher",
-        "roleZh": "配电运营中心派工员",
-        "kind": "human"
-      },
       "permissions": [
         "crew:dispatch"
       ],
@@ -3026,7 +3307,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "DOC Dispatcher",
+        "roleZh": "配电运营中心派工员",
+        "kind": "human"
+      }
     },
     {
       "id": "action:log-field-finding",
@@ -3035,16 +3321,83 @@
       "nameZh": "记录现场发现",
       "description": "Consume the crew's on-site assessment; produce an updated MaintenanceWorkOrder with diagnosed cause and the confirmed faulted Asset, and advance the OutageEvent to state RepairInProgress.",
       "descriptionZh": "消费班组现场评估；产生带诊断原因和已确认故障资产的更新维护工单，并将停电事件推进至RepairInProgress状态。",
+      "submission_criteria": "1. Event CREW_DISPATCHED has been received",
+      "object_type": "action",
+      "category": "记录现场发现",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "CREW_DISPATCHED"
+      ],
+      "target_objects": [
+        "Maintenance_Work_Order",
+        "Outage_Event",
+        "Asset"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeTheCrewSOnSite",
+          "description": "Consume the crew's on-site assessment via Maximo mobile.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "updateTheMaintenanceWorkOrderWith",
+          "description": "Update the MaintenanceWorkOrder with diagnosed cause and confirmed faulted Asset.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "3",
+          "name": "advanceTheOutageEventToState",
+          "description": "Advance the OutageEvent to state RepairInProgress.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"LogFieldFinding\" action. Consume the crew's on-site assessment; produce an updated MaintenanceWorkOrder with diagnosed cause and the confirmed faulted Asset, and advance the OutageEvent to state RepairInProgress. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"LogFieldFinding\" using work_order, outage_event. Consume the crew's on-site assessment; produce an updated MaintenanceWorkOrder with diagnosed cause and the confirmed faulted Asset, and advance the OutageEvent to state RepairInProgress. Produce work_order, asset and emit the appropriate events.",
+      "tool_use": [
+        "Maximo"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Outage_Event",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "OutageEvent.state := RepairInProgress"
+          },
+          {
+            "object_type": "Maintenance_Work_Order",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Update MaintenanceWorkOrder with cause and faulted asset"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "FIELD_FINDING_LOGGED",
+        "ASSET_DEFECT_IDENTIFIED"
+      ],
       "inputs": [
         {
           "name": "work_order",
           "objectTypeId": "objectType:maintenance-work-order",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Maintenance_Work_Order.work_order_id"
         },
         {
           "name": "outage_event",
           "objectTypeId": "objectType:outage-event",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Outage_Event.outage_event_id"
         }
       ],
       "outputs": [
@@ -3052,13 +3405,15 @@
           "name": "work_order",
           "objectTypeId": "objectType:maintenance-work-order",
           "required": true,
-          "description": "Updated WO with diagnosed cause."
+          "description": "Updated WO with diagnosed cause.",
+          "type": "String"
         },
         {
           "name": "asset",
           "objectTypeId": "objectType:asset",
           "required": true,
-          "description": "Confirmed faulted Asset."
+          "description": "Confirmed faulted Asset.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3121,11 +3476,6 @@
           "objectTypeId": "objectType:maintenance-work-order"
         }
       ],
-      "actor": {
-        "role": "Field Crew",
-        "roleZh": "现场班组",
-        "kind": "human"
-      },
       "permissions": [
         "workorder:update"
       ],
@@ -3171,7 +3521,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Field Crew",
+        "roleZh": "现场班组",
+        "kind": "human"
+      }
     },
     {
       "id": "action:restore-supply",
@@ -3180,23 +3535,95 @@
       "nameZh": "恢复供电",
       "description": "Consume the completed switching/repair; produce re-energization, an OutageEvent state of Restored, a restorationTimestamp, and a computed outage duration.",
       "descriptionZh": "消费已完成的开关操作/维修；产生重新带电、Restored状态的停电事件、复电时间戳和计算出的停电持续时间。",
+      "submission_criteria": "1. Event FIELD_FINDING_LOGGED has been received\n2. Rule \"No switching until upstream device confirmed open\" is satisfied",
+      "object_type": "action",
+      "category": "恢复供电",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "FIELD_FINDING_LOGGED"
+      ],
+      "target_objects": [
+        "Outage_Event",
+        "Feeder",
+        "Service_Point",
+        "Substation"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "confirmTheUpstreamSubstationDeviceState",
+          "description": "Confirm the upstream Substation device state is open in SCADA before switching.",
+          "object_type": "logic",
+          "submission_criteria": "Before switching during restoration; may be waived by Shift Supervisor for public safety",
+          "rules": [
+            {
+              "id": "no-switching-until-upstream-open",
+              "name": "No switching until upstream device confirmed open",
+              "submission_criteria": "Before switching during restoration; may be waived by Shift Supervisor for public safety",
+              "description": "A Crew may not perform switching on a Feeder until the upstream Substation device state is confirmed open in SCADA."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "executeCompletedSwitchingRepairAndRe",
+          "description": "Execute completed switching/repair and re-energize.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "3",
+          "name": "setOutageEventStateRestoredRecord",
+          "description": "Set OutageEvent state Restored, record restorationTimestamp, and compute outage duration.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"RestoreSupply\" action. Consume the completed switching/repair; produce re-energization, an OutageEvent state of Restored, a restorationTimestamp, and a computed outage duration. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"RestoreSupply\" using outage_event, feeder, service_point. Consume the completed switching/repair; produce re-energization, an OutageEvent state of Restored, a restorationTimestamp, and a computed outage duration. Produce outage_event and emit the appropriate events.",
+      "tool_use": [
+        "OMS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Outage_Event",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "OutageEvent.state := Restored; set restorationTimestamp"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "SUPPLY_RESTORED",
+        "OUTAGE_RESTORED"
+      ],
       "inputs": [
         {
           "name": "outage_event",
           "objectTypeId": "objectType:outage-event",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Outage_Event.outage_event_id"
         },
         {
           "name": "feeder",
           "objectTypeId": "objectType:feeder",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Feeder.feeder_id"
         },
         {
           "name": "service_point",
           "objectTypeId": "objectType:service-point",
           "required": true,
           "cardinality": "many",
-          "isArray": true
+          "isArray": true,
+          "type": "String",
+          "source_object": "Service_Point.service_point_id"
         }
       ],
       "outputs": [
@@ -3204,7 +3631,8 @@
           "name": "outage_event",
           "objectTypeId": "objectType:outage-event",
           "required": true,
-          "description": "OutageEvent in state Restored with restorationTimestamp."
+          "description": "OutageEvent in state Restored with restorationTimestamp.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3268,11 +3696,6 @@
           "objectTypeId": "objectType:outage-event"
         }
       ],
-      "actor": {
-        "role": "Field Crew",
-        "roleZh": "现场班组",
-        "kind": "human"
-      },
       "permissions": [
         "supply:restore"
       ],
@@ -3313,7 +3736,12 @@
       ],
       "confidence": 0.94,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Field Crew",
+        "roleZh": "现场班组",
+        "kind": "human"
+      }
     },
     {
       "id": "action:close-outage",
@@ -3322,18 +3750,93 @@
       "nameZh": "关闭停电",
       "description": "Consume AMI 'power restored' confirmations for all affected ServicePoints; produce a closed OutageEvent (state Closed) and trigger finalization of the linked MaintenanceWorkOrder.",
       "descriptionZh": "消费所有受影响供电点的AMI“已复电”确认；产生已关闭的停电事件（状态Closed）并触发关联维护工单的收尾。",
+      "submission_criteria": "1. Event OUTAGE_RESTORED has been received\n2. Rule \"No close until all ServicePoints AMI-confirmed\" is satisfied\n3. Rule \"Cause code required before close\" is satisfied",
+      "object_type": "action",
+      "category": "关闭停电",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "OUTAGE_RESTORED"
+      ],
+      "target_objects": [
+        "Outage_Event",
+        "Service_Point"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "confirmEveryAffectedServicePointReturned",
+          "description": "Confirm every affected ServicePoint returned an AMI power-restored confirmation.",
+          "object_type": "logic",
+          "submission_criteria": "On OutageEvent transition Restored → Closed",
+          "rules": [
+            {
+              "id": "no-close-until-all-restored",
+              "name": "No close until all ServicePoints AMI-confirmed",
+              "submission_criteria": "On OutageEvent transition Restored → Closed",
+              "description": "An OutageEvent may not be advanced to the Closed state until every affected ServicePoint has returned an AMI power-restored confirmation."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "verifyTheOutageEventCauseCode",
+          "description": "Verify the OutageEvent cause code is recorded before close.",
+          "object_type": "logic",
+          "submission_criteria": "On OutageEvent transition Restored → Closed",
+          "rules": [
+            {
+              "id": "cause-code-before-close",
+              "name": "Cause code required before close",
+              "submission_criteria": "On OutageEvent transition Restored → Closed",
+              "description": "An OutageEvent cause code is required to be recorded before the OutageEvent may transition from Restored to Closed."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "setOutageEventStateClosedAnd",
+          "description": "Set OutageEvent state Closed and trigger finalization of the linked MaintenanceWorkOrder.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"CloseOutage\" action. Consume AMI 'power restored' confirmations for all affected ServicePoints; produce a closed OutageEvent (state Closed) and trigger finalization of the linked MaintenanceWorkOrder. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"CloseOutage\" using outage_event, service_point. Consume AMI 'power restored' confirmations for all affected ServicePoints; produce a closed OutageEvent (state Closed) and trigger finalization of the linked MaintenanceWorkOrder. Produce outage_event and emit the appropriate events.",
+      "tool_use": [
+        "OMS"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Outage_Event",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "OutageEvent.state := Closed"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "OUTAGE_CLOSED"
+      ],
       "inputs": [
         {
           "name": "outage_event",
           "objectTypeId": "objectType:outage-event",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Outage_Event.outage_event_id"
         },
         {
           "name": "service_point",
           "objectTypeId": "objectType:service-point",
           "required": true,
           "cardinality": "many",
-          "isArray": true
+          "isArray": true,
+          "type": "String",
+          "source_object": "Service_Point.service_point_id"
         }
       ],
       "outputs": [
@@ -3341,7 +3844,8 @@
           "name": "outage_event",
           "objectTypeId": "objectType:outage-event",
           "required": true,
-          "description": "Closed OutageEvent."
+          "description": "Closed OutageEvent.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3404,11 +3908,6 @@
           "objectTypeId": "objectType:outage-event"
         }
       ],
-      "actor": {
-        "role": "OMS / DOC Operator",
-        "roleZh": "OMS/配电运营中心操作员",
-        "kind": "system"
-      },
       "permissions": [
         "outage:close"
       ],
@@ -3444,7 +3943,12 @@
       ],
       "confidence": 0.95,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "OMS / DOC Operator",
+        "roleZh": "OMS/配电运营中心操作员",
+        "kind": "system"
+      }
     },
     {
       "id": "action:open-regulatory-report",
@@ -3453,11 +3957,69 @@
       "nameZh": "开立监管报告",
       "description": "Consume the reportable OutageEvent and its scope; produce a draft RegulatoryReport with the filing deadline computed from RegulatoryClockStarted (Rule R-07).",
       "descriptionZh": "消费可报告停电事件及其范围；产生草稿监管报告，其备案截止时间从RegulatoryClockStarted计算（R-07规则）。",
+      "submission_criteria": "1. Event REGULATORY_CLOCK_STARTED has been received\n2. Rule \"Report outage over 50,000 ServicePoints within 1 hour\" is satisfied",
+      "object_type": "action",
+      "category": "开立监管报告",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "REGULATORY_CLOCK_STARTED"
+      ],
+      "target_objects": [
+        "Outage_Event",
+        "Regulatory_Report"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "readTheReportableOutageEventAnd",
+          "description": "Read the reportable OutageEvent and its scope.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "createADraftRegulatoryReportAnd",
+          "description": "Create a draft RegulatoryReport and compute the filing deadline from the regulatory clock (within 1 hour for events over 50,000 ServicePoints).",
+          "object_type": "logic",
+          "submission_criteria": "On OutageConfirmed; starts the regulatory reporting clock",
+          "rules": [
+            {
+              "id": "outage-reportable-threshold-1h",
+              "name": "Report outage over 50,000 ServicePoints within 1 hour",
+              "submission_criteria": "On OutageConfirmed; starts the regulatory reporting clock",
+              "description": "An OutageEvent affecting more than 50,000 ServicePoints must be reported to the regulator within 1 hour of its detection timestamp."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"OpenRegulatoryReport\" action. Consume the reportable OutageEvent and its scope; produce a draft RegulatoryReport with the filing deadline computed from RegulatoryClockStarted (Rule R-07). Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"OpenRegulatoryReport\" using outage_event. Consume the reportable OutageEvent and its scope; produce a draft RegulatoryReport with the filing deadline computed from RegulatoryClockStarted (Rule R-07). Produce regulatory_report and emit the appropriate events.",
+      "tool_use": [
+        "RegFiling Portal"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Regulatory_Report",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create draft RegulatoryReport with filingDeadline"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "REGULATORY_REPORT_OPENED"
+      ],
       "inputs": [
         {
           "name": "outage_event",
           "objectTypeId": "objectType:outage-event",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Outage_Event.outage_event_id"
         }
       ],
       "outputs": [
@@ -3465,7 +4027,8 @@
           "name": "regulatory_report",
           "objectTypeId": "objectType:regulatory-report",
           "required": true,
-          "description": "Draft RegulatoryReport with filing deadline."
+          "description": "Draft RegulatoryReport with filing deadline.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3513,11 +4076,6 @@
           "objectTypeId": "objectType:regulatory-report"
         }
       ],
-      "actor": {
-        "role": "Regulatory Analyst",
-        "roleZh": "监管分析师",
-        "kind": "human"
-      },
       "permissions": [
         "report:open"
       ],
@@ -3550,7 +4108,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Regulatory Analyst",
+        "roleZh": "监管分析师",
+        "kind": "human"
+      }
     },
     {
       "id": "action:compile-regulatory-report",
@@ -3559,30 +4122,103 @@
       "nameZh": "编制监管报告",
       "description": "Consume affected-customer counts (ServicePoint → Customer), cause code, and estimated restoration time; produce a validated RegulatoryReport ready for submission.",
       "descriptionZh": "消费受影响客户数量（供电点→客户）、原因代码和预计复电时间；产生准备好提交的已校验监管报告。",
+      "submission_criteria": "1. Event REGULATORY_REPORT_OPENED has been received\n2. Rule \"Long outage requires root-cause narrative\" is satisfied",
+      "object_type": "action",
+      "category": "编制监管报告",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "REGULATORY_REPORT_OPENED"
+      ],
+      "target_objects": [
+        "Regulatory_Report",
+        "Outage_Event",
+        "Customer",
+        "Service_Point"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "deriveAffectedCustomerCountsStrictlyVia",
+          "description": "Derive affected-customer counts strictly via OutageEvent → Feeder → ServicePoint → Customer.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "includeCauseCodeAndEstimatedRestoration",
+          "description": "Include cause code and estimated restoration time; add a root-cause narrative if restoration exceeded 24 hours.",
+          "object_type": "logic",
+          "submission_criteria": "On RegulatoryReport compilation",
+          "rules": [
+            {
+              "id": "long-outage-root-cause-narrative",
+              "name": "Long outage requires root-cause narrative",
+              "submission_criteria": "On RegulatoryReport compilation",
+              "description": "An OutageEvent with a restoration duration exceeding 24 hours is required to include a root-cause narrative in its RegulatoryReport."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "validateTheRegulatoryReportForSubmission",
+          "description": "Validate the RegulatoryReport for submission.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"CompileRegulatoryReport\" action. Consume affected-customer counts (ServicePoint → Customer), cause code, and estimated restoration time; produce a validated RegulatoryReport ready for submission. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"CompileRegulatoryReport\" using regulatory_report, outage_event, customer, service_point. Consume affected-customer counts (ServicePoint → Customer), cause code, and estimated restoration time; produce a validated RegulatoryReport ready for submission. Produce regulatory_report and emit the appropriate events.",
+      "tool_use": [
+        "RegFiling Portal"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Regulatory_Report",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Validate and populate RegulatoryReport"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "REGULATORY_REPORT_COMPILED"
+      ],
       "inputs": [
         {
           "name": "regulatory_report",
           "objectTypeId": "objectType:regulatory-report",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Regulatory_Report.report_id"
         },
         {
           "name": "outage_event",
           "objectTypeId": "objectType:outage-event",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Outage_Event.outage_event_id"
         },
         {
           "name": "customer",
           "objectTypeId": "objectType:customer",
           "required": true,
           "cardinality": "many",
-          "isArray": true
+          "isArray": true,
+          "type": "String",
+          "source_object": "Customer.customer_id"
         },
         {
           "name": "service_point",
           "objectTypeId": "objectType:service-point",
           "required": true,
           "cardinality": "many",
-          "isArray": true
+          "isArray": true,
+          "type": "String",
+          "source_object": "Service_Point.service_point_id"
         }
       ],
       "outputs": [
@@ -3590,7 +4226,8 @@
           "name": "regulatory_report",
           "objectTypeId": "objectType:regulatory-report",
           "required": true,
-          "description": "Validated RegulatoryReport."
+          "description": "Validated RegulatoryReport.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3652,11 +4289,6 @@
           "objectTypeId": "objectType:regulatory-report"
         }
       ],
-      "actor": {
-        "role": "Regulatory Analyst",
-        "roleZh": "监管分析师",
-        "kind": "human"
-      },
       "permissions": [
         "report:compile"
       ],
@@ -3693,7 +4325,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Regulatory Analyst",
+        "roleZh": "监管分析师",
+        "kind": "human"
+      }
     },
     {
       "id": "action:submit-regulatory-report",
@@ -3702,16 +4339,80 @@
       "nameZh": "提交监管报告",
       "description": "Consume the validated report; produce a submitted RegulatoryReport with a portal confirmation ID, stopping the reporting clock. Major events require Director of Compliance approval (Rule R-09).",
       "descriptionZh": "消费已校验报告；产生带门户确认编号的已提交监管报告，停止报告时钟。重大事件须经合规总监批准（R-09规则）。",
+      "submission_criteria": "1. Event REGULATORY_REPORT_COMPILED has been received\n2. Rule \"Major event filing requires Director approval\" is satisfied\n3. Rule \"Missed filing deadline escalates to Director\" is satisfied",
+      "object_type": "action",
+      "category": "提交监管报告",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "REGULATORY_REPORT_COMPILED"
+      ],
+      "target_objects": [
+        "Regulatory_Report",
+        "Outage_Event"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "forMajorEventsAffectingOver100",
+          "description": "For major events affecting over 100,000 ServicePoints, obtain Director of Compliance approval.",
+          "object_type": "logic",
+          "submission_criteria": "On RegulatoryReport submission for major events",
+          "rules": [
+            {
+              "id": "major-event-director-approval",
+              "name": "Major event filing requires Director approval",
+              "submission_criteria": "On RegulatoryReport submission for major events",
+              "description": "A RegulatoryReport for a major event affecting more than 100,000 ServicePoints may not be submitted without the Director of Compliance's recorded approval."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "submitTheValidatedReportViaThe",
+          "description": "Submit the validated report via the RegFiling Portal and record the portal confirmation ID, stopping the reporting clock.",
+          "object_type": "logic",
+          "submission_criteria": "On filing deadline lapse",
+          "rules": [
+            {
+              "id": "report-deadline-escalation",
+              "name": "Missed filing deadline escalates to Director",
+              "submission_criteria": "On filing deadline lapse",
+              "description": "A RegulatoryReport that is not submitted before its computed filing deadline shall escalate automatically to the Director of Compliance."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"SubmitRegulatoryReport\" action. Consume the validated report; produce a submitted RegulatoryReport with a portal confirmation ID, stopping the reporting clock. Major events require Director of Compliance approval (Rule R-09). Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"SubmitRegulatoryReport\" using regulatory_report, outage_event. Consume the validated report; produce a submitted RegulatoryReport with a portal confirmation ID, stopping the reporting clock. Major events require Director of Compliance approval (Rule R-09). Produce regulatory_report and emit the appropriate events.",
+      "tool_use": [
+        "RegFiling Portal",
+        "Submit RegulatoryReport to PUC via RegFiling Portal"
+      ],
+      "side_effects": {
+        "data_changes": [],
+        "notifications": []
+      },
+      "triggered_event": [
+        "REGULATORY_REPORT_SUBMITTED",
+        "REGULATORY_REPORT_ACCEPTED",
+        "REGULATORY_DEADLINE_BREACHED"
+      ],
       "inputs": [
         {
           "name": "regulatory_report",
           "objectTypeId": "objectType:regulatory-report",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Regulatory_Report.report_id"
         },
         {
           "name": "outage_event",
           "objectTypeId": "objectType:outage-event",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Outage_Event.outage_event_id"
         }
       ],
       "outputs": [
@@ -3719,7 +4420,8 @@
           "name": "regulatory_report",
           "objectTypeId": "objectType:regulatory-report",
           "required": true,
-          "description": "Submitted RegulatoryReport with portalConfirmationId."
+          "description": "Submitted RegulatoryReport with portalConfirmationId.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3783,11 +4485,6 @@
           "objectTypeId": "objectType:regulatory-report"
         }
       ],
-      "actor": {
-        "role": "Regulatory Analyst",
-        "roleZh": "监管分析师",
-        "kind": "human"
-      },
       "permissions": [
         "report:submit"
       ],
@@ -3827,7 +4524,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Regulatory Analyst",
+        "roleZh": "监管分析师",
+        "kind": "human"
+      }
     },
     {
       "id": "action:schedule-inspection",
@@ -3836,11 +4538,69 @@
       "nameZh": "排定巡检",
       "description": "Consume each Asset's rated inspection interval and last completed date; produce a scheduled Inspection record with a due date.",
       "descriptionZh": "消费每个资产的额定巡检间隔和上次完成日期；产生带到期日的已排定巡检记录。",
+      "submission_criteria": "1. Event INSPECTION_INTERVAL_ELAPSED has been received\n2. Rule \"Inspection cadence by asset class\" is satisfied\n3. Rule \"Transmission inspection within rated interval\" is satisfied",
+      "object_type": "action",
+      "category": "排定巡检",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "INSPECTION_INTERVAL_ELAPSED"
+      ],
+      "target_objects": [
+        "Asset",
+        "Inspection"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "readTheAssetSRatedInspection",
+          "description": "Read the Asset's rated inspection interval and last completed date.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "computeTheDueDateHonoringClass",
+          "description": "Compute the due date honoring class cadence (distribution ≤ 36 months, transmission ≤ 12 months) and create the Inspection.",
+          "object_type": "logic",
+          "submission_criteria": "On inspection scheduling",
+          "rules": [
+            {
+              "id": "inspection-cadence-by-class",
+              "name": "Inspection cadence by asset class",
+              "submission_criteria": "On inspection scheduling",
+              "description": "A distribution-class Asset must be inspected at least once every 36 months, and a transmission-class Asset at least once every 12 months."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"ScheduleInspection\" action. Consume each Asset's rated inspection interval and last completed date; produce a scheduled Inspection record with a due date. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ScheduleInspection\" using asset. Consume each Asset's rated inspection interval and last completed date; produce a scheduled Inspection record with a due date. Produce inspection and emit the appropriate events.",
+      "tool_use": [
+        "Maximo"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Inspection",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create scheduled Inspection with dueDate"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "INSPECTION_SCHEDULED"
+      ],
       "inputs": [
         {
           "name": "asset",
           "objectTypeId": "objectType:asset",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Asset.asset_tag"
         }
       ],
       "outputs": [
@@ -3848,7 +4608,8 @@
           "name": "inspection",
           "objectTypeId": "objectType:inspection",
           "required": true,
-          "description": "Scheduled Inspection with due date."
+          "description": "Scheduled Inspection with due date.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3900,11 +4661,6 @@
           "objectTypeId": "objectType:inspection"
         }
       ],
-      "actor": {
-        "role": "Maximo PM Scheduler",
-        "roleZh": "Maximo预防性维护排程器",
-        "kind": "system"
-      },
       "permissions": [
         "inspection:schedule"
       ],
@@ -3940,7 +4696,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Maximo PM Scheduler",
+        "roleZh": "Maximo预防性维护排程器",
+        "kind": "system"
+      }
     },
     {
       "id": "action:record-inspection-result",
@@ -3949,16 +4710,69 @@
       "nameZh": "记录巡检结果",
       "description": "Consume the inspector's condition assessment; produce a completed Inspection with a pass/fail result and a recorded completion date against the Asset.",
       "descriptionZh": "消费检查员的状态评估；产生带通过/不通过结果和已记录完成日期的已完成巡检，并记入资产。",
+      "submission_criteria": "1. Event INSPECTION_SCHEDULED has been received",
+      "object_type": "action",
+      "category": "记录巡检结果",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "INSPECTION_SCHEDULED"
+      ],
+      "target_objects": [
+        "Inspection",
+        "Asset"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeTheInspectorSConditionAssessment",
+          "description": "Consume the inspector's condition assessment via Maximo mobile.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "recordThePassFailResultAnd",
+          "description": "Record the pass/fail result and completion date against the Asset.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"RecordInspectionResult\" action. Consume the inspector's condition assessment; produce a completed Inspection with a pass/fail result and a recorded completion date against the Asset. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"RecordInspectionResult\" using inspection, asset. Consume the inspector's condition assessment; produce a completed Inspection with a pass/fail result and a recorded completion date against the Asset. Produce inspection and emit the appropriate events.",
+      "tool_use": [
+        "Maximo"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Inspection",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Complete Inspection with result and completedDate"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "INSPECTION_COMPLETED",
+        "ASSET_DEFECT_IDENTIFIED"
+      ],
       "inputs": [
         {
           "name": "inspection",
           "objectTypeId": "objectType:inspection",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Inspection.inspection_id"
         },
         {
           "name": "asset",
           "objectTypeId": "objectType:asset",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Asset.asset_tag"
         }
       ],
       "outputs": [
@@ -3966,7 +4780,8 @@
           "name": "inspection",
           "objectTypeId": "objectType:inspection",
           "required": true,
-          "description": "Completed Inspection with pass/fail result."
+          "description": "Completed Inspection with pass/fail result.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4015,11 +4830,6 @@
           "objectTypeId": "objectType:inspection"
         }
       ],
-      "actor": {
-        "role": "Inspector",
-        "roleZh": "检查员",
-        "kind": "human"
-      },
       "permissions": [
         "inspection:record"
       ],
@@ -4060,7 +4870,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Inspector",
+        "roleZh": "检查员",
+        "kind": "human"
+      }
     },
     {
       "id": "action:raise-maintenance-work-order",
@@ -4069,16 +4884,93 @@
       "nameZh": "开立维护工单",
       "description": "Consume a failed Inspection or a missed inspection interval; produce a MaintenanceWorkOrder with a priority derived from asset class (transmission assets auto-raise priority per Rule R-01).",
       "descriptionZh": "消费不通过的巡检或逾期的巡检间隔；产生优先级由资产等级推导的维护工单（输电资产按R-01规则自动提升优先级）。",
+      "submission_criteria": "1. Event ASSET_DEFECT_IDENTIFIED has been received\n2. Event INSPECTION_INTERVAL_MISSED has been received\n3. Rule \"Failed inspection raises corrective WO within 24h\" is satisfied\n4. Rule \"Transmission inspection within rated interval\" is satisfied",
+      "object_type": "action",
+      "category": "开立维护工单",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "ASSET_DEFECT_IDENTIFIED",
+        "INSPECTION_INTERVAL_MISSED"
+      ],
+      "target_objects": [
+        "Inspection",
+        "Asset",
+        "Maintenance_Work_Order"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "readTheFailedInspectionOrMissed",
+          "description": "Read the failed Inspection or missed inspection interval and the Asset class.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "generateTheCorrectiveMaintenanceWorkOrder",
+          "description": "Generate the corrective MaintenanceWorkOrder within 24 hours of a failed inspection.",
+          "object_type": "logic",
+          "submission_criteria": "On Inspection result = fail",
+          "rules": [
+            {
+              "id": "failed-inspection-raises-wo-24h",
+              "name": "Failed inspection raises corrective WO within 24h",
+              "submission_criteria": "On Inspection result = fail",
+              "description": "An Inspection that returns a fail result is required to generate a corrective MaintenanceWorkOrder within 24 hours of the inspection completion timestamp."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "autoRaisePriorityForTransmissionClass",
+          "description": "Auto-raise priority for transmission-class assets.",
+          "object_type": "logic",
+          "submission_criteria": "On inspection-interval timer or missed interval",
+          "rules": [
+            {
+              "id": "transmission-inspection-interval",
+              "name": "Transmission inspection within rated interval",
+              "submission_criteria": "On inspection-interval timer or missed interval",
+              "description": "A transmission-class Asset must have a completed Inspection within its rated inspection interval, and a missed interval shall automatically raise a priority MaintenanceWorkOrder."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"RaiseMaintenanceWorkOrder\" action. Consume a failed Inspection or a missed inspection interval; produce a MaintenanceWorkOrder with a priority derived from asset class (transmission assets auto-raise priority per Rule R-01). Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"RaiseMaintenanceWorkOrder\" using inspection, asset. Consume a failed Inspection or a missed inspection interval; produce a MaintenanceWorkOrder with a priority derived from asset class (transmission assets auto-raise priority per Rule R-01). Produce work_order and emit the appropriate events.",
+      "tool_use": [
+        "Maximo"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Maintenance_Work_Order",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create MaintenanceWorkOrder with derived priority"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "MAINTENANCE_WORK_ORDER_RAISED"
+      ],
       "inputs": [
         {
           "name": "inspection",
           "objectTypeId": "objectType:inspection",
-          "required": false
+          "required": false,
+          "type": "String",
+          "source_object": "Inspection.inspection_id"
         },
         {
           "name": "asset",
           "objectTypeId": "objectType:asset",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Asset.asset_tag"
         }
       ],
       "outputs": [
@@ -4086,7 +4978,8 @@
           "name": "work_order",
           "objectTypeId": "objectType:maintenance-work-order",
           "required": true,
-          "description": "Raised MaintenanceWorkOrder with derived priority."
+          "description": "Raised MaintenanceWorkOrder with derived priority.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4151,11 +5044,6 @@
           "objectTypeId": "objectType:maintenance-work-order"
         }
       ],
-      "actor": {
-        "role": "Maintenance Planner",
-        "roleZh": "维护计划员",
-        "kind": "human"
-      },
       "permissions": [
         "workorder:raise"
       ],
@@ -4196,7 +5084,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Maintenance Planner",
+        "roleZh": "维护计划员",
+        "kind": "human"
+      }
     },
     {
       "id": "action:approve-maintenance-work-order",
@@ -4205,21 +5098,91 @@
       "nameZh": "批准维护工单",
       "description": "Consume the raised work order; produce an approved, scheduled, and crew-assigned MaintenanceWorkOrder. Asset Manager approves high-cost or safety-classified work (Rule R-05, R-06).",
       "descriptionZh": "消费已开立工单；产生已批准、已排定且已派工的维护工单。资产经理批准高成本或安全分类工作（R-05、R-06规则）。",
+      "submission_criteria": "1. Event MAINTENANCE_WORK_ORDER_RAISED has been received\n2. Rule \"High-cost WO requires Asset Manager approval\" is satisfied",
+      "object_type": "action",
+      "category": "批准维护工单",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "MAINTENANCE_WORK_ORDER_RAISED"
+      ],
+      "target_objects": [
+        "Maintenance_Work_Order",
+        "Crew",
+        "Asset"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "readTheRaisedMaintenanceWorkOrder",
+          "description": "Read the raised MaintenanceWorkOrder.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "obtainAssetManagerApprovalWhenEstimated",
+          "description": "Obtain Asset Manager approval when estimated cost exceeds $250,000 before crew assignment.",
+          "object_type": "logic",
+          "submission_criteria": "Before crew assignment on approval",
+          "rules": [
+            {
+              "id": "high-cost-wo-asset-manager-approval",
+              "name": "High-cost WO requires Asset Manager approval",
+              "submission_criteria": "Before crew assignment on approval",
+              "description": "A MaintenanceWorkOrder with an estimated cost above $250,000 is required to obtain Asset Manager approval before crew assignment."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "approveScheduleAndAssignACrew",
+          "description": "Approve, schedule, and assign a crew.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"ApproveMaintenanceWorkOrder\" action. Consume the raised work order; produce an approved, scheduled, and crew-assigned MaintenanceWorkOrder. Asset Manager approves high-cost or safety-classified work (Rule R-05, R-06). Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ApproveMaintenanceWorkOrder\" using work_order, crew, asset. Consume the raised work order; produce an approved, scheduled, and crew-assigned MaintenanceWorkOrder. Asset Manager approves high-cost or safety-classified work (Rule R-05, R-06). Produce work_order and emit the appropriate events.",
+      "tool_use": [
+        "Maximo"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Maintenance_Work_Order",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "MaintenanceWorkOrder.status := approved; assign crew"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "MAINTENANCE_WORK_ORDER_APPROVED"
+      ],
       "inputs": [
         {
           "name": "work_order",
           "objectTypeId": "objectType:maintenance-work-order",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Maintenance_Work_Order.work_order_id"
         },
         {
           "name": "crew",
           "objectTypeId": "objectType:crew",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Crew.crew_id"
         },
         {
           "name": "asset",
           "objectTypeId": "objectType:asset",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Asset.asset_tag"
         }
       ],
       "outputs": [
@@ -4227,7 +5190,8 @@
           "name": "work_order",
           "objectTypeId": "objectType:maintenance-work-order",
           "required": true,
-          "description": "Approved, scheduled, crew-assigned MaintenanceWorkOrder."
+          "description": "Approved, scheduled, crew-assigned MaintenanceWorkOrder.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4286,11 +5250,6 @@
           "objectTypeId": "objectType:maintenance-work-order"
         }
       ],
-      "actor": {
-        "role": "Maintenance Planner / Asset Manager",
-        "roleZh": "维护计划员/资产经理",
-        "kind": "human"
-      },
       "permissions": [
         "workorder:approve"
       ],
@@ -4331,7 +5290,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Maintenance Planner / Asset Manager",
+        "roleZh": "维护计划员/资产经理",
+        "kind": "human"
+      }
     },
     {
       "id": "action:complete-maintenance-work-order",
@@ -4340,16 +5304,89 @@
       "nameZh": "完成维护工单",
       "description": "Consume the completed field repair; produce a closed MaintenanceWorkOrder, update the Asset condition record, and reset the inspection clock if the work cleared the defect.",
       "descriptionZh": "消费已完成的现场维修；产生已关闭的维护工单，更新资产状态记录，若工作清除了缺陷则重置巡检时钟。",
+      "submission_criteria": "1. Event MAINTENANCE_WORK_ORDER_APPROVED has been received\n2. Rule \"Safety-classified asset close requires second engineer\" is satisfied",
+      "object_type": "action",
+      "category": "完成维护工单",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "MAINTENANCE_WORK_ORDER_APPROVED"
+      ],
+      "target_objects": [
+        "Maintenance_Work_Order",
+        "Asset"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeTheCompletedFieldRepairVia",
+          "description": "Consume the completed field repair via Maximo mobile.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "requireASecondQualifiedEngineerS",
+          "description": "Require a second qualified engineer's approval before closing work on a safety-classified Asset.",
+          "object_type": "logic",
+          "submission_criteria": "On MaintenanceWorkOrder close attempt",
+          "rules": [
+            {
+              "id": "safety-asset-second-engineer-close",
+              "name": "Safety-classified asset close requires second engineer",
+              "submission_criteria": "On MaintenanceWorkOrder close attempt",
+              "description": "A MaintenanceWorkOrder against a safety-classified Asset may not be closed without a second qualified engineer's approval recorded in Maximo."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "closeTheMaintenanceWorkOrderUpdate",
+          "description": "Close the MaintenanceWorkOrder, update the Asset condition record, and reset the inspection clock if the defect was cleared.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"CompleteMaintenanceWorkOrder\" action. Consume the completed field repair; produce a closed MaintenanceWorkOrder, update the Asset condition record, and reset the inspection clock if the work cleared the defect. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"CompleteMaintenanceWorkOrder\" using work_order, asset. Consume the completed field repair; produce a closed MaintenanceWorkOrder, update the Asset condition record, and reset the inspection clock if the work cleared the defect. Produce work_order and emit the appropriate events.",
+      "tool_use": [
+        "Maximo"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Maintenance_Work_Order",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "MaintenanceWorkOrder.status := closed"
+          },
+          {
+            "object_type": "Asset",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Update Asset condition record and reset inspection clock"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "MAINTENANCE_WORK_ORDER_CLOSED"
+      ],
       "inputs": [
         {
           "name": "work_order",
           "objectTypeId": "objectType:maintenance-work-order",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Maintenance_Work_Order.work_order_id"
         },
         {
           "name": "asset",
           "objectTypeId": "objectType:asset",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Asset.asset_tag"
         }
       ],
       "outputs": [
@@ -4357,7 +5394,8 @@
           "name": "work_order",
           "objectTypeId": "objectType:maintenance-work-order",
           "required": true,
-          "description": "Closed MaintenanceWorkOrder."
+          "description": "Closed MaintenanceWorkOrder.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4421,11 +5459,6 @@
           "objectTypeId": "objectType:asset"
         }
       ],
-      "actor": {
-        "role": "Field Crew",
-        "roleZh": "现场班组",
-        "kind": "human"
-      },
       "permissions": [
         "workorder:close"
       ],
@@ -4464,7 +5497,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Field Crew",
+        "roleZh": "现场班组",
+        "kind": "human"
+      }
     },
     {
       "id": "action:schedule-vegetation-clearance",
@@ -4473,11 +5511,69 @@
       "nameZh": "排定植被清理",
       "description": "Consume the feeder's clearance cycle and last-completed date and produce a vegetation MaintenanceWorkOrder.",
       "descriptionZh": "消费馈线的清理周期和上次完成日期，产生一份植被维护工单。",
+      "submission_criteria": "1. Event VEGETATION_CYCLE_LAPSED has been received\n2. Rule \"Vegetation cycle maximum by zone\" is satisfied\n3. Rule \"Vegetation cycle may not lapse without variance\" is satisfied",
+      "object_type": "action",
+      "category": "排定植被清理",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "VEGETATION_CYCLE_LAPSED"
+      ],
+      "target_objects": [
+        "Feeder",
+        "Maintenance_Work_Order"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "readTheHighVoltageFeederS",
+          "description": "Read the high-voltage Feeder's clearance cycle and last-completed date.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "verifyTheCycleDoesNotExceed",
+          "description": "Verify the cycle does not exceed the zone maximum (48 months; 24 months in wildfire-risk zones) and create a vegetation MaintenanceWorkOrder.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "vegetation-cycle-max-months",
+              "name": "Vegetation cycle maximum by zone",
+              "submission_criteria": "",
+              "description": "A high-voltage Feeder must be cleared on a cycle no longer than 48 months, and a Feeder traversing a designated wildfire-risk zone must be cleared on a cycle no longer than 24 months."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"ScheduleVegetationClearance\" action. Consume the feeder's clearance cycle and last-completed date and produce a vegetation MaintenanceWorkOrder. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ScheduleVegetationClearance\" using feeder. Consume the feeder's clearance cycle and last-completed date and produce a vegetation MaintenanceWorkOrder. Produce work_order and emit the appropriate events.",
+      "tool_use": [
+        "Maximo"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Maintenance_Work_Order",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create vegetation MaintenanceWorkOrder"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "MAINTENANCE_WORK_ORDER_RAISED"
+      ],
       "inputs": [
         {
           "name": "feeder",
           "objectTypeId": "objectType:feeder",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Feeder.feeder_id"
         }
       ],
       "outputs": [
@@ -4485,7 +5581,8 @@
           "name": "work_order",
           "objectTypeId": "objectType:maintenance-work-order",
           "required": true,
-          "description": "Vegetation MaintenanceWorkOrder."
+          "description": "Vegetation MaintenanceWorkOrder.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4537,11 +5634,6 @@
           "objectTypeId": "objectType:maintenance-work-order"
         }
       ],
-      "actor": {
-        "role": "Vegetation Program",
-        "roleZh": "植被管理项目",
-        "kind": "system"
-      },
       "permissions": [
         "vegetation:schedule"
       ],
@@ -4578,7 +5670,12 @@
       ],
       "confidence": 0.9,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Vegetation Program",
+        "roleZh": "植被管理项目",
+        "kind": "system"
+      }
     }
   ],
   "events": [

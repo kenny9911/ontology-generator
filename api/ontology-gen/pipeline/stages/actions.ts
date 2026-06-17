@@ -56,7 +56,11 @@ import type {
   Severity,
   SideEffect,
   SourceRef,
+  SpecActionStep,
+  SpecActor,
+  SpecSideEffects,
 } from '../../../_shared/ontology-schema.js';
+import { specObjectId, eventSpecName, mapDataType } from '../../spec-format/project.js';
 
 // ---------------------------------------------------------------------------
 // Local constants / small lookups
@@ -191,14 +195,11 @@ function coerceIO(v: unknown, objectIds: Set<string>): ActionIO | null {
   const scalar = coerceDataType(r.type);
   if (objId && objectIds.has(objId)) {
     io.objectTypeId = objId;
+    io.type = 'String'; // an object reference is carried as its id (String)
   } else if (scalar) {
-    io.type = scalar;
-  } else if (objId) {
-    // referenced an object we don't have: degrade to a reference scalar so the
-    // signature stays typed without a dangling cross-ref.
-    io.type = 'reference';
+    io.type = mapDataType(scalar); // spec-format human-facing type
   } else {
-    io.type = 'json';
+    io.type = 'String';
   }
 
   const card = asString(r.cardinality);
@@ -375,23 +376,19 @@ function toSnakeCase(s: string): string {
     .toLowerCase();
 }
 
-/** Map a DataType to the JSON-Schema primitive type for tool parameter schemas. */
-function dataTypeToJsonType(t: DataType): JsonSchemaProp['type'] {
+/** Map a spec-format property type to the JSON-Schema primitive for tool params. */
+function specTypeToJsonType(t: string | undefined): JsonSchemaProp['type'] {
   switch (t) {
-    case 'integer':
+    case 'Integer':
       return 'integer';
-    case 'decimal':
-    case 'money':
+    case 'Float':
       return 'number';
-    case 'boolean':
+    case 'Boolean':
       return 'boolean';
-    case 'array':
+    case 'List<String>':
       return 'array';
-    case 'json':
-    case 'reference':
-      return 'object';
     default:
-      // string | date | datetime | uuid | enum
+      // String | Date | Timestamp | unknown
       return 'string';
   }
 }
@@ -412,7 +409,7 @@ function deriveParameterSchema(inputs: ActionIO[]): JsonSchema {
     if (io.objectTypeId) {
       prop = { type: 'object', $objectTypeId: io.objectTypeId };
     } else {
-      const base: JsonSchemaProp = { type: dataTypeToJsonType(io.type ?? 'json') };
+      const base: JsonSchemaProp = { type: specTypeToJsonType(io.type) };
       prop = base;
     }
     if (io.description) prop.description = io.description;
@@ -421,7 +418,7 @@ function deriveParameterSchema(inputs: ActionIO[]): JsonSchema {
     if (io.isArray || io.cardinality === 'many') {
       const items: JsonSchemaProp = io.objectTypeId
         ? { type: 'object', $objectTypeId: io.objectTypeId }
-        : { type: dataTypeToJsonType(io.type ?? 'json') };
+        : { type: specTypeToJsonType(io.type) };
       prop = { type: 'array', items };
       if (io.description) prop.description = io.description;
     }
@@ -583,7 +580,9 @@ export async function extractActions(ctx: StageContext): Promise<{ actions: Acti
 
     const description = asString(r.description);
 
-    const action: ActionType = {
+    // Build the STRUCTURAL action first; the spec-format fields are derived from
+    // it by attachActionSpecFields below (cast: the spec fields are set there).
+    const action = {
       id,
       uuid: randomUUID(),
       name,
@@ -594,13 +593,13 @@ export async function extractActions(ctx: StageContext): Promise<{ actions: Acti
       preconditions: coercePreconditions(r.preconditions, ruleSeverity),
       triggeredByEventIds: coerceTriggeredBy(r.triggeredByEventIds, ctx, eventIdCache),
       emitsEvents: coerceEmits(r.emitsEvents, ctx, eventIdCache),
-      actor: coerceActor(r.actor),
+      actorRef: coerceActor(r.actor),
       agent: coerceAgent(r.agent, name, inputs, description, ctx.taken),
       sources: coerceSources(r.sources, docName),
       confidence: asConfidence(r.confidence),
-      provenance: 'extracted',
-      reviewState: 'pending',
-    };
+      provenance: 'extracted' as const,
+      reviewState: 'pending' as const,
+    } as ActionType;
 
     const nameZh = asOptString(r.nameZh);
     if (nameZh) action.nameZh = nameZh;
@@ -612,10 +611,158 @@ export async function extractActions(ctx: StageContext): Promise<{ actions: Acti
     const permissions = coercePermissions(r.permissions);
     if (permissions) action.permissions = permissions;
 
+    attachActionSpecFields(action, ctx);
+
     actionIdsSoFar.add(id);
     actions.push(action);
   }
 
   ctx.log(`[actions] extracted ${actions.length} action type(s).`);
   return { actions };
+}
+
+// ---------------------------------------------------------------------------
+// Spec-format field derivation (the published action shape). Computed from the
+// structural action so the canonical node matches `generate spec` output.
+// ---------------------------------------------------------------------------
+
+function capActorKind(kind: string | undefined): SpecActor {
+  if (kind === 'human') return 'Human';
+  if (kind === 'system') return 'System';
+  return 'Agent';
+}
+function actorLabel(kind: string | undefined): string {
+  if (kind === 'human') return 'human operator';
+  if (kind === 'system') return 'system';
+  return 'agent';
+}
+function humanize(s: string): string {
+  return s
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .split(/[^A-Za-z0-9]+/)
+    .filter(Boolean)
+    .map((w) => w[0]!.toUpperCase() + w.slice(1))
+    .join(' ');
+}
+function uniqStr(a: string[]): string[] {
+  return Array.from(new Set(a));
+}
+function specStepName(step: ActionStep): string {
+  const text = step.text?.en || step.text?.zh || '';
+  const words = text
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .split(/[^A-Za-z0-9]+/)
+    .filter(Boolean)
+    .slice(0, 6);
+  if (words.length === 0) return `step${step.order}`;
+  return words[0]!.toLowerCase() + words.slice(1).map((w) => w[0]!.toUpperCase() + w.slice(1)).join('');
+}
+
+/** Derive + assign the spec-format fields on a structural action (mutates). */
+function attachActionSpecFields(a: ActionType, ctx: StageContext): void {
+  const objById = new Map(ctx.objects.map((o) => [o.id, o]));
+  const ruleById = new Map(ctx.rules.map((r) => [r.id, r]));
+  const objPk = (oid: string): string => objById.get(oid)?.primary_key || `${specObjectId(oid).toLowerCase()}_id`;
+
+  // Enrich object-typed inputs with source_object "SpecObj.pk".
+  for (const io of a.inputs) {
+    if (io.objectTypeId && objById.has(io.objectTypeId)) {
+      io.source_object = `${specObjectId(io.objectTypeId)}.${objPk(io.objectTypeId)}`;
+    }
+  }
+
+  // target_objects: every object the action reads/writes.
+  const targets: string[] = [];
+  const addTarget = (oid: string | undefined): void => {
+    if (oid && objById.has(oid)) targets.push(specObjectId(oid));
+  };
+  for (const io of a.inputs) addTarget(io.objectTypeId);
+  for (const io of a.outputs) addTarget(io.objectTypeId);
+  for (const s of a.steps) {
+    (s.readsObjectTypeIds ?? []).forEach(addTarget);
+    (s.writesObjectTypeIds ?? []).forEach(addTarget);
+  }
+  for (const se of a.sideEffects ?? []) addTarget(se.objectTypeId);
+
+  // submission_criteria: triggering events + precondition rules.
+  const lines: string[] = [];
+  let n = 1;
+  for (const eid of a.triggeredByEventIds) lines.push(`${n++}. Event ${eventSpecName(eid)} has been received`);
+  for (const pc of a.preconditions) {
+    const r = ruleById.get(pc.ruleId);
+    if (r) lines.push(`${n++}. Rule "${r.businessLogicRuleName || r.title || pc.ruleId}" is satisfied`);
+  }
+
+  // action_steps + side_effects.
+  const actionSteps: SpecActionStep[] = a.steps.map((s) => {
+    const out: SpecActionStep = {
+      order: String(s.order),
+      name: specStepName(s),
+      description: s.text?.en?.trim() || s.text?.zh?.trim() || '',
+      object_type: 'logic',
+      submission_criteria: '',
+    };
+    if (s.guardRuleId && ruleById.has(s.guardRuleId)) {
+      const r = ruleById.get(s.guardRuleId)!;
+      out.submission_criteria = r.trigger?.description?.trim() || '';
+      out.rules = [
+        {
+          id: r.id.replace(/^rule:/, ''),
+          name: r.businessLogicRuleName || r.title || r.id.replace(/^rule:/, ''),
+          submission_criteria: r.trigger?.description?.trim() || '',
+          description: r.standardizedLogicRule || r.statement?.en?.trim() || r.formal?.trim() || '',
+        },
+      ];
+    }
+    return out;
+  });
+
+  const sideEffects: SpecSideEffects = { data_changes: [], notifications: [] };
+  for (const se of a.sideEffects ?? []) {
+    if (se.kind === 'notification') {
+      sideEffects.notifications.push({
+        recipient: a.actorRef?.role || 'User',
+        channel: 'InApp',
+        condition: '',
+        message: se.description?.trim() || '',
+        triggered_event: '',
+      });
+    } else if (
+      (se.kind === 'db_write' || se.kind === 'state_change' || se.kind === 'payment') &&
+      se.objectTypeId &&
+      objById.has(se.objectTypeId)
+    ) {
+      sideEffects.data_changes.push({
+        object_type: specObjectId(se.objectTypeId),
+        action: se.kind === 'db_write' ? 'CREATE' : 'MODIFY',
+        property_impacted: [],
+        description: se.description?.trim() || '',
+      });
+    }
+  }
+
+  const toolUse: string[] = [];
+  if (a.agent?.integration) toolUse.push(a.agent.integration);
+  for (const se of a.sideEffects ?? []) {
+    if (se.kind === 'external_call' && se.description) toolUse.push(se.description.trim());
+  }
+
+  const inputNames = a.inputs.map((i) => i.name).join(', ') || 'the provided inputs';
+  const outputNames = a.outputs.map((o) => o.name).join(', ') || 'the resulting records';
+
+  a.submission_criteria = lines.join('\n');
+  a.object_type = 'action';
+  a.category = a.nameZh?.trim() || humanize(a.name);
+  a.actor = [capActorKind(a.actorRef?.kind)];
+  a.trigger = uniqStr(a.triggeredByEventIds.map(eventSpecName));
+  a.target_objects = uniqStr(targets);
+  a.action_steps = actionSteps;
+  a.system_prompt =
+    `You are an automated ${actorLabel(a.actorRef?.kind)} responsible for the "${a.name}" action. ` +
+    `${a.description ?? ''} Read the required objects from the ontology, honor every precondition, and perform the steps in order.`;
+  a.user_prompt =
+    `Execute "${a.name}" using ${inputNames}. ${a.description ?? ''} Produce ${outputNames} and emit the appropriate events.`;
+  a.tool_use = uniqStr(toolUse);
+  a.side_effects = sideEffects;
+  a.triggered_event = uniqStr(a.emitsEvents.map((e) => eventSpecName(e.eventTypeId)));
 }

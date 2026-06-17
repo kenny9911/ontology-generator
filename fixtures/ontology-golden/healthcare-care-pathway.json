@@ -2555,12 +2555,70 @@
       "nameZh": "登记就诊",
       "description": "Consumes patient demographics and scheduling data and produces a new Encounter record linked to the Patient via MRN.",
       "descriptionZh": "录入患者人口学与排程数据，生成与患者（MRN）关联的新就诊记录。",
+      "submission_criteria": "1. Event PATIENT_ARRIVED has been received\n2. Rule \"Encounter resolves to one MRN\" is satisfied",
+      "object_type": "action",
+      "category": "登记就诊",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "PATIENT_ARRIVED"
+      ],
+      "target_objects": [
+        "Patient",
+        "Encounter"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "resolveThePatientToASingle",
+          "description": "Resolve the patient to a single active MRN in Epic EHR.",
+          "object_type": "logic",
+          "submission_criteria": "on Encounter registration",
+          "rules": [
+            {
+              "id": "r01-encounter-single-mrn",
+              "name": "Encounter resolves to one MRN",
+              "submission_criteria": "on Encounter registration",
+              "description": "Every Encounter must resolve to exactly one Patient identified by a single active MRN."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "createANewEncounterRecordLinked",
+          "description": "Create a new Encounter record linked to the Patient and set status Open.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"RegisterEncounter\" action. Consumes patient demographics and scheduling data and produces a new Encounter record linked to the Patient via MRN. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"RegisterEncounter\" using patient. Consumes patient demographics and scheduling data and produces a new Encounter record linked to the Patient via MRN. Produce encounter and emit the appropriate events.",
+      "tool_use": [
+        "Epic EHR"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Encounter",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Creates an Encounter record in Epic EHR."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "ENCOUNTER_CREATED"
+      ],
       "inputs": [
         {
           "name": "patient",
           "required": true,
           "objectTypeId": "objectType:patient",
-          "description": "Arriving or scheduled patient."
+          "description": "Arriving or scheduled patient.",
+          "type": "String",
+          "source_object": "Patient.mrn"
         }
       ],
       "outputs": [
@@ -2568,7 +2626,8 @@
           "name": "encounter",
           "required": true,
           "objectTypeId": "objectType:encounter",
-          "description": "New Encounter linked to the Patient."
+          "description": "New Encounter linked to the Patient.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2616,11 +2675,6 @@
           "objectTypeId": "objectType:encounter"
         }
       ],
-      "actor": {
-        "role": "Patient Access Representative",
-        "roleZh": "接诊登记员",
-        "kind": "human"
-      },
       "permissions": [
         "encounter:create"
       ],
@@ -2657,7 +2711,12 @@
       ],
       "confidence": 0.95,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Patient Access Representative",
+        "roleZh": "接诊登记员",
+        "kind": "human"
+      }
     },
     {
       "id": "action:verify-eligibility",
@@ -2666,17 +2725,79 @@
       "nameZh": "核验资格",
       "description": "Consumes the Coverage on file, sends an EDI 270 eligibility inquiry, and stamps Coverage.status from the 271 response.",
       "descriptionZh": "读取在档保险覆盖，发送 EDI 270 资格查询，并依据 271 应答更新 Coverage.status。",
+      "submission_criteria": "1. Event ENCOUNTER_CREATED has been received\n2. Rule \"Verify active coverage before non-emergency service\" is satisfied",
+      "object_type": "action",
+      "category": "核验资格",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "ENCOUNTER_CREATED"
+      ],
+      "target_objects": [
+        "Coverage",
+        "Encounter"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "sendAnEDI270EligibilityInquiry",
+          "description": "Send an EDI 270 eligibility inquiry to the payer via the Clearinghouse.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "parseThe271ResponseAndStamp",
+          "description": "Parse the 271 response and stamp Coverage.status and eligibility_checked_at.",
+          "object_type": "logic",
+          "submission_criteria": "before non-emergency service delivery",
+          "rules": [
+            {
+              "id": "r02-verify-coverage-before-service",
+              "name": "Verify active coverage before non-emergency service",
+              "submission_criteria": "before non-emergency service delivery",
+              "description": "A Patient's Coverage must be verified as active before any non-emergency Procedure is performed, unless the Encounter is flagged Emergency."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"VerifyEligibility\" action. Consumes the Coverage on file, sends an EDI 270 eligibility inquiry, and stamps Coverage.status from the 271 response. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"VerifyEligibility\" using coverage, encounter. Consumes the Coverage on file, sends an EDI 270 eligibility inquiry, and stamps Coverage.status from the 271 response. Produce coverage and emit the appropriate events.",
+      "tool_use": [
+        "Clearinghouse (Waystar)",
+        "EDI 270/271 eligibility exchange via the Clearinghouse."
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Coverage",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Coverage.status := Active|Inactive|Termed"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "ELIGIBILITY_VERIFIED",
+        "ELIGIBILITY_FAILED"
+      ],
       "inputs": [
         {
           "name": "coverage",
           "required": true,
           "objectTypeId": "objectType:coverage",
-          "description": "Coverage on file for the Encounter."
+          "description": "Coverage on file for the Encounter.",
+          "type": "String",
+          "source_object": "Coverage.coverage_id"
         },
         {
           "name": "encounter",
           "required": true,
-          "objectTypeId": "objectType:encounter"
+          "objectTypeId": "objectType:encounter",
+          "type": "String",
+          "source_object": "Encounter.encounter_id"
         }
       ],
       "outputs": [
@@ -2684,7 +2805,8 @@
           "name": "coverage",
           "required": true,
           "objectTypeId": "objectType:coverage",
-          "description": "Coverage with refreshed status from 271."
+          "description": "Coverage with refreshed status from 271.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2740,11 +2862,6 @@
           "objectTypeId": "objectType:coverage"
         }
       ],
-      "actor": {
-        "role": "Patient Access Representative",
-        "roleZh": "接诊登记员",
-        "kind": "agent"
-      },
       "permissions": [
         "coverage:verify"
       ],
@@ -2785,7 +2902,12 @@
       ],
       "confidence": 0.94,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Patient Access Representative",
+        "roleZh": "接诊登记员",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:record-triage",
@@ -2794,16 +2916,74 @@
       "nameZh": "记录分诊",
       "description": "Consumes vitals and chief complaint and produces a triage timestamp, an acuity level, and (when criteria met) sets Encounter.emergencyFlag.",
       "descriptionZh": "录入生命体征与主诉，生成分诊时间戳与急性度等级，必要时置 Encounter.emergencyFlag。",
+      "submission_criteria": "1. Event PATIENT_ARRIVED has been received",
+      "object_type": "action",
+      "category": "记录分诊",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "PATIENT_ARRIVED"
+      ],
+      "target_objects": [
+        "Encounter"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "captureVitalsAndChiefComplaintAnd",
+          "description": "Capture vitals and chief complaint and compute acuity.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "stampEncounterTriageTimestampStartsThe",
+          "description": "Stamp Encounter.triage_timestamp (starts the sepsis clock) and set emergency_flag when criteria are met.",
+          "object_type": "logic",
+          "submission_criteria": "sepsis bundle clock starts at the triage timestamp",
+          "rules": [
+            {
+              "id": "r08-sepsis-lactate-3h",
+              "name": "Sepsis bundle lactate within 3 hours of triage",
+              "submission_criteria": "sepsis bundle clock starts at the triage timestamp",
+              "description": "A sepsis bundle must record a lactate result within 3 hours of the triage timestamp."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"RecordTriage\" action. Consumes vitals and chief complaint and produces a triage timestamp, an acuity level, and (when criteria met) sets Encounter.emergencyFlag. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"RecordTriage\" using encounter, vitals. Consumes vitals and chief complaint and produces a triage timestamp, an acuity level, and (when criteria met) sets Encounter.emergencyFlag. Produce encounter and emit the appropriate events.",
+      "tool_use": [
+        "Epic EHR"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Encounter",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Encounter.triage_timestamp / emergency_flag set."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "TRIAGE_COMPLETED",
+        "SEPSIS_SUSPECTED"
+      ],
       "inputs": [
         {
           "name": "encounter",
           "required": true,
-          "objectTypeId": "objectType:encounter"
+          "objectTypeId": "objectType:encounter",
+          "type": "String",
+          "source_object": "Encounter.encounter_id"
         },
         {
           "name": "vitals",
           "required": true,
-          "type": "json",
+          "type": "String",
           "description": "Captured vital signs and chief complaint."
         }
       ],
@@ -2812,7 +2992,8 @@
           "name": "encounter",
           "required": true,
           "objectTypeId": "objectType:encounter",
-          "description": "Encounter with triage_timestamp and acuity set."
+          "description": "Encounter with triage_timestamp and acuity set.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2860,11 +3041,6 @@
           "objectTypeId": "objectType:encounter"
         }
       ],
-      "actor": {
-        "role": "Triage Nurse",
-        "roleZh": "分诊护士",
-        "kind": "human"
-      },
       "permissions": [
         "triage:record"
       ],
@@ -2905,7 +3081,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Triage Nurse",
+        "roleZh": "分诊护士",
+        "kind": "human"
+      }
     },
     {
       "id": "action:place-order",
@@ -2914,17 +3095,80 @@
       "nameZh": "下达医嘱",
       "description": "Consumes the clinician's selection and produces one or more Order records, each referencing a catalog Procedure; routes designated high-cost imaging to Prior Authorization.",
       "descriptionZh": "录入医师选择，生成一条或多条引用目录诊疗操作的医嘱记录；将指定高费用影像路由至事前授权流程。",
+      "submission_criteria": "1. Event TRIAGE_COMPLETED has been received\n2. Rule \"High-cost imaging requires approved authorization\" is satisfied",
+      "object_type": "action",
+      "category": "下达医嘱",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "TRIAGE_COMPLETED"
+      ],
+      "target_objects": [
+        "Encounter",
+        "Procedure",
+        "Order",
+        "Prior_Authorization"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "createOneOrMoreOrderRecords",
+          "description": "Create one or more Order records referencing the selected Procedure.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "forADesignatedHighCostImaging",
+          "description": "For a designated high-cost imaging Procedure, check for an approved PriorAuthorization and route to Process C if none exists.",
+          "object_type": "logic",
+          "submission_criteria": "before scheduling a designated procedure",
+          "rules": [
+            {
+              "id": "r04-imaging-requires-auth",
+              "name": "High-cost imaging requires approved authorization",
+              "submission_criteria": "before scheduling a designated procedure",
+              "description": "A high-cost imaging Procedure with a billed amount of $1,500 or more must have an approved PriorAuthorization before scheduling, unless the Encounter is flagged Emergency."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"PlaceOrder\" action. Consumes the clinician's selection and produces one or more Order records, each referencing a catalog Procedure; routes designated high-cost imaging to Prior Authorization. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"PlaceOrder\" using encounter, procedure. Consumes the clinician's selection and produces one or more Order records, each referencing a catalog Procedure; routes designated high-cost imaging to Prior Authorization. Produce order and emit the appropriate events.",
+      "tool_use": [
+        "Epic EHR"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Order",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Creates Order records in Epic EHR."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "ORDER_PLACED",
+        "AUTHORIZATION_REQUIRED"
+      ],
       "inputs": [
         {
           "name": "encounter",
           "required": true,
-          "objectTypeId": "objectType:encounter"
+          "objectTypeId": "objectType:encounter",
+          "type": "String",
+          "source_object": "Encounter.encounter_id"
         },
         {
           "name": "procedure",
           "required": true,
           "objectTypeId": "objectType:procedure",
-          "description": "Catalog procedure selected by the clinician."
+          "description": "Catalog procedure selected by the clinician.",
+          "type": "String",
+          "source_object": "Procedure.procedure_id"
         }
       ],
       "outputs": [
@@ -2934,7 +3178,8 @@
           "objectTypeId": "objectType:order",
           "isArray": true,
           "cardinality": "many",
-          "description": "One or more placed orders."
+          "description": "One or more placed orders.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2988,11 +3233,6 @@
           "objectTypeId": "objectType:order"
         }
       ],
-      "actor": {
-        "role": "Ordering Clinician",
-        "roleZh": "开单医师",
-        "kind": "human"
-      },
       "permissions": [
         "order:place"
       ],
@@ -3033,7 +3273,12 @@
       ],
       "confidence": 0.94,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Ordering Clinician",
+        "roleZh": "开单医师",
+        "kind": "human"
+      }
     },
     {
       "id": "action:request-authorization",
@@ -3042,21 +3287,86 @@
       "nameZh": "申请事前授权",
       "description": "Consumes the ordered Procedure, the Coverage, and supporting documentation and produces a PriorAuthorization in Requested state, transmitting an EDI 278 to the payer.",
       "descriptionZh": "读取已下达的诊疗操作、保险覆盖与支持性文档，生成处于 Requested 状态的事前授权，并向付款方发送 EDI 278 请求。",
+      "submission_criteria": "1. Event AUTHORIZATION_REQUIRED has been received\n2. Rule \"Urgent authorization request within 24 hours\" is satisfied",
+      "object_type": "action",
+      "category": "申请事前授权",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "AUTHORIZATION_REQUIRED"
+      ],
+      "target_objects": [
+        "Procedure",
+        "Coverage",
+        "Encounter",
+        "Prior_Authorization"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "assembleTheRequestFromTheProcedure",
+          "description": "Assemble the request from the Procedure, Coverage, and supporting clinical documentation.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "createAPriorAuthorizationInRequested",
+          "description": "Create a PriorAuthorization in Requested state and transmit an EDI 278 via the Clearinghouse.",
+          "object_type": "logic",
+          "submission_criteria": "after an urgent Order is placed",
+          "rules": [
+            {
+              "id": "r06-urgent-auth-sla-24h",
+              "name": "Urgent authorization request within 24 hours",
+              "submission_criteria": "after an urgent Order is placed",
+              "description": "A UM Coordinator is required to submit an urgent PriorAuthorization request to the payer within 24 hours of the Order being placed."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"RequestAuthorization\" action. Consumes the ordered Procedure, the Coverage, and supporting documentation and produces a PriorAuthorization in Requested state, transmitting an EDI 278 to the payer. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"RequestAuthorization\" using procedure, coverage, encounter. Consumes the ordered Procedure, the Coverage, and supporting documentation and produces a PriorAuthorization in Requested state, transmitting an EDI 278 to the payer. Produce prior_authorization and emit the appropriate events.",
+      "tool_use": [
+        "Clearinghouse (Waystar)",
+        "EDI 278 authorization request via the Clearinghouse."
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Prior_Authorization",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Creates a PriorAuthorization (Requested)."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "AUTHORIZATION_REQUESTED"
+      ],
       "inputs": [
         {
           "name": "procedure",
           "required": true,
-          "objectTypeId": "objectType:procedure"
+          "objectTypeId": "objectType:procedure",
+          "type": "String",
+          "source_object": "Procedure.procedure_id"
         },
         {
           "name": "coverage",
           "required": true,
-          "objectTypeId": "objectType:coverage"
+          "objectTypeId": "objectType:coverage",
+          "type": "String",
+          "source_object": "Coverage.coverage_id"
         },
         {
           "name": "encounter",
           "required": true,
-          "objectTypeId": "objectType:encounter"
+          "objectTypeId": "objectType:encounter",
+          "type": "String",
+          "source_object": "Encounter.encounter_id"
         }
       ],
       "outputs": [
@@ -3064,7 +3374,8 @@
           "name": "prior_authorization",
           "required": true,
           "objectTypeId": "objectType:prior-authorization",
-          "description": "PriorAuthorization in Requested state."
+          "description": "PriorAuthorization in Requested state.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3117,11 +3428,6 @@
           "description": "EDI 278 authorization request via the Clearinghouse."
         }
       ],
-      "actor": {
-        "role": "UM Coordinator",
-        "roleZh": "授权管理协调员",
-        "kind": "agent"
-      },
       "permissions": [
         "auth:request"
       ],
@@ -3167,7 +3473,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "UM Coordinator",
+        "roleZh": "授权管理协调员",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:post-authorization-response",
@@ -3176,17 +3487,75 @@
       "nameZh": "回写授权应答",
       "description": "Consumes the payer's 278 response and updates the PriorAuthorization to Approved, Denied, or Pended, recording approval number, approved units, and validity window.",
       "descriptionZh": "读取付款方 278 应答，将事前授权更新为 Approved/Denied/Pended，并记录批准号、批准单位数与有效窗口。",
+      "submission_criteria": "1. Event AUTHORIZATION_REQUESTED has been received\n2. Rule \"Authorization valid on date of service\" is satisfied",
+      "object_type": "action",
+      "category": "回写授权应答",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "AUTHORIZATION_REQUESTED"
+      ],
+      "target_objects": [
+        "Prior_Authorization"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "parseThePayer278Response",
+          "description": "Parse the payer 278 response.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "updatePriorAuthorizationStatusAndRecord",
+          "description": "Update PriorAuthorization status and record approval number, approved units, and expiration date.",
+          "object_type": "logic",
+          "submission_criteria": "on service delivery against an authorization",
+          "rules": [
+            {
+              "id": "r07-auth-valid-on-dos",
+              "name": "Authorization valid on date of service",
+              "submission_criteria": "on service delivery against an authorization",
+              "description": "A PriorAuthorization is valid only for the approved units within its approval window, and the date of service must fall on or before the PriorAuthorization expiration date."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"PostAuthorizationResponse\" action. Consumes the payer's 278 response and updates the PriorAuthorization to Approved, Denied, or Pended, recording approval number, approved units, and validity window. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"PostAuthorizationResponse\" using prior_authorization, response. Consumes the payer's 278 response and updates the PriorAuthorization to Approved, Denied, or Pended, recording approval number, approved units, and validity window. Produce prior_authorization and emit the appropriate events.",
+      "tool_use": [
+        "Clearinghouse (Waystar)"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Prior_Authorization",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "PriorAuthorization.status := Approved|Denied|Pended"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "AUTHORIZATION_APPROVED",
+        "AUTHORIZATION_DENIED"
+      ],
       "inputs": [
         {
           "name": "prior_authorization",
           "required": true,
           "objectTypeId": "objectType:prior-authorization",
-          "description": "The pending authorization."
+          "description": "The pending authorization.",
+          "type": "String",
+          "source_object": "Prior_Authorization.auth_id"
         },
         {
           "name": "response",
           "required": true,
-          "type": "json",
+          "type": "String",
           "description": "Payer EDI 278 response."
         }
       ],
@@ -3195,7 +3564,8 @@
           "name": "prior_authorization",
           "required": true,
           "objectTypeId": "objectType:prior-authorization",
-          "description": "Adjudicated authorization."
+          "description": "Adjudicated authorization.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3246,11 +3616,6 @@
           "objectTypeId": "objectType:prior-authorization"
         }
       ],
-      "actor": {
-        "role": "UM Coordinator",
-        "roleZh": "授权管理协调员",
-        "kind": "agent"
-      },
       "permissions": [
         "auth:adjudicate"
       ],
@@ -3291,7 +3656,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "UM Coordinator",
+        "roleZh": "授权管理协调员",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:document-procedure",
@@ -3300,18 +3670,78 @@
       "nameZh": "记录诊疗操作",
       "description": "Consumes the completed clinical work and produces a documented Procedure with start/stop times, links it to at least one supporting Diagnosis, and signs the clinical note.",
       "descriptionZh": "录入已完成的临床工作，生成带起止时间的已记录诊疗操作，关联至少一个支持性诊断并签署病历。",
+      "submission_criteria": "1. Event ORDER_PLACED has been received\n2. Rule \"Billable Procedure links to documented Diagnosis\" is satisfied",
+      "object_type": "action",
+      "category": "记录诊疗操作",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "ORDER_PLACED"
+      ],
+      "target_objects": [
+        "Procedure",
+        "Diagnosis"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "recordStartStopTimesForThe",
+          "description": "Record start/stop times for the completed Procedure.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "linkTheProcedureToAtLeast",
+          "description": "Link the Procedure to at least one supporting Diagnosis and sign the clinical note.",
+          "object_type": "logic",
+          "submission_criteria": "on procedure documentation / coding",
+          "rules": [
+            {
+              "id": "r09-procedure-linked-diagnosis",
+              "name": "Billable Procedure links to documented Diagnosis",
+              "submission_criteria": "on procedure documentation / coding",
+              "description": "Every billable Procedure on an Encounter is required to link to at least one documented Diagnosis with a supporting ICD-10-CM code."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"DocumentProcedure\" action. Consumes the completed clinical work and produces a documented Procedure with start/stop times, links it to at least one supporting Diagnosis, and signs the clinical note. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"DocumentProcedure\" using procedure, diagnosis. Consumes the completed clinical work and produces a documented Procedure with start/stop times, links it to at least one supporting Diagnosis, and signs the clinical note. Produce procedure and emit the appropriate events.",
+      "tool_use": [
+        "Epic EHR"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Procedure",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Writes documented Procedure and signed note."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "PROCEDURE_DOCUMENTED"
+      ],
       "inputs": [
         {
           "name": "procedure",
           "required": true,
-          "objectTypeId": "objectType:procedure"
+          "objectTypeId": "objectType:procedure",
+          "type": "String",
+          "source_object": "Procedure.procedure_id"
         },
         {
           "name": "diagnosis",
           "required": true,
           "objectTypeId": "objectType:diagnosis",
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String",
+          "source_object": "Diagnosis.diagnosis_id"
         }
       ],
       "outputs": [
@@ -3319,7 +3749,8 @@
           "name": "procedure",
           "required": true,
           "objectTypeId": "objectType:procedure",
-          "description": "Documented procedure with signed note."
+          "description": "Documented procedure with signed note.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3370,11 +3801,6 @@
           "objectTypeId": "objectType:procedure"
         }
       ],
-      "actor": {
-        "role": "Ordering Clinician",
-        "roleZh": "开单医师",
-        "kind": "human"
-      },
       "permissions": [
         "procedure:document"
       ],
@@ -3419,7 +3845,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Ordering Clinician",
+        "roleZh": "开单医师",
+        "kind": "human"
+      }
     },
     {
       "id": "action:discharge-encounter",
@@ -3428,11 +3859,68 @@
       "nameZh": "出院结束就诊",
       "description": "Consumes the discharge order and final documentation and produces a closed Encounter (status Discharged) with a discharge timestamp; this opens Process B.",
       "descriptionZh": "读取出院医嘱与最终文档，生成已关闭的就诊（status = Discharged）及出院时间戳；此举开启流程 B。",
+      "submission_criteria": "1. Event PROCEDURE_DOCUMENTED has been received\n2. Rule \"Coding complete within 4 days of discharge\" is satisfied",
+      "object_type": "action",
+      "category": "出院结束就诊",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "PROCEDURE_DOCUMENTED"
+      ],
+      "target_objects": [
+        "Encounter"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "verifyTheDischargeOrderIsSigned",
+          "description": "Verify the discharge order is signed and final documentation is present.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "setEncounterStatusDischargedAndStamp",
+          "description": "Set Encounter.status = Discharged and stamp the discharge date.",
+          "object_type": "logic",
+          "submission_criteria": "on discharge, into the coding work queue",
+          "rules": [
+            {
+              "id": "r10-coding-complete-4d",
+              "name": "Coding complete within 4 days of discharge",
+              "submission_criteria": "on discharge, into the coding work queue",
+              "description": "An Encounter must be coding-complete within 4 calendar days of its discharge date, except for Encounters held for clinical query, which may extend to 10 calendar days."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"DischargeEncounter\" action. Consumes the discharge order and final documentation and produces a closed Encounter (status Discharged) with a discharge timestamp; this opens Process B. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"DischargeEncounter\" using encounter. Consumes the discharge order and final documentation and produces a closed Encounter (status Discharged) with a discharge timestamp; this opens Process B. Produce encounter and emit the appropriate events.",
+      "tool_use": [
+        "Epic EHR"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Encounter",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Encounter.status := Discharged"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "ENCOUNTER_DISCHARGED"
+      ],
       "inputs": [
         {
           "name": "encounter",
           "required": true,
-          "objectTypeId": "objectType:encounter"
+          "objectTypeId": "objectType:encounter",
+          "type": "String",
+          "source_object": "Encounter.encounter_id"
         }
       ],
       "outputs": [
@@ -3440,7 +3928,8 @@
           "name": "encounter",
           "required": true,
           "objectTypeId": "objectType:encounter",
-          "description": "Discharged Encounter."
+          "description": "Discharged Encounter.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3488,11 +3977,6 @@
           "objectTypeId": "objectType:encounter"
         }
       ],
-      "actor": {
-        "role": "Ordering Clinician",
-        "roleZh": "开单医师",
-        "kind": "human"
-      },
       "permissions": [
         "encounter:discharge"
       ],
@@ -3528,7 +4012,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Ordering Clinician",
+        "roleZh": "开单医师",
+        "kind": "human"
+      }
     },
     {
       "id": "action:generate-charge",
@@ -3537,12 +4026,71 @@
       "nameZh": "生成费用",
       "description": "Consumes each ProcedureDocumented event, looks up the matching CDM line, and produces one Charge per billable Procedure with price, revenue code, and units.",
       "descriptionZh": "消费每个 ProcedureDocumented 事件，查找匹配的 CDM 行，为每项可计费诊疗操作生成带价格、收入代码与单位数的费用项。",
+      "submission_criteria": "1. Event PROCEDURE_DOCUMENTED has been received\n2. Rule \"Charge maps to active CDM line\" is satisfied",
+      "object_type": "action",
+      "category": "生成费用",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "PROCEDURE_DOCUMENTED"
+      ],
+      "target_objects": [
+        "Procedure",
+        "Charge"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "lookUpTheMatchingActiveCDM",
+          "description": "Look up the matching active CDM line for the documented Procedure.",
+          "object_type": "logic",
+          "submission_criteria": "on charge generation",
+          "rules": [
+            {
+              "id": "r11-charge-active-cdm",
+              "name": "Charge maps to active CDM line",
+              "submission_criteria": "on charge generation",
+              "description": "Every Charge must map to an active line in the Charge Description Master on the date of service."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "createOneChargeWithPriceRevenue",
+          "description": "Create one Charge with price, revenue code, and units.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"GenerateCharge\" action. Consumes each ProcedureDocumented event, looks up the matching CDM line, and produces one Charge per billable Procedure with price, revenue code, and units. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"GenerateCharge\" using procedure. Consumes each ProcedureDocumented event, looks up the matching CDM line, and produces one Charge per billable Procedure with price, revenue code, and units. Produce charge and emit the appropriate events.",
+      "tool_use": [
+        "Revenue Cycle System (Resolute)"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Charge",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Creates a Charge in RCS."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "CHARGE_CAPTURED",
+        "CHARGE_ROUTER_ERROR"
+      ],
       "inputs": [
         {
           "name": "procedure",
           "required": true,
           "objectTypeId": "objectType:procedure",
-          "description": "Documented billable procedure."
+          "description": "Documented billable procedure.",
+          "type": "String",
+          "source_object": "Procedure.procedure_id"
         }
       ],
       "outputs": [
@@ -3550,7 +4098,8 @@
           "name": "charge",
           "required": true,
           "objectTypeId": "objectType:charge",
-          "description": "Generated charge mapped to an active CDM line."
+          "description": "Generated charge mapped to an active CDM line.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3603,11 +4152,6 @@
           "objectTypeId": "objectType:charge"
         }
       ],
-      "actor": {
-        "role": "RCS Charge Router",
-        "roleZh": "收入周期系统费用路由",
-        "kind": "system"
-      },
       "permissions": [
         "charge:generate"
       ],
@@ -3643,7 +4187,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "RCS Charge Router",
+        "roleZh": "收入周期系统费用路由",
+        "kind": "system"
+      }
     },
     {
       "id": "action:assign-codes",
@@ -3652,25 +4201,104 @@
       "nameZh": "分配编码",
       "description": "Consumes the clinical documentation and produces final ICD-10-CM and CPT/HCPCS codes, running the NCCI edit set and medical-necessity (LCD/NCD) checks against the Diagnosis–Procedure pairing.",
       "descriptionZh": "读取临床文档，产出最终 ICD-10-CM 与 CPT/HCPCS 编码，并对诊断—操作配对运行 NCCI 编辑集与医疗必要性（LCD/NCD）检查。",
+      "submission_criteria": "1. Event ENCOUNTER_DISCHARGED has been received\n2. Rule \"Billable Procedure links to documented Diagnosis\" is satisfied\n3. Rule \"Medical-necessity (LCD/NCD) linkage required\" is satisfied\n4. Rule \"NCCI edit prohibits unbundling without modifier\" is satisfied",
+      "object_type": "action",
+      "category": "分配编码",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "ENCOUNTER_DISCHARGED"
+      ],
+      "target_objects": [
+        "Encounter",
+        "Diagnosis",
+        "Procedure"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "assignFinalICD10CMAnd",
+          "description": "Assign final ICD-10-CM and CPT/HCPCS codes.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "runNCCIEditsAndLCDNCD",
+          "description": "Run NCCI edits and LCD/NCD medical-necessity checks on each Diagnosis–Procedure pairing.",
+          "object_type": "logic",
+          "submission_criteria": "during coding / code validation",
+          "rules": [
+            {
+              "id": "r13-medical-necessity",
+              "name": "Medical-necessity (LCD/NCD) linkage required",
+              "submission_criteria": "during coding / code validation",
+              "description": "A Procedure with a Diagnosis pairing that fails the applicable medical-necessity policy (LCD/NCD) may not be billed to the payer and must be flagged for review."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "flagNCCIUnbundlingViolationsLackingA",
+          "description": "Flag NCCI unbundling violations lacking a valid modifier.",
+          "object_type": "logic",
+          "submission_criteria": "during coding / claim assembly",
+          "rules": [
+            {
+              "id": "r14-ncci-no-unbundling",
+              "name": "NCCI edit prohibits unbundling without modifier",
+              "submission_criteria": "during coding / claim assembly",
+              "description": "Two Procedures that violate an NCCI Procedure-to-Procedure edit may not be billed on the same Claim unless a valid modifier is documented."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"AssignCodes\" action. Consumes the clinical documentation and produces final ICD-10-CM and CPT/HCPCS codes, running the NCCI edit set and medical-necessity (LCD/NCD) checks against the Diagnosis–Procedure pairing. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"AssignCodes\" using encounter, diagnosis, procedure. Consumes the clinical documentation and produces final ICD-10-CM and CPT/HCPCS codes, running the NCCI edit set and medical-necessity (LCD/NCD) checks against the Diagnosis–Procedure pairing. Produce encounter and emit the appropriate events.",
+      "tool_use": [
+        "Revenue Cycle System (Resolute)"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Encounter",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Encounter.status := CodingComplete"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "CODING_COMPLETED",
+        "CODING_EDIT_FAILED"
+      ],
       "inputs": [
         {
           "name": "encounter",
           "required": true,
-          "objectTypeId": "objectType:encounter"
+          "objectTypeId": "objectType:encounter",
+          "type": "String",
+          "source_object": "Encounter.encounter_id"
         },
         {
           "name": "diagnosis",
           "required": true,
           "objectTypeId": "objectType:diagnosis",
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String",
+          "source_object": "Diagnosis.diagnosis_id"
         },
         {
           "name": "procedure",
           "required": true,
           "objectTypeId": "objectType:procedure",
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String",
+          "source_object": "Procedure.procedure_id"
         }
       ],
       "outputs": [
@@ -3678,7 +4306,8 @@
           "name": "encounter",
           "required": true,
           "objectTypeId": "objectType:encounter",
-          "description": "Encounter with final code set."
+          "description": "Encounter with final code set.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3749,11 +4378,6 @@
           "objectTypeId": "objectType:encounter"
         }
       ],
-      "actor": {
-        "role": "Coding Specialist",
-        "roleZh": "编码专员",
-        "kind": "agent"
-      },
       "permissions": [
         "coding:assign"
       ],
@@ -3805,7 +4429,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Coding Specialist",
+        "roleZh": "编码专员",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:assemble-claim",
@@ -3814,23 +4443,104 @@
       "nameZh": "组装理赔",
       "description": "Consumes all captured Charges and completed coding for the Encounter, produces a draft Claim, runs the scrubber (eligibility re-check, auth presence, field completeness), and sets Claim.status Ready or Held.",
       "descriptionZh": "汇总就诊的全部已生成费用与已完成编码，生成草稿理赔单，运行清洗器（资格复核、授权存在性、字段完整性），并将 Claim.status 置为 Ready 或 Held。",
+      "submission_criteria": "1. Event CODING_COMPLETED has been received\n2. Rule \"Claim requires linked approved authorization\" is satisfied\n3. Rule \"Claim must be scrub-clean (Ready) before submission\" is satisfied",
+      "object_type": "action",
+      "category": "组装理赔",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "CODING_COMPLETED"
+      ],
+      "target_objects": [
+        "Encounter",
+        "Charge",
+        "Coverage",
+        "Claim",
+        "Prior_Authorization"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "aggregateTheEncounterSCapturedCharges",
+          "description": "Aggregate the Encounter's captured Charges and completed coding into a draft Claim.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "runTheScrubberEligibilityReCheck",
+          "description": "Run the scrubber: eligibility re-check, authorization presence, and field completeness.",
+          "object_type": "logic",
+          "submission_criteria": "on claim assembly / submission",
+          "rules": [
+            {
+              "id": "r05-claim-requires-linked-auth",
+              "name": "Claim requires linked approved authorization",
+              "submission_criteria": "on claim assembly / submission",
+              "description": "A Claim may not be submitted for a Procedure that required PriorAuthorization unless an approved PriorAuthorization is linked to the Encounter."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "setClaimStatusReadyWhenScrub",
+          "description": "Set Claim.status = Ready when scrub-clean, else Held.",
+          "object_type": "logic",
+          "submission_criteria": "on transition to Submitted",
+          "rules": [
+            {
+              "id": "r15-scrub-clean-before-submit",
+              "name": "Claim must be scrub-clean (Ready) before submission",
+              "submission_criteria": "on transition to Submitted",
+              "description": "A Claim must pass all scrubber edits and reach status Ready before it may be submitted to a payer."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"AssembleClaim\" action. Consumes all captured Charges and completed coding for the Encounter, produces a draft Claim, runs the scrubber (eligibility re-check, auth presence, field completeness), and sets Claim.status Ready or Held. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"AssembleClaim\" using encounter, charge, coverage. Consumes all captured Charges and completed coding for the Encounter, produces a draft Claim, runs the scrubber (eligibility re-check, auth presence, field completeness), and sets Claim.status Ready or Held. Produce claim and emit the appropriate events.",
+      "tool_use": [
+        "Revenue Cycle System (Resolute)"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Claim",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Creates a draft Claim and sets its status."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "CLAIM_ASSEMBLED",
+        "CLAIM_SCRUB_FAILED"
+      ],
       "inputs": [
         {
           "name": "encounter",
           "required": true,
-          "objectTypeId": "objectType:encounter"
+          "objectTypeId": "objectType:encounter",
+          "type": "String",
+          "source_object": "Encounter.encounter_id"
         },
         {
           "name": "charge",
           "required": true,
           "objectTypeId": "objectType:charge",
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String",
+          "source_object": "Charge.charge_id"
         },
         {
           "name": "coverage",
           "required": true,
-          "objectTypeId": "objectType:coverage"
+          "objectTypeId": "objectType:coverage",
+          "type": "String",
+          "source_object": "Coverage.coverage_id"
         }
       ],
       "outputs": [
@@ -3838,7 +4548,8 @@
           "name": "claim",
           "required": true,
           "objectTypeId": "objectType:claim",
-          "description": "Draft Claim in status Ready or Held."
+          "description": "Draft Claim in status Ready or Held.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3910,11 +4621,6 @@
           "objectTypeId": "objectType:claim"
         }
       ],
-      "actor": {
-        "role": "Billing Specialist",
-        "roleZh": "计费专员",
-        "kind": "agent"
-      },
       "permissions": [
         "claim:assemble"
       ],
@@ -3963,7 +4669,12 @@
       ],
       "confidence": 0.94,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Billing Specialist",
+        "roleZh": "计费专员",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:submit-claim",
@@ -3972,12 +4683,80 @@
       "nameZh": "提交理赔",
       "description": "Consumes a Ready Claim and produces an EDI 837 transaction, transitioning Claim.status to Submitted.",
       "descriptionZh": "消费处于 Ready 状态的理赔单，生成 EDI 837 交易，并将 Claim.status 置为 Submitted。",
+      "submission_criteria": "1. Event CLAIM_ASSEMBLED has been received\n2. Rule \"Claim timely-filing deadline\" is satisfied\n3. Rule \"Claim must be scrub-clean (Ready) before submission\" is satisfied\n4. Rule \"No resubmission of an accepted Claim as original\" is satisfied",
+      "object_type": "action",
+      "category": "提交理赔",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "CLAIM_ASSEMBLED"
+      ],
+      "target_objects": [
+        "Claim"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "generateTheEDI837TransactionFor",
+          "description": "Generate the EDI 837 transaction for the Ready Claim.",
+          "object_type": "logic",
+          "submission_criteria": "on transition to Submitted",
+          "rules": [
+            {
+              "id": "r15-scrub-clean-before-submit",
+              "name": "Claim must be scrub-clean (Ready) before submission",
+              "submission_criteria": "on transition to Submitted",
+              "description": "A Claim must pass all scrubber edits and reach status Ready before it may be submitted to a payer."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "transmitViaTheClearinghouseAndSet",
+          "description": "Transmit via the Clearinghouse and set Claim.status = Submitted.",
+          "object_type": "logic",
+          "submission_criteria": "on resubmission of an accepted claim",
+          "rules": [
+            {
+              "id": "r16-no-resubmit-accepted",
+              "name": "No resubmission of an accepted Claim as original",
+              "submission_criteria": "on resubmission of an accepted claim",
+              "description": "A Claim that has already been accepted by the payer may not be resubmitted as an original; corrections shall be submitted only as a replacement Claim with frequency code 7."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"SubmitClaim\" action. Consumes a Ready Claim and produces an EDI 837 transaction, transitioning Claim.status to Submitted. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"SubmitClaim\" using claim. Consumes a Ready Claim and produces an EDI 837 transaction, transitioning Claim.status to Submitted. Produce claim and emit the appropriate events.",
+      "tool_use": [
+        "Clearinghouse (Waystar)",
+        "EDI 837 claim submission via the Clearinghouse."
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Claim",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Claim.status := Submitted"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "CLAIM_SUBMITTED",
+        "CLAIM_ACCEPTED",
+        "CLAIM_REJECTED"
+      ],
       "inputs": [
         {
           "name": "claim",
           "required": true,
           "objectTypeId": "objectType:claim",
-          "description": "A claim in status Ready."
+          "description": "A claim in status Ready.",
+          "type": "String",
+          "source_object": "Claim.claim_id"
         }
       ],
       "outputs": [
@@ -3985,7 +4764,8 @@
           "name": "claim",
           "required": true,
           "objectTypeId": "objectType:claim",
-          "description": "Claim in status Submitted."
+          "description": "Claim in status Submitted.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4056,11 +4836,6 @@
           "objectTypeId": "objectType:claim"
         }
       ],
-      "actor": {
-        "role": "RCS Claim Engine",
-        "roleZh": "收入周期系统理赔引擎",
-        "kind": "system"
-      },
       "permissions": [
         "claim:submit"
       ],
@@ -4097,7 +4872,12 @@
       ],
       "confidence": 0.94,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "RCS Claim Engine",
+        "roleZh": "收入周期系统理赔引擎",
+        "kind": "system"
+      }
     },
     {
       "id": "action:post-remittance",
@@ -4106,16 +4886,74 @@
       "nameZh": "入账汇款",
       "description": "Consumes the payer's EDI 835 remittance and produces posted payments and adjustments at the Charge level; for any denied line, creates a Denial with its CARC/RARC code.",
       "descriptionZh": "消费付款方 EDI 835 汇款，在费用项层面入账付款与调整；对任何被拒行项，创建带 CARC/RARC 码的拒付记录。",
+      "submission_criteria": "1. Event REMITTANCE_RECEIVED has been received",
+      "object_type": "action",
+      "category": "入账汇款",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "REMITTANCE_RECEIVED"
+      ],
+      "target_objects": [
+        "Claim",
+        "Denial",
+        "Charge"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "postPaymentsAndAdjustmentsAtThe",
+          "description": "Post payments and adjustments at the Charge level from the 835.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "forAnyDeniedLineCreateA",
+          "description": "For any denied line, create a Denial carrying its CARC/RARC code.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"PostRemittance\" action. Consumes the payer's EDI 835 remittance and produces posted payments and adjustments at the Charge level; for any denied line, creates a Denial with its CARC/RARC code. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"PostRemittance\" using claim, remittance. Consumes the payer's EDI 835 remittance and produces posted payments and adjustments at the Charge level; for any denied line, creates a Denial with its CARC/RARC code. Produce payment, denial and emit the appropriate events.",
+      "tool_use": [
+        "Revenue Cycle System (Resolute)"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Charge",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Posts payments/adjustments at the Charge level."
+          },
+          {
+            "object_type": "Denial",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Creates Denial records for rejected lines."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "PAYMENT_POSTED",
+        "CLAIM_DENIED"
+      ],
       "inputs": [
         {
           "name": "claim",
           "required": true,
-          "objectTypeId": "objectType:claim"
+          "objectTypeId": "objectType:claim",
+          "type": "String",
+          "source_object": "Claim.claim_id"
         },
         {
           "name": "remittance",
           "required": true,
-          "type": "json",
+          "type": "String",
           "description": "Payer EDI 835 file."
         }
       ],
@@ -4123,7 +4961,7 @@
         {
           "name": "payment",
           "required": false,
-          "type": "money",
+          "type": "Float",
           "description": "Posted payment amount."
         },
         {
@@ -4132,7 +4970,8 @@
           "objectTypeId": "objectType:denial",
           "isArray": true,
           "cardinality": "many",
-          "description": "Denials created for rejected lines."
+          "description": "Denials created for rejected lines.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4187,11 +5026,6 @@
           "objectTypeId": "objectType:denial"
         }
       ],
-      "actor": {
-        "role": "RCS",
-        "roleZh": "收入周期系统",
-        "kind": "system"
-      },
       "permissions": [
         "remittance:post"
       ],
@@ -4232,7 +5066,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "RCS",
+        "roleZh": "收入周期系统",
+        "kind": "system"
+      }
     },
     {
       "id": "action:triage-denial",
@@ -4241,12 +5080,69 @@
       "nameZh": "分诊拒付",
       "description": "Consumes a new Denial, classifies it (clinical, coding, authorization, eligibility, technical), and routes it to rework or write-off.",
       "descriptionZh": "消费新的拒付，按（临床、编码、授权、资格、技术）分类，并路由至返工或核销。",
+      "submission_criteria": "1. Event CLAIM_DENIED has been received\n2. Rule \"Denial routed to analyst within 2 business days\" is satisfied\n3. Rule \"Write-off approval authority thresholds\" is satisfied",
+      "object_type": "action",
+      "category": "分诊拒付",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "CLAIM_DENIED"
+      ],
+      "target_objects": [
+        "Denial"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "classifyTheDenialIntoACategory",
+          "description": "Classify the Denial into a category from its CARC/RARC code.",
+          "object_type": "logic",
+          "submission_criteria": "after remittance posting",
+          "rules": [
+            {
+              "id": "r17-denial-routing-sla-2d",
+              "name": "Denial routed to analyst within 2 business days",
+              "submission_criteria": "after remittance posting",
+              "description": "A Denial must be routed to a Denials Analyst work queue within 2 business days of the remittance posting date."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "routeTheDenialToARework",
+          "description": "Route the Denial to a rework (appeal) or write-off disposition.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"TriageDenial\" action. Consumes a new Denial, classifies it (clinical, coding, authorization, eligibility, technical), and routes it to rework or write-off. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"TriageDenial\" using denial. Consumes a new Denial, classifies it (clinical, coding, authorization, eligibility, technical), and routes it to rework or write-off. Produce denial and emit the appropriate events.",
+      "tool_use": [
+        "Revenue Cycle System (Resolute)"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Denial",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Denial.category set and routedAt stamped."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "DENIAL_ASSIGNED"
+      ],
       "inputs": [
         {
           "name": "denial",
           "required": true,
           "objectTypeId": "objectType:denial",
-          "description": "A new denial."
+          "description": "A new denial.",
+          "type": "String",
+          "source_object": "Denial.denial_id"
         }
       ],
       "outputs": [
@@ -4254,7 +5150,8 @@
           "name": "denial",
           "required": true,
           "objectTypeId": "objectType:denial",
-          "description": "Classified and routed denial."
+          "description": "Classified and routed denial.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4306,11 +5203,6 @@
           "objectTypeId": "objectType:denial"
         }
       ],
-      "actor": {
-        "role": "Denials Analyst",
-        "roleZh": "拒付处理专员",
-        "kind": "agent"
-      },
       "permissions": [
         "denial:triage"
       ],
@@ -4347,7 +5239,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Denials Analyst",
+        "roleZh": "拒付处理专员",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:submit-appeal",
@@ -4356,16 +5253,85 @@
       "nameZh": "提交申诉",
       "description": "Consumes the corrected documentation/codes and produces a corrected Claim (frequency code 7) or a formal appeal packet, resubmitting via the Clearinghouse and re-entering the remittance loop.",
       "descriptionZh": "读取已更正的文档/编码，生成更正理赔单（频次码 7）或正式申诉包，通过清算网关重新提交并重回汇款循环。",
+      "submission_criteria": "1. Event DENIAL_ASSIGNED has been received\n2. Rule \"No resubmission of an accepted Claim as original\" is satisfied\n3. Rule \"Appeal within payer deadline (≤ 60 days)\" is satisfied\n4. Rule \"No balance-bill for provider coding/auth error\" is satisfied",
+      "object_type": "action",
+      "category": "提交申诉",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "DENIAL_ASSIGNED"
+      ],
+      "target_objects": [
+        "Denial",
+        "Claim"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "compileTheCorrectedDocumentationCodesOr",
+          "description": "Compile the corrected documentation/codes or a formal appeal packet.",
+          "object_type": "logic",
+          "submission_criteria": "on appeal submission",
+          "rules": [
+            {
+              "id": "r18-appeal-deadline-60d",
+              "name": "Appeal within payer deadline (≤ 60 days)",
+              "submission_criteria": "on appeal submission",
+              "description": "An appeal for a denied Claim shall be submitted within the payer's appeal deadline, which may not exceed 60 calendar days from the Denial date unless the payer contract grants a longer window."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "produceAReplacementClaimWithFrequency",
+          "description": "Produce a replacement Claim with frequency code 7 and resubmit via the Clearinghouse.",
+          "object_type": "logic",
+          "submission_criteria": "on resubmission of an accepted claim",
+          "rules": [
+            {
+              "id": "r16-no-resubmit-accepted",
+              "name": "No resubmission of an accepted Claim as original",
+              "submission_criteria": "on resubmission of an accepted claim",
+              "description": "A Claim that has already been accepted by the payer may not be resubmitted as an original; corrections shall be submitted only as a replacement Claim with frequency code 7."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"SubmitAppeal\" action. Consumes the corrected documentation/codes and produces a corrected Claim (frequency code 7) or a formal appeal packet, resubmitting via the Clearinghouse and re-entering the remittance loop. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"SubmitAppeal\" using denial, claim. Consumes the corrected documentation/codes and produces a corrected Claim (frequency code 7) or a formal appeal packet, resubmitting via the Clearinghouse and re-entering the remittance loop. Produce claim and emit the appropriate events.",
+      "tool_use": [
+        "Clearinghouse (Waystar)",
+        "Resubmits a replacement claim / appeal packet via the Clearinghouse."
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Claim",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Claim.frequency_code := 7 (replacement)"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "APPEAL_SUBMITTED"
+      ],
       "inputs": [
         {
           "name": "denial",
           "required": true,
-          "objectTypeId": "objectType:denial"
+          "objectTypeId": "objectType:denial",
+          "type": "String",
+          "source_object": "Denial.denial_id"
         },
         {
           "name": "claim",
           "required": true,
-          "objectTypeId": "objectType:claim"
+          "objectTypeId": "objectType:claim",
+          "type": "String",
+          "source_object": "Claim.claim_id"
         }
       ],
       "outputs": [
@@ -4373,7 +5339,8 @@
           "name": "claim",
           "required": true,
           "objectTypeId": "objectType:claim",
-          "description": "Corrected/replacement Claim resubmitted."
+          "description": "Corrected/replacement Claim resubmitted.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4434,11 +5401,6 @@
           "objectTypeId": "objectType:claim"
         }
       ],
-      "actor": {
-        "role": "Denials Analyst",
-        "roleZh": "拒付处理专员",
-        "kind": "agent"
-      },
       "permissions": [
         "appeal:submit"
       ],
@@ -4479,7 +5441,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Denials Analyst",
+        "roleZh": "拒付处理专员",
+        "kind": "agent"
+      }
     }
   ],
   "events": [

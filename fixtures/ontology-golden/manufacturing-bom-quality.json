@@ -2246,11 +2246,59 @@
       "nameZh": "提出工程变更",
       "description": "Create a new EngineeringChange record in status Draft from the proposed change description and affected Part numbers.",
       "descriptionZh": "根据提议的变更说明与受影响零件号，创建状态为草稿的新工程变更记录。",
+      "submission_criteria": "1. Event CHANGE_NEED_IDENTIFIED has been received",
+      "object_type": "action",
+      "category": "提出工程变更",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "CHANGE_NEED_IDENTIFIED"
+      ],
+      "target_objects": [
+        "Part",
+        "Engineering_Change"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "captureTheProposedChangeDescriptionAnd",
+          "description": "Capture the proposed change description and affected Part numbers.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "createANewEngineeringChangeIn",
+          "description": "Create a new EngineeringChange in status Draft with a unique ecr_id.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"RaiseEngineeringChange\" action. Create a new EngineeringChange record in status Draft from the proposed change description and affected Part numbers. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"RaiseEngineeringChange\" using change_description, affected_parts. Create a new EngineeringChange record in status Draft from the proposed change description and affected Part numbers. Produce engineering_change and emit the appropriate events.",
+      "tool_use": [
+        "Jira ECR"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Engineering_Change",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Insert EngineeringChange record in Jira ECR."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "ENGINEERING_CHANGE_RAISED"
+      ],
       "inputs": [
         {
           "name": "change_description",
           "required": true,
-          "type": "string",
+          "type": "String",
           "description": "The proposed change description."
         },
         {
@@ -2259,7 +2307,9 @@
           "objectTypeId": "objectType:part",
           "isArray": true,
           "cardinality": "many",
-          "description": "Affected Part numbers."
+          "description": "Affected Part numbers.",
+          "type": "String",
+          "source_object": "Part.part_number"
         }
       ],
       "outputs": [
@@ -2267,7 +2317,8 @@
           "name": "engineering_change",
           "required": true,
           "objectTypeId": "objectType:engineeringChange",
-          "description": "New EngineeringChange in status Draft with a unique ecr_id."
+          "description": "New EngineeringChange in status Draft with a unique ecr_id.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2309,11 +2360,6 @@
           "objectTypeId": "objectType:engineeringChange"
         }
       ],
-      "actor": {
-        "role": "Requestor",
-        "roleZh": "申请人",
-        "kind": "human"
-      },
       "permissions": [
         "engineeringChange:create"
       ],
@@ -2355,7 +2401,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Requestor",
+        "roleZh": "申请人",
+        "kind": "human"
+      }
     },
     {
       "id": "action:classify-engineering-change",
@@ -2364,11 +2415,69 @@
       "nameZh": "分类工程变更",
       "description": "Classify the change category (Minor/Major/Safety) and set requires_second_approval when any affected Part is safety-critical per R-03.",
       "descriptionZh": "对变更类别（次要/重大/安全）进行分类，并在任一受影响零件为安全关键时按 R-03 设置需二次批准。",
+      "submission_criteria": "1. Event ENGINEERING_CHANGE_RAISED has been received\n2. Rule \"Safety changes need second approval\" is satisfied",
+      "object_type": "action",
+      "category": "分类工程变更",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "ENGINEERING_CHANGE_RAISED"
+      ],
+      "target_objects": [
+        "Engineering_Change",
+        "Part"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "readTheAffectedPartSafetyClass",
+          "description": "Read the affected Part safety_class master data.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "setCategoryMinorMajorSafetyAnd",
+          "description": "Set category (Minor/Major/Safety) and requires_second_approval per R-03 when any affected Part.safety_class = Critical.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "R-03-safety-second-approval",
+              "name": "Safety changes need second approval",
+              "submission_criteria": "",
+              "description": "Any EngineeringChange that affects a Part whose safety_class is Critical is required to obtain a second engineer's approval before it may be released."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"ClassifyEngineeringChange\" action. Classify the change category (Minor/Major/Safety) and set requires_second_approval when any affected Part is safety-critical per R-03. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ClassifyEngineeringChange\" using engineering_change, affected_part_master. Classify the change category (Minor/Major/Safety) and set requires_second_approval when any affected Part is safety-critical per R-03. Produce engineering_change and emit the appropriate events.",
+      "tool_use": [
+        "Jira ECR"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Engineering_Change",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "EngineeringChange.category set; requires_second_approval flagged."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "ENGINEERING_CHANGE_CLASSIFIED"
+      ],
       "inputs": [
         {
           "name": "engineering_change",
           "required": true,
-          "objectTypeId": "objectType:engineeringChange"
+          "objectTypeId": "objectType:engineeringChange",
+          "type": "String",
+          "source_object": "Engineering_Change.ecr_id"
         },
         {
           "name": "affected_part_master",
@@ -2376,7 +2485,9 @@
           "objectTypeId": "objectType:part",
           "isArray": true,
           "cardinality": "many",
-          "description": "Affected Part master data."
+          "description": "Affected Part master data.",
+          "type": "String",
+          "source_object": "Part.part_number"
         }
       ],
       "outputs": [
@@ -2384,7 +2495,8 @@
           "name": "engineering_change",
           "required": true,
           "objectTypeId": "objectType:engineeringChange",
-          "description": "Updated with category and requires_second_approval."
+          "description": "Updated with category and requires_second_approval.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2432,11 +2544,6 @@
           "objectTypeId": "objectType:engineeringChange"
         }
       ],
-      "actor": {
-        "role": "Change Coordinator",
-        "roleZh": "变更协调员",
-        "kind": "agent"
-      },
       "permissions": [
         "engineeringChange:classify"
       ],
@@ -2469,7 +2576,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Change Coordinator",
+        "roleZh": "变更协调员",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:approve-engineering-change",
@@ -2478,16 +2590,89 @@
       "nameZh": "批准工程变更",
       "description": "Review the EngineeringChange at the CCB and produce an approval decision; enforces CCB quorum (R-05) and second-engineer approval for safety changes (R-03).",
       "descriptionZh": "在变更控制委员会审查工程变更并产出批准决定；执行委员会法定人数(R-05)及安全变更的第二工程师批准(R-03)。",
+      "submission_criteria": "1. Event ENGINEERING_CHANGE_CLASSIFIED has been received\n2. Rule \"CCB quorum of three\" is satisfied\n3. Rule \"Safety changes need second approval\" is satisfied",
+      "object_type": "action",
+      "category": "批准工程变更",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "ENGINEERING_CHANGE_CLASSIFIED"
+      ],
+      "target_objects": [
+        "Engineering_Change"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "collectCCBVotesAndVerifyA",
+          "description": "Collect CCB votes and verify a quorum of at least three voting members per R-05.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "R-05-ccb-quorum",
+              "name": "CCB quorum of three",
+              "submission_criteria": "",
+              "description": "An EngineeringChange must be approved by a Change Control Board quorum of at least three voting members before it moves to status Approved."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "forASafetyClassifiedChangeVerify",
+          "description": "For a Safety-classified change, verify a second engineer's approval per R-03 before release.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "R-03-safety-second-approval",
+              "name": "Safety changes need second approval",
+              "submission_criteria": "",
+              "description": "Any EngineeringChange that affects a Part whose safety_class is Critical is required to obtain a second engineer's approval before it may be released."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "setEngineeringChangeStatusToApproved",
+          "description": "Set EngineeringChange.status to Approved or Rejected.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"ApproveEngineeringChange\" action. Review the EngineeringChange at the CCB and produce an approval decision; enforces CCB quorum (R-05) and second-engineer approval for safety changes (R-03). Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ApproveEngineeringChange\" using engineering_change, ccb_votes. Review the EngineeringChange at the CCB and produce an approval decision; enforces CCB quorum (R-05) and second-engineer approval for safety changes (R-03). Produce engineering_change and emit the appropriate events.",
+      "tool_use": [
+        "Jira ECR"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Engineering_Change",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "EngineeringChange.status -> Approved/Rejected."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "ENGINEERING_CHANGE_APPROVED",
+        "ENGINEERING_CHANGE_REJECTED"
+      ],
       "inputs": [
         {
           "name": "engineering_change",
           "required": true,
-          "objectTypeId": "objectType:engineeringChange"
+          "objectTypeId": "objectType:engineeringChange",
+          "type": "String",
+          "source_object": "Engineering_Change.ecr_id"
         },
         {
           "name": "ccb_votes",
           "required": true,
-          "type": "json",
+          "type": "String",
           "description": "CCB voting members and votes."
         }
       ],
@@ -2496,7 +2681,8 @@
           "name": "engineering_change",
           "required": true,
           "objectTypeId": "objectType:engineeringChange",
-          "description": "Status -> Approved or Rejected."
+          "description": "Status -> Approved or Rejected.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2562,11 +2748,6 @@
           "objectTypeId": "objectType:engineeringChange"
         }
       ],
-      "actor": {
-        "role": "Change Control Board",
-        "roleZh": "变更控制委员会",
-        "kind": "human"
-      },
       "permissions": [
         "engineeringChange:approve"
       ],
@@ -2604,7 +2785,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Change Control Board",
+        "roleZh": "变更控制委员会",
+        "kind": "human"
+      }
     },
     {
       "id": "action:set-revision-effectivity",
@@ -2613,12 +2799,72 @@
       "nameZh": "设定修订生效",
       "description": "Produce a new effective BillOfMaterials revision and bump each affected Part.revision; enforces the effective_from lead time per R-06.",
       "descriptionZh": "产出新的生效物料清单修订并提升每个受影响 Part.revision；按 R-06 执行生效起始日提前期。",
+      "submission_criteria": "1. Event ENGINEERING_CHANGE_APPROVED has been received\n2. Rule \"BOM effectivity lead time\" is satisfied",
+      "object_type": "action",
+      "category": "设定修订生效",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "ENGINEERING_CHANGE_APPROVED"
+      ],
+      "target_objects": [
+        "Engineering_Change",
+        "Bill_Of_Materials",
+        "Part"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "createANewBillOfMaterials",
+          "description": "Create a new BillOfMaterials revision with an effective_from date at least 5 business days out per R-06 (unless emergency).",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "R-06-effective-from-lead-time",
+              "name": "BOM effectivity lead time",
+              "submission_criteria": "",
+              "description": "A BillOfMaterials revision shall carry an effective_from date no fewer than 5 business days in the future, except that an EngineeringChange flagged emergency = true may be made effective immediately with VP of Quality approval."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "bumpEachAffectedPartRevisionAnd",
+          "description": "Bump each affected Part.revision and set EngineeringChange.status to Released.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"SetRevisionEffectivity\" action. Produce a new effective BillOfMaterials revision and bump each affected Part.revision; enforces the effective_from lead time per R-06. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"SetRevisionEffectivity\" using engineering_change. Produce a new effective BillOfMaterials revision and bump each affected Part.revision; enforces the effective_from lead time per R-06. Produce bill_of_materials, affected_parts and emit the appropriate events.",
+      "tool_use": [
+        "SAP ECC"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Bill_Of_Materials",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Part.revision bumped; BOM revision made effective."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "REVISION_BECAME_EFFECTIVE",
+        "BOM_REVISION_PUBLISHED"
+      ],
       "inputs": [
         {
           "name": "engineering_change",
           "required": true,
           "objectTypeId": "objectType:engineeringChange",
-          "description": "Approved EngineeringChange."
+          "description": "Approved EngineeringChange.",
+          "type": "String",
+          "source_object": "Engineering_Change.ecr_id"
         }
       ],
       "outputs": [
@@ -2626,7 +2872,8 @@
           "name": "bill_of_materials",
           "required": true,
           "objectTypeId": "objectType:billOfMaterials",
-          "description": "New effective BOM revision."
+          "description": "New effective BOM revision.",
+          "type": "String"
         },
         {
           "name": "affected_parts",
@@ -2634,7 +2881,8 @@
           "objectTypeId": "objectType:part",
           "isArray": true,
           "cardinality": "many",
-          "description": "Parts with bumped revision."
+          "description": "Parts with bumped revision.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2687,11 +2935,6 @@
           "objectTypeId": "objectType:billOfMaterials"
         }
       ],
-      "actor": {
-        "role": "Manufacturing Engineer",
-        "roleZh": "制造工程师",
-        "kind": "agent"
-      },
       "permissions": [
         "bom:setEffectivity"
       ],
@@ -2724,7 +2967,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Manufacturing Engineer",
+        "roleZh": "制造工程师",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:revalidate-open-work-orders",
@@ -2733,13 +2981,71 @@
       "nameZh": "重校开放工单",
       "description": "Evaluate all open WorkOrders referencing an affected Part and produce a hold flag on any still pointing at a superseded revision per R-01.",
       "descriptionZh": "评估所有引用受影响零件的开放工单，对仍指向被替代修订者按 R-01 产出冻结标记。",
+      "submission_criteria": "1. Event REVISION_BECAME_EFFECTIVE has been received\n2. Rule \"WorkOrder release requires effective revisions\" is satisfied",
+      "object_type": "action",
+      "category": "重校开放工单",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "REVISION_BECAME_EFFECTIVE"
+      ],
+      "target_objects": [
+        "Part",
+        "Work_Order"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "findAllOpenWorkOrdersThat",
+          "description": "Find all open WorkOrders that reference an affected Part.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "flagAnyWorkOrderStillPointing",
+          "description": "Flag any WorkOrder still pointing at a superseded revision per R-01.",
+          "object_type": "logic",
+          "submission_criteria": "On WorkOrder release",
+          "rules": [
+            {
+              "id": "R-01-workorder-effective-revision",
+              "name": "WorkOrder release requires effective revisions",
+              "submission_criteria": "On WorkOrder release",
+              "description": "A WorkOrder may not be released unless every component Part in its BillOfMaterials is at the currently effective revision."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"RevalidateOpenWorkOrders\" action. Evaluate all open WorkOrders referencing an affected Part and produce a hold flag on any still pointing at a superseded revision per R-01. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"RevalidateOpenWorkOrders\" using affected_parts, open_work_orders. Evaluate all open WorkOrders referencing an affected Part and produce a hold flag on any still pointing at a superseded revision per R-01. Produce flagged_work_orders and emit the appropriate events.",
+      "tool_use": [
+        "SAP ECC"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Work_Order",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Hold flag on superseded-revision WorkOrders."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "WORK_ORDER_REVALIDATION_REQUIRED"
+      ],
       "inputs": [
         {
           "name": "affected_parts",
           "required": true,
           "objectTypeId": "objectType:part",
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String",
+          "source_object": "Part.part_number"
         },
         {
           "name": "open_work_orders",
@@ -2747,7 +3053,9 @@
           "objectTypeId": "objectType:workOrder",
           "isArray": true,
           "cardinality": "many",
-          "description": "Open WorkOrders referencing affected Parts."
+          "description": "Open WorkOrders referencing affected Parts.",
+          "type": "String",
+          "source_object": "Work_Order.work_order_id"
         }
       ],
       "outputs": [
@@ -2757,7 +3065,8 @@
           "objectTypeId": "objectType:workOrder",
           "isArray": true,
           "cardinality": "many",
-          "description": "WorkOrders flagged for revalidation."
+          "description": "WorkOrders flagged for revalidation.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2806,11 +3115,6 @@
           "objectTypeId": "objectType:workOrder"
         }
       ],
-      "actor": {
-        "role": "Manufacturing Engineer",
-        "roleZh": "制造工程师",
-        "kind": "agent"
-      },
       "permissions": [
         "workOrder:revalidate"
       ],
@@ -2846,7 +3150,12 @@
       ],
       "confidence": 0.9,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Manufacturing Engineer",
+        "roleZh": "制造工程师",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:release-work-order",
@@ -2855,18 +3164,96 @@
       "nameZh": "下达工单",
       "description": "Release a WorkOrder with reserved components against the currently effective BillOfMaterials; blocked unless all components are at effective revision (R-01) and none carry a Quarantine NonConformance (R-02).",
       "descriptionZh": "依当前生效物料清单下达带预留组件的工单；除非所有组件均为生效修订(R-01)且无隔离不合格(R-02)，否则阻止。",
+      "submission_criteria": "1. Event PRODUCTION_DEMAND_CONFIRMED has been received\n2. Event REVISION_BECAME_EFFECTIVE has been received\n3. Rule \"WorkOrder release requires effective revisions\" is satisfied\n4. Rule \"Quarantine disposition blocks release\" is satisfied",
+      "object_type": "action",
+      "category": "下达工单",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "PRODUCTION_DEMAND_CONFIRMED",
+        "REVISION_BECAME_EFFECTIVE"
+      ],
+      "target_objects": [
+        "Bill_Of_Materials",
+        "Work_Order",
+        "Part",
+        "Non_Conformance",
+        "Disposition"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "verifyEveryComponentPartIsAt",
+          "description": "Verify every component Part is at the currently effective revision per R-01.",
+          "object_type": "logic",
+          "submission_criteria": "On WorkOrder release",
+          "rules": [
+            {
+              "id": "R-01-workorder-effective-revision",
+              "name": "WorkOrder release requires effective revisions",
+              "submission_criteria": "On WorkOrder release",
+              "description": "A WorkOrder may not be released unless every component Part in its BillOfMaterials is at the currently effective revision."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "verifyNoComponentPartCarriesAn",
+          "description": "Verify no component Part carries an open NonConformance with Disposition = Quarantine per R-02.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "R-02-quarantine-blocks-release",
+              "name": "Quarantine disposition blocks release",
+              "submission_criteria": "",
+              "description": "A component Part that has an open NonConformance with Disposition = Quarantine shall not be consumed by any newly released WorkOrder."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "releaseTheWorkOrderAndReserve",
+          "description": "Release the WorkOrder and reserve components.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"ReleaseWorkOrder\" action. Release a WorkOrder with reserved components against the currently effective BillOfMaterials; blocked unless all components are at effective revision (R-01) and none carry a Quarantine NonConformance (R-02). Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ReleaseWorkOrder\" using planned_order, bill_of_materials. Release a WorkOrder with reserved components against the currently effective BillOfMaterials; blocked unless all components are at effective revision (R-01) and none carry a Quarantine NonConformance (R-02). Produce work_order and emit the appropriate events.",
+      "tool_use": [
+        "SAP ECC"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Work_Order",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "WorkOrder.status -> Released; components reserved."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "WORK_ORDER_RELEASED",
+        "WORK_ORDER_RELEASE_BLOCKED"
+      ],
       "inputs": [
         {
           "name": "planned_order",
           "required": true,
-          "type": "json",
+          "type": "String",
           "description": "The demand / planned order."
         },
         {
           "name": "bill_of_materials",
           "required": true,
           "objectTypeId": "objectType:billOfMaterials",
-          "description": "Currently effective BOM."
+          "description": "Currently effective BOM.",
+          "type": "String",
+          "source_object": "Bill_Of_Materials.bom_id"
         }
       ],
       "outputs": [
@@ -2874,7 +3261,8 @@
           "name": "work_order",
           "required": true,
           "objectTypeId": "objectType:workOrder",
-          "description": "Released WorkOrder with reserved components."
+          "description": "Released WorkOrder with reserved components.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2944,11 +3332,6 @@
           "objectTypeId": "objectType:workOrder"
         }
       ],
-      "actor": {
-        "role": "Production Supervisor",
-        "roleZh": "生产主管",
-        "kind": "agent"
-      },
       "permissions": [
         "workOrder:release"
       ],
@@ -2986,7 +3369,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Production Supervisor",
+        "roleZh": "生产主管",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:confirm-production-operation",
@@ -2995,11 +3383,70 @@
       "nameZh": "确认生产操作",
       "description": "Confirm operation yield from issued components and, at the final operation, produce a finished Part lot pending inspection; backflushes against the released WorkOrder BOM revision per R-09.",
       "descriptionZh": "依已发料组件确认操作产出，并在最终操作产出待检成品零件批；按 R-09 依已下达工单的物料清单修订倒冲。",
+      "submission_criteria": "1. Event WORK_ORDER_RELEASED has been received\n2. Rule \"Backflush against frozen revision\" is satisfied",
+      "object_type": "action",
+      "category": "确认生产操作",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "WORK_ORDER_RELEASED"
+      ],
+      "target_objects": [
+        "Work_Order",
+        "Part"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "backflushEveryComponentGoodsIssueAgainst",
+          "description": "Backflush every component goods issue against the released WorkOrder bom_revision per R-09.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "R-09-backflush-frozen-revision",
+              "name": "Backflush against frozen revision",
+              "submission_criteria": "",
+              "description": "Every component goods issue must be backflushed against the bom_revision recorded on the released WorkOrder, and may not be backflushed against a later revision."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "confirmOperationYieldAtTheFinal",
+          "description": "Confirm operation yield; at the final operation, produce a finished Part lot pending inspection.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"ConfirmProductionOperation\" action. Confirm operation yield from issued components and, at the final operation, produce a finished Part lot pending inspection; backflushes against the released WorkOrder BOM revision per R-09. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ConfirmProductionOperation\" using work_order, issued_components. Confirm operation yield from issued components and, at the final operation, produce a finished Part lot pending inspection; backflushes against the released WorkOrder BOM revision per R-09. Produce finished_part_lot and emit the appropriate events.",
+      "tool_use": [
+        "SAP ECC"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Work_Order",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Operation confirmation and goods movements."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "PRODUCTION_OPERATION_CONFIRMED",
+        "FINISHED_LOT_PRODUCED"
+      ],
       "inputs": [
         {
           "name": "work_order",
           "required": true,
-          "objectTypeId": "objectType:workOrder"
+          "objectTypeId": "objectType:workOrder",
+          "type": "String",
+          "source_object": "Work_Order.work_order_id"
         },
         {
           "name": "issued_components",
@@ -3007,7 +3454,9 @@
           "objectTypeId": "objectType:part",
           "isArray": true,
           "cardinality": "many",
-          "description": "Issued component Part quantities."
+          "description": "Issued component Part quantities.",
+          "type": "String",
+          "source_object": "Part.part_number"
         }
       ],
       "outputs": [
@@ -3015,7 +3464,8 @@
           "name": "finished_part_lot",
           "required": true,
           "objectTypeId": "objectType:part",
-          "description": "Finished Part lot pending inspection at the final operation."
+          "description": "Finished Part lot pending inspection at the final operation.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3069,11 +3519,6 @@
           "objectTypeId": "objectType:workOrder"
         }
       ],
-      "actor": {
-        "role": "Production Supervisor",
-        "roleZh": "生产主管",
-        "kind": "human"
-      },
       "permissions": [
         "workOrder:confirm"
       ],
@@ -3114,7 +3559,12 @@
       ],
       "confidence": 0.91,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Production Supervisor",
+        "roleZh": "生产主管",
+        "kind": "human"
+      }
     },
     {
       "id": "action:open-inspection-lot",
@@ -3123,17 +3573,75 @@
       "nameZh": "开立检验批",
       "description": "Create a new InspectionLot in status Open with a sampling plan; mandatory for any finished lot of a Part whose inspection_required is true per R-07.",
       "descriptionZh": "创建带抽样计划、状态为开立的新检验批；按 R-07 对 inspection_required 为真零件的任何成品批为强制。",
+      "submission_criteria": "1. Event FINISHED_LOT_PRODUCED has been received\n2. Rule \"InspectionLot required when flagged\" is satisfied",
+      "object_type": "action",
+      "category": "开立检验批",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "FINISHED_LOT_PRODUCED"
+      ],
+      "target_objects": [
+        "Part",
+        "Inspection_Lot"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "checkThePartInspectionRequiredFlag",
+          "description": "Check the Part inspection_required flag per R-07.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "R-07-inspectionlot-required",
+              "name": "InspectionLot required when flagged",
+              "submission_criteria": "",
+              "description": "An InspectionLot is required for every finished lot of any Part whose inspection_required flag is true."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "createANewInspectionLotIn",
+          "description": "Create a new InspectionLot in status Open with a sampling plan.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"OpenInspectionLot\" action. Create a new InspectionLot in status Open with a sampling plan; mandatory for any finished lot of a Part whose inspection_required is true per R-07. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"OpenInspectionLot\" using finished_part_lot, inspection_plan. Create a new InspectionLot in status Open with a sampling plan; mandatory for any finished lot of a Part whose inspection_required is true per R-07. Produce inspection_lot and emit the appropriate events.",
+      "tool_use": [
+        "SAP ECC"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Inspection_Lot",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create InspectionLot in SAP ECC QM."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "INSPECTION_LOT_OPENED"
+      ],
       "inputs": [
         {
           "name": "finished_part_lot",
           "required": true,
           "objectTypeId": "objectType:part",
-          "description": "The finished Part lot."
+          "description": "The finished Part lot.",
+          "type": "String",
+          "source_object": "Part.part_number"
         },
         {
           "name": "inspection_plan",
           "required": true,
-          "type": "json",
+          "type": "String",
           "description": "The inspection plan for that Part."
         }
       ],
@@ -3142,7 +3650,8 @@
           "name": "inspection_lot",
           "required": true,
           "objectTypeId": "objectType:inspectionLot",
-          "description": "New InspectionLot in status Open with sampling plan."
+          "description": "New InspectionLot in status Open with sampling plan.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3190,11 +3699,6 @@
           "objectTypeId": "objectType:inspectionLot"
         }
       ],
-      "actor": {
-        "role": "SAP ECC",
-        "roleZh": "SAP ECC",
-        "kind": "system"
-      },
       "permissions": [
         "inspectionLot:open"
       ],
@@ -3232,7 +3736,12 @@
       ],
       "confidence": 0.91,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "SAP ECC",
+        "roleZh": "SAP ECC",
+        "kind": "system"
+      }
     },
     {
       "id": "action:record-inspection",
@@ -3241,16 +3750,74 @@
       "nameZh": "记录检验",
       "description": "Produce an Inspection record with pass/fail per characteristic and an aggregate result; the lot is Accepted only if defects are at or below the AQL acceptance number per R-08. Used for both finished-lot and incoming inspection.",
       "descriptionZh": "产出含各特性合格/不合格及汇总结果的检验记录；仅当缺陷数不超过 AQL 接收数时该批方为接受(R-08)。用于成品批与来料检验。",
+      "submission_criteria": "1. Event INSPECTION_LOT_OPENED has been received\n2. Rule \"AQL acceptance number\" is satisfied",
+      "object_type": "action",
+      "category": "记录检验",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "INSPECTION_LOT_OPENED"
+      ],
+      "target_objects": [
+        "Inspection_Lot",
+        "Inspection"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "measureCharacteristicsAgainstTheSamplingPlan",
+          "description": "Measure characteristics against the sampling plan.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "setTheLotAcceptedOnlyIf",
+          "description": "Set the lot Accepted only if defect count is at or below the AQL acceptance number; otherwise Rejected, per R-08.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "R-08-aql-acceptance",
+              "name": "AQL acceptance number",
+              "submission_criteria": "",
+              "description": "An InspectionLot shall be set to Accepted only when the observed defect count is at or below the AQL 1.0 acceptance number for the applicable sample size; otherwise it must be set to Rejected."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"RecordInspection\" action. Produce an Inspection record with pass/fail per characteristic and an aggregate result; the lot is Accepted only if defects are at or below the AQL acceptance number per R-08. Used for both finished-lot and incoming inspection. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"RecordInspection\" using inspection_lot, measured_characteristics. Produce an Inspection record with pass/fail per characteristic and an aggregate result; the lot is Accepted only if defects are at or below the AQL acceptance number per R-08. Used for both finished-lot and incoming inspection. Produce inspection and emit the appropriate events.",
+      "tool_use": [
+        "Quality Data Mart"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Inspection",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Write Inspection result in Quality Data Mart."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "INSPECTION_RECORDED"
+      ],
       "inputs": [
         {
           "name": "inspection_lot",
           "required": true,
-          "objectTypeId": "objectType:inspectionLot"
+          "objectTypeId": "objectType:inspectionLot",
+          "type": "String",
+          "source_object": "Inspection_Lot.lot_id"
         },
         {
           "name": "measured_characteristics",
           "required": true,
-          "type": "json",
+          "type": "String",
           "description": "The sampling plan and measured characteristics."
         }
       ],
@@ -3259,7 +3826,8 @@
           "name": "inspection",
           "required": true,
           "objectTypeId": "objectType:inspection",
-          "description": "Inspection record with per-characteristic and aggregate result."
+          "description": "Inspection record with per-characteristic and aggregate result.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3308,11 +3876,6 @@
           "objectTypeId": "objectType:inspection"
         }
       ],
-      "actor": {
-        "role": "Quality Inspector",
-        "roleZh": "质量检验员",
-        "kind": "human"
-      },
       "permissions": [
         "inspection:record"
       ],
@@ -3350,7 +3913,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Quality Inspector",
+        "roleZh": "质量检验员",
+        "kind": "human"
+      }
     },
     {
       "id": "action:post-usage-decision",
@@ -3359,12 +3927,82 @@
       "nameZh": "过账使用决策",
       "description": "On Accepted, post the lot to unrestricted stock and clear it to ship per R-04; on Rejected, automatically open a NonConformance per R-04 and post to blocked stock.",
       "descriptionZh": "接受时按 R-04 将批过账至非限制库存并放行发运；拒收时按 R-04 自动开立不合格品并过账至冻结库存。",
+      "submission_criteria": "1. Event INSPECTION_RECORDED has been received\n2. Rule \"No ship until lot accepted; reject opens NCR\" is satisfied",
+      "object_type": "action",
+      "category": "过账使用决策",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "INSPECTION_RECORDED"
+      ],
+      "target_objects": [
+        "Inspection",
+        "Inspection_Lot",
+        "Non_Conformance",
+        "Part"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "onAcceptedPostTheLotTo",
+          "description": "On Accepted, post the lot to unrestricted stock and clear to ship per R-04.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "R-04-no-ship-until-accepted",
+              "name": "No ship until lot accepted; reject opens NCR",
+              "submission_criteria": "",
+              "description": "A finished lot may not ship until its InspectionLot is Accepted; a Rejected InspectionLot shall automatically open a NonConformance."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "onRejectedAutomaticallyOpenANon",
+          "description": "On Rejected, automatically open a NonConformance per R-04 and post to blocked stock.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "R-04-no-ship-until-accepted",
+              "name": "No ship until lot accepted; reject opens NCR",
+              "submission_criteria": "",
+              "description": "A finished lot may not ship until its InspectionLot is Accepted; a Rejected InspectionLot shall automatically open a NonConformance."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"PostUsageDecision\" action. On Accepted, post the lot to unrestricted stock and clear it to ship per R-04; on Rejected, automatically open a NonConformance per R-04 and post to blocked stock. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"PostUsageDecision\" using inspection. On Accepted, post the lot to unrestricted stock and clear it to ship per R-04; on Rejected, automatically open a NonConformance per R-04 and post to blocked stock. Produce inspection_lot, non_conformance and emit the appropriate events.",
+      "tool_use": [
+        "SAP ECC"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Inspection_Lot",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "InspectionLot.status posted; stock moved; NCR opened on reject."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "INSPECTION_LOT_ACCEPTED",
+        "INSPECTION_LOT_REJECTED",
+        "NON_CONFORMANCE_OPENED"
+      ],
       "inputs": [
         {
           "name": "inspection",
           "required": true,
           "objectTypeId": "objectType:inspection",
-          "description": "The Inspection result."
+          "description": "The Inspection result.",
+          "type": "String",
+          "source_object": "Inspection.inspection_id"
         }
       ],
       "outputs": [
@@ -3372,13 +4010,15 @@
           "name": "inspection_lot",
           "required": true,
           "objectTypeId": "objectType:inspectionLot",
-          "description": "Status -> Accepted or Rejected."
+          "description": "Status -> Accepted or Rejected.",
+          "type": "String"
         },
         {
           "name": "non_conformance",
           "required": false,
           "objectTypeId": "objectType:nonConformance",
-          "description": "Opened on Rejected."
+          "description": "Opened on Rejected.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3440,11 +4080,6 @@
           "objectTypeId": "objectType:inspectionLot"
         }
       ],
-      "actor": {
-        "role": "Quality Inspector",
-        "roleZh": "质量检验员",
-        "kind": "agent"
-      },
       "permissions": [
         "inspectionLot:postDecision"
       ],
@@ -3477,7 +4112,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Quality Inspector",
+        "roleZh": "质量检验员",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:release-lot-to-ship",
@@ -3486,17 +4126,102 @@
       "nameZh": "放行批发运",
       "description": "Produce a delivery-eligible lot from an accepted finished lot; a finished lot may not ship until its InspectionLot is Accepted per R-04.",
       "descriptionZh": "由已接受成品批产出可交付批；成品批在其检验批被接受前不得发运(R-04)。",
+      "submission_criteria": "1. Event INSPECTION_LOT_ACCEPTED has been received\n2. Rule \"No ship until lot accepted; reject opens NCR\" is satisfied\n3. Rule \"No customer ship with unresolved Major/Critical NCR\" is satisfied\n4. Rule \"No WorkOrder close with open lot\" is satisfied",
+      "object_type": "action",
+      "category": "放行批发运",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "INSPECTION_LOT_ACCEPTED"
+      ],
+      "target_objects": [
+        "Inspection_Lot",
+        "Part",
+        "Work_Order",
+        "Non_Conformance"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "verifyTheInspectionLotIsAccepted",
+          "description": "Verify the InspectionLot is Accepted before shipping per R-04.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "R-04-no-ship-until-accepted",
+              "name": "No ship until lot accepted; reject opens NCR",
+              "submission_criteria": "",
+              "description": "A finished lot may not ship until its InspectionLot is Accepted; a Rejected InspectionLot shall automatically open a NonConformance."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "verifyNoConstituentComponentLotHas",
+          "description": "Verify no constituent component lot has an unresolved Major/Critical NonConformance per R-20.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "R-20-no-ship-unresolved-major",
+              "name": "No customer ship with unresolved Major/Critical NCR",
+              "submission_criteria": "",
+              "description": "A Part may not be released to a customer-facing shipment if any of its constituent component lots has an unresolved NonConformance with severity Major or Critical."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "produceADeliveryEligibleLotAnd",
+          "description": "Produce a delivery-eligible lot and close the WorkOrder.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "R-16-no-close-open-lot",
+              "name": "No WorkOrder close with open lot",
+              "submission_criteria": "",
+              "description": "A WorkOrder may not be closed while any linked InspectionLot remains in status Open or InProcess."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"ReleaseLotToShip\" action. Produce a delivery-eligible lot from an accepted finished lot; a finished lot may not ship until its InspectionLot is Accepted per R-04. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ReleaseLotToShip\" using inspection_lot, finished_lot. Produce a delivery-eligible lot from an accepted finished lot; a finished lot may not ship until its InspectionLot is Accepted per R-04. Produce shippable_lot, work_order and emit the appropriate events.",
+      "tool_use": [
+        "SAP ECC"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Work_Order",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "WorkOrder.status -> Closed; lot delivery-eligible."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "FINISHED_LOT_SHIPPABLE"
+      ],
       "inputs": [
         {
           "name": "inspection_lot",
           "required": true,
           "objectTypeId": "objectType:inspectionLot",
-          "description": "Must be Accepted."
+          "description": "Must be Accepted.",
+          "type": "String",
+          "source_object": "Inspection_Lot.lot_id"
         },
         {
           "name": "finished_lot",
           "required": true,
-          "objectTypeId": "objectType:part"
+          "objectTypeId": "objectType:part",
+          "type": "String",
+          "source_object": "Part.part_number"
         }
       ],
       "outputs": [
@@ -3504,13 +4229,15 @@
           "name": "shippable_lot",
           "required": true,
           "objectTypeId": "objectType:part",
-          "description": "Delivery-eligible lot."
+          "description": "Delivery-eligible lot.",
+          "type": "String"
         },
         {
           "name": "work_order",
           "required": true,
           "objectTypeId": "objectType:workOrder",
-          "description": "Closed work order."
+          "description": "Closed work order.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3579,11 +4306,6 @@
           "objectTypeId": "objectType:workOrder"
         }
       ],
-      "actor": {
-        "role": "Production Supervisor",
-        "roleZh": "生产主管",
-        "kind": "agent"
-      },
       "permissions": [
         "lot:releaseToShip"
       ],
@@ -3621,7 +4343,12 @@
       ],
       "confidence": 0.91,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Production Supervisor",
+        "roleZh": "生产主管",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:post-goods-receipt",
@@ -3630,17 +4357,77 @@
       "nameZh": "过账收货",
       "description": "Produce a received Part lot in quality-inspection stock and, for inspection-required parts, an incoming InspectionLot; goods may be received only from an Approved Supplier per R-10.",
       "descriptionZh": "产出处于质检库存的收货零件批，并对需检验零件产出来料检验批；按 R-10 仅可从合格供应商收货。",
+      "submission_criteria": "1. Event SUPPLIER_DELIVERY_ARRIVED has been received\n2. Rule \"Receive only from approved suppliers\" is satisfied",
+      "object_type": "action",
+      "category": "过账收货",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "SUPPLIER_DELIVERY_ARRIVED"
+      ],
+      "target_objects": [
+        "Supplier",
+        "Part",
+        "Inspection_Lot"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "verifyTheSupplierQualificationStatusIs",
+          "description": "Verify the Supplier qualification_status is Approved per R-10.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "R-10-approved-supplier-only",
+              "name": "Receive only from approved suppliers",
+              "submission_criteria": "",
+              "description": "Goods may be received only from a Supplier whose qualification_status is Approved."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "postTheReceivedPartLotTo",
+          "description": "Post the received Part lot to quality-inspection stock and open an incoming InspectionLot for inspection-required parts.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"PostGoodsReceipt\" action. Produce a received Part lot in quality-inspection stock and, for inspection-required parts, an incoming InspectionLot; goods may be received only from an Approved Supplier per R-10. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"PostGoodsReceipt\" using inbound_delivery, supplier. Produce a received Part lot in quality-inspection stock and, for inspection-required parts, an incoming InspectionLot; goods may be received only from an Approved Supplier per R-10. Produce received_part_lot, inspection_lot and emit the appropriate events.",
+      "tool_use": [
+        "SAP ECC"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Part",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Post goods receipt; open incoming inspection lot."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "GOODS_RECEIPT_POSTED",
+        "INSPECTION_LOT_OPENED"
+      ],
       "inputs": [
         {
           "name": "inbound_delivery",
           "required": true,
-          "type": "json",
+          "type": "String",
           "description": "The inbound delivery against a purchase order."
         },
         {
           "name": "supplier",
           "required": true,
-          "objectTypeId": "objectType:supplier"
+          "objectTypeId": "objectType:supplier",
+          "type": "String",
+          "source_object": "Supplier.supplier_id"
         }
       ],
       "outputs": [
@@ -3648,13 +4435,15 @@
           "name": "received_part_lot",
           "required": true,
           "objectTypeId": "objectType:part",
-          "description": "Received lot in quality-inspection stock."
+          "description": "Received lot in quality-inspection stock.",
+          "type": "String"
         },
         {
           "name": "inspection_lot",
           "required": false,
           "objectTypeId": "objectType:inspectionLot",
-          "description": "Incoming InspectionLot for inspection-required parts."
+          "description": "Incoming InspectionLot for inspection-required parts.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3708,11 +4497,6 @@
           "objectTypeId": "objectType:part"
         }
       ],
-      "actor": {
-        "role": "Receiving Clerk",
-        "roleZh": "收货员",
-        "kind": "human"
-      },
       "permissions": [
         "goodsReceipt:post"
       ],
@@ -3750,7 +4534,12 @@
       ],
       "confidence": 0.91,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Receiving Clerk",
+        "roleZh": "收货员",
+        "kind": "human"
+      }
     },
     {
       "id": "action:triage-non-conformance",
@@ -3759,12 +4548,78 @@
       "nameZh": "分检不合格品",
       "description": "Produce an owner assignment and severity for an auto-opened NonConformance; an owner must be assigned within 24h (R-12) and a safety-critical Part NCR escalated to the Quality Manager within 4h (R-15).",
       "descriptionZh": "为自动开立的不合格品产出负责人指派与严重度；须在 24 小时内指派负责人(R-12)，安全关键零件不合格须在 4 小时内升级至质量经理(R-15)。",
+      "submission_criteria": "1. Event NON_CONFORMANCE_OPENED has been received\n2. Rule \"NCR owner within 24h\" is satisfied\n3. Rule \"Safety NCR escalation within 4h\" is satisfied",
+      "object_type": "action",
+      "category": "分检不合格品",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "NON_CONFORMANCE_OPENED"
+      ],
+      "target_objects": [
+        "Non_Conformance",
+        "Part"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "assignAnOwnerWithin24Hours",
+          "description": "Assign an owner within 24 hours of opening per R-12.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "R-12-ncr-owner-24h",
+              "name": "NCR owner within 24h",
+              "submission_criteria": "",
+              "description": "A NonConformance must be assigned an owner within 24 hours of being opened."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "escalateASafetyClassifiedPartNonconformance",
+          "description": "Escalate a safety-classified Part nonconformance to the Quality Manager within 4 hours per R-15.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "R-15-safety-escalation-4h",
+              "name": "Safety NCR escalation within 4h",
+              "submission_criteria": "",
+              "description": "A NonConformance involving a Part whose safety_class is Critical must be escalated to the Quality Manager within 4 hours of being opened."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"TriageNonConformance\" action. Produce an owner assignment and severity for an auto-opened NonConformance; an owner must be assigned within 24h (R-12) and a safety-critical Part NCR escalated to the Quality Manager within 4h (R-15). Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"TriageNonConformance\" using non_conformance. Produce an owner assignment and severity for an auto-opened NonConformance; an owner must be assigned within 24h (R-12) and a safety-critical Part NCR escalated to the Quality Manager within 4h (R-15). Produce non_conformance and emit the appropriate events.",
+      "tool_use": [
+        "Quality Data Mart"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Non_Conformance",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "NonConformance.owner_id and severity set."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "NON_CONFORMANCE_ASSIGNED"
+      ],
       "inputs": [
         {
           "name": "non_conformance",
           "required": true,
           "objectTypeId": "objectType:nonConformance",
-          "description": "The auto-opened NonConformance."
+          "description": "The auto-opened NonConformance.",
+          "type": "String",
+          "source_object": "Non_Conformance.ncr_id"
         }
       ],
       "outputs": [
@@ -3772,7 +4627,8 @@
           "name": "non_conformance",
           "required": true,
           "objectTypeId": "objectType:nonConformance",
-          "description": "With owner assignment and severity."
+          "description": "With owner assignment and severity.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3825,11 +4681,6 @@
           "objectTypeId": "objectType:nonConformance"
         }
       ],
-      "actor": {
-        "role": "Quality Engineer",
-        "roleZh": "质量工程师",
-        "kind": "agent"
-      },
       "permissions": [
         "nonConformance:triage"
       ],
@@ -3862,7 +4713,12 @@
       ],
       "confidence": 0.91,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Quality Engineer",
+        "roleZh": "质量工程师",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:disposition-non-conformance",
@@ -3871,16 +4727,98 @@
       "nameZh": "处置不合格品",
       "description": "Produce a Disposition of UseAsIs, Rework, ReturnToSupplier, Quarantine, or Scrap; UseAsIs/Rework on a safety-critical Part requires QM sign-off (R-13) and a Quarantine blocks new WorkOrder release (R-02); only a Quality Engineer or higher may post it (R-19).",
       "descriptionZh": "产出照用、返工、退供应商、隔离或报废处置；安全关键零件照用/返工需质量经理签核(R-13)，隔离将阻止新工单下达(R-02)；仅质量工程师或更高级别可过账(R-19)。",
+      "submission_criteria": "1. Event NON_CONFORMANCE_ASSIGNED has been received\n2. Rule \"Only Quality Engineer posts Disposition\" is satisfied\n3. Rule \"QM sign-off for UseAsIs/Rework on safety parts\" is satisfied\n4. Rule \"Quarantine disposition blocks release\" is satisfied",
+      "object_type": "action",
+      "category": "处置不合格品",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "NON_CONFORMANCE_ASSIGNED"
+      ],
+      "target_objects": [
+        "Non_Conformance",
+        "Disposition",
+        "Part"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "verifyTheActorIsAQuality",
+          "description": "Verify the actor is a Quality Engineer or higher per R-19.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "R-19-disposition-authorization",
+              "name": "Only Quality Engineer posts Disposition",
+              "submission_criteria": "",
+              "description": "Only a Quality Engineer or higher is authorized to post a Disposition; a Quality Inspector may not post a Disposition."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "forUseAsIsReworkOn",
+          "description": "For UseAsIs/Rework on a safety-critical Part, obtain Quality Manager sign-off per R-13.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "R-13-useasis-rework-qm-signoff",
+              "name": "QM sign-off for UseAsIs/Rework on safety parts",
+              "submission_criteria": "",
+              "description": "A Disposition of UseAsIs or Rework on a Part whose safety_class is Critical is required to carry Quality Manager sign-off."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "produceTheDispositionAQuarantineBlocks",
+          "description": "Produce the Disposition; a Quarantine blocks the affected Part from new WorkOrder release per R-02.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "R-02-quarantine-blocks-release",
+              "name": "Quarantine disposition blocks release",
+              "submission_criteria": "",
+              "description": "A component Part that has an open NonConformance with Disposition = Quarantine shall not be consumed by any newly released WorkOrder."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"DispositionNonConformance\" action. Produce a Disposition of UseAsIs, Rework, ReturnToSupplier, Quarantine, or Scrap; UseAsIs/Rework on a safety-critical Part requires QM sign-off (R-13) and a Quarantine blocks new WorkOrder release (R-02); only a Quality Engineer or higher may post it (R-19). Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"DispositionNonConformance\" using non_conformance, investigation_findings. Produce a Disposition of UseAsIs, Rework, ReturnToSupplier, Quarantine, or Scrap; UseAsIs/Rework on a safety-critical Part requires QM sign-off (R-13) and a Quarantine blocks new WorkOrder release (R-02); only a Quality Engineer or higher may post it (R-19). Produce disposition and emit the appropriate events.",
+      "tool_use": [
+        "Quality Data Mart"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Disposition",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create Disposition; move stock per decision."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "NON_CONFORMANCE_DISPOSITIONED"
+      ],
       "inputs": [
         {
           "name": "non_conformance",
           "required": true,
-          "objectTypeId": "objectType:nonConformance"
+          "objectTypeId": "objectType:nonConformance",
+          "type": "String",
+          "source_object": "Non_Conformance.ncr_id"
         },
         {
           "name": "investigation_findings",
           "required": true,
-          "type": "json",
+          "type": "String",
           "description": "The investigation findings."
         }
       ],
@@ -3889,7 +4827,8 @@
           "name": "disposition",
           "required": true,
           "objectTypeId": "objectType:disposition",
-          "description": "The disposition decision."
+          "description": "The disposition decision.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3954,11 +4893,6 @@
           "objectTypeId": "objectType:disposition"
         }
       ],
-      "actor": {
-        "role": "Quality Engineer",
-        "roleZh": "质量工程师",
-        "kind": "agent"
-      },
       "permissions": [
         "disposition:post"
       ],
@@ -3996,7 +4930,12 @@
       ],
       "confidence": 0.91,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Quality Engineer",
+        "roleZh": "质量工程师",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:open-corrective-action",
@@ -4005,16 +4944,93 @@
       "nameZh": "开立纠正措施",
       "description": "Produce a CorrectiveAction with a due date from the Disposition and root-cause analysis; a NonConformance recurring three or more times in 90 days for the same Part requires a formal CAPA (R-14), and a CAPA must be verified effective before its NonConformance may close (R-18).",
       "descriptionZh": "依处置与根因分析产出含到期日的纠正措施；同一零件 90 天内重复三次或以上的不合格品需正式 CAPA(R-14)，且 CAPA 须验证有效后其不合格品方可关闭(R-18)。",
+      "submission_criteria": "1. Event NON_CONFORMANCE_DISPOSITIONED has been received\n2. Rule \"Recurring NCR triggers CAPA\" is satisfied\n3. Rule \"CAPA verified before NCR close\" is satisfied",
+      "object_type": "action",
+      "category": "开立纠正措施",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "NON_CONFORMANCE_DISPOSITIONED"
+      ],
+      "target_objects": [
+        "Disposition",
+        "Corrective_Action",
+        "Engineering_Change",
+        "Non_Conformance"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "ifANonConformanceRecursThree",
+          "description": "If a NonConformance recurs three or more times within 90 days for the same Part, require a formal CorrectiveAction per R-14.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "R-14-recurrence-capa",
+              "name": "Recurring NCR triggers CAPA",
+              "submission_criteria": "",
+              "description": "A NonConformance that recurs three or more times within any 90-day window for the same Part shall trigger a formal CorrectiveAction (CAPA)."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "produceACorrectiveActionWithA",
+          "description": "Produce a CorrectiveAction with a due date; on verification, close it and the NonConformance per R-18.",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "R-18-capa-verified-before-close",
+              "name": "CAPA verified before NCR close",
+              "submission_criteria": "",
+              "description": "A CorrectiveAction must be verified effective before its linked NonConformance may be set to status Closed."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "ifTheFixChangesProductStructure",
+          "description": "If the fix changes product structure, raise a new EngineeringChange (re-entering Process P1).",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"OpenCorrectiveAction\" action. Produce a CorrectiveAction with a due date from the Disposition and root-cause analysis; a NonConformance recurring three or more times in 90 days for the same Part requires a formal CAPA (R-14), and a CAPA must be verified effective before its NonConformance may close (R-18). Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"OpenCorrectiveAction\" using disposition, root_cause_analysis. Produce a CorrectiveAction with a due date from the Disposition and root-cause analysis; a NonConformance recurring three or more times in 90 days for the same Part requires a formal CAPA (R-14), and a CAPA must be verified effective before its NonConformance may close (R-18). Produce corrective_action, engineering_change and emit the appropriate events.",
+      "tool_use": [
+        "Quality Data Mart"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Corrective_Action",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create CorrectiveAction; close NCR on verification."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "CORRECTIVE_ACTION_OPENED",
+        "CORRECTIVE_ACTION_CLOSED",
+        "NON_CONFORMANCE_CLOSED"
+      ],
       "inputs": [
         {
           "name": "disposition",
           "required": true,
-          "objectTypeId": "objectType:disposition"
+          "objectTypeId": "objectType:disposition",
+          "type": "String",
+          "source_object": "Disposition.disposition_id"
         },
         {
           "name": "root_cause_analysis",
           "required": true,
-          "type": "string",
+          "type": "String",
           "description": "Root-cause analysis."
         }
       ],
@@ -4023,13 +5039,15 @@
           "name": "corrective_action",
           "required": true,
           "objectTypeId": "objectType:correctiveAction",
-          "description": "CorrectiveAction with a due date."
+          "description": "CorrectiveAction with a due date.",
+          "type": "String"
         },
         {
           "name": "engineering_change",
           "required": false,
           "objectTypeId": "objectType:engineeringChange",
-          "description": "Optionally raised if the fix changes product structure."
+          "description": "Optionally raised if the fix changes product structure.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4104,11 +5122,6 @@
           "objectTypeId": "objectType:correctiveAction"
         }
       ],
-      "actor": {
-        "role": "Quality Engineer",
-        "roleZh": "质量工程师",
-        "kind": "agent"
-      },
       "permissions": [
         "correctiveAction:open"
       ],
@@ -4146,7 +5159,12 @@
       ],
       "confidence": 0.9,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Quality Engineer",
+        "roleZh": "质量工程师",
+        "kind": "agent"
+      }
     }
   ],
   "events": [

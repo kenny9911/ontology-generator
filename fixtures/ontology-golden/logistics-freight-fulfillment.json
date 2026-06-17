@@ -2684,25 +2684,99 @@
       "nameZh": "校验订单",
       "description": "Validate an inbound Order from EDI 940 and decompose it into per-ship-to Consignments.",
       "descriptionZh": "校验来自 EDI 940 的入站订单，并按收货方分解为货件。",
+      "submission_criteria": "1. Event ORDER_RECEIVED has been received\n2. Rule \"Order must have a Consignment before planning\" is satisfied",
+      "object_type": "action",
+      "category": "校验订单",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "ORDER_RECEIVED"
+      ],
+      "target_objects": [
+        "Order",
+        "Consignment"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "readTheNormalizedInboundOrderFrom",
+          "description": "Read the normalized inbound Order from the EDI Gateway.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "validateShipToPartyAndServiceable",
+          "description": "Validate ship-to party and serviceable destination.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "3",
+          "name": "onSuccessSetStatusAcceptedAnd",
+          "description": "On success set status Accepted and create one Consignment per ship-to party.",
+          "object_type": "logic",
+          "submission_criteria": "On shipment planning",
+          "rules": [
+            {
+              "id": "order-assigned-to-consignment",
+              "name": "Order must have a Consignment before planning",
+              "submission_criteria": "On shipment planning",
+              "description": "An Order must be assigned to at least one Consignment before a Shipment may be planned."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"ValidateOrder\" action. Validate an inbound Order from EDI 940 and decompose it into per-ship-to Consignments. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ValidateOrder\" using order. Validate an inbound Order from EDI 940 and decompose it into per-ship-to Consignments. Produce order, consignments and emit the appropriate events.",
+      "tool_use": [
+        "Oracle OTM"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Order",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Order.status := Accepted | Rejected"
+          },
+          {
+            "object_type": "Consignment",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create Consignment records in WMS."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "ORDER_ACCEPTED",
+        "ORDER_REJECTED"
+      ],
       "inputs": [
         {
           "name": "order",
           "objectTypeId": "objectType:order",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Order.order_id"
         }
       ],
       "outputs": [
         {
           "name": "order",
           "objectTypeId": "objectType:order",
-          "required": true
+          "required": true,
+          "type": "String"
         },
         {
           "name": "consignments",
           "objectTypeId": "objectType:consignment",
           "required": true,
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2770,11 +2844,6 @@
           "objectTypeId": "objectType:consignment"
         }
       ],
-      "actor": {
-        "role": "Order Management Specialist",
-        "roleZh": "订单管理专员",
-        "kind": "agent"
-      },
       "permissions": [
         "order:validate"
       ],
@@ -2812,7 +2881,12 @@
       ],
       "confidence": 0.94,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Order Management Specialist",
+        "roleZh": "订单管理专员",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:plan-shipment",
@@ -2821,32 +2895,95 @@
       "nameZh": "计划运单",
       "description": "Group accepted Consignments into a Shipment along an eligible Lane and resolve the applicable SLA and delivery window.",
       "descriptionZh": "将已接受的货件沿合格运线归集为运单，并解析适用的 SLA 与送达窗口。",
+      "submission_criteria": "1. Event ORDER_ACCEPTED has been received\n2. Rule \"Order must have a Consignment before planning\" is satisfied",
+      "object_type": "action",
+      "category": "计划运单",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "ORDER_ACCEPTED"
+      ],
+      "target_objects": [
+        "Consignment",
+        "Shipment",
+        "Stop",
+        "Sla",
+        "Lane"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "groupAcceptedConsignmentsOntoAnEligible",
+          "description": "Group accepted Consignments onto an eligible Lane.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "resolveTheApplicableSLAGuaranteedVs",
+          "description": "Resolve the applicable SLA (guaranteed vs. standard) and compute the committed delivery window.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "3",
+          "name": "createOrderedStopRecordsPickupDelivery",
+          "description": "Create ordered Stop records (pickup → delivery) and set Shipment status Planned.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"PlanShipment\" action. Group accepted Consignments into a Shipment along an eligible Lane and resolve the applicable SLA and delivery window. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"PlanShipment\" using consignments. Group accepted Consignments into a Shipment along an eligible Lane and resolve the applicable SLA and delivery window. Produce shipment, stops, sla and emit the appropriate events.",
+      "tool_use": [
+        "Oracle OTM"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Shipment",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create Shipment, Stops, and attach SLA in TMS."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "SHIPMENT_PLANNED"
+      ],
       "inputs": [
         {
           "name": "consignments",
           "objectTypeId": "objectType:consignment",
           "required": true,
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String",
+          "source_object": "Consignment.consignment_id"
         }
       ],
       "outputs": [
         {
           "name": "shipment",
           "objectTypeId": "objectType:shipment",
-          "required": true
+          "required": true,
+          "type": "String"
         },
         {
           "name": "stops",
           "objectTypeId": "objectType:stop",
           "required": true,
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String"
         },
         {
           "name": "sla",
           "objectTypeId": "objectType:sla",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -2912,11 +3049,6 @@
           "objectTypeId": "objectType:shipment"
         }
       ],
-      "actor": {
-        "role": "Transportation Planner",
-        "roleZh": "运输计划员",
-        "kind": "agent"
-      },
       "permissions": [
         "shipment:plan"
       ],
@@ -2956,7 +3088,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Transportation Planner",
+        "roleZh": "运输计划员",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:tender-shipment",
@@ -2965,23 +3102,109 @@
       "nameZh": "招标运单",
       "description": "Select a Lane-qualified Carrier and transmit an EDI 204 load tender, booking the Carrier on EDI 990 acceptance.",
       "descriptionZh": "选择具备运线资格的承运商并发送 EDI 204 装载招标，于 EDI 990 接受时订妥承运商。",
+      "submission_criteria": "1. Event SHIPMENT_PLANNED has been received\n2. Rule \"Tender only to Lane-qualified Carrier\" is satisfied\n3. Rule \"Carrier below 95% on-time placed on hold\" is satisfied\n4. Rule \"High-value Shipment needs insured Carrier and visibility\" is satisfied",
+      "object_type": "action",
+      "category": "招标运单",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "SHIPMENT_PLANNED"
+      ],
+      "target_objects": [
+        "Shipment",
+        "Carrier",
+        "Lane",
+        "Consignment"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "selectACarrierQualifiedForThe",
+          "description": "Select a Carrier qualified for the Lane from the approved-carrier roster.",
+          "object_type": "logic",
+          "submission_criteria": "On tender",
+          "rules": [
+            {
+              "id": "tender-only-qualified-carrier",
+              "name": "Tender only to Lane-qualified Carrier",
+              "submission_criteria": "On tender",
+              "description": "A Shipment must be tendered to a Carrier that is qualified for the Shipment's Lane; a Carrier not listed on the Lane's approved-carrier roster may not be tendered freight on that Lane."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "forHighValueFreightVerifyCarrier",
+          "description": "For high-value freight, verify Carrier cargo insurance and visibility commitment.",
+          "object_type": "logic",
+          "submission_criteria": "On high-value tender",
+          "rules": [
+            {
+              "id": "high-value-insured-carrier",
+              "name": "High-value Shipment needs insured Carrier and visibility",
+              "submission_criteria": "On high-value tender",
+              "description": "A high-value Shipment with declared cargo value exceeding USD 100,000 must be tendered only to a Carrier carrying cargo insurance of at least the declared value and shall require a team-driver or in-transit-visibility commitment."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "transmitEDI204MotorCarrierLoad",
+          "description": "Transmit EDI 204 (Motor Carrier Load Tender) via the EDI Gateway and await EDI 990.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "4",
+          "name": "onAcceptanceSetStatusTenderedWith",
+          "description": "On acceptance, set status Tendered with the booked Carrier and PRO number.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"TenderShipment\" action. Select a Lane-qualified Carrier and transmit an EDI 204 load tender, booking the Carrier on EDI 990 acceptance. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"TenderShipment\" using shipment. Select a Lane-qualified Carrier and transmit an EDI 204 load tender, booking the Carrier on EDI 990 acceptance. Produce shipment, carrier and emit the appropriate events.",
+      "tool_use": [
+        "Cleo Integration Cloud",
+        "Transmit EDI 204 to Carrier and receive EDI 990 via EDI Gateway."
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Shipment",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Shipment.status := Tendered"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "SHIPMENT_TENDERED",
+        "TENDER_REJECTED"
+      ],
       "inputs": [
         {
           "name": "shipment",
           "objectTypeId": "objectType:shipment",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Shipment.shipment_id"
         }
       ],
       "outputs": [
         {
           "name": "shipment",
           "objectTypeId": "objectType:shipment",
-          "required": true
+          "required": true,
+          "type": "String"
         },
         {
           "name": "carrier",
           "objectTypeId": "objectType:carrier",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3068,11 +3291,6 @@
           "objectTypeId": "objectType:shipment"
         }
       ],
-      "actor": {
-        "role": "Transportation Planner",
-        "roleZh": "运输计划员",
-        "kind": "agent"
-      },
       "permissions": [
         "shipment:tender"
       ],
@@ -3110,7 +3328,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Transportation Planner",
+        "roleZh": "运输计划员",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:file-customs-declaration",
@@ -3119,18 +3342,110 @@
       "nameZh": "申报报关单",
       "description": "File a CustomsDeclaration for an international Consignment via CBP-Link and assign duties on broker acceptance.",
       "descriptionZh": "经 CBP-Link 为国际货件申报报关单，并在报关行接受时核定关税。",
+      "submission_criteria": "1. Event SHIPMENT_TENDERED has been received\n2. Rule \"Formal entry at or above USD 2,500\" is satisfied\n3. Rule \"Customs filing lead time by mode\" is satisfied\n4. Rule \"Controlled goods need export-license reference\" is satisfied",
+      "object_type": "action",
+      "category": "申报报关单",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "SHIPMENT_TENDERED"
+      ],
+      "target_objects": [
+        "Consignment",
+        "Customs_Declaration"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "selectEntryTypeByDeclaredValue",
+          "description": "Select entry type by declared value (formal at or above USD 2,500).",
+          "object_type": "logic",
+          "submission_criteria": "On entry-type selection",
+          "rules": [
+            {
+              "id": "formal-entry-threshold",
+              "name": "Formal entry at or above USD 2,500",
+              "submission_criteria": "On entry-type selection",
+              "description": "Any Consignment with a declared customs value at or above USD 2,500 must include a formal entry with a licensed customs broker; below USD 2,500 an informal entry may be used."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "attachExportLicenseReferenceForControlled",
+          "description": "Attach export-license reference for controlled or dual-use commodities.",
+          "object_type": "logic",
+          "submission_criteria": "On departure release for controlled goods",
+          "rules": [
+            {
+              "id": "controlled-goods-license",
+              "name": "Controlled goods need export-license reference",
+              "submission_criteria": "On departure release for controlled goods",
+              "description": "A Consignment whose contents include controlled or dual-use commodities shall not be released for departure without a recorded export-license reference on its CustomsDeclaration."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "fileHSCodesDeclaredValueAnd",
+          "description": "File HS codes, declared value, and country of origin to the broker via CBP-Link within the mode lead time.",
+          "object_type": "logic",
+          "submission_criteria": "On customs filing",
+          "rules": [
+            {
+              "id": "customs-filing-lead-time",
+              "name": "Customs filing lead time by mode",
+              "submission_criteria": "On customs filing",
+              "description": "A CustomsDeclaration is required to be filed at least 24 hours before the scheduled departure for any ocean Consignment and at least 4 hours before for any air Consignment."
+            }
+          ]
+        },
+        {
+          "order": "4",
+          "name": "onBrokerAcceptanceAssignDutiesAnd",
+          "description": "On broker acceptance, assign duties and set status Accepted; on hold, set status Held.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"FileCustomsDeclaration\" action. File a CustomsDeclaration for an international Consignment via CBP-Link and assign duties on broker acceptance. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"FileCustomsDeclaration\" using consignment. File a CustomsDeclaration for an international Consignment via CBP-Link and assign duties on broker acceptance. Produce declaration and emit the appropriate events.",
+      "tool_use": [
+        "Descartes CBP-Link",
+        "File CustomsDeclaration to broker via CBP-Link REST API."
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Customs_Declaration",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create/update CustomsDeclaration and assign duties."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "CUSTOMS_DECLARATION_FILED",
+        "CUSTOMS_CLEARED",
+        "CUSTOMS_HELD"
+      ],
       "inputs": [
         {
           "name": "consignment",
           "objectTypeId": "objectType:consignment",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Consignment.consignment_id"
         }
       ],
       "outputs": [
         {
           "name": "declaration",
           "objectTypeId": "objectType:customs-declaration",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3220,11 +3535,6 @@
           "objectTypeId": "objectType:customs-declaration"
         }
       ],
-      "actor": {
-        "role": "Customs Compliance Analyst",
-        "roleZh": "海关合规分析师",
-        "kind": "human"
-      },
       "permissions": [
         "customs:file"
       ],
@@ -3262,7 +3572,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Customs Compliance Analyst",
+        "roleZh": "海关合规分析师",
+        "kind": "human"
+      }
     },
     {
       "id": "action:pick-and-pack",
@@ -3271,15 +3586,80 @@
       "nameZh": "拣货装箱",
       "description": "Pick and pack Consignment line items in WMS, produce a packing manifest, and write dims/weights back to the Shipment.",
       "descriptionZh": "在 WMS 拣选并装箱货件明细，生成装箱清单，并将尺寸/重量回写到运单。",
+      "submission_criteria": "1. Event SHIPMENT_TENDERED has been received\n2. Event CUSTOMS_CLEARED has been received",
+      "object_type": "action",
+      "category": "拣货装箱",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "SHIPMENT_TENDERED",
+        "CUSTOMS_CLEARED"
+      ],
+      "target_objects": [
+        "Consignment",
+        "Proof_Of_Delivery",
+        "Shipment"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "executeTheWMSPickTaskAgainst",
+          "description": "Execute the WMS pick task against the Consignment line items.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "packCartonsPalletsInitializeThePacking",
+          "description": "Pack cartons/pallets, initialize the packing manifest, and set Consignment status Staged.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "3",
+          "name": "writeWeightsAndDimensionsBackTo",
+          "description": "Write weights and dimensions back to the Shipment in TMS.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"PickAndPack\" action. Pick and pack Consignment line items in WMS, produce a packing manifest, and write dims/weights back to the Shipment. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"PickAndPack\" using consignment, pick_task. Pick and pack Consignment line items in WMS, produce a packing manifest, and write dims/weights back to the Shipment. Produce consignment, packing_manifest and emit the appropriate events.",
+      "tool_use": [
+        "Manhattan Active WM"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Consignment",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Consignment.status := Staged"
+          },
+          {
+            "object_type": "Shipment",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Write dims/weights to Shipment via TMS↔WMS REST API."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "CONSIGNMENT_STAGED"
+      ],
       "inputs": [
         {
           "name": "consignment",
           "objectTypeId": "objectType:consignment",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Consignment.consignment_id"
         },
         {
           "name": "pick_task",
-          "type": "json",
+          "type": "String",
           "required": true,
           "description": "WMS pick task."
         }
@@ -3288,12 +3668,14 @@
         {
           "name": "consignment",
           "objectTypeId": "objectType:consignment",
-          "required": true
+          "required": true,
+          "type": "String"
         },
         {
           "name": "packing_manifest",
           "objectTypeId": "objectType:proof-of-delivery",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3352,11 +3734,6 @@
           "objectTypeId": "objectType:shipment"
         }
       ],
-      "actor": {
-        "role": "Warehouse Operator",
-        "roleZh": "仓库操作员",
-        "kind": "human"
-      },
       "permissions": [
         "consignment:pick_pack"
       ],
@@ -3398,7 +3775,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Warehouse Operator",
+        "roleZh": "仓库操作员",
+        "kind": "human"
+      }
     },
     {
       "id": "action:confirm-departure",
@@ -3407,15 +3789,83 @@
       "nameZh": "确认发运",
       "description": "Confirm Carrier check-in and loading at the pickup Stop, set the Shipment In Transit, and record the first TrackingEvent.",
       "descriptionZh": "确认承运商在提货站点签到与装载，将运单置为在途，并记录首条轨迹事件。",
+      "submission_criteria": "1. Event CONSIGNMENT_STAGED has been received\n2. Rule \"In Transit requires pickup Stop and first TrackingEvent\" is satisfied",
+      "object_type": "action",
+      "category": "确认发运",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "CONSIGNMENT_STAGED"
+      ],
+      "target_objects": [
+        "Consignment",
+        "Shipment",
+        "Stop",
+        "Tracking_Event"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "dockSupervisorAuthorizesLoadingAndConfirms",
+          "description": "Dock Supervisor authorizes loading and confirms Carrier check-in.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "completeThePickupStopAndRecord",
+          "description": "Complete the pickup Stop and record the first TrackingEvent.",
+          "object_type": "logic",
+          "submission_criteria": "On Shipment.status → In Transit",
+          "rules": [
+            {
+              "id": "in-transit-requires-pickup-tracking",
+              "name": "In Transit requires pickup Stop and first TrackingEvent",
+              "submission_criteria": "On Shipment.status → In Transit",
+              "description": "A Shipment may not be marked In Transit until the pickup Stop is confirmed and the first TrackingEvent is recorded."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "setShipmentStatusInTransitEDI",
+          "description": "Set Shipment status In Transit; EDI Gateway emits EDI 214 status AF upstream.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"ConfirmDeparture\" action. Confirm Carrier check-in and loading at the pickup Stop, set the Shipment In Transit, and record the first TrackingEvent. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ConfirmDeparture\" using consignment, carrier_checkin. Confirm Carrier check-in and loading at the pickup Stop, set the Shipment In Transit, and record the first TrackingEvent. Produce shipment, pickup_stop, tracking_event and emit the appropriate events.",
+      "tool_use": [
+        "Oracle OTM",
+        "EDI 214 status AF (Carrier Departed Pickup Location) sent upstream to client."
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Shipment",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Shipment.status := In Transit"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "SHIPMENT_DEPARTED"
+      ],
       "inputs": [
         {
           "name": "consignment",
           "objectTypeId": "objectType:consignment",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Consignment.consignment_id"
         },
         {
           "name": "carrier_checkin",
-          "type": "json",
+          "type": "String",
           "required": true,
           "description": "Carrier check-in record."
         }
@@ -3424,17 +3874,20 @@
         {
           "name": "shipment",
           "objectTypeId": "objectType:shipment",
-          "required": true
+          "required": true,
+          "type": "String"
         },
         {
           "name": "pickup_stop",
           "objectTypeId": "objectType:stop",
-          "required": true
+          "required": true,
+          "type": "String"
         },
         {
           "name": "tracking_event",
           "objectTypeId": "objectType:tracking-event",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3498,11 +3951,6 @@
           "description": "EDI 214 status AF (Carrier Departed Pickup Location) sent upstream to client."
         }
       ],
-      "actor": {
-        "role": "Dock Supervisor",
-        "roleZh": "码头主管",
-        "kind": "human"
-      },
       "permissions": [
         "shipment:depart"
       ],
@@ -3544,7 +3992,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Dock Supervisor",
+        "roleZh": "码头主管",
+        "kind": "human"
+      }
     },
     {
       "id": "action:ingest-tracking-event",
@@ -3553,15 +4006,82 @@
       "nameZh": "摄取轨迹事件",
       "description": "Ingest inbound EDI 214 status messages, append canonicalized TrackingEvents, and re-evaluate the SLA against the committed window.",
       "descriptionZh": "摄取入站 EDI 214 状态报文，追加规范化轨迹事件，并依据承诺窗口重新评估 SLA。",
+      "submission_criteria": "1. Event TRACKING_EVENT_RECEIVED has been received",
+      "object_type": "action",
+      "category": "摄取轨迹事件",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "TRACKING_EVENT_RECEIVED"
+      ],
+      "target_objects": [
+        "Shipment",
+        "Tracking_Event",
+        "Sla"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "mapTheCrypticEDIStatusCode",
+          "description": "Map the cryptic EDI status code (e.g., X3, AG, D1) to a canonical lifecycle state.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "appendATrackingEventRecordTo",
+          "description": "Append a TrackingEvent record to the Shipment.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "3",
+          "name": "reEvaluateTheSLAAgainstThe",
+          "description": "Re-evaluate the SLA against the committed delivery window.",
+          "object_type": "logic",
+          "submission_criteria": "On SLA evaluation",
+          "rules": [
+            {
+              "id": "guaranteed-lane-credit",
+              "name": "Missed guaranteed Lane qualifies for credit",
+              "submission_criteria": "On SLA evaluation",
+              "description": "A Shipment on a guaranteed Lane that misses its committed delivery window is required to qualify for a service-failure credit from the Carrier."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"IngestTrackingEvent\" action. Ingest inbound EDI 214 status messages, append canonicalized TrackingEvents, and re-evaluate the SLA against the committed window. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"IngestTrackingEvent\" using shipment, edi_214. Ingest inbound EDI 214 status messages, append canonicalized TrackingEvents, and re-evaluate the SLA against the committed window. Produce tracking_event, shipment and emit the appropriate events.",
+      "tool_use": [
+        "Cleo Integration Cloud"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Tracking_Event",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Append TrackingEvent and update Shipment status in TMS."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "SLA_BREACHED",
+        "SHIPMENT_DELIVERED"
+      ],
       "inputs": [
         {
           "name": "shipment",
           "objectTypeId": "objectType:shipment",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Shipment.shipment_id"
         },
         {
           "name": "edi_214",
-          "type": "json",
+          "type": "String",
           "required": true,
           "description": "Inbound EDI 214 status message."
         }
@@ -3570,12 +4090,14 @@
         {
           "name": "tracking_event",
           "objectTypeId": "objectType:tracking-event",
-          "required": true
+          "required": true,
+          "type": "String"
         },
         {
           "name": "shipment",
           "objectTypeId": "objectType:shipment",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3635,11 +4157,6 @@
           "objectTypeId": "objectType:tracking-event"
         }
       ],
-      "actor": {
-        "role": "EDI Gateway",
-        "roleZh": "EDI 网关",
-        "kind": "system"
-      },
       "permissions": [
         "shipment:track"
       ],
@@ -3681,7 +4198,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "EDI Gateway",
+        "roleZh": "EDI 网关",
+        "kind": "system"
+      }
     },
     {
       "id": "action:capture-proof-of-delivery",
@@ -3690,23 +4212,108 @@
       "nameZh": "采集签收凭证",
       "description": "Capture the ProofOfDelivery at the delivery Stop and set the Shipment to Delivered.",
       "descriptionZh": "在送货站点采集签收凭证并将运单置为已送达。",
+      "submission_criteria": "1. Event POD_CAPTURED has been received\n2. Rule \"Delivered requires captured POD\" is satisfied\n3. Rule \"POD must include timestamp and signature or photo\" is satisfied",
+      "object_type": "action",
+      "category": "采集签收凭证",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "POD_CAPTURED"
+      ],
+      "target_objects": [
+        "Stop",
+        "Proof_Of_Delivery",
+        "Shipment"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "captureThePODArtifactSignatureTimestamp",
+          "description": "Capture the POD artifact (signature + timestamp, or geotagged photo in lieu of signature).",
+          "object_type": "logic",
+          "submission_criteria": "On POD capture",
+          "rules": [
+            {
+              "id": "pod-content",
+              "name": "POD must include timestamp and signature or photo",
+              "submission_criteria": "On POD capture",
+              "description": "A ProofOfDelivery must include a delivery timestamp and a recipient signature; a delivery left without signature is required to capture a geotagged photo in lieu of signature."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "completeTheDeliveryStop",
+          "description": "Complete the delivery Stop.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "3",
+          "name": "setShipmentStatusDeliveredRequiresA",
+          "description": "Set Shipment status Delivered (requires a captured POD).",
+          "object_type": "logic",
+          "submission_criteria": "On Shipment.status → Delivered",
+          "rules": [
+            {
+              "id": "delivered-requires-pod",
+              "name": "Delivered requires captured POD",
+              "submission_criteria": "On Shipment.status → Delivered",
+              "description": "A Shipment may not be marked Delivered without a captured ProofOfDelivery."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"CaptureProofOfDelivery\" action. Capture the ProofOfDelivery at the delivery Stop and set the Shipment to Delivered. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"CaptureProofOfDelivery\" using delivery_stop, pod. Capture the ProofOfDelivery at the delivery Stop and set the Shipment to Delivered. Produce shipment and emit the appropriate events.",
+      "tool_use": [
+        "Manhattan Active WM"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Shipment",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Shipment.status := Delivered"
+          }
+        ],
+        "notifications": [
+          {
+            "recipient": "Warehouse Operator",
+            "channel": "InApp",
+            "condition": "",
+            "message": "ShipmentDelivered notified to EDI Gateway, client, and finance; triggers EDI 210 reconciliation.",
+            "triggered_event": ""
+          }
+        ]
+      },
+      "triggered_event": [
+        "SHIPMENT_DELIVERED"
+      ],
       "inputs": [
         {
           "name": "delivery_stop",
           "objectTypeId": "objectType:stop",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Stop.stop_id"
         },
         {
           "name": "pod",
           "objectTypeId": "objectType:proof-of-delivery",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Proof_Of_Delivery.pod_id"
         }
       ],
       "outputs": [
         {
           "name": "shipment",
           "objectTypeId": "objectType:shipment",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3773,11 +4380,6 @@
           "description": "ShipmentDelivered notified to EDI Gateway, client, and finance; triggers EDI 210 reconciliation."
         }
       ],
-      "actor": {
-        "role": "Warehouse Operator",
-        "roleZh": "仓库操作员",
-        "kind": "system"
-      },
       "permissions": [
         "shipment:deliver"
       ],
@@ -3820,7 +4422,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Warehouse Operator",
+        "roleZh": "仓库操作员",
+        "kind": "system"
+      }
     },
     {
       "id": "action:open-exception",
@@ -3829,29 +4436,92 @@
       "nameZh": "开立异常",
       "description": "Open an Exception within 15 minutes of an SLA breach or customs hold, classified by type with an assigned owner.",
       "descriptionZh": "在 SLA 违约或海关扣留后 15 分钟内开立异常，按类型分类并指派负责人。",
+      "submission_criteria": "1. Event SLA_BREACHED has been received\n2. Event CUSTOMS_HELD has been received\n3. Rule \"Exception opens within 15 minutes of breach\" is satisfied",
+      "object_type": "action",
+      "category": "开立异常",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "SLA_BREACHED",
+        "CUSTOMS_HELD"
+      ],
+      "target_objects": [
+        "Shipment",
+        "Consignment",
+        "Exception"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeTheTriggeringEventAndLink",
+          "description": "Consume the triggering event and link the affected Shipment or Consignment.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "createTheExceptionClassifiedByType",
+          "description": "Create the Exception classified by type (SLA_BREACH, CUSTOMS_HOLD, DAMAGE, LOST) with severity and an assigned owner, within 15 minutes.",
+          "object_type": "logic",
+          "submission_criteria": "On SLABreached or CustomsHeld",
+          "rules": [
+            {
+              "id": "exception-auto-open-15min",
+              "name": "Exception opens within 15 minutes of breach",
+              "submission_criteria": "On SLABreached or CustomsHeld",
+              "description": "An Exception must be opened automatically within 15 minutes of an SLABreached or CustomsHeld event."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"OpenException\" action. Open an Exception within 15 minutes of an SLA breach or customs hold, classified by type with an assigned owner. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"OpenException\" using trigger_event, shipment, consignment. Open an Exception within 15 minutes of an SLA breach or customs hold, classified by type with an assigned owner. Produce exception and emit the appropriate events.",
+      "tool_use": [
+        "Oracle OTM"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Exception",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create Exception record in TMS."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "EXCEPTION_OPENED"
+      ],
       "inputs": [
         {
           "name": "trigger_event",
-          "type": "json",
+          "type": "String",
           "required": true,
           "description": "Triggering SLABreached or CustomsHeld event."
         },
         {
           "name": "shipment",
           "objectTypeId": "objectType:shipment",
-          "required": false
+          "required": false,
+          "type": "String",
+          "source_object": "Shipment.shipment_id"
         },
         {
           "name": "consignment",
           "objectTypeId": "objectType:consignment",
-          "required": false
+          "required": false,
+          "type": "String",
+          "source_object": "Consignment.consignment_id"
         }
       ],
       "outputs": [
         {
           "name": "exception",
           "objectTypeId": "objectType:exception",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3901,11 +4571,6 @@
           "objectTypeId": "objectType:exception"
         }
       ],
-      "actor": {
-        "role": "Exception Coordinator",
-        "roleZh": "异常协调员",
-        "kind": "agent"
-      },
       "permissions": [
         "exception:open"
       ],
@@ -3951,7 +4616,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Exception Coordinator",
+        "roleZh": "异常协调员",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:classify-exception",
@@ -3960,18 +4630,86 @@
       "nameZh": "分类异常",
       "description": "Classify an Exception against the SLA and Lane commitment tier, setting liability and the creditEligible flag.",
       "descriptionZh": "依据 SLA 与运线承诺等级对异常分类，设定责任归属与可减免标志。",
+      "submission_criteria": "1. Event EXCEPTION_OPENED has been received\n2. Rule \"Carrier liability on guaranteed Lane generates claim\" is satisfied",
+      "object_type": "action",
+      "category": "分类异常",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "EXCEPTION_OPENED"
+      ],
+      "target_objects": [
+        "Exception",
+        "Sla",
+        "Lane",
+        "Carrier"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "readTheExceptionAttachedSLAAnd",
+          "description": "Read the Exception, attached SLA, and the Lane commitment tier.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "determineWhetherTheBreachIsCarrier",
+          "description": "Determine whether the breach is Carrier-attributable on a guaranteed Lane and eligible for a service-failure credit.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "3",
+          "name": "setLiabilityCARRIERCUSTOMERINTERNALFORCE",
+          "description": "Set liability (CARRIER, CUSTOMER, INTERNAL, FORCE_MAJEURE) and the creditEligible flag.",
+          "object_type": "logic",
+          "submission_criteria": "On exception classification",
+          "rules": [
+            {
+              "id": "carrier-liability-generates-claim",
+              "name": "Carrier liability on guaranteed Lane generates claim",
+              "submission_criteria": "On exception classification",
+              "description": "An Exception classified as liability = CARRIER on a guaranteed Lane is required to generate a ServiceFailureClaim; an Exception classified as FORCE_MAJEURE may not generate a claim."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"ClassifyException\" action. Classify an Exception against the SLA and Lane commitment tier, setting liability and the creditEligible flag. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ClassifyException\" using exception. Classify an Exception against the SLA and Lane commitment tier, setting liability and the creditEligible flag. Produce exception and emit the appropriate events.",
+      "tool_use": [
+        "Oracle OTM"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Exception",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Exception.liability and creditEligible set."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "EXCEPTION_CLASSIFIED"
+      ],
       "inputs": [
         {
           "name": "exception",
           "objectTypeId": "objectType:exception",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Exception.exception_id"
         }
       ],
       "outputs": [
         {
           "name": "exception",
           "objectTypeId": "objectType:exception",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -4032,11 +4770,6 @@
           "objectTypeId": "objectType:exception"
         }
       ],
-      "actor": {
-        "role": "Exception Coordinator",
-        "roleZh": "异常协调员",
-        "kind": "agent"
-      },
       "permissions": [
         "exception:classify"
       ],
@@ -4073,7 +4806,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Exception Coordinator",
+        "roleZh": "异常协调员",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:raise-service-failure-claim",
@@ -4082,18 +4820,108 @@
       "nameZh": "提起服务失败索赔",
       "description": "Raise a ServiceFailureClaim for a credit-eligible Exception on a guaranteed Lane, with the calculated credit and cited CSA clause, and submit it to the Carrier.",
       "descriptionZh": "为保证运线上可减免的异常提起服务失败索赔，载明计算的减免与引用的 CSA 条款，并提交给承运商。",
+      "submission_criteria": "1. Event EXCEPTION_CLASSIFIED has been received\n2. Rule \"Service-failure credit schedule\" is satisfied\n3. Rule \"Claims over USD 10,000 need Director approval\" is satisfied\n4. Rule \"Claim must be submitted within 30 days\" is satisfied",
+      "object_type": "action",
+      "category": "提起服务失败索赔",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "EXCEPTION_CLASSIFIED"
+      ],
+      "target_objects": [
+        "Exception",
+        "Service_Failure_Claim"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "readTheCreditEligibleExceptionAnd",
+          "description": "Read the credit-eligible Exception and the CSA credit schedule.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "calculateTheCreditAmount25Up",
+          "description": "Calculate the credit amount (25% up to 24h late; 100% over 24h) and attach the cited CSA clause.",
+          "object_type": "logic",
+          "submission_criteria": "On claim drafting",
+          "rules": [
+            {
+              "id": "credit-schedule",
+              "name": "Service-failure credit schedule",
+              "submission_criteria": "On claim drafting",
+              "description": "The service-failure credit on a guaranteed Lane shall equal 25% of the linehaul charge when delivery is late by up to 24 hours, and 100% of the linehaul charge when delivery is late by more than 24 hours."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "ifCreditExceedsUSD10000",
+          "description": "If credit exceeds USD 10,000, obtain Operations Director approval before submission.",
+          "object_type": "logic",
+          "submission_criteria": "On claim submission",
+          "rules": [
+            {
+              "id": "claim-approval-10k",
+              "name": "Claims over USD 10,000 need Director approval",
+              "submission_criteria": "On claim submission",
+              "description": "A ServiceFailureClaim exceeding USD 10,000 in credit value must receive Operations Director approval before submission to the Carrier."
+            }
+          ]
+        },
+        {
+          "order": "4",
+          "name": "submitTheClaimToTheCarrier",
+          "description": "Submit the claim to the Carrier within 30 days of ShipmentDelivered.",
+          "object_type": "logic",
+          "submission_criteria": "On claim submission",
+          "rules": [
+            {
+              "id": "claim-window-30d",
+              "name": "Claim must be submitted within 30 days",
+              "submission_criteria": "On claim submission",
+              "description": "A ServiceFailureClaim must be submitted to the Carrier within 30 calendar days of the ShipmentDelivered event, or the claim is waived."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"RaiseServiceFailureClaim\" action. Raise a ServiceFailureClaim for a credit-eligible Exception on a guaranteed Lane, with the calculated credit and cited CSA clause, and submit it to the Carrier. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"RaiseServiceFailureClaim\" using exception. Raise a ServiceFailureClaim for a credit-eligible Exception on a guaranteed Lane, with the calculated credit and cited CSA clause, and submit it to the Carrier. Produce claim and emit the appropriate events.",
+      "tool_use": [
+        "Oracle OTM",
+        "Submit claim to Carrier via EDI Gateway."
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Service_Failure_Claim",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create ServiceFailureClaim in TMS."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "CLAIM_SUBMITTED"
+      ],
       "inputs": [
         {
           "name": "exception",
           "objectTypeId": "objectType:exception",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Exception.exception_id"
         }
       ],
       "outputs": [
         {
           "name": "claim",
           "objectTypeId": "objectType:service-failure-claim",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -4173,11 +5001,6 @@
           "description": "Submit claim to Carrier via EDI Gateway."
         }
       ],
-      "actor": {
-        "role": "Exception Coordinator",
-        "roleZh": "异常协调员",
-        "kind": "agent"
-      },
       "permissions": [
         "claim:raise"
       ],
@@ -4215,7 +5038,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Exception Coordinator",
+        "roleZh": "异常协调员",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:resolve-exception",
@@ -4224,15 +5052,80 @@
       "nameZh": "结案异常",
       "description": "Resolve and close the Exception on the Carrier's claim disposition, settling or writing off the linked ServiceFailureClaim.",
       "descriptionZh": "依据承运商的索赔裁定结案并关闭异常，结算或核销关联的服务失败索赔。",
+      "submission_criteria": "1. Event CLAIM_DISPOSITION_RECEIVED has been received\n2. Rule \"Exception closes only when claim is terminal\" is satisfied",
+      "object_type": "action",
+      "category": "结案异常",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "CLAIM_DISPOSITION_RECEIVED"
+      ],
+      "target_objects": [
+        "Exception",
+        "Service_Failure_Claim"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeTheCarrierSClaimDisposition",
+          "description": "Consume the Carrier's claim disposition (accepted/credited or contested) and any corrective action.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "settleOrWriteOffTheLinked",
+          "description": "Settle or write off the linked ServiceFailureClaim to a terminal state.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "3",
+          "name": "closeTheExceptionWithResolutionNotes",
+          "description": "Close the Exception with resolution notes (only when any linked claim is terminal).",
+          "object_type": "logic",
+          "submission_criteria": "On exception close",
+          "rules": [
+            {
+              "id": "exception-close-requires-terminal-claim",
+              "name": "Exception closes only when claim is terminal",
+              "submission_criteria": "On exception close",
+              "description": "An Exception may not be closed until its linked ServiceFailureClaim, if any, is in a terminal state (Settled, Credited, or WrittenOff)."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"ResolveException\" action. Resolve and close the Exception on the Carrier's claim disposition, settling or writing off the linked ServiceFailureClaim. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ResolveException\" using exception, disposition. Resolve and close the Exception on the Carrier's claim disposition, settling or writing off the linked ServiceFailureClaim. Produce exception, claim and emit the appropriate events.",
+      "tool_use": [
+        "Oracle OTM"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Exception",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Exception.status := Resolved/Closed; Claim settled or written off."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "EXCEPTION_RESOLVED"
+      ],
       "inputs": [
         {
           "name": "exception",
           "objectTypeId": "objectType:exception",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Exception.exception_id"
         },
         {
           "name": "disposition",
-          "type": "json",
+          "type": "String",
           "required": true,
           "description": "Carrier claim disposition."
         }
@@ -4241,12 +5134,14 @@
         {
           "name": "exception",
           "objectTypeId": "objectType:exception",
-          "required": true
+          "required": true,
+          "type": "String"
         },
         {
           "name": "claim",
           "objectTypeId": "objectType:service-failure-claim",
-          "required": false
+          "required": false,
+          "type": "String"
         }
       ],
       "steps": [
@@ -4304,11 +5199,6 @@
           "objectTypeId": "objectType:exception"
         }
       ],
-      "actor": {
-        "role": "Exception Coordinator",
-        "roleZh": "异常协调员",
-        "kind": "agent"
-      },
       "permissions": [
         "exception:resolve"
       ],
@@ -4350,7 +5240,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Exception Coordinator",
+        "roleZh": "异常协调员",
+        "kind": "agent"
+      }
     }
   ],
   "events": [

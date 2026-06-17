@@ -604,20 +604,38 @@ function buildActionsAndEvents(
 
       const actorRole = primaryActor(proc);
 
+      const evtSpec = (eid: string): string =>
+        eid.replace(/^event:/, '').replace(/[^A-Za-z0-9]+/g, '_').toUpperCase();
+      const targetSpec = objId ? pascalCase(objId.replace(PREFIX.object, '')) : undefined;
+
       actions.push({
         id: actId,
         uuid: demoUuid(actId),
-        name: pascalCase(step.en.slice(0, 40)),
+        name: camelCaseName(step.en.slice(0, 40)),
         nameZh: step.zh,
         description: step.en,
         descriptionZh: step.zh,
+        submission_criteria: '',
+        object_type: 'action',
+        category: step.zh || step.en.slice(0, 24),
+        actor: ['Agent'],
+        trigger: prevEmitId ? [evtSpec(prevEmitId)] : [],
+        target_objects: targetSpec ? [targetSpec] : [],
+        action_steps: [
+          { order: '1', name: camelCaseName(step.en.slice(0, 24)), description: step.en, object_type: 'logic', submission_criteria: '' },
+        ],
+        system_prompt: `Perform "${step.en}".`,
+        user_prompt: `Perform "${step.en}" and emit the resulting event.`,
+        tool_use: [],
+        side_effects: { data_changes: [], notifications: [] },
+        triggered_event: [evtSpec(emitId)],
         inputs,
         outputs,
         steps,
         preconditions: [],
         triggeredByEventIds: prevEmitId ? [prevEmitId] : [],
         emitsEvents: [{ eventTypeId: emitId, on: 'success' }],
-        actor: { role: actorRole, kind: 'system' },
+        actorRef: { role: actorRole, kind: 'system' },
         agent: buildAgentBinding(actId, step, objId),
         sources: [synthSource(primarySource, `Process step: ${step.en}`)],
         confidence: 0.86,
@@ -758,6 +776,12 @@ function pascalCase(s: string): string {
     .filter(Boolean);
   const joined = parts.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join('');
   return joined.length > 0 ? joined : 'Action';
+}
+
+/** camelCase function-style name (the spec-format action/workflow naming). */
+function camelCaseName(s: string): string {
+  const p = pascalCase(s);
+  return p.charAt(0).toLowerCase() + p.slice(1);
 }
 
 function snakeCase(s: string): string {

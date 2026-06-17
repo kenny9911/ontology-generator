@@ -121,7 +121,7 @@ function projectAction(action: ActionType, out: Triple[]): void {
   for (const pre of action.preconditions) out.push(ref(action.id, 'guarded_by', pre.ruleId));
   for (const emit of action.emitsEvents) out.push(ref(action.id, 'emits', emit.eventTypeId));
   for (const evId of action.triggeredByEventIds) out.push(ref(action.id, 'triggered_by', evId));
-  if (action.actor.role.trim()) out.push(lit(action.id, 'performed_by', action.actor.role));
+  if (action.actorRef.role.trim()) out.push(lit(action.id, 'performed_by', action.actorRef.role));
   for (const step of action.steps) {
     if (step.callsActionTypeId) out.push(ref(action.id, 'calls', step.callsActionTypeId));
   }

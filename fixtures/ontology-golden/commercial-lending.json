@@ -2390,12 +2390,62 @@
       "nameZh": "受理申请",
       "description": "Consumes the borrower's signed application package and produces a new LoanFacility linked to the Borrower.",
       "descriptionZh": "受理借款人已签署的申请材料，生成与借款人关联的新信贷额度记录。",
+      "submission_criteria": "1. Event APPLICATION_SUBMITTED has been received",
+      "object_type": "action",
+      "category": "受理申请",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "APPLICATION_SUBMITTED"
+      ],
+      "target_objects": [
+        "Borrower",
+        "Loan_Facility"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "captureTheBorrowerSSignedApplication",
+          "description": "Capture the borrower's signed application package in nCino.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "createALoanFacilityRecordStatus",
+          "description": "Create a LoanFacility record (status Applied) linked to the Borrower.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"CaptureApplication\" action. Consumes the borrower's signed application package and produces a new LoanFacility linked to the Borrower. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"CaptureApplication\" using borrower. Consumes the borrower's signed application package and produces a new LoanFacility linked to the Borrower. Produce loan_facility and emit the appropriate events.",
+      "tool_use": [
+        "nCino"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Loan_Facility",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Creates Borrower and LoanFacility records in nCino."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "FACILITY_CREATED"
+      ],
       "inputs": [
         {
           "name": "borrower",
           "objectTypeId": "objectType:borrower",
           "required": true,
-          "description": "Applicant party."
+          "description": "Applicant party.",
+          "type": "String",
+          "source_object": "Borrower.borrower_id"
         }
       ],
       "outputs": [
@@ -2403,7 +2453,8 @@
           "name": "loan_facility",
           "objectTypeId": "objectType:loan-facility",
           "required": true,
-          "description": "New facility in status Applied."
+          "description": "New facility in status Applied.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2445,11 +2496,6 @@
           "objectTypeId": "objectType:loan-facility"
         }
       ],
-      "actor": {
-        "role": "Relationship Manager",
-        "roleZh": "客户经理",
-        "kind": "human"
-      },
       "permissions": [
         "facility:create"
       ],
@@ -2486,7 +2532,12 @@
       ],
       "confidence": 0.95,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Relationship Manager",
+        "roleZh": "客户经理",
+        "kind": "human"
+      }
     },
     {
       "id": "action:spread-financials",
@@ -2495,16 +2546,68 @@
       "nameZh": "财务报表展开",
       "description": "Consumes the borrower's last three fiscal years of statements and produces computed ratios and an initial RiskRating candidate.",
       "descriptionZh": "读取借款人最近三个财年的报表，计算比率并生成初始风险评级候选值。",
+      "submission_criteria": "1. Event FACILITY_CREATED has been received",
+      "object_type": "action",
+      "category": "财务报表展开",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "FACILITY_CREATED"
+      ],
+      "target_objects": [
+        "Borrower",
+        "Loan_Facility"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "readTheBorrowerSLastThree",
+          "description": "Read the borrower's last three fiscal years of financial statements.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "computeLeverageAndDebtServiceCoverage",
+          "description": "Compute leverage and debt-service-coverage ratios and write them back to nCino.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"SpreadFinancials\" action. Consumes the borrower's last three fiscal years of statements and produces computed ratios and an initial RiskRating candidate. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"SpreadFinancials\" using borrower, loan_facility. Consumes the borrower's last three fiscal years of statements and produces computed ratios and an initial RiskRating candidate. Produce loan_facility and emit the appropriate events.",
+      "tool_use": [
+        "Sageworks Spreading"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Loan_Facility",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Writes computed ratios to the LoanFacility in nCino."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "FINANCIALS_SPREAD"
+      ],
       "inputs": [
         {
           "name": "borrower",
           "objectTypeId": "objectType:borrower",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Borrower.borrower_id"
         },
         {
           "name": "loan_facility",
           "objectTypeId": "objectType:loan-facility",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Loan_Facility.facility_id"
         }
       ],
       "outputs": [
@@ -2512,7 +2615,8 @@
           "name": "loan_facility",
           "objectTypeId": "objectType:loan-facility",
           "required": true,
-          "description": "With computed leverage and DSCR ratios."
+          "description": "With computed leverage and DSCR ratios.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2554,11 +2658,6 @@
           "objectTypeId": "objectType:loan-facility"
         }
       ],
-      "actor": {
-        "role": "Credit Analyst",
-        "roleZh": "信贷分析师",
-        "kind": "human"
-      },
       "permissions": [
         "financials:spread"
       ],
@@ -2596,7 +2695,12 @@
       ],
       "confidence": 0.94,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Credit Analyst",
+        "roleZh": "信贷分析师",
+        "kind": "human"
+      }
     },
     {
       "id": "action:assign-risk-rating",
@@ -2605,23 +2709,85 @@
       "nameZh": "授予风险评级",
       "description": "Consumes the spread ratios and qualitative factors and produces a RiskRating with a next_review_date.",
       "descriptionZh": "依据展开比率与定性因素，生成带有下次复核日期的风险评级。",
+      "submission_criteria": "1. Event FINANCIALS_SPREAD has been received\n2. Rule \"Rating of 9 or 10 requires Credit Committee review\" is satisfied",
+      "object_type": "action",
+      "category": "授予风险评级",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "FINANCIALS_SPREAD"
+      ],
+      "target_objects": [
+        "Borrower",
+        "Loan_Facility",
+        "Risk_Rating"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "scoreTheSpreadRatiosAndQualitative",
+          "description": "Score the spread ratios and qualitative factors with the rating model.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "createARiskRatingScale1",
+          "description": "Create a RiskRating (scale 1-10) attached to the Borrower with a next_review_date.",
+          "object_type": "logic",
+          "submission_criteria": "on risk rating assignment",
+          "rules": [
+            {
+              "id": "r18-rating-9-10-committee-only",
+              "name": "Rating of 9 or 10 requires Credit Committee review",
+              "submission_criteria": "on risk rating assignment",
+              "description": "A RiskRating of 9 or 10 must be reviewed by the Credit Committee and may not be assigned by a Credit Analyst acting alone."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"AssignRiskRating\" action. Consumes the spread ratios and qualitative factors and produces a RiskRating with a next_review_date. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"AssignRiskRating\" using borrower, loan_facility. Consumes the spread ratios and qualitative factors and produces a RiskRating with a next_review_date. Produce risk_rating and emit the appropriate events.",
+      "tool_use": [
+        "nCino"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Risk_Rating",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Creates a RiskRating record on the Borrower."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "RISK_RATING_ASSIGNED"
+      ],
       "inputs": [
         {
           "name": "borrower",
           "objectTypeId": "objectType:borrower",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Borrower.borrower_id"
         },
         {
           "name": "loan_facility",
           "objectTypeId": "objectType:loan-facility",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Loan_Facility.facility_id"
         }
       ],
       "outputs": [
         {
           "name": "risk_rating",
           "objectTypeId": "objectType:risk-rating",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -2669,11 +2835,6 @@
           "objectTypeId": "objectType:risk-rating"
         }
       ],
-      "actor": {
-        "role": "Credit Analyst",
-        "roleZh": "信贷分析师",
-        "kind": "human"
-      },
       "permissions": [
         "rating:assign"
       ],
@@ -2714,7 +2875,12 @@
       ],
       "confidence": 0.94,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Credit Analyst",
+        "roleZh": "信贷分析师",
+        "kind": "human"
+      }
     },
     {
       "id": "action:value-collateral",
@@ -2723,11 +2889,67 @@
       "nameZh": "抵押物估值",
       "description": "Consumes the appraisal report and produces Collateral fair_value and the facility LTV.",
       "descriptionZh": "读取评估报告，生成抵押物公允价值及额度的贷款价值比。",
+      "submission_criteria": "1. Rule \"LTV must stay at or below 80%\" is satisfied",
+      "object_type": "action",
+      "category": "抵押物估值",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [],
+      "target_objects": [
+        "Loan_Facility",
+        "Collateral"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "receiveTheExternalAppraiserSReport",
+          "description": "Receive the external appraiser's report.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "createOneOrMoreCollateralRecords",
+          "description": "Create one or more Collateral records and compute fair_value and facility LTV.",
+          "object_type": "logic",
+          "submission_criteria": "on covenant test of LTV",
+          "rules": [
+            {
+              "id": "r09-ltv-max-80-percent",
+              "name": "LTV must stay at or below 80%",
+              "submission_criteria": "on covenant test of LTV",
+              "description": "A LoanFacility's loan-to-value must stay at or below 80% of the pledged Collateral fair value; a breach triggers a MarginCallNotice."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"ValueCollateral\" action. Consumes the appraisal report and produces Collateral fair_value and the facility LTV. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ValueCollateral\" using loan_facility. Consumes the appraisal report and produces Collateral fair_value and the facility LTV. Produce collateral and emit the appropriate events.",
+      "tool_use": [
+        "nCino"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Collateral",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Creates Collateral records and updates LoanFacility LTV."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "COLLATERAL_VALUED"
+      ],
       "inputs": [
         {
           "name": "loan_facility",
           "objectTypeId": "objectType:loan-facility",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Loan_Facility.facility_id"
         }
       ],
       "outputs": [
@@ -2736,7 +2958,8 @@
           "objectTypeId": "objectType:collateral",
           "required": true,
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2780,11 +3003,6 @@
           "objectTypeId": "objectType:collateral"
         }
       ],
-      "actor": {
-        "role": "Credit Analyst",
-        "roleZh": "信贷分析师",
-        "kind": "human"
-      },
       "permissions": [
         "collateral:value"
       ],
@@ -2817,7 +3035,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Credit Analyst",
+        "roleZh": "信贷分析师",
+        "kind": "human"
+      }
     },
     {
       "id": "action:draft-credit-memo",
@@ -2826,37 +3049,111 @@
       "nameZh": "撰写信贷备忘录",
       "description": "Consumes the RiskRating, Collateral, and proposed structure and produces a CreditMemo with attached Covenant definitions and recommended terms.",
       "descriptionZh": "依据风险评级、抵押物与拟定结构，生成附带契约定义和建议条款的信贷审批备忘录。",
+      "submission_criteria": "1. Event RISK_RATING_ASSIGNED has been received\n2. Rule \"Facility requires at least one covenant\" is satisfied",
+      "object_type": "action",
+      "category": "撰写信贷备忘录",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "RISK_RATING_ASSIGNED"
+      ],
+      "target_objects": [
+        "Risk_Rating",
+        "Collateral",
+        "Loan_Facility",
+        "Credit_Memo",
+        "Covenant"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "assembleTheRiskRatingCollateralAnd",
+          "description": "Assemble the RiskRating, Collateral, and proposed structure into a credit memo.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "defineAtLeastOneFinancialCovenant",
+          "description": "Define at least one financial Covenant (e.g., DSCR >= 1.25x, max leverage <= 3.5x) bound to the LoanFacility.",
+          "object_type": "logic",
+          "submission_criteria": "before submission for credit decision",
+          "rules": [
+            {
+              "id": "r03-facility-requires-covenant",
+              "name": "Facility requires at least one covenant",
+              "submission_criteria": "before submission for credit decision",
+              "description": "Every LoanFacility must have at least one financial Covenant defined in its CreditMemo before it may be submitted for credit decision."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "produceTheCreditMemoWithRecommended",
+          "description": "Produce the CreditMemo with recommended terms and store it in iManage.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"DraftCreditMemo\" action. Consumes the RiskRating, Collateral, and proposed structure and produces a CreditMemo with attached Covenant definitions and recommended terms. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"DraftCreditMemo\" using risk_rating, collateral, loan_facility. Consumes the RiskRating, Collateral, and proposed structure and produces a CreditMemo with attached Covenant definitions and recommended terms. Produce credit_memo, covenant and emit the appropriate events.",
+      "tool_use": [
+        "nCino"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Credit_Memo",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Creates CreditMemo and Covenant records; pushes memo to iManage."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "CREDIT_MEMO_SUBMITTED"
+      ],
       "inputs": [
         {
           "name": "risk_rating",
           "objectTypeId": "objectType:risk-rating",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Risk_Rating.risk_rating_id"
         },
         {
           "name": "collateral",
           "objectTypeId": "objectType:collateral",
           "required": true,
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String",
+          "source_object": "Collateral.collateral_id"
         },
         {
           "name": "loan_facility",
           "objectTypeId": "objectType:loan-facility",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Loan_Facility.facility_id"
         }
       ],
       "outputs": [
         {
           "name": "credit_memo",
           "objectTypeId": "objectType:credit-memo",
-          "required": true
+          "required": true,
+          "type": "String"
         },
         {
           "name": "covenant",
           "objectTypeId": "objectType:covenant",
           "required": true,
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2915,11 +3212,6 @@
           "objectTypeId": "objectType:credit-memo"
         }
       ],
-      "actor": {
-        "role": "Credit Analyst",
-        "roleZh": "信贷分析师",
-        "kind": "agent"
-      },
       "permissions": [
         "memo:author",
         "covenant:define"
@@ -2968,7 +3260,12 @@
       ],
       "confidence": 0.94,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Credit Analyst",
+        "roleZh": "信贷分析师",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:render-credit-decision",
@@ -2977,11 +3274,78 @@
       "nameZh": "作出信贷决定",
       "description": "Consumes the CreditMemo and produces an approval record at the correct authority level.",
       "descriptionZh": "审阅信贷备忘录，在正确的权限层级作出审批记录。",
+      "submission_criteria": "1. Event CREDIT_MEMO_SUBMITTED has been received\n2. Rule \"Credit Officer authority below USD 5M\" is satisfied\n3. Rule \"Weak rating requires Credit Committee approval\" is satisfied\n4. Rule \"Two breaches in 12 months places borrower on Watch List\" is satisfied",
+      "object_type": "action",
+      "category": "作出信贷决定",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "CREDIT_MEMO_SUBMITTED"
+      ],
+      "target_objects": [
+        "Credit_Memo",
+        "Loan_Facility"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "determineTheRequiredAuthorityLevelFrom",
+          "description": "Determine the required authority level from committed amount and risk rating.",
+          "object_type": "logic",
+          "submission_criteria": "on credit decision",
+          "rules": [
+            {
+              "id": "r01-officer-authority-5m",
+              "name": "Credit Officer authority below USD 5M",
+              "submission_criteria": "on credit decision",
+              "description": "A CreditMemo recommending a new LoanFacility shall be approved by a Credit Officer when the committed amount is at or below USD 5,000,000; above this amount the CreditMemo must be escalated to the Credit Committee."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "renderTheDecisionOnApprovalSet",
+          "description": "Render the decision; on approval set LoanFacility.status = Approved.",
+          "object_type": "logic",
+          "submission_criteria": "on covenant breach accumulation",
+          "rules": [
+            {
+              "id": "r14-two-breaches-watch-list",
+              "name": "Two breaches in 12 months places borrower on Watch List",
+              "submission_criteria": "on covenant breach accumulation",
+              "description": "A Borrower with two or more covenant breaches within any rolling 12-month period shall be placed on the Watch List and may not receive new LoanFacility approvals until removed."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"RenderCreditDecision\" action. Consumes the CreditMemo and produces an approval record at the correct authority level. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"RenderCreditDecision\" using credit_memo. Consumes the CreditMemo and produces an approval record at the correct authority level. Produce credit_memo, loan_facility and emit the appropriate events.",
+      "tool_use": [
+        "nCino"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Loan_Facility",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Sets CreditMemo.decision and LoanFacility.status."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "FACILITY_APPROVED",
+        "FACILITY_DECLINED"
+      ],
       "inputs": [
         {
           "name": "credit_memo",
           "objectTypeId": "objectType:credit-memo",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Credit_Memo.memo_id"
         }
       ],
       "outputs": [
@@ -2989,13 +3353,15 @@
           "name": "credit_memo",
           "objectTypeId": "objectType:credit-memo",
           "required": true,
-          "description": "Decision and approval_level set."
+          "description": "Decision and approval_level set.",
+          "type": "String"
         },
         {
           "name": "loan_facility",
           "objectTypeId": "objectType:loan-facility",
           "required": true,
-          "description": "Status Approved on approval."
+          "description": "Status Approved on approval.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3058,11 +3424,6 @@
           "objectTypeId": "objectType:loan-facility"
         }
       ],
-      "actor": {
-        "role": "Credit Officer",
-        "roleZh": "信贷专员",
-        "kind": "human"
-      },
       "permissions": [
         "memo:approve"
       ],
@@ -3098,7 +3459,12 @@
       ],
       "confidence": 0.94,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Credit Officer",
+        "roleZh": "信贷专员",
+        "kind": "human"
+      }
     },
     {
       "id": "action:book-facility",
@@ -3107,16 +3473,69 @@
       "nameZh": "额度入账",
       "description": "Consumes the approved terms from the CreditMemo and produces a booked LoanFacility (status Active) and an amortizing RepaymentSchedule.",
       "descriptionZh": "依据信贷备忘录中已批准的条款，生成已入账的信贷额度（状态 Active）及摊还还款计划。",
+      "submission_criteria": "1. Event FACILITY_APPROVED has been received",
+      "object_type": "action",
+      "category": "额度入账",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "FACILITY_APPROVED"
+      ],
+      "target_objects": [
+        "Credit_Memo",
+        "Loan_Facility",
+        "Repayment_Schedule"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "createTheCanonicalLoanFacilityIn",
+          "description": "Create the canonical LoanFacility in FLEXCUBE from approved terms.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "generateTheAmortizingRepaymentScheduleAnd",
+          "description": "Generate the amortizing RepaymentSchedule and set status Active.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"BookFacility\" action. Consumes the approved terms from the CreditMemo and produces a booked LoanFacility (status Active) and an amortizing RepaymentSchedule. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"BookFacility\" using credit_memo, loan_facility. Consumes the approved terms from the CreditMemo and produces a booked LoanFacility (status Active) and an amortizing RepaymentSchedule. Produce loan_facility, repayment_schedule and emit the appropriate events.",
+      "tool_use": [
+        "Oracle FLEXCUBE"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Repayment_Schedule",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Books LoanFacility and generates RepaymentSchedule in FLEXCUBE."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "FACILITY_BOOKED"
+      ],
       "inputs": [
         {
           "name": "credit_memo",
           "objectTypeId": "objectType:credit-memo",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Credit_Memo.memo_id"
         },
         {
           "name": "loan_facility",
           "objectTypeId": "objectType:loan-facility",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Loan_Facility.facility_id"
         }
       ],
       "outputs": [
@@ -3124,12 +3543,14 @@
           "name": "loan_facility",
           "objectTypeId": "objectType:loan-facility",
           "required": true,
-          "description": "Booked, status Active."
+          "description": "Booked, status Active.",
+          "type": "String"
         },
         {
           "name": "repayment_schedule",
           "objectTypeId": "objectType:repayment-schedule",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3171,11 +3592,6 @@
           "objectTypeId": "objectType:repayment-schedule"
         }
       ],
-      "actor": {
-        "role": "Loan Operations",
-        "roleZh": "贷款运营",
-        "kind": "system"
-      },
       "permissions": [
         "facility:book"
       ],
@@ -3213,7 +3629,12 @@
       ],
       "confidence": 0.94,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Loan Operations",
+        "roleZh": "贷款运营",
+        "kind": "system"
+      }
     },
     {
       "id": "action:perfect-security",
@@ -3222,18 +3643,70 @@
       "nameZh": "完善担保权益",
       "description": "Consumes the executed security agreements and produces perfected Collateral and a satisfied conditions-precedent checklist.",
       "descriptionZh": "依据已签署的担保协议，完善抵押物担保权益并满足先决条件清单。",
+      "submission_criteria": "1. Event FACILITY_BOOKED has been received",
+      "object_type": "action",
+      "category": "完善担保权益",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "FACILITY_BOOKED"
+      ],
+      "target_objects": [
+        "Collateral",
+        "Loan_Facility"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "recordTheExecutedSecurityAgreementsIn",
+          "description": "Record the executed security agreements in iManage and FLEXCUBE.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "setCollateralPerfectionStatusPerfectedAnd",
+          "description": "Set Collateral.perfection_status = Perfected and LoanFacility.conditions_met = true.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"PerfectSecurity\" action. Consumes the executed security agreements and produces perfected Collateral and a satisfied conditions-precedent checklist. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"PerfectSecurity\" using collateral, loan_facility. Consumes the executed security agreements and produces perfected Collateral and a satisfied conditions-precedent checklist. Produce collateral, loan_facility and emit the appropriate events.",
+      "tool_use": [
+        "iManage"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Collateral",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Sets perfection_status and conditions_met."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "SECURITY_PERFECTED"
+      ],
       "inputs": [
         {
           "name": "collateral",
           "objectTypeId": "objectType:collateral",
           "required": true,
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String",
+          "source_object": "Collateral.collateral_id"
         },
         {
           "name": "loan_facility",
           "objectTypeId": "objectType:loan-facility",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Loan_Facility.facility_id"
         }
       ],
       "outputs": [
@@ -3241,13 +3714,15 @@
           "name": "collateral",
           "objectTypeId": "objectType:collateral",
           "required": true,
-          "description": "perfection_status Perfected."
+          "description": "perfection_status Perfected.",
+          "type": "String"
         },
         {
           "name": "loan_facility",
           "objectTypeId": "objectType:loan-facility",
           "required": true,
-          "description": "conditions_met true."
+          "description": "conditions_met true.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3287,11 +3762,6 @@
           "objectTypeId": "objectType:collateral"
         }
       ],
-      "actor": {
-        "role": "Loan Operations",
-        "roleZh": "贷款运营",
-        "kind": "human"
-      },
       "permissions": [
         "security:perfect"
       ],
@@ -3332,7 +3802,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Loan Operations",
+        "roleZh": "贷款运营",
+        "kind": "human"
+      }
     },
     {
       "id": "action:request-drawdown",
@@ -3341,11 +3816,59 @@
       "nameZh": "发起支用请求",
       "description": "Consumes the borrower drawdown notice and produces a Drawdown record against an Active LoanFacility.",
       "descriptionZh": "受理借款人支用通知，针对生效的信贷额度生成支用记录。",
+      "submission_criteria": "",
+      "object_type": "action",
+      "category": "发起支用请求",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [],
+      "target_objects": [
+        "Loan_Facility",
+        "Drawdown"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "receiveTheBorrowerSDrawdownNotice",
+          "description": "Receive the borrower's drawdown notice via the Relationship Manager.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "createADrawdownStatusRequestedAgainst",
+          "description": "Create a Drawdown (status Requested) against the Active LoanFacility.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"RequestDrawdown\" action. Consumes the borrower drawdown notice and produces a Drawdown record against an Active LoanFacility. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"RequestDrawdown\" using loan_facility. Consumes the borrower drawdown notice and produces a Drawdown record against an Active LoanFacility. Produce drawdown and emit the appropriate events.",
+      "tool_use": [
+        "nCino"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Drawdown",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Creates a Drawdown record."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "DRAWDOWN_REQUESTED"
+      ],
       "inputs": [
         {
           "name": "loan_facility",
           "objectTypeId": "objectType:loan-facility",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Loan_Facility.facility_id"
         }
       ],
       "outputs": [
@@ -3353,7 +3876,8 @@
           "name": "drawdown",
           "objectTypeId": "objectType:drawdown",
           "required": true,
-          "description": "Status Requested."
+          "description": "Status Requested.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3390,11 +3914,6 @@
           "objectTypeId": "objectType:drawdown"
         }
       ],
-      "actor": {
-        "role": "Relationship Manager",
-        "roleZh": "客户经理",
-        "kind": "human"
-      },
       "permissions": [
         "drawdown:request"
       ],
@@ -3427,7 +3946,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Relationship Manager",
+        "roleZh": "客户经理",
+        "kind": "human"
+      }
     },
     {
       "id": "action:check-drawdown-eligibility",
@@ -3436,23 +3960,102 @@
       "nameZh": "支用合规检查",
       "description": "Consumes the Drawdown request, live Covenant states, available undrawn commitment, and any WaiverRequest, and produces an eligibility verdict.",
       "descriptionZh": "依据支用请求、实时契约状态、可用未提取承诺及豁免申请，生成合规裁定。",
+      "submission_criteria": "1. Event DRAWDOWN_REQUESTED has been received\n2. Rule \"No drawdown while covenant in breach without waiver\" is satisfied\n3. Rule \"Drawdown within undrawn commitment\" is satisfied",
+      "object_type": "action",
+      "category": "支用合规检查",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "DRAWDOWN_REQUESTED"
+      ],
+      "target_objects": [
+        "Drawdown",
+        "Covenant",
+        "Waiver_Request"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "readAllCovenantRecordsAndCurrent",
+          "description": "Read all Covenant records and current LTV for the LoanFacility; read any active WaiverRequest.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "verifyDrawdownDoesNotExceedUndrawn",
+          "description": "Verify drawdown does not exceed undrawn commitment.",
+          "object_type": "logic",
+          "submission_criteria": "on drawdown eligibility check",
+          "rules": [
+            {
+              "id": "r06-drawdown-within-commitment",
+              "name": "Drawdown within undrawn commitment",
+              "submission_criteria": "on drawdown eligibility check",
+              "description": "A Drawdown may not exceed the undrawn available commitment of its LoanFacility."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "blockIfAnyFinancialCovenantIs",
+          "description": "Block if any financial covenant is in breach with no granted waiver on file; otherwise clear.",
+          "object_type": "logic",
+          "submission_criteria": "on drawdown eligibility check",
+          "rules": [
+            {
+              "id": "r05-no-drawdown-during-breach",
+              "name": "No drawdown while covenant in breach without waiver",
+              "submission_criteria": "on drawdown eligibility check",
+              "description": "A LoanFacility may not be drawn down while any financial Covenant is in breach, unless a WaiverRequest with status Granted is on file for that Covenant."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"CheckDrawdownEligibility\" action. Consumes the Drawdown request, live Covenant states, available undrawn commitment, and any WaiverRequest, and produces an eligibility verdict. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"CheckDrawdownEligibility\" using drawdown, covenant, waiver_request. Consumes the Drawdown request, live Covenant states, available undrawn commitment, and any WaiverRequest, and produces an eligibility verdict. Produce drawdown and emit the appropriate events.",
+      "tool_use": [
+        "CovenantWatch"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Drawdown",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Sets Drawdown.status to Cleared or Blocked."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "DRAWDOWN_CLEARED",
+        "DRAWDOWN_BLOCKED"
+      ],
       "inputs": [
         {
           "name": "drawdown",
           "objectTypeId": "objectType:drawdown",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Drawdown.drawdown_id"
         },
         {
           "name": "covenant",
           "objectTypeId": "objectType:covenant",
           "required": true,
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String",
+          "source_object": "Covenant.covenant_id"
         },
         {
           "name": "waiver_request",
           "objectTypeId": "objectType:waiver-request",
-          "required": false
+          "required": false,
+          "type": "String",
+          "source_object": "Waiver_Request.waiver_id"
         }
       ],
       "outputs": [
@@ -3460,7 +4063,8 @@
           "name": "drawdown",
           "objectTypeId": "objectType:drawdown",
           "required": true,
-          "description": "Status Cleared or Blocked."
+          "description": "Status Cleared or Blocked.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3525,11 +4129,6 @@
           "objectTypeId": "objectType:drawdown"
         }
       ],
-      "actor": {
-        "role": "Loan Operations",
-        "roleZh": "贷款运营",
-        "kind": "system"
-      },
       "permissions": [
         "drawdown:check"
       ],
@@ -3577,7 +4176,12 @@
       ],
       "confidence": 0.94,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Loan Operations",
+        "roleZh": "贷款运营",
+        "kind": "system"
+      }
     },
     {
       "id": "action:disburse-funds",
@@ -3586,11 +4190,76 @@
       "nameZh": "拨付资金",
       "description": "Consumes the cleared Drawdown and produces a funds transfer and an updated outstanding balance.",
       "descriptionZh": "依据已放行的支用请求执行资金划转并更新未偿余额。",
+      "submission_criteria": "1. Event DRAWDOWN_CLEARED has been received\n2. Rule \"No funding until booked and security perfected\" is satisfied\n3. Rule \"Re-validate drawdown not funded within 5 business days\" is satisfied",
+      "object_type": "action",
+      "category": "拨付资金",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "DRAWDOWN_CLEARED"
+      ],
+      "target_objects": [
+        "Drawdown",
+        "Loan_Facility",
+        "Repayment_Schedule"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "reValidateAgainstCurrentCovenantStates",
+          "description": "Re-validate against current covenant states if not funded within 5 business days of clearing.",
+          "object_type": "logic",
+          "submission_criteria": "before disbursement of a cleared drawdown",
+          "rules": [
+            {
+              "id": "r17-stale-drawdown-revalidation",
+              "name": "Re-validate drawdown not funded within 5 business days",
+              "submission_criteria": "before disbursement of a cleared drawdown",
+              "description": "A Drawdown request that is not funded within 5 business days of being cleared is required to be re-validated against current Covenant states before disbursement."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "executeTheFundsTransferSetDrawdown",
+          "description": "Execute the funds transfer; set Drawdown.status = Funded and increment outstanding_principal.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"DisburseFunds\" action. Consumes the cleared Drawdown and produces a funds transfer and an updated outstanding balance. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"DisburseFunds\" using drawdown. Consumes the cleared Drawdown and produces a funds transfer and an updated outstanding balance. Produce drawdown, loan_facility and emit the appropriate events.",
+      "tool_use": [
+        "Oracle FLEXCUBE"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Drawdown",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Transfers funds to the borrower."
+          },
+          {
+            "object_type": "Loan_Facility",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Increments LoanFacility.outstanding_principal and adjusts RepaymentSchedule."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "FUNDS_DISBURSED"
+      ],
       "inputs": [
         {
           "name": "drawdown",
           "objectTypeId": "objectType:drawdown",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Drawdown.drawdown_id"
         }
       ],
       "outputs": [
@@ -3598,13 +4267,15 @@
           "name": "drawdown",
           "objectTypeId": "objectType:drawdown",
           "required": true,
-          "description": "Status Funded."
+          "description": "Status Funded.",
+          "type": "String"
         },
         {
           "name": "loan_facility",
           "objectTypeId": "objectType:loan-facility",
           "required": true,
-          "description": "Incremented outstanding_principal."
+          "description": "Incremented outstanding_principal.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3660,11 +4331,6 @@
           "objectTypeId": "objectType:loan-facility"
         }
       ],
-      "actor": {
-        "role": "Loan Operations",
-        "roleZh": "贷款运营",
-        "kind": "system"
-      },
       "permissions": [
         "funds:disburse"
       ],
@@ -3700,7 +4366,12 @@
       ],
       "confidence": 0.94,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Loan Operations",
+        "roleZh": "贷款运营",
+        "kind": "system"
+      }
     },
     {
       "id": "action:schedule-covenant-test",
@@ -3709,13 +4380,61 @@
       "nameZh": "排定契约测试",
       "description": "Consumes the covenant calendar and produces a pending covenant test per facility per quarter.",
       "descriptionZh": "依据契约日历，为每笔额度每季度生成一个待测的契约测试。",
+      "submission_criteria": "1. Rule \"Quarterly covenant tested within 45 days of quarter end\" is satisfied",
+      "object_type": "action",
+      "category": "排定契约测试",
+      "actor": [
+        "System"
+      ],
+      "trigger": [],
+      "target_objects": [
+        "Covenant"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "readCovenantRecordsWithAQuarterly",
+          "description": "Read Covenant records with a quarterly test_frequency.",
+          "object_type": "logic",
+          "submission_criteria": "on covenant test scheduling",
+          "rules": [
+            {
+              "id": "r10-quarterly-covenant-test-45-days",
+              "name": "Quarterly covenant tested within 45 days of quarter end",
+              "submission_criteria": "on covenant test scheduling",
+              "description": "A financial Covenant with a quarterly test_frequency must be tested within 45 calendar days of each fiscal quarter end."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "scheduleAPendingCovenantTestPer",
+          "description": "Schedule a pending covenant test per facility per quarter.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"ScheduleCovenantTest\" action. Consumes the covenant calendar and produces a pending covenant test per facility per quarter. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ScheduleCovenantTest\" using covenant. Consumes the covenant calendar and produces a pending covenant test per facility per quarter. Produce covenant and emit the appropriate events.",
+      "tool_use": [
+        "CovenantWatch"
+      ],
+      "side_effects": {
+        "data_changes": [],
+        "notifications": []
+      },
+      "triggered_event": [
+        "COVENANT_TEST_DUE"
+      ],
       "inputs": [
         {
           "name": "covenant",
           "objectTypeId": "objectType:covenant",
           "required": true,
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String",
+          "source_object": "Covenant.covenant_id"
         }
       ],
       "outputs": [
@@ -3723,7 +4442,8 @@
           "name": "covenant",
           "objectTypeId": "objectType:covenant",
           "required": true,
-          "description": "Pending test scheduled."
+          "description": "Pending test scheduled.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3766,11 +4486,6 @@
           "objectTypeId": "objectType:covenant"
         }
       ],
-      "actor": {
-        "role": "Covenant Monitoring Analyst",
-        "roleZh": "契约监测分析师",
-        "kind": "system"
-      },
       "permissions": [
         "covenant:schedule"
       ],
@@ -3806,7 +4521,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Covenant Monitoring Analyst",
+        "roleZh": "契约监测分析师",
+        "kind": "system"
+      }
     },
     {
       "id": "action:evaluate-covenant",
@@ -3815,11 +4535,69 @@
       "nameZh": "评估契约",
       "description": "Consumes the latest financials and the Covenant thresholds and produces a Covenant test_result.",
       "descriptionZh": "依据最新财务数据与契约阈值，生成契约测试结果。",
+      "submission_criteria": "1. Event COVENANT_TEST_DUE has been received\n2. Rule \"DSCR covenant breached below 1.25x\" is satisfied\n3. Rule \"Leverage covenant breached above 3.5x\" is satisfied",
+      "object_type": "action",
+      "category": "评估契约",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "COVENANT_TEST_DUE"
+      ],
+      "target_objects": [
+        "Covenant"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "readTheBorrowerSQuarterlyFinancials",
+          "description": "Read the borrower's quarterly financials and recompute DSCR, leverage, and LTV.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "compareAgainstThresholdsSetTestResult",
+          "description": "Compare against thresholds; set test_result Compliant or Breached.",
+          "object_type": "logic",
+          "submission_criteria": "on covenant evaluation",
+          "rules": [
+            {
+              "id": "r11-dscr-breach-below-1-25",
+              "name": "DSCR covenant breached below 1.25x",
+              "submission_criteria": "on covenant evaluation",
+              "description": "A debt-service-coverage Covenant is breached when the tested ratio falls below 1.25x."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"EvaluateCovenant\" action. Consumes the latest financials and the Covenant thresholds and produces a Covenant test_result. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"EvaluateCovenant\" using covenant. Consumes the latest financials and the Covenant thresholds and produces a Covenant test_result. Produce covenant and emit the appropriate events.",
+      "tool_use": [
+        "Sageworks Spreading"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Covenant",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Sets Covenant.test_result."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "COVENANT_TESTED",
+        "COVENANT_BREACHED"
+      ],
       "inputs": [
         {
           "name": "covenant",
           "objectTypeId": "objectType:covenant",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Covenant.covenant_id"
         }
       ],
       "outputs": [
@@ -3827,7 +4605,8 @@
           "name": "covenant",
           "objectTypeId": "objectType:covenant",
           "required": true,
-          "description": "test_result Compliant or Breached."
+          "description": "test_result Compliant or Breached.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3884,11 +4663,6 @@
           "objectTypeId": "objectType:covenant"
         }
       ],
-      "actor": {
-        "role": "Covenant Monitoring Analyst",
-        "roleZh": "契约监测分析师",
-        "kind": "agent"
-      },
       "permissions": [
         "covenant:evaluate"
       ],
@@ -3924,7 +4698,12 @@
       ],
       "confidence": 0.94,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Covenant Monitoring Analyst",
+        "roleZh": "契约监测分析师",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:escalate-breach",
@@ -3933,11 +4712,70 @@
       "nameZh": "上报违约",
       "description": "Consumes the CovenantBreached event and produces a committee notification citing the exact covenant clause and loan-agreement section.",
       "descriptionZh": "依据契约违约事件，生成引用具体契约条款与贷款协议章节的委员会通知。",
+      "submission_criteria": "1. Event COVENANT_BREACHED has been received\n2. Rule \"Breach escalated to committee within 2 business days\" is satisfied",
+      "object_type": "action",
+      "category": "上报违约",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "COVENANT_BREACHED"
+      ],
+      "target_objects": [
+        "Covenant",
+        "Waiver_Request"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "createABreachRecordOnThe",
+          "description": "Create a breach record on the Covenant.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "notifyTheCreditCommitteeWithin2",
+          "description": "Notify the Credit Committee within 2 business days citing the clause and loan-agreement section.",
+          "object_type": "logic",
+          "submission_criteria": "on covenant breach",
+          "rules": [
+            {
+              "id": "r13-breach-escalation-2-days",
+              "name": "Breach escalated to committee within 2 business days",
+              "submission_criteria": "on covenant breach",
+              "description": "A CovenantBreached event must be escalated to the Credit Committee within 2 business days of detection, with a citation to the breached covenant clause and the relevant Loan Agreement section."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"EscalateBreach\" action. Consumes the CovenantBreached event and produces a committee notification citing the exact covenant clause and loan-agreement section. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"EscalateBreach\" using covenant. Consumes the CovenantBreached event and produces a committee notification citing the exact covenant clause and loan-agreement section. Produce waiver_request and emit the appropriate events.",
+      "tool_use": [
+        "CovenantWatch"
+      ],
+      "side_effects": {
+        "data_changes": [],
+        "notifications": [
+          {
+            "recipient": "Covenant Monitoring Analyst",
+            "channel": "InApp",
+            "condition": "",
+            "message": "Notifies the Credit Committee of the breach.",
+            "triggered_event": ""
+          }
+        ]
+      },
+      "triggered_event": [
+        "BREACH_ESCALATED"
+      ],
       "inputs": [
         {
           "name": "covenant",
           "objectTypeId": "objectType:covenant",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Covenant.covenant_id"
         }
       ],
       "outputs": [
@@ -3945,7 +4783,8 @@
           "name": "waiver_request",
           "objectTypeId": "objectType:waiver-request",
           "required": false,
-          "description": "May be created during escalation."
+          "description": "May be created during escalation.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3990,11 +4829,6 @@
           "objectTypeId": "objectType:covenant"
         }
       ],
-      "actor": {
-        "role": "Covenant Monitoring Analyst",
-        "roleZh": "契约监测分析师",
-        "kind": "human"
-      },
       "permissions": [
         "breach:escalate"
       ],
@@ -4030,7 +4864,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Covenant Monitoring Analyst",
+        "roleZh": "契约监测分析师",
+        "kind": "human"
+      }
     },
     {
       "id": "action:decide-waiver",
@@ -4039,11 +4878,85 @@
       "nameZh": "豁免决定",
       "description": "Consumes the WaiverRequest and produces a Granted or Denied decision recorded against the facility.",
       "descriptionZh": "审阅豁免申请，作出批准或拒绝的决定并记录于额度。",
+      "submission_criteria": "1. Event BREACH_ESCALATED has been received\n2. Rule \"Waiver granted only by committee with expiry\" is satisfied\n3. Rule \"No retroactive waiver after a margin call\" is satisfied",
+      "object_type": "action",
+      "category": "豁免决定",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "BREACH_ESCALATED"
+      ],
+      "target_objects": [
+        "Waiver_Request",
+        "Covenant"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "confirmTheRequestIsDecidedBy",
+          "description": "Confirm the request is decided by the Credit Committee with a valid expiry date.",
+          "object_type": "logic",
+          "submission_criteria": "on waiver decision",
+          "rules": [
+            {
+              "id": "r15-waiver-committee-only-with-expiry",
+              "name": "Waiver granted only by committee with expiry",
+              "submission_criteria": "on waiver decision",
+              "description": "A WaiverRequest covering a financial covenant breach may be granted only by the Credit Committee and is required to specify an expiry date no later than the next scheduled covenant test."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "refuseRetroactiveWaiversForBreachesThat",
+          "description": "Refuse retroactive waivers for breaches that already triggered a margin call.",
+          "object_type": "logic",
+          "submission_criteria": "on waiver decision",
+          "rules": [
+            {
+              "id": "r20-no-retroactive-waiver-after-margin-call",
+              "name": "No retroactive waiver after a margin call",
+              "submission_criteria": "on waiver decision",
+              "description": "A WaiverRequest may not be granted retroactively for a breach that has already triggered a MarginCallNotice."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "recordAGrantedOrDeniedDecision",
+          "description": "Record a Granted or Denied decision; on grant, link the waiver to the breached Covenant.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"DecideWaiver\" action. Consumes the WaiverRequest and produces a Granted or Denied decision recorded against the facility. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"DecideWaiver\" using waiver_request. Consumes the WaiverRequest and produces a Granted or Denied decision recorded against the facility. Produce waiver_request and emit the appropriate events.",
+      "tool_use": [
+        "nCino"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Waiver_Request",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Sets WaiverRequest.status and links to the Covenant on grant."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "WAIVER_GRANTED",
+        "WAIVER_DENIED"
+      ],
       "inputs": [
         {
           "name": "waiver_request",
           "objectTypeId": "objectType:waiver-request",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Waiver_Request.waiver_id"
         }
       ],
       "outputs": [
@@ -4051,7 +4964,8 @@
           "name": "waiver_request",
           "objectTypeId": "objectType:waiver-request",
           "required": true,
-          "description": "Status Granted or Denied."
+          "description": "Status Granted or Denied.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4113,11 +5027,6 @@
           "objectTypeId": "objectType:waiver-request"
         }
       ],
-      "actor": {
-        "role": "Credit Committee",
-        "roleZh": "信贷委员会",
-        "kind": "human"
-      },
       "permissions": [
         "waiver:decide"
       ],
@@ -4153,7 +5062,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Credit Committee",
+        "roleZh": "信贷委员会",
+        "kind": "human"
+      }
     },
     {
       "id": "action:issue-margin-call",
@@ -4162,23 +5076,93 @@
       "nameZh": "发出追加保证金通知",
       "description": "Consumes the LTV breach result and produces a MarginCallNotice with a cure deadline.",
       "descriptionZh": "依据贷款价值比违约结果，生成带有补足期限的追加保证金通知。",
+      "submission_criteria": "1. Event COVENANT_BREACHED has been received\n2. Rule \"LTV must stay at or below 80%\" is satisfied\n3. Rule \"Margin call cured within 10 business days or default\" is satisfied",
+      "object_type": "action",
+      "category": "发出追加保证金通知",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "COVENANT_BREACHED"
+      ],
+      "target_objects": [
+        "Covenant",
+        "Collateral",
+        "Margin_Call_Notice"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "confirmTheLTVSpecificCovenantBreach",
+          "description": "Confirm the LTV-specific covenant breach.",
+          "object_type": "logic",
+          "submission_criteria": "on covenant test of LTV",
+          "rules": [
+            {
+              "id": "r09-ltv-max-80-percent",
+              "name": "LTV must stay at or below 80%",
+              "submission_criteria": "on covenant test of LTV",
+              "description": "A LoanFacility's loan-to-value must stay at or below 80% of the pledged Collateral fair value; a breach triggers a MarginCallNotice."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "createAMarginCallNoticeWith",
+          "description": "Create a MarginCallNotice with a 10-business-day cure deadline linked to the facility and collateral.",
+          "object_type": "logic",
+          "submission_criteria": "on margin call issuance",
+          "rules": [
+            {
+              "id": "r16-margin-call-cure-10-days",
+              "name": "Margin call cured within 10 business days or default",
+              "submission_criteria": "on margin call issuance",
+              "description": "A Borrower who receives a MarginCallNotice is required to cure the loan-to-value shortfall within 10 business days, after which the LoanFacility shall be classified as in default."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"IssueMarginCall\" action. Consumes the LTV breach result and produces a MarginCallNotice with a cure deadline. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"IssueMarginCall\" using covenant, collateral. Consumes the LTV breach result and produces a MarginCallNotice with a cure deadline. Produce margin_call_notice and emit the appropriate events.",
+      "tool_use": [
+        "Oracle FLEXCUBE"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Margin_Call_Notice",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Creates a MarginCallNotice in FLEXCUBE and iManage."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "MARGIN_CALL_ISSUED"
+      ],
       "inputs": [
         {
           "name": "covenant",
           "objectTypeId": "objectType:covenant",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Covenant.covenant_id"
         },
         {
           "name": "collateral",
           "objectTypeId": "objectType:collateral",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Collateral.collateral_id"
         }
       ],
       "outputs": [
         {
           "name": "margin_call_notice",
           "objectTypeId": "objectType:margin-call-notice",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -4232,11 +5216,6 @@
           "objectTypeId": "objectType:margin-call-notice"
         }
       ],
-      "actor": {
-        "role": "Loan Operations",
-        "roleZh": "贷款运营",
-        "kind": "system"
-      },
       "permissions": [
         "margin-call:issue"
       ],
@@ -4277,7 +5256,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Loan Operations",
+        "roleZh": "贷款运营",
+        "kind": "system"
+      }
     },
     {
       "id": "action:trigger-rating-review",
@@ -4286,11 +5270,61 @@
       "nameZh": "触发评级复核",
       "description": "Consumes the rating calendar and breach events and produces a pending review task for the Credit Analyst.",
       "descriptionZh": "依据评级日历与违约事件，为信贷分析师生成待办复核任务。",
+      "submission_criteria": "1. Event COVENANT_BREACHED has been received\n2. Rule \"Risk rating refreshed at least every 12 months\" is satisfied\n3. Rule \"Rating refresh within 30 days of breach\" is satisfied",
+      "object_type": "action",
+      "category": "触发评级复核",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "COVENANT_BREACHED"
+      ],
+      "target_objects": [
+        "Risk_Rating"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "readRiskRatingNextReviewDate",
+          "description": "Read RiskRating.next_review_date and recent CovenantBreached events.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "raiseAReviewDueAtLeast",
+          "description": "Raise a review due at least every 12 months, or within 30 days of any breach, whichever is sooner.",
+          "object_type": "logic",
+          "submission_criteria": "on covenant breach",
+          "rules": [
+            {
+              "id": "r08-rating-refresh-30-days-after-breach",
+              "name": "Rating refresh within 30 days of breach",
+              "submission_criteria": "on covenant breach",
+              "description": "A Borrower RiskRating is required to be refreshed within 30 days after any covenant breach, and where this 30-day deadline falls before the scheduled annual review it shall take precedence."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"TriggerRatingReview\" action. Consumes the rating calendar and breach events and produces a pending review task for the Credit Analyst. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"TriggerRatingReview\" using risk_rating. Consumes the rating calendar and breach events and produces a pending review task for the Credit Analyst. Produce risk_rating and emit the appropriate events.",
+      "tool_use": [
+        "nCino"
+      ],
+      "side_effects": {
+        "data_changes": [],
+        "notifications": []
+      },
+      "triggered_event": [
+        "RATING_REVIEW_DUE"
+      ],
       "inputs": [
         {
           "name": "risk_rating",
           "objectTypeId": "objectType:risk-rating",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Risk_Rating.risk_rating_id"
         }
       ],
       "outputs": [
@@ -4298,7 +5332,8 @@
           "name": "risk_rating",
           "objectTypeId": "objectType:risk-rating",
           "required": true,
-          "description": "Review task pending."
+          "description": "Review task pending.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4347,11 +5382,6 @@
           "objectTypeId": "objectType:risk-rating"
         }
       ],
-      "actor": {
-        "role": "Credit Analyst",
-        "roleZh": "信贷分析师",
-        "kind": "system"
-      },
       "permissions": [
         "rating:review-trigger"
       ],
@@ -4387,7 +5417,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Credit Analyst",
+        "roleZh": "信贷分析师",
+        "kind": "system"
+      }
     },
     {
       "id": "action:refresh-risk-rating",
@@ -4396,16 +5431,76 @@
       "nameZh": "刷新风险评级",
       "description": "Consumes the latest financials and breach history and produces an updated RiskRating (new version).",
       "descriptionZh": "依据最新财务数据与违约历史，生成更新版本的风险评级。",
+      "submission_criteria": "1. Event RATING_REVIEW_DUE has been received\n2. Rule \"Rating of 9 or 10 requires Credit Committee review\" is satisfied",
+      "object_type": "action",
+      "category": "刷新风险评级",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "RATING_REVIEW_DUE"
+      ],
+      "target_objects": [
+        "Risk_Rating",
+        "Borrower"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "reSpreadTheLatestFinancialsAnd",
+          "description": "Re-spread the latest financials and review breach history.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "updateRiskRatingValueAndNext",
+          "description": "Update RiskRating.value and next_review_date on the Borrower and increment version.",
+          "object_type": "logic",
+          "submission_criteria": "on risk rating assignment",
+          "rules": [
+            {
+              "id": "r18-rating-9-10-committee-only",
+              "name": "Rating of 9 or 10 requires Credit Committee review",
+              "submission_criteria": "on risk rating assignment",
+              "description": "A RiskRating of 9 or 10 must be reviewed by the Credit Committee and may not be assigned by a Credit Analyst acting alone."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"RefreshRiskRating\" action. Consumes the latest financials and breach history and produces an updated RiskRating (new version). Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"RefreshRiskRating\" using risk_rating, borrower. Consumes the latest financials and breach history and produces an updated RiskRating (new version). Produce risk_rating and emit the appropriate events.",
+      "tool_use": [
+        "nCino"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Risk_Rating",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Updates RiskRating value/version on the Borrower."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "RISK_RATING_ASSIGNED"
+      ],
       "inputs": [
         {
           "name": "risk_rating",
           "objectTypeId": "objectType:risk-rating",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Risk_Rating.risk_rating_id"
         },
         {
           "name": "borrower",
           "objectTypeId": "objectType:borrower",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Borrower.borrower_id"
         }
       ],
       "outputs": [
@@ -4413,7 +5508,8 @@
           "name": "risk_rating",
           "objectTypeId": "objectType:risk-rating",
           "required": true,
-          "description": "Updated value, next_review_date, incremented version."
+          "description": "Updated value, next_review_date, incremented version.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4461,11 +5557,6 @@
           "objectTypeId": "objectType:risk-rating"
         }
       ],
-      "actor": {
-        "role": "Credit Analyst",
-        "roleZh": "信贷分析师",
-        "kind": "human"
-      },
       "permissions": [
         "rating:refresh"
       ],
@@ -4506,7 +5597,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Credit Analyst",
+        "roleZh": "信贷分析师",
+        "kind": "human"
+      }
     }
   ],
   "events": [

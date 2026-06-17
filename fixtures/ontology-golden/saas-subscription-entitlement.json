@@ -2550,18 +2550,71 @@
       "nameZh": "创建订单表",
       "description": "Consumes a Closed-Won Opportunity and selected Plan; produces a draft Order Form linked to the Account.",
       "descriptionZh": "消费赢单商机与所选套餐，生成与账户关联的订单表草稿。",
+      "submission_criteria": "1. Event OPPORTUNITY_CLOSED_WON has been received",
+      "object_type": "action",
+      "category": "创建订单表",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "OPPORTUNITY_CLOSED_WON"
+      ],
+      "target_objects": [
+        "Account",
+        "Plan",
+        "Contract"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeTheClosedWonOpportunityAnd",
+          "description": "Consume the Closed-Won Opportunity and the selected Plan.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "produceADraftOrderFormLinked",
+          "description": "Produce a draft Order Form linked to the Account.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"CreateOrderForm\" action. Consumes a Closed-Won Opportunity and selected Plan; produces a draft Order Form linked to the Account. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"CreateOrderForm\" using account, plan. Consumes a Closed-Won Opportunity and selected Plan; produces a draft Order Form linked to the Account. Produce contract and emit the appropriate events.",
+      "tool_use": [
+        "salesforce"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Contract",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Draft Order Form written to Salesforce."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "ORDER_FORM_DRAFTED"
+      ],
       "inputs": [
         {
           "name": "account",
           "objectTypeId": "objectType:account",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Account.account_id"
         },
         {
           "name": "plan",
           "objectTypeId": "objectType:plan",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Plan.plan_code"
         }
       ],
       "outputs": [
@@ -2570,7 +2623,8 @@
           "objectTypeId": "objectType:contract",
           "required": true,
           "cardinality": "one",
-          "description": "Draft Order Form materialized as a draft Contract."
+          "description": "Draft Order Form materialized as a draft Contract.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2613,11 +2667,6 @@
           "objectTypeId": "objectType:contract"
         }
       ],
-      "actor": {
-        "role": "Account Executive",
-        "roleZh": "客户经理",
-        "kind": "human"
-      },
       "permissions": [
         "orderform:create"
       ],
@@ -2655,7 +2704,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Account Executive",
+        "roleZh": "客户经理",
+        "kind": "human"
+      }
     },
     {
       "id": "action:validate-quote",
@@ -2664,12 +2718,93 @@
       "nameZh": "校验报价",
       "description": "Consumes the draft Order Form, list price, and discount; produces an approved or rejected quote. Above-threshold discounts require escalation.",
       "descriptionZh": "消费订单表草稿、标价与折扣，生成已批准或被拒绝的报价；超阈值折扣需升级审批。",
+      "submission_criteria": "1. Event ORDER_FORM_DRAFTED has been received\n2. Rule \"Discount approval thresholds (20% Deal Desk, 40% VP)\" is satisfied\n3. Rule \"Minimum 12-month term unless Finance exception\" is satisfied",
+      "object_type": "action",
+      "category": "校验报价",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "ORDER_FORM_DRAFTED"
+      ],
+      "target_objects": [
+        "Contract",
+        "Plan"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeTheDraftOrderFormList",
+          "description": "Consume the draft Order Form, list price, and discount.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "applyDiscountApprovalThresholdsEscalateAbove",
+          "description": "Apply discount approval thresholds; escalate above-threshold discounts.",
+          "object_type": "logic",
+          "submission_criteria": "Before Contract signature, during quote validation",
+          "rules": [
+            {
+              "id": "discount-approval-thresholds",
+              "name": "Discount approval thresholds (20% Deal Desk, 40% VP)",
+              "submission_criteria": "Before Contract signature, during quote validation",
+              "description": "A quote whose discount exceeds 20% of list price must be approved by the Deal Desk, and a discount exceeding 40% is required to receive VP of Sales approval before the Contract may be signed."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "verifyMinimum12MonthTermUnless",
+          "description": "Verify minimum 12-month term unless Finance month-to-month exception.",
+          "object_type": "logic",
+          "submission_criteria": "Before Contract signature",
+          "rules": [
+            {
+              "id": "min-12-month-term",
+              "name": "Minimum 12-month term unless Finance exception",
+              "submission_criteria": "Before Contract signature",
+              "description": "A Contract term shall be a minimum of 12 months unless a month-to-month exception is approved by Finance."
+            }
+          ]
+        },
+        {
+          "order": "4",
+          "name": "produceAnApprovedOrRejectedQuote",
+          "description": "Produce an approved or rejected quote.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"ValidateQuote\" action. Consumes the draft Order Form, list price, and discount; produces an approved or rejected quote. Above-threshold discounts require escalation. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ValidateQuote\" using contract. Consumes the draft Order Form, list price, and discount; produces an approved or rejected quote. Above-threshold discounts require escalation. Produce contract and emit the appropriate events.",
+      "tool_use": [
+        "salesforce"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Contract",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Quote marked approved or rejected."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "QUOTE_APPROVED",
+        "QUOTE_REJECTED"
+      ],
       "inputs": [
         {
           "name": "contract",
           "objectTypeId": "objectType:contract",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Contract.contract_id"
         }
       ],
       "outputs": [
@@ -2678,7 +2813,8 @@
           "objectTypeId": "objectType:contract",
           "required": true,
           "cardinality": "one",
-          "description": "Approved or rejected quote."
+          "description": "Approved or rejected quote.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2750,11 +2886,6 @@
           "objectTypeId": "objectType:contract"
         }
       ],
-      "actor": {
-        "role": "Deal Desk Analyst",
-        "roleZh": "交易台分析师",
-        "kind": "human"
-      },
       "permissions": [
         "quote:approve"
       ],
@@ -2791,7 +2922,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Deal Desk Analyst",
+        "roleZh": "交易台分析师",
+        "kind": "human"
+      }
     },
     {
       "id": "action:sign-contract",
@@ -2800,12 +2936,68 @@
       "nameZh": "签署合同",
       "description": "Consumes the approved Order Form; produces an executed Contract with term start, term end, and committed quantities.",
       "descriptionZh": "消费已批准的订单表，生成含起止日期与承诺数量的已签署合同。",
+      "submission_criteria": "1. Event QUOTE_APPROVED has been received\n2. Rule \"Discount approval thresholds (20% Deal Desk, 40% VP)\" is satisfied\n3. Rule \"Minimum 12-month term unless Finance exception\" is satisfied",
+      "object_type": "action",
+      "category": "签署合同",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "QUOTE_APPROVED"
+      ],
+      "target_objects": [
+        "Contract"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeTheApprovedOrderForm",
+          "description": "Consume the approved Order Form.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "captureCustomerCounterSignatureInSalesforce",
+          "description": "Capture customer counter-signature in Salesforce.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "3",
+          "name": "produceAnExecutedContractWithTerm",
+          "description": "Produce an executed Contract with term start, term end, and committed quantities.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"SignContract\" action. Consumes the approved Order Form; produces an executed Contract with term start, term end, and committed quantities. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"SignContract\" using contract. Consumes the approved Order Form; produces an executed Contract with term start, term end, and committed quantities. Produce contract and emit the appropriate events.",
+      "tool_use": [
+        "salesforce"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Contract",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Contract executed in Salesforce."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "CONTRACT_SIGNED"
+      ],
       "inputs": [
         {
           "name": "contract",
           "objectTypeId": "objectType:contract",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Contract.contract_id"
         }
       ],
       "outputs": [
@@ -2814,7 +3006,8 @@
           "objectTypeId": "objectType:contract",
           "required": true,
           "cardinality": "one",
-          "description": "Executed Contract."
+          "description": "Executed Contract.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2872,11 +3065,6 @@
           "objectTypeId": "objectType:contract"
         }
       ],
-      "actor": {
-        "role": "Salesforce CRM",
-        "roleZh": "Salesforce CRM",
-        "kind": "system"
-      },
       "permissions": [
         "contract:sign"
       ],
@@ -2909,7 +3097,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Salesforce CRM",
+        "roleZh": "Salesforce CRM",
+        "kind": "system"
+      }
     },
     {
       "id": "action:create-subscription",
@@ -2918,18 +3111,102 @@
       "nameZh": "创建订阅",
       "description": "Consumes the executed Contract and Plan; produces an active Subscription and the first Invoice (initial term charge).",
       "descriptionZh": "消费已签署合同与套餐，生成活动订阅与首张发票（初始合同期收费）。",
+      "submission_criteria": "1. Event CONTRACT_SIGNED has been received\n2. Rule \"One active subscription per product line\" is satisfied\n3. Rule \"Invoice must reference a Subscription and have a line item\" is satisfied",
+      "object_type": "action",
+      "category": "创建订阅",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "CONTRACT_SIGNED"
+      ],
+      "target_objects": [
+        "Contract",
+        "Plan",
+        "Subscription",
+        "Invoice"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "verifyTheAccountHoldsNoOther",
+          "description": "Verify the Account holds no other active Subscription on this product line.",
+          "object_type": "logic",
+          "submission_criteria": "On subscription creation",
+          "rules": [
+            {
+              "id": "one-active-subscription-per-product",
+              "name": "One active subscription per product line",
+              "submission_criteria": "On subscription creation",
+              "description": "An Account may not hold more than one active Subscription per product line at any time."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "consumeTheExecutedContractAndPlan",
+          "description": "Consume the executed Contract and Plan; create an active Subscription.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "3",
+          "name": "issueTheFirstInvoiceForThe",
+          "description": "Issue the first Invoice for the initial term charge.",
+          "object_type": "logic",
+          "submission_criteria": "Before Invoice issuance",
+          "rules": [
+            {
+              "id": "invoice-references-subscription",
+              "name": "Invoice must reference a Subscription and have a line item",
+              "submission_criteria": "Before Invoice issuance",
+              "description": "Every Invoice must reference the Subscription that generated it and shall not be issued without at least one line item."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"CreateSubscription\" action. Consumes the executed Contract and Plan; produces an active Subscription and the first Invoice (initial term charge). Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"CreateSubscription\" using contract, plan. Consumes the executed Contract and Plan; produces an active Subscription and the first Invoice (initial term charge). Produce subscription, invoice and emit the appropriate events.",
+      "tool_use": [
+        "stripe"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Subscription",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Active Subscription created in Stripe."
+          },
+          {
+            "object_type": "Invoice",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Initial term Invoice issued."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "SUBSCRIPTION_CREATED",
+        "INVOICE_ISSUED"
+      ],
       "inputs": [
         {
           "name": "contract",
           "objectTypeId": "objectType:contract",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Contract.contract_id"
         },
         {
           "name": "plan",
           "objectTypeId": "objectType:plan",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Plan.plan_code"
         }
       ],
       "outputs": [
@@ -2937,13 +3214,15 @@
           "name": "subscription",
           "objectTypeId": "objectType:subscription",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String"
         },
         {
           "name": "invoice",
           "objectTypeId": "objectType:invoice",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3016,11 +3295,6 @@
           "objectTypeId": "objectType:invoice"
         }
       ],
-      "actor": {
-        "role": "RevOps Automation",
-        "roleZh": "营收运营自动化",
-        "kind": "agent"
-      },
       "permissions": [
         "subscription:create",
         "invoice:issue"
@@ -3059,7 +3333,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "RevOps Automation",
+        "roleZh": "营收运营自动化",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:provision-entitlements",
@@ -3068,12 +3347,89 @@
       "nameZh": "开通权益",
       "description": "Consumes the Subscription's Plan mapping; produces Entitlement records (feature flags, quota limits, seat counts) and closes the ProvisioningTask.",
       "descriptionZh": "消费订阅的套餐映射，生成权益记录（功能开关、配额、席位），并关闭开通任务。",
+      "submission_criteria": "1. Event SUBSCRIPTION_CREATED has been received\n2. Rule \"Provision only after initial Invoice\" is satisfied\n3. Rule \"Seat grant cannot exceed purchased seats\" is satisfied",
+      "object_type": "action",
+      "category": "开通权益",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "SUBSCRIPTION_CREATED"
+      ],
+      "target_objects": [
+        "Subscription",
+        "Entitlement",
+        "Provisioning_Task",
+        "Plan"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "confirmTheInitialInvoiceIsIssued",
+          "description": "Confirm the initial Invoice is issued (or the Contract is net_terms) before provisioning.",
+          "object_type": "logic",
+          "submission_criteria": "Before Provision Entitlements (SOP step 1.5)",
+          "rules": [
+            {
+              "id": "provision-after-invoice",
+              "name": "Provision only after initial Invoice",
+              "submission_criteria": "Before Provision Entitlements (SOP step 1.5)",
+              "description": "A Subscription's Entitlements shall not be provisioned before the initial Invoice is issued, unless the Contract carries a net_terms flag."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "consumeTheSubscriptionSPlanMapping",
+          "description": "Consume the Subscription's Plan mapping and grant entitlements; cap seat grants to purchased seats.",
+          "object_type": "logic",
+          "submission_criteria": "On entitlement grant",
+          "rules": [
+            {
+              "id": "seat-grant-cap",
+              "name": "Seat grant cannot exceed purchased seats",
+              "submission_criteria": "On entitlement grant",
+              "description": "A seat-based Entitlement may not grant more active seats than the seat count purchased on the Contract."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "closeTheProvisioningTask",
+          "description": "Close the ProvisioningTask.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"ProvisionEntitlements\" action. Consumes the Subscription's Plan mapping; produces Entitlement records (feature flags, quota limits, seat counts) and closes the ProvisioningTask. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ProvisionEntitlements\" using subscription. Consumes the Subscription's Plan mapping; produces Entitlement records (feature flags, quota limits, seat counts) and closes the ProvisioningTask. Produce entitlements, provisioning_task and emit the appropriate events.",
+      "tool_use": [
+        "launchdarkly",
+        "Feature flags set in LaunchDarkly."
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Entitlement",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Entitlement records created."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "ENTITLEMENT_GRANTED",
+        "PROVISIONING_COMPLETED"
+      ],
       "inputs": [
         {
           "name": "subscription",
           "objectTypeId": "objectType:subscription",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Subscription.subscription_id"
         }
       ],
       "outputs": [
@@ -3082,13 +3438,15 @@
           "objectTypeId": "objectType:entitlement",
           "required": true,
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String"
         },
         {
           "name": "provisioning_task",
           "objectTypeId": "objectType:provisioning-task",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3160,11 +3518,6 @@
           "description": "Feature flags set in LaunchDarkly."
         }
       ],
-      "actor": {
-        "role": "Entitlement Service",
-        "roleZh": "权益服务",
-        "kind": "system"
-      },
       "permissions": [
         "entitlement:grant"
       ],
@@ -3201,7 +3554,12 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Entitlement Service",
+        "roleZh": "权益服务",
+        "kind": "system"
+      }
     },
     {
       "id": "action:reconcile-entitlements",
@@ -3210,19 +3568,97 @@
       "nameZh": "对账权益",
       "description": "Consumes the live Entitlement set and the Plan spec; produces a drift report and, if mismatched, a remediation ProvisioningTask.",
       "descriptionZh": "消费现有权益集合与套餐规格，生成漂移报告；若不匹配则生成修复开通任务。",
+      "submission_criteria": "1. Event PROVISIONING_COMPLETED has been received\n2. Rule \"Entitlements must match current Plan\" is satisfied\n3. Rule \"Remediate drift within one business day; escalate at 72h\" is satisfied",
+      "object_type": "action",
+      "category": "对账权益",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "PROVISIONING_COMPLETED"
+      ],
+      "target_objects": [
+        "Subscription",
+        "Entitlement",
+        "Provisioning_Task",
+        "Plan"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "compareTheLiveEntitlementSetAgainst",
+          "description": "Compare the live Entitlement set against the Plan feature_keys spec.",
+          "object_type": "logic",
+          "submission_criteria": "Continuous and nightly reconciliation",
+          "rules": [
+            {
+              "id": "entitlements-match-plan",
+              "name": "Entitlements must match current Plan",
+              "submission_criteria": "Continuous and nightly reconciliation",
+              "description": "An Account's active Entitlements must at all times match the entitlement set defined by its current Subscription Plan."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "onMismatchCreateARemediationProvisioning",
+          "description": "On mismatch, create a remediation ProvisioningTask and flag drift for SLA tracking.",
+          "object_type": "logic",
+          "submission_criteria": "On entitlement drift detection",
+          "rules": [
+            {
+              "id": "drift-remediation-sla",
+              "name": "Remediate drift within one business day; escalate at 72h",
+              "submission_criteria": "On entitlement drift detection",
+              "description": "Detected entitlement drift is required to be remediated within one business day, and drift unresolved beyond 72 hours must be escalated to the RevOps lead."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"ReconcileEntitlements\" action. Consumes the live Entitlement set and the Plan spec; produces a drift report and, if mismatched, a remediation ProvisioningTask. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ReconcileEntitlements\" using subscription, entitlements. Consumes the live Entitlement set and the Plan spec; produces a drift report and, if mismatched, a remediation ProvisioningTask. Produce provisioning_task and emit the appropriate events.",
+      "tool_use": [
+        "launchdarkly"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Provisioning_Task",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Remediation ProvisioningTask created on drift."
+          }
+        ],
+        "notifications": [
+          {
+            "recipient": "RevOps Automation",
+            "channel": "InApp",
+            "condition": "",
+            "message": "Escalation to RevOps lead when drift > 72h.",
+            "triggered_event": ""
+          }
+        ]
+      },
+      "triggered_event": [
+        "ENTITLEMENT_DRIFT_DETECTED"
+      ],
       "inputs": [
         {
           "name": "subscription",
           "objectTypeId": "objectType:subscription",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Subscription.subscription_id"
         },
         {
           "name": "entitlements",
           "objectTypeId": "objectType:entitlement",
           "required": true,
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String",
+          "source_object": "Entitlement.entitlement_id"
         }
       ],
       "outputs": [
@@ -3231,7 +3667,8 @@
           "objectTypeId": "objectType:provisioning-task",
           "required": false,
           "cardinality": "one",
-          "description": "Remediation task created only on drift."
+          "description": "Remediation task created only on drift.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3290,11 +3727,6 @@
           "description": "Escalation to RevOps lead when drift > 72h."
         }
       ],
-      "actor": {
-        "role": "RevOps Automation",
-        "roleZh": "营收运营自动化",
-        "kind": "agent"
-      },
       "permissions": [
         "entitlement:reconcile"
       ],
@@ -3338,7 +3770,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "RevOps Automation",
+        "roleZh": "营收运营自动化",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:record-usage",
@@ -3347,12 +3784,60 @@
       "nameZh": "记录用量",
       "description": "Consumes metered product events (API calls, seats, GB); produces timestamped UsageRecord rows keyed to the Subscription.",
       "descriptionZh": "消费计量的产品事件（API调用、席位、GB），生成与订阅关联的带时间戳用量记录。",
+      "submission_criteria": "",
+      "object_type": "action",
+      "category": "记录用量",
+      "actor": [
+        "System"
+      ],
+      "trigger": [],
+      "target_objects": [
+        "Subscription",
+        "Usage_Record"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeMeteredProductEventsForThe",
+          "description": "Consume metered product events for the Subscription.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "writeATimestampedUsageRecordRow",
+          "description": "Write a timestamped UsageRecord row keyed to the Subscription.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"RecordUsage\" action. Consumes metered product events (API calls, seats, GB); produces timestamped UsageRecord rows keyed to the Subscription. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"RecordUsage\" using subscription. Consumes metered product events (API calls, seats, GB); produces timestamped UsageRecord rows keyed to the Subscription. Produce usage_record and emit the appropriate events.",
+      "tool_use": [
+        "stripe"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Usage_Record",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "UsageRecord row appended."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "USAGE_RECORDED"
+      ],
       "inputs": [
         {
           "name": "subscription",
           "objectTypeId": "objectType:subscription",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Subscription.subscription_id"
         }
       ],
       "outputs": [
@@ -3360,7 +3845,8 @@
           "name": "usage_record",
           "objectTypeId": "objectType:usage-record",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3400,11 +3886,6 @@
           "objectTypeId": "objectType:usage-record"
         }
       ],
-      "actor": {
-        "role": "Product Runtime",
-        "roleZh": "产品运行时",
-        "kind": "system"
-      },
       "permissions": [
         "usage:record"
       ],
@@ -3437,7 +3918,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Product Runtime",
+        "roleZh": "产品运行时",
+        "kind": "system"
+      }
     },
     {
       "id": "action:calculate-overage",
@@ -3446,31 +3932,111 @@
       "nameZh": "计算超量",
       "description": "Consumes cumulative UsageRecord totals and the Entitlement included quota; produces an overage quantity when usage exceeds quota.",
       "descriptionZh": "消费累计用量总额与权益包含配额，当用量超过配额时生成超量数量。",
+      "submission_criteria": "1. Event USAGE_RECORDED has been received\n2. Rule \"Bill overage on next Invoice\" is satisfied\n3. Rule \"Unlimited tier incurs no overage\" is satisfied",
+      "object_type": "action",
+      "category": "计算超量",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "USAGE_RECORDED"
+      ],
+      "target_objects": [
+        "Subscription",
+        "Usage_Record",
+        "Entitlement",
+        "Plan"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "sumCumulativeUsageRecordTotalsAnd",
+          "description": "Sum cumulative UsageRecord totals and compare to the included quota.",
+          "object_type": "logic",
+          "submission_criteria": "At billing-period close",
+          "rules": [
+            {
+              "id": "overage-billed-next-invoice",
+              "name": "Bill overage on next Invoice",
+              "submission_criteria": "At billing-period close",
+              "description": "Usage beyond a Plan's included quota must be billed as an overage line item on the next Invoice."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "shortCircuitToWithinQuotaFor",
+          "description": "Short-circuit to within-quota for unlimited-tier contracts.",
+          "object_type": "logic",
+          "submission_criteria": "During overage calculation",
+          "rules": [
+            {
+              "id": "unlimited-no-overage",
+              "name": "Unlimited tier incurs no overage",
+              "submission_criteria": "During overage calculation",
+              "description": "A Subscription on an unlimited-tier Contract shall not incur overage charges regardless of recorded usage."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "produceAnOverageQuantityWhenUsage",
+          "description": "Produce an overage quantity when usage exceeds quota.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"CalculateOverage\" action. Consumes cumulative UsageRecord totals and the Entitlement included quota; produces an overage quantity when usage exceeds quota. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"CalculateOverage\" using subscription, usage_records, entitlement. Consumes cumulative UsageRecord totals and the Entitlement included quota; produces an overage quantity when usage exceeds quota. Produce overage_quantity and emit the appropriate events.",
+      "tool_use": [
+        "stripe"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Subscription",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Overage quantity computed for the billing period."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "OVERAGE_DETECTED",
+        "USAGE_WITHIN_QUOTA"
+      ],
       "inputs": [
         {
           "name": "subscription",
           "objectTypeId": "objectType:subscription",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Subscription.subscription_id"
         },
         {
           "name": "usage_records",
           "objectTypeId": "objectType:usage-record",
           "required": true,
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String",
+          "source_object": "Usage_Record.usage_id"
         },
         {
           "name": "entitlement",
           "objectTypeId": "objectType:entitlement",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Entitlement.entitlement_id"
         }
       ],
       "outputs": [
         {
           "name": "overage_quantity",
-          "type": "integer",
+          "type": "Integer",
           "required": false,
           "cardinality": "one"
         }
@@ -3537,11 +4103,6 @@
           "objectTypeId": "objectType:subscription"
         }
       ],
-      "actor": {
-        "role": "RevOps Automation",
-        "roleZh": "营收运营自动化",
-        "kind": "agent"
-      },
       "permissions": [
         "overage:calculate"
       ],
@@ -3590,7 +4151,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "RevOps Automation",
+        "roleZh": "营收运营自动化",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:issue-invoice",
@@ -3599,12 +4165,79 @@
       "nameZh": "开具发票",
       "description": "Consumes the recurring plan charge plus any overage line items; produces the period Invoice.",
       "descriptionZh": "消费经常性套餐收费及任何超量行项，生成周期发票。",
+      "submission_criteria": "1. Event OVERAGE_DETECTED has been received\n2. Event USAGE_WITHIN_QUOTA has been received\n3. Rule \"Invoice must reference a Subscription and have a line item\" is satisfied",
+      "object_type": "action",
+      "category": "开具发票",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "OVERAGE_DETECTED",
+        "USAGE_WITHIN_QUOTA"
+      ],
+      "target_objects": [
+        "Subscription",
+        "Invoice",
+        "Usage_Record"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "assembleTheRecurringPlanChargePlus",
+          "description": "Assemble the recurring plan charge plus any overage line items.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "validateTheInvoiceReferencesItsSubscription",
+          "description": "Validate the Invoice references its Subscription and has at least one line item.",
+          "object_type": "logic",
+          "submission_criteria": "Before Invoice issuance",
+          "rules": [
+            {
+              "id": "invoice-references-subscription",
+              "name": "Invoice must reference a Subscription and have a line item",
+              "submission_criteria": "Before Invoice issuance",
+              "description": "Every Invoice must reference the Subscription that generated it and shall not be issued without at least one line item."
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "produceThePeriodInvoice",
+          "description": "Produce the period Invoice.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"IssueInvoice\" action. Consumes the recurring plan charge plus any overage line items; produces the period Invoice. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"IssueInvoice\" using subscription. Consumes the recurring plan charge plus any overage line items; produces the period Invoice. Produce invoice and emit the appropriate events.",
+      "tool_use": [
+        "stripe"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Invoice",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Period Invoice created in Stripe."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "INVOICE_ISSUED"
+      ],
       "inputs": [
         {
           "name": "subscription",
           "objectTypeId": "objectType:subscription",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Subscription.subscription_id"
         }
       ],
       "outputs": [
@@ -3612,7 +4245,8 @@
           "name": "invoice",
           "objectTypeId": "objectType:invoice",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3669,11 +4303,6 @@
           "objectTypeId": "objectType:invoice"
         }
       ],
-      "actor": {
-        "role": "Stripe Billing",
-        "roleZh": "Stripe 计费",
-        "kind": "system"
-      },
       "permissions": [
         "invoice:issue"
       ],
@@ -3706,7 +4335,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Stripe Billing",
+        "roleZh": "Stripe 计费",
+        "kind": "system"
+      }
     },
     {
       "id": "action:collect-payment",
@@ -3715,12 +4349,63 @@
       "nameZh": "收取付款",
       "description": "Consumes a payment instrument charge against the open Invoice; produces a Payment and marks the Invoice Paid or Failed.",
       "descriptionZh": "对未结发票发起付款工具扣款，生成付款并将发票标记为已付或失败。",
+      "submission_criteria": "1. Event INVOICE_ISSUED has been received",
+      "object_type": "action",
+      "category": "收取付款",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "INVOICE_ISSUED"
+      ],
+      "target_objects": [
+        "Invoice",
+        "Payment"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "chargeThePaymentInstrumentAgainstThe",
+          "description": "Charge the payment instrument against the open Invoice.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "produceAPaymentAndMarkThe",
+          "description": "Produce a Payment and mark the Invoice Paid or Failed.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"CollectPayment\" action. Consumes a payment instrument charge against the open Invoice; produces a Payment and marks the Invoice Paid or Failed. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"CollectPayment\" using invoice. Consumes a payment instrument charge against the open Invoice; produces a Payment and marks the Invoice Paid or Failed. Produce payment and emit the appropriate events.",
+      "tool_use": [
+        "stripe"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Invoice",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Invoice status set to paid or failed."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "PAYMENT_SUCCEEDED",
+        "PAYMENT_FAILED"
+      ],
       "inputs": [
         {
           "name": "invoice",
           "objectTypeId": "objectType:invoice",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Invoice.invoice_id"
         }
       ],
       "outputs": [
@@ -3728,7 +4413,8 @@
           "name": "payment",
           "objectTypeId": "objectType:payment",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3779,11 +4465,6 @@
           "objectTypeId": "objectType:invoice"
         }
       ],
-      "actor": {
-        "role": "Stripe Billing",
-        "roleZh": "Stripe 计费",
-        "kind": "system"
-      },
       "permissions": [
         "payment:collect"
       ],
@@ -3816,7 +4497,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Stripe Billing",
+        "roleZh": "Stripe 计费",
+        "kind": "system"
+      }
     },
     {
       "id": "action:recognize-revenue",
@@ -3825,18 +4511,76 @@
       "nameZh": "确认收入",
       "description": "Consumes the Subscription term and Invoice; produces recognized revenue schedules.",
       "descriptionZh": "消费订阅合同期与发票，生成已确认收入计划。",
+      "submission_criteria": "1. Event PAYMENT_SUCCEEDED has been received\n2. Rule \"No revenue recognition before payment succeeds\" is satisfied",
+      "object_type": "action",
+      "category": "确认收入",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "PAYMENT_SUCCEEDED"
+      ],
+      "target_objects": [
+        "Subscription",
+        "Invoice"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "verifyTheCorrespondingInvoicePaymentHas",
+          "description": "Verify the corresponding Invoice Payment has succeeded.",
+          "object_type": "logic",
+          "submission_criteria": "Before revenue recognition",
+          "rules": [
+            {
+              "id": "no-revenue-before-payment",
+              "name": "No revenue recognition before payment succeeds",
+              "submission_criteria": "Before revenue recognition",
+              "description": "Revenue may not be recognized against a Subscription until the corresponding Invoice Payment has succeeded."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "consumeTheSubscriptionTermAndInvoice",
+          "description": "Consume the Subscription term and Invoice; produce recognized revenue schedules.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"RecognizeRevenue\" action. Consumes the Subscription term and Invoice; produces recognized revenue schedules. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"RecognizeRevenue\" using subscription, invoice. Consumes the Subscription term and Invoice; produces recognized revenue schedules. Produce subscription and emit the appropriate events.",
+      "tool_use": [],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Subscription",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Revenue schedule recorded against the Subscription."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "REVENUE_RECOGNIZED"
+      ],
       "inputs": [
         {
           "name": "subscription",
           "objectTypeId": "objectType:subscription",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Subscription.subscription_id"
         },
         {
           "name": "invoice",
           "objectTypeId": "objectType:invoice",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Invoice.invoice_id"
         }
       ],
       "outputs": [
@@ -3845,7 +4589,8 @@
           "objectTypeId": "objectType:subscription",
           "required": true,
           "cardinality": "one",
-          "description": "Subscription with recognized revenue schedule."
+          "description": "Subscription with recognized revenue schedule.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -3894,11 +4639,6 @@
           "objectTypeId": "objectType:subscription"
         }
       ],
-      "actor": {
-        "role": "Finance / Revenue Accountant",
-        "roleZh": "财务/收入会计",
-        "kind": "human"
-      },
       "permissions": [
         "revenue:recognize"
       ],
@@ -3938,7 +4678,12 @@
       ],
       "confidence": 0.91,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Finance / Revenue Accountant",
+        "roleZh": "财务/收入会计",
+        "kind": "human"
+      }
     },
     {
       "id": "action:open-renewal",
@@ -3947,12 +4692,71 @@
       "nameZh": "开立续约",
       "description": "Consumes a Subscription approaching term end; produces a RenewalOpportunity 90 days before term-end.",
       "descriptionZh": "消费临近期满的订阅，在期满前90天生成续约商机。",
+      "submission_criteria": "1. Event RENEWAL_WINDOW_OPENED has been received\n2. Rule \"Open renewal no later than T-90\" is satisfied",
+      "object_type": "action",
+      "category": "开立续约",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "RENEWAL_WINDOW_OPENED"
+      ],
+      "target_objects": [
+        "Subscription",
+        "Renewal_Opportunity",
+        "Contract"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "detectTheSubscriptionApproachingTermEnd",
+          "description": "Detect the Subscription approaching term end at the T-90 window.",
+          "object_type": "logic",
+          "submission_criteria": "At T-90 renewal window",
+          "rules": [
+            {
+              "id": "renewal-opens-t90",
+              "name": "Open renewal no later than T-90",
+              "submission_criteria": "At T-90 renewal window",
+              "description": "A RenewalOpportunity must be opened no later than 90 days before the Subscription term-end date."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "produceARenewalOpportunityInSalesforce",
+          "description": "Produce a RenewalOpportunity in Salesforce.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"OpenRenewal\" action. Consumes a Subscription approaching term end; produces a RenewalOpportunity 90 days before term-end. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"OpenRenewal\" using subscription. Consumes a Subscription approaching term end; produces a RenewalOpportunity 90 days before term-end. Produce renewal_opportunity and emit the appropriate events.",
+      "tool_use": [
+        "salesforce"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Renewal_Opportunity",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "RenewalOpportunity created in Salesforce."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "RENEWAL_OPPORTUNITY_CREATED"
+      ],
       "inputs": [
         {
           "name": "subscription",
           "objectTypeId": "objectType:subscription",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Subscription.subscription_id"
         }
       ],
       "outputs": [
@@ -3960,7 +4764,8 @@
           "name": "renewal_opportunity",
           "objectTypeId": "objectType:renewal-opportunity",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4009,11 +4814,6 @@
           "objectTypeId": "objectType:renewal-opportunity"
         }
       ],
-      "actor": {
-        "role": "RevOps Automation",
-        "roleZh": "营收运营自动化",
-        "kind": "agent"
-      },
       "permissions": [
         "renewal:open"
       ],
@@ -4046,7 +4846,12 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "RevOps Automation",
+        "roleZh": "营收运营自动化",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:process-renewal",
@@ -4055,18 +4860,73 @@
       "nameZh": "处理续约",
       "description": "Consumes the customer's renewal decision; produces a renewed Subscription, an upgrade, or a downgrade.",
       "descriptionZh": "消费客户的续约决定，生成续约、升级或降级后的订阅。",
+      "submission_criteria": "1. Event RENEWAL_OPPORTUNITY_CREATED has been received",
+      "object_type": "action",
+      "category": "处理续约",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "RENEWAL_OPPORTUNITY_CREATED"
+      ],
+      "target_objects": [
+        "Renewal_Opportunity",
+        "Plan",
+        "Subscription"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeTheCustomerSRenewalDecision",
+          "description": "Consume the customer's renewal decision (renew, upgrade, or downgrade).",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "produceARenewedSubscriptionAnUpgrade",
+          "description": "Produce a renewed Subscription, an upgrade, or a downgrade.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated human operator responsible for the \"ProcessRenewal\" action. Consumes the customer's renewal decision; produces a renewed Subscription, an upgrade, or a downgrade. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ProcessRenewal\" using renewal_opportunity, plan. Consumes the customer's renewal decision; produces a renewed Subscription, an upgrade, or a downgrade. Produce subscription and emit the appropriate events.",
+      "tool_use": [
+        "salesforce"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Subscription",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Subscription renewed/upgraded/downgraded."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "SUBSCRIPTION_RENEWED",
+        "PLAN_UPGRADED",
+        "PLAN_DOWNGRADED"
+      ],
       "inputs": [
         {
           "name": "renewal_opportunity",
           "objectTypeId": "objectType:renewal-opportunity",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Renewal_Opportunity.renewal_id"
         },
         {
           "name": "plan",
           "objectTypeId": "objectType:plan",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Plan.plan_code"
         }
       ],
       "outputs": [
@@ -4074,7 +4934,8 @@
           "name": "subscription",
           "objectTypeId": "objectType:subscription",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4127,11 +4988,6 @@
           "objectTypeId": "objectType:subscription"
         }
       ],
-      "actor": {
-        "role": "Customer Success Manager",
-        "roleZh": "客户成功经理",
-        "kind": "human"
-      },
       "permissions": [
         "renewal:process"
       ],
@@ -4169,7 +5025,12 @@
       ],
       "confidence": 0.91,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Customer Success Manager",
+        "roleZh": "客户成功经理",
+        "kind": "human"
+      }
     },
     {
       "id": "action:adjust-entitlements",
@@ -4178,18 +5039,90 @@
       "nameZh": "调整权益",
       "description": "Consumes the new Plan mapping; on upgrade grants new Entitlements immediately, on downgrade schedules revocation of removed features at period end.",
       "descriptionZh": "消费新套餐映射，升级时立即授予新权益，降级时安排在周期结束撤销已移除功能。",
+      "submission_criteria": "1. Event PLAN_UPGRADED has been received\n2. Event PLAN_DOWNGRADED has been received\n3. Rule \"Mid-term upgrade provisioned immediately, prorated\" is satisfied\n4. Rule \"Downgrade never revokes before period end\" is satisfied",
+      "object_type": "action",
+      "category": "调整权益",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "PLAN_UPGRADED",
+        "PLAN_DOWNGRADED"
+      ],
+      "target_objects": [
+        "Subscription",
+        "Plan",
+        "Entitlement"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "onUpgradeGrantNewEntitlementsImmediately",
+          "description": "On upgrade, grant new Entitlements immediately and prorate the difference on the next Invoice.",
+          "object_type": "logic",
+          "submission_criteria": "On mid-term Plan upgrade",
+          "rules": [
+            {
+              "id": "upgrade-immediate-prorated",
+              "name": "Mid-term upgrade provisioned immediately, prorated",
+              "submission_criteria": "On mid-term Plan upgrade",
+              "description": "A mid-term upgrade is required to be provisioned immediately and the price difference shall be prorated on the next Invoice."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "onDowngradeScheduleRevocationOfRemoved",
+          "description": "On downgrade, schedule revocation of removed features at period end; never revoke before period end.",
+          "object_type": "logic",
+          "submission_criteria": "On Plan downgrade",
+          "rules": [
+            {
+              "id": "downgrade-no-early-revoke",
+              "name": "Downgrade never revokes before period end",
+              "submission_criteria": "On Plan downgrade",
+              "description": "A Plan downgrade may not revoke the removed features before the end of the current billing period."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"AdjustEntitlements\" action. Consumes the new Plan mapping; on upgrade grants new Entitlements immediately, on downgrade schedules revocation of removed features at period end. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"AdjustEntitlements\" using subscription, plan. Consumes the new Plan mapping; on upgrade grants new Entitlements immediately, on downgrade schedules revocation of removed features at period end. Produce entitlements and emit the appropriate events.",
+      "tool_use": [
+        "launchdarkly",
+        "Feature flags adjusted in LaunchDarkly."
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Entitlement",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Entitlement state grant/scheduled_revoke."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "ENTITLEMENT_GRANTED",
+        "ENTITLEMENT_REVOKED"
+      ],
       "inputs": [
         {
           "name": "subscription",
           "objectTypeId": "objectType:subscription",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Subscription.subscription_id"
         },
         {
           "name": "plan",
           "objectTypeId": "objectType:plan",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Plan.plan_code"
         }
       ],
       "outputs": [
@@ -4198,7 +5131,8 @@
           "objectTypeId": "objectType:entitlement",
           "required": true,
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4262,11 +5196,6 @@
           "objectTypeId": "objectType:entitlement"
         }
       ],
-      "actor": {
-        "role": "Entitlement Service",
-        "roleZh": "权益服务",
-        "kind": "system"
-      },
       "permissions": [
         "entitlement:grant",
         "entitlement:revoke"
@@ -4308,7 +5237,12 @@
       ],
       "confidence": 0.91,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Entitlement Service",
+        "roleZh": "权益服务",
+        "kind": "system"
+      }
     },
     {
       "id": "action:enter-grace-period",
@@ -4317,12 +5251,68 @@
       "nameZh": "进入宽限期",
       "description": "Consumes a Subscription not renewed by its term-end date; produces a 14-day grace state.",
       "descriptionZh": "消费未在期满日续约的订阅，生成14天宽限状态。",
+      "submission_criteria": "1. Rule \"Unrenewed subscription enters 14-day grace\" is satisfied",
+      "object_type": "action",
+      "category": "进入宽限期",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [],
+      "target_objects": [
+        "Subscription",
+        "Contract"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "detectASubscriptionWhoseTermEnd",
+          "description": "Detect a Subscription whose term-end passed without renewal.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "moveTheSubscriptionToA14",
+          "description": "Move the Subscription to a 14-day grace state with Entitlements remaining active.",
+          "object_type": "logic",
+          "submission_criteria": "When term-end passes without renewal",
+          "rules": [
+            {
+              "id": "grace-period-14d",
+              "name": "Unrenewed subscription enters 14-day grace",
+              "submission_criteria": "When term-end passes without renewal",
+              "description": "A Subscription not renewed by its term-end date shall move to a 14-day grace period during which Entitlements remain active."
+            }
+          ]
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"EnterGracePeriod\" action. Consumes a Subscription not renewed by its term-end date; produces a 14-day grace state. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"EnterGracePeriod\" using subscription. Consumes a Subscription not renewed by its term-end date; produces a 14-day grace state. Produce subscription and emit the appropriate events.",
+      "tool_use": [
+        "stripe"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Subscription",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Subscription.status := grace."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "GRACE_PERIOD_STARTED"
+      ],
       "inputs": [
         {
           "name": "subscription",
           "objectTypeId": "objectType:subscription",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Subscription.subscription_id"
         }
       ],
       "outputs": [
@@ -4331,7 +5321,8 @@
           "objectTypeId": "objectType:subscription",
           "required": true,
           "cardinality": "one",
-          "description": "Subscription in grace state."
+          "description": "Subscription in grace state.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4378,11 +5369,6 @@
           "objectTypeId": "objectType:subscription"
         }
       ],
-      "actor": {
-        "role": "RevOps Automation",
-        "roleZh": "营收运营自动化",
-        "kind": "agent"
-      },
       "permissions": [
         "subscription:grace"
       ],
@@ -4415,7 +5401,12 @@
       ],
       "confidence": 0.91,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "RevOps Automation",
+        "roleZh": "营收运营自动化",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:run-dunning",
@@ -4424,12 +5415,72 @@
       "nameZh": "执行催款",
       "description": "Consumes a PaymentFailed Invoice; produces a dunning schedule of up to 3 retries over 10 days.",
       "descriptionZh": "消费付款失败的发票，生成最多3次、分布于10天的催款重试计划。",
+      "submission_criteria": "1. Event PAYMENT_FAILED has been received\n2. Rule \"Dunning: max 3 retries over 10 days\" is satisfied",
+      "object_type": "action",
+      "category": "执行催款",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "PAYMENT_FAILED"
+      ],
+      "target_objects": [
+        "Invoice",
+        "Payment"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "buildADunningScheduleOfNo",
+          "description": "Build a dunning schedule of no more than 3 retries over 10 calendar days.",
+          "object_type": "logic",
+          "submission_criteria": "On Payment failure",
+          "rules": [
+            {
+              "id": "dunning-3-retries-10-days",
+              "name": "Dunning: max 3 retries over 10 days",
+              "submission_criteria": "On Payment failure",
+              "description": "A failed Payment shall trigger a dunning sequence of no more than 3 automated retry attempts spread over 10 calendar days."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "onTerminalFailureAfterRetriesAre",
+          "description": "On terminal failure after retries are exhausted, signal dunning exhausted.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"RunDunning\" action. Consumes a PaymentFailed Invoice; produces a dunning schedule of up to 3 retries over 10 days. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"RunDunning\" using invoice. Consumes a PaymentFailed Invoice; produces a dunning schedule of up to 3 retries over 10 days. Produce payment and emit the appropriate events.",
+      "tool_use": [
+        "stripe"
+      ],
+      "side_effects": {
+        "data_changes": [],
+        "notifications": [
+          {
+            "recipient": "RevOps Automation",
+            "channel": "InApp",
+            "condition": "",
+            "message": "Dunning emails / retry charges scheduled.",
+            "triggered_event": ""
+          }
+        ]
+      },
+      "triggered_event": [
+        "DUNNING_STARTED",
+        "DUNNING_EXHAUSTED"
+      ],
       "inputs": [
         {
           "name": "invoice",
           "objectTypeId": "objectType:invoice",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Invoice.invoice_id"
         }
       ],
       "outputs": [
@@ -4439,7 +5490,8 @@
           "required": true,
           "isArray": true,
           "cardinality": "many",
-          "description": "Retry Payment attempts."
+          "description": "Retry Payment attempts.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4488,11 +5540,6 @@
           "description": "Dunning emails / retry charges scheduled."
         }
       ],
-      "actor": {
-        "role": "RevOps Automation",
-        "roleZh": "营收运营自动化",
-        "kind": "agent"
-      },
       "permissions": [
         "dunning:run"
       ],
@@ -4528,7 +5575,12 @@
       ],
       "confidence": 0.91,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "RevOps Automation",
+        "roleZh": "营收运营自动化",
+        "kind": "agent"
+      }
     },
     {
       "id": "action:suspend-subscription",
@@ -4537,12 +5589,73 @@
       "nameZh": "暂停订阅",
       "description": "Consumes a Subscription whose grace period or dunning is exhausted; produces a Suspended Subscription and revokes all Entitlement access.",
       "descriptionZh": "消费宽限期或催款耗尽的订阅，生成已暂停订阅并撤销所有权益访问。",
+      "submission_criteria": "1. Event GRACE_PERIOD_STARTED has been received\n2. Event DUNNING_EXHAUSTED has been received\n3. Rule \"Suspend and revoke on grace expiry\" is satisfied",
+      "object_type": "action",
+      "category": "暂停订阅",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "GRACE_PERIOD_STARTED",
+        "DUNNING_EXHAUSTED"
+      ],
+      "target_objects": [
+        "Subscription",
+        "Entitlement"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "confirmGracePeriod14dOrDunning",
+          "description": "Confirm grace period (+14d) or dunning is exhausted.",
+          "object_type": "logic",
+          "submission_criteria": "On grace-period expiry (+14d)",
+          "rules": [
+            {
+              "id": "suspend-on-grace-expiry",
+              "name": "Suspend and revoke on grace expiry",
+              "submission_criteria": "On grace-period expiry (+14d)",
+              "description": "A Subscription whose 14-day grace period expires without renewal must be suspended and all of its Entitlements revoked."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "setTheSubscriptionToSuspendedAnd",
+          "description": "Set the Subscription to Suspended and revoke all Entitlement access.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"SuspendSubscription\" action. Consumes a Subscription whose grace period or dunning is exhausted; produces a Suspended Subscription and revokes all Entitlement access. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"SuspendSubscription\" using subscription. Consumes a Subscription whose grace period or dunning is exhausted; produces a Suspended Subscription and revokes all Entitlement access. Produce subscription and emit the appropriate events.",
+      "tool_use": [
+        "launchdarkly",
+        "All feature flags revoked in LaunchDarkly."
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Subscription",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Subscription.status := suspended."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "SUBSCRIPTION_SUSPENDED",
+        "ENTITLEMENT_REVOKED"
+      ],
       "inputs": [
         {
           "name": "subscription",
           "objectTypeId": "objectType:subscription",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Subscription.subscription_id"
         }
       ],
       "outputs": [
@@ -4551,7 +5664,8 @@
           "objectTypeId": "objectType:subscription",
           "required": true,
           "cardinality": "one",
-          "description": "Suspended Subscription."
+          "description": "Suspended Subscription.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4609,11 +5723,6 @@
           "description": "All feature flags revoked in LaunchDarkly."
         }
       ],
-      "actor": {
-        "role": "Entitlement Service",
-        "roleZh": "权益服务",
-        "kind": "system"
-      },
       "permissions": [
         "subscription:suspend",
         "entitlement:revoke"
@@ -4650,7 +5759,12 @@
       ],
       "confidence": 0.91,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Entitlement Service",
+        "roleZh": "权益服务",
+        "kind": "system"
+      }
     },
     {
       "id": "action:reinstate-subscription",
@@ -4659,18 +5773,82 @@
       "nameZh": "恢复订阅",
       "description": "Consumes a successful catch-up Payment on a Suspended Subscription; produces a reactivated Subscription and re-grants Entitlement access.",
       "descriptionZh": "消费已暂停订阅的成功补缴付款，生成重新激活的订阅并重新授予权益访问。",
+      "submission_criteria": "1. Event PAYMENT_SUCCEEDED has been received\n2. Rule \"Reinstate only after catch-up payment; re-grant within 1h\" is satisfied",
+      "object_type": "action",
+      "category": "恢复订阅",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "PAYMENT_SUCCEEDED"
+      ],
+      "target_objects": [
+        "Subscription",
+        "Payment",
+        "Invoice",
+        "Entitlement"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "verifyASuccessfulCatchUpPayment",
+          "description": "Verify a successful catch-up Payment cleared all overdue Invoices.",
+          "object_type": "logic",
+          "submission_criteria": "On successful catch-up payment for a suspended subscription",
+          "rules": [
+            {
+              "id": "reinstate-after-catchup",
+              "name": "Reinstate only after catch-up payment; re-grant within 1h",
+              "submission_criteria": "On successful catch-up payment for a suspended subscription",
+              "description": "A suspended Subscription may be reinstated only after a successful catch-up Payment clears all overdue Invoices, after which Entitlements must be re-granted within 1 hour."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "reactivateTheSubscriptionAndReGrant",
+          "description": "Reactivate the Subscription and re-grant Entitlement access within 1 hour.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated system responsible for the \"ReinstateSubscription\" action. Consumes a successful catch-up Payment on a Suspended Subscription; produces a reactivated Subscription and re-grants Entitlement access. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ReinstateSubscription\" using subscription, payment. Consumes a successful catch-up Payment on a Suspended Subscription; produces a reactivated Subscription and re-grants Entitlement access. Produce subscription and emit the appropriate events.",
+      "tool_use": [
+        "launchdarkly",
+        "Feature flags re-granted in LaunchDarkly."
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Subscription",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Subscription.status := active."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "SUBSCRIPTION_REINSTATED",
+        "ENTITLEMENT_GRANTED"
+      ],
       "inputs": [
         {
           "name": "subscription",
           "objectTypeId": "objectType:subscription",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Subscription.subscription_id"
         },
         {
           "name": "payment",
           "objectTypeId": "objectType:payment",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Payment.payment_id"
         }
       ],
       "outputs": [
@@ -4679,7 +5857,8 @@
           "objectTypeId": "objectType:subscription",
           "required": true,
           "cardinality": "one",
-          "description": "Reactivated Subscription."
+          "description": "Reactivated Subscription.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4737,11 +5916,6 @@
           "description": "Feature flags re-granted in LaunchDarkly."
         }
       ],
-      "actor": {
-        "role": "Entitlement Service",
-        "roleZh": "权益服务",
-        "kind": "system"
-      },
       "permissions": [
         "subscription:reinstate",
         "entitlement:grant"
@@ -4783,7 +5957,12 @@
       ],
       "confidence": 0.91,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Entitlement Service",
+        "roleZh": "权益服务",
+        "kind": "system"
+      }
     },
     {
       "id": "action:churn-subscription",
@@ -4792,12 +5971,70 @@
       "nameZh": "流失订阅",
       "description": "Consumes a Subscription suspended beyond 30 days; produces a Cancelled Subscription and a closed-lost RenewalOpportunity.",
       "descriptionZh": "消费暂停超过30天的订阅，生成已取消订阅与关闭为流失的续约商机。",
+      "submission_criteria": "1. Event SUBSCRIPTION_SUSPENDED has been received\n2. Rule \"Cancel after 30 days suspended\" is satisfied",
+      "object_type": "action",
+      "category": "流失订阅",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "SUBSCRIPTION_SUSPENDED"
+      ],
+      "target_objects": [
+        "Subscription",
+        "Renewal_Opportunity"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "confirmTheSubscriptionHasRemainedSuspended",
+          "description": "Confirm the Subscription has remained suspended for more than 30 consecutive days.",
+          "object_type": "logic",
+          "submission_criteria": "When suspension exceeds 30 days",
+          "rules": [
+            {
+              "id": "churn-after-30-days",
+              "name": "Cancel after 30 days suspended",
+              "submission_criteria": "When suspension exceeds 30 days",
+              "description": "A Subscription that remains suspended for more than 30 consecutive days must be cancelled and its RenewalOpportunity closed as lost."
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "cancelTheSubscriptionAndCloseIts",
+          "description": "Cancel the Subscription and close its RenewalOpportunity as lost.",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "You are an automated agent responsible for the \"ChurnSubscription\" action. Consumes a Subscription suspended beyond 30 days; produces a Cancelled Subscription and a closed-lost RenewalOpportunity. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
+      "user_prompt": "Execute \"ChurnSubscription\" using subscription. Consumes a Subscription suspended beyond 30 days; produces a Cancelled Subscription and a closed-lost RenewalOpportunity. Produce subscription, renewal_opportunity and emit the appropriate events.",
+      "tool_use": [
+        "salesforce"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Subscription",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Subscription.status := cancelled; RenewalOpportunity.stage := lost."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "SUBSCRIPTION_CANCELLED"
+      ],
       "inputs": [
         {
           "name": "subscription",
           "objectTypeId": "objectType:subscription",
           "required": true,
-          "cardinality": "one"
+          "cardinality": "one",
+          "type": "String",
+          "source_object": "Subscription.subscription_id"
         }
       ],
       "outputs": [
@@ -4806,14 +6043,16 @@
           "objectTypeId": "objectType:subscription",
           "required": true,
           "cardinality": "one",
-          "description": "Cancelled Subscription."
+          "description": "Cancelled Subscription.",
+          "type": "String"
         },
         {
           "name": "renewal_opportunity",
           "objectTypeId": "objectType:renewal-opportunity",
           "required": false,
           "cardinality": "one",
-          "description": "RenewalOpportunity closed as lost."
+          "description": "RenewalOpportunity closed as lost.",
+          "type": "String"
         }
       ],
       "steps": [
@@ -4862,11 +6101,6 @@
           "objectTypeId": "objectType:subscription"
         }
       ],
-      "actor": {
-        "role": "RevOps Automation",
-        "roleZh": "营收运营自动化",
-        "kind": "agent"
-      },
       "permissions": [
         "subscription:cancel"
       ],
@@ -4902,7 +6136,12 @@
       ],
       "confidence": 0.91,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "RevOps Automation",
+        "roleZh": "营收运营自动化",
+        "kind": "agent"
+      }
     }
   ],
   "events": [

@@ -283,7 +283,7 @@ function buildNodeOps(o: Ontology, ontologyId: string, version: number): Op[] {
       name: act.name,
       nameZh: act.nameZh ?? null,
       toolName: act.agent?.toolName ?? null,
-      actor: act.actor?.role ?? null,
+      actor: act.actorRef?.role ?? null,
       confidence: act.confidence,
     })),
   });
