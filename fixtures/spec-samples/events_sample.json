@@ -1,0 +1,178 @@
+{
+  "metadata": {
+    "project_name": "外包招聘本体知识库",
+    "document_type": "本体定义 (Ontology Schema)",
+    "version": "0.1",
+    "last_updated": "2026-02-12",
+    "description": "人力资源外包本体Event定义。"
+  },
+  "events": [
+  {
+    "name": "AI_INTERVIEW_COMPLETED",
+    "description": "候选人已完成AI面试流程，系统记录面试数据并准备生成评估分析报告。",
+    "payload": {
+      "source_action": "interviewExecution",
+      "event_data": [
+        {
+          "name": "interview_completed",
+          "type": "Boolean",
+          "target_object": null
+        }
+      ],
+      "state_mutations": [
+        {
+          "target_object": "Interview_Record",
+          "mutation_type": "CREATE_OR_MODIFY",
+          "impacted_properties": [
+            "interview_record_id",
+            "interview_type",
+            "interview_round",
+            "start_time",
+            "end_time",
+            "duration_minutes",
+            "interview_mode",
+            "recording_url"
+          ]
+        },
+        {
+          "target_object": "Candidate",
+          "mutation_type": "CREATE_OR_MODIFY",
+          "impacted_properties": [
+            "candidate_id",
+            "is_locked",
+            "lock_start_time",
+            "id_number",
+            "name",
+            "nationality",
+            "gender",
+            "birth_date"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "ANALYSIS_BLOCKED",
+    "description": "由于原始数据异常或关键规则缺失，需求分析环节受阻，需人工干预修复输入源。",
+    "payload": {
+      "source_action": "analyzeRequirement",
+      "event_data": [
+        {
+          "name": "degree_requirement",
+          "type": "String",
+          "target_object": "Job_Requisition"
+        },
+        {
+          "name": "work_years",
+          "type": "Integer",
+          "target_object": "Job_Requisition"
+        },
+        {
+          "name": "city",
+          "type": "String",
+          "target_object": "Job_Requisition"
+        },
+        {
+          "name": "required_arrival_date",
+          "type": "Date",
+          "target_object": "Job_Requisition"
+        },
+        {
+          "name": "interview_mode",
+          "type": "String",
+          "target_object": "Job_Requisition"
+        },
+        {
+          "name": "headcount",
+          "type": "Integer",
+          "target_object": "Job_Requisition"
+        },
+        {
+          "name": "job_responsibility",
+          "type": "String",
+          "target_object": "Job_Requisition"
+        },
+        {
+          "name": "must_have_skills",
+          "type": "List<String>",
+          "target_object": "Job_Requisition"
+        },
+        {
+          "name": "nice_to_have_skills",
+          "type": "List<String>",
+          "target_object": "Job_Requisition"
+        },
+        {
+          "name": "negative_requirement",
+          "type": "String",
+          "target_object": "Job_Requisition"
+        },
+        {
+          "name": "gender",
+          "type": "String",
+          "target_object": "Job_Requisition"
+        },
+        {
+          "name": "recruitment_strategies",
+          "type": "String",
+          "target_object": "Job_Requisition"
+        },
+        {
+          "name": "clarify_questions",
+          "type": "List<String>",
+          "target_object": "Job_Requisition"
+        },
+        {
+          "name": "fill_difficulty",
+          "type": "String",
+          "target_object": "Job_Requisition"
+        }
+      ],
+      "state_mutations": [
+        {
+          "target_object": "Job_Requisition",
+          "mutation_type": "CREATE_OR_MODIFY",
+          "impacted_properties": [
+            "job_requisition_id",
+            "client_job_id",
+            "client_job_temp_id",
+            "client_job_title",
+            "client_job_type",
+            "job_responsibility",
+            "job_requirement",
+            "job_type"
+          ]
+        },
+        {
+          "target_object": "Job_Requisition_Specification",
+          "mutation_type": "CREATE_OR_MODIFY",
+          "impacted_properties": [
+            "job_requisition_specification_id",
+            "start_date",
+            "deadline",
+            "create_time",
+            "create_by",
+            "sd_org_name",
+            "priority",
+            "is_exclusive"
+          ]
+        },
+        {
+          "target_object": "Client",
+          "mutation_type": "CREATE_OR_MODIFY",
+          "impacted_properties": [
+            "client_id",
+            "client_name",
+            "address",
+            "industry_category",
+            "submission_materials",
+            "entry_day_rules",
+            "technical_stack_preference",
+            "client_preference_id"
+          ]
+        }
+      ]
+    }
+  }
+]
+}

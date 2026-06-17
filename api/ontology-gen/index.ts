@@ -1296,7 +1296,7 @@ async function actionGenerate(req: VercelRequest, res: VercelResponse): Promise<
 
   const target = body.target;
   if (!isGeneratorTarget(target) && target !== 'all') {
-    throw new HttpError(400, `generate requires target in agent-code|prompts|manifest|all`, 'BAD_TARGET');
+    throw new HttpError(400, `generate requires target in agent-code|prompts|manifest|spec|all`, 'BAD_TARGET');
   }
 
   // Either an inline ontology or an id (+ optional version) to load.
@@ -1475,7 +1475,7 @@ function isDomainKey(v: unknown): v is DomainKey {
 }
 
 function isGeneratorTarget(v: unknown): v is GeneratorTarget {
-  return v === 'agent-code' || v === 'prompts' || v === 'manifest';
+  return v === 'agent-code' || v === 'prompts' || v === 'manifest' || v === 'spec';
 }
 
 // ===========================================================================

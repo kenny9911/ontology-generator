@@ -1,0 +1,73 @@
+{
+  "metadata": {
+    "project_name": "RAAS-v1",
+    "document_type": "规则对象",
+    "version": "v0_1_039",
+    "last_updated": "2026-05-18",
+    "description": "支配业务决策的规则 — 通用覆盖 + 客户定制叠加。"
+  },
+  "rules": [
+    {
+      "id": "1-1-1",
+      "specificScenarioStage": "客户系统需求创建与更新",
+      "businessLogicRuleName": "客户需求系统数据自动采集",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "系统已配置客户需求系统的登录凭证，系统中已维护该客户的字段映射配置。",
+      "standardizedLogicRule": "系统自动登录客户需求系统，按预设频率扫描并读取新增或更新的需求信息。系统根据该客户预配置的字段映射关系，将客户系统中的需求字段（如需求编号，需求名称、需求数岗、岗位类型、期望级别、期望到岗日期、服务BG、 工作城市、办公大厦、优先级、岗位职责、岗位要求等）自动转换为需求管理系统对应字段，调用需求系统的需求新增或更新API在后台同步创建新需求记录。若客户系统页面结构发生变更导致字段无法正常抓取，系统立即暂停采集并向系统管理员发送告警通知",
+      "relatedEntities": [
+        "客户单位 (Client)",
+        "外包招聘需求 (Job_Requisition_Specification)",
+        "招聘岗位 (Job_Requisition)",
+        "客户侧需求管理系统(Client_RMS_System)",
+        "RAAS系统(RAAS_System)"
+      ],
+      "businessBackgroundReason": "消除人工搬运时差与错误，保障SLA响应速度。",
+      "ruleSource": "内部流程",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "warn"
+    },
+    {
+      "id": "1-1-2",
+      "specificScenarioStage": "客户系统需求创建与更新",
+      "businessLogicRuleName": "客户需求同步数据完整性校验",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "系统已从客户需求系统采集到需求数据并完成字段映射转换",
+      "standardizedLogicRule": "系统在将客户需求数据同步至需求系统前，自动校验映射后的必填字段是否完整。若任一必填字段缺失或格式异常，系统暂停该条需求的同步操作，自动向HSM发送通知，明确列出缺失或异常的字段，待HSM补充确认后重新触发同步。若全部字段校验通过，系统完成同步并自动触发需求分析流程",
+      "relatedEntities": [
+        "客户单位 (Client)",
+        "外包招聘需求 (Job_Requisition_Specification)",
+        "招聘岗位 (Job_Requisition)",
+        "客户侧需求管理系统(Client_RMS_System)",
+        "RAAS系统(RAAS_System)"
+      ],
+      "businessBackgroundReason": "防止“垃圾进垃圾出”，确保下游匹配算法有效性。",
+      "ruleSource": "内部流程",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn"
+    },
+    {
+      "id": "1-2-1",
+      "specificScenarioStage": "线下需求创建与更新",
+      "businessLogicRuleName": "线下开拓需求管理人工规则",
+      "applicableClient": "字节",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "线下开拓到需求且客户系统未发布该需求。",
+      "standardizedLogicRule": "HSM 在通过线下方式开拓到需求且确认客户系统尚未发布该需求后，须先在需求管理系统内创建该需求，将客户侧需求编码字段填写为临时编号（客户系统中当前在招聘但不活跃需求编码）。",
+      "relatedEntities": [
+        "客户单位 (Client)",
+        "内部员工 (Employee)",
+        "招聘岗位 (Job_Requisition)",
+        "外包招聘需求 (Job_Requisition_Specification)"
+      ],
+      "businessBackgroundReason": "在需求公开发布前提前获取机会",
+      "ruleSource": "访谈沟通",
+      "executor": "Human",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn"
+    }
+  ]
+}

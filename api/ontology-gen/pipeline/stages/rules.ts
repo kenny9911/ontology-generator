@@ -52,6 +52,21 @@ const RULE_KINDS: ReadonlySet<RuleKind> = new Set<RuleKind>([
 
 const SEVERITIES: ReadonlySet<Severity> = new Set<Severity>(SEVERITY_LEVELS);
 
+// Spec-format execution semantics (optional). Coerced from the model output;
+// the spec-format projection derives defaults from `severity` when absent.
+function toExecutor(v: unknown): 'human' | 'agent' | undefined {
+  const s = typeof v === 'string' ? v.toLowerCase() : '';
+  return s === 'human' || s === 'agent' ? s : undefined;
+}
+function toEnforcementLevel(v: unknown): 'mandatory' | 'optional' | undefined {
+  const s = typeof v === 'string' ? v.toLowerCase() : '';
+  return s === 'mandatory' || s === 'optional' ? s : undefined;
+}
+function toFailurePolicy(v: unknown): 'warn' | 'block' | undefined {
+  const s = typeof v === 'string' ? v.toLowerCase() : '';
+  return s === 'warn' || s === 'block' ? s : undefined;
+}
+
 /** A numbered sentence handed to the prompt + used to recover snippets. */
 interface NumberedSentence {
   idx: number;
@@ -262,6 +277,10 @@ function buildRule(
   const trigger = coerceTrigger(raw.trigger);
   const sources = coerceSources(raw.sources, sentenceByIdx, docName);
 
+  const executor = toExecutor(raw.executor);
+  const enforcementLevel = toEnforcementLevel(raw.enforcementLevel);
+  const failurePolicy = toFailurePolicy(raw.failurePolicy);
+
   const id = makeId('rule', title, ctx.taken);
   const uuid = `${id}#${ctx.ontologyId}`;
 
@@ -275,6 +294,9 @@ function buildRule(
     ...(expression ? { expression } : {}),
     kind,
     severity,
+    ...(executor ? { executor } : {}),
+    ...(enforcementLevel ? { enforcementLevel } : {}),
+    ...(failurePolicy ? { failurePolicy } : {}),
     appliesToObjectTypeIds,
     ...(appliesToAttributes.length > 0 ? { appliesToAttributes } : {}),
     ...(trigger ? { trigger } : {}),

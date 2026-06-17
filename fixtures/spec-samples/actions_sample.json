@@ -1,0 +1,383 @@
+{
+    "metadata": {
+      "project_name": "外包招聘本体知识库",
+      "document_type": "本体定义 (Ontology Schema)",
+      "version": "0.1",
+      "last_updated": "2026-02-12",
+      "description": "人力资源外包本体的Action定义。"
+    },
+    "actions": [
+    {
+        "id": "10-1",
+        "name": "ruleCheckForMatchResume",
+        "description": "候选人在进行简历匹配前的规则检查，包括执行公司通用规则和客户定制规则。只有检查结果通过后才能执行简历匹配。",
+        "submission_criteria": "1. RESUME_PROCESSED事件已送达\n2. 候选人(Candidate)记录已创建且candidate_id非空\n3. 候选人简历(Resume)已完成结构化解析\n4. 至少一个有效的招聘岗位(Job_Requisition)记录存在且hc_status不为\"已关闭\"",
+        "object_type": "action",
+        "category": "简历匹配前置规则检查",
+        "actor": [
+            "Agent"
+        ],
+        "trigger": [
+            "RESUME_PROCESSED"
+        ],
+        "target_objects": [
+            "Candidate",
+            "Resume",
+            "Job_Requisition",
+            "Application",
+            "Client",
+            "Client_Department"
+        ],
+        "inputs": [
+            {
+                "name": "candidate_id",
+                "type": "String",
+                "description": "待匹配的候选人唯一编号。通过RESUME_PROCESSED事件携带。系统中必须存在对应的Candidate记录且状态不为\"已锁定冲突\"。本Action所有步骤基于此ID读取候选人的基本信息执行规则检查。",
+                "source_object": "Candidate.candidate_id",
+                "required": true
+            },
+            {
+                "name": "resume_id",
+                "type": "String",
+                "description": "待匹配的候选人简历唯一编号。系统中必须存在对应的Resume记录且已完成结构化解析(work_experience/education_experience/skill_tags等字段非空)。本Action基于此ID读取简历的结构化数据执行规则检查。",
+                "source_object": "Resume.resume_id",
+                "required": true
+            },
+            {
+                "name": "job_requisition_id",
+                "type": "String",
+                "description": "待匹配的招聘岗位编号，Job_Requisition中hc_status不为\"已关闭\"。从Job_Requisition可获取到该岗位的客户编号和客户部门编号，用于适用的规则过滤",
+                "source_object": "Job_Requisition.job_requisition_id",
+                "required": true
+            }
+        ],
+        "outputs": [
+            {
+                "name": "result",
+                "type": "String",
+                "description": "规则检查的综合结果，表示候选人是否通过规则检查，可选值为'通过'或'未通过'"
+            },
+            {
+                "name": "reason",
+                "type": "String",
+                "description": "规则检查结果的原因解释。"
+            }
+        ],
+        "action_steps": [
+            {
+                "order": "1",
+                "name": "checkRelatedCompaniesRecords",
+                "description": "检查候选人的历史工作经历是否包含华为/荣耀及其关联公司、OPPO/小米及其关联公司记录",
+                "object_type": "logic",
+                "submission_criteria": "已收到简历处理完成事件，候选人记录已创建",
+                "rules": [
+                    {
+                        "id": "10-25",
+                        "name": "华为荣耀竞对与客户互不挖角红线",
+                        "submission_criteria": "候选人简历已完成解析，工作经历数据已结构化。",
+                        "description": "系统在简历匹配环节，自动检索候选人工作经历中是否包含华为、荣耀及其关联公司的任职记录。若存在此类记录，系统自动计算该段经历的离职日期距当前日期的间隔。若间隔不足3个月，系统立即挂起该候选人的匹配推荐流程，并自动生成一条\"竞对互不挖角待确认\"待办任务通知招聘专员。若间隔达到3个月及以上，系统正常继续匹配流程。"
+                    },
+                    {
+                        "id": "10-26",
+                        "name": "OPPO小米竞对与客户互不挖角红线",
+                        "submission_criteria": "候选人简历已完成解析，工作经历数据已结构化。",
+                        "description": "系统在简历匹配环节，自动检索候选人工作经历中是否包含OPPO、小米及其关联公司的任职记录。若存在此类记录，系统自动计算该段经历的离职日期距当前日期的间隔。若间隔不足6个月，系统立即挂起该候选人的匹配推荐流程，并自动生成一条\"竞对互不挖角待确认\"待办任务通知招聘专员。若间隔达到6个月及以上，系统正常继续匹配流程。"
+                    }
+                ]
+            },
+            {
+                "order": "2",
+                "name": "checkReflux",
+                "description": "从简历的详细工作履历及职责描述中检查候选人是否属于回流人员（腾讯正编、腾讯外包、友商字节派驻等），区分BPO与非BPO业务类型，按客户和事业群维度执行回流冷冻期拦截。",
+                "object_type": "logic",
+                "submission_criteria": "已通过关联公司规则检查",
+                "rules": [
+                    {
+                        "id": "10-32",
+                        "name": "岗位冷冻期规则",
+                        "submission_criteria": "系统中存在候选人在目标岗位下的历史推荐记录。",
+                        "description": "系统在简历匹配环节，自动检索候选人在各目标岗位下近3个月内的历史记录。若某岗位下存在\"筛选淘汰\"、\"面试淘汰\"或\"筛选通过未到面\"任一记录，系统自动跳过该岗位，不将候选人匹配至该岗位，继续匹配其他可用岗位。"
+                    },
+                    {
+                        "id": "10-34",
+                        "name": "字节跳动友商非BPO外包经历回流冷冻期拦截",
+                        "submission_criteria": "候选人简历的详细工作履历或职责描述中，包含通过其他竞对供应商（友商）在字节跳动任职的工作经历。",
+                        "description": "匹配字节岗位简历时，审查候选人简历的详细工作履历及职责描述。若包含通过其他竞对供应商（友商）派驻至字节跳动的工作经历，需识别该段经历的业务类型。若为BPO业务，则不受回流限制，直接继续正常匹配流程；若为非BPO业务，提取该段经历的真实离职日期并计算距今间隔时间。若间隔不足6个月，立即拦截并跳过该候选人与所有字节岗位的匹配；若间隔达到或超过6个月，允许正常继续匹配流程。"
+                    },
+                    {
+                        "id": "10-42",
+                        "name": "CDG事业群6个月回流冷冻期绝对拦截",
+                        "submission_criteria": "候选人简历的详细工作履历或职责描述中，包含通过其他竞对供应商（友商）在字节跳动任职的工作经历。",
+                        "description": "在匹配腾讯CDG事业群的岗位时，系统检查候选人简历的详细工作履历及职责描述。查找所有涉及腾讯或腾讯外包的工作经历，并提取其最近一次从腾讯离职的具体日期。计算该离职日期距离当前日期的间隔时间。如果该离职日期距今不足6个月（即使候选人在离开腾讯后又有其他非腾讯公司的短暂工作经历），系统必须立即阻断该候选人的岗位推荐流程，且不提供任何人工审核放行机制；如果候选人没有任何腾讯相关工作经历，或者最近一次从腾讯离职的时间已满6个月及以上，则正常继续匹配流程。"
+                    },
+                    {
+                        "id": "10-43",
+                        "name": "IEG工作室回流候选人互斥标记",
+                        "submission_criteria": "候选人推荐至腾讯IEG事业群岗位，目标岗位归属天美、光子、魔方或北极光工作室之一",
+                        "description": "系统在简历匹配环节，若候选人推荐至IEG天美、光子、魔方或北极光任一工作室岗位，自动检索候选人历史工作经历中是否存在上述四大工作室的从业记录。若存在，系统读取该段经历的离职日期，计算距当前日期的间隔。若离职不满6个月且目标岗位所属工作室与候选人原工作室不同，系统自动跳过该岗位匹配，禁止跨室推荐。候选人仍可匹配至原所属工作室岗位或IEG其他非四大工作室岗位。离职满6个月及以上，系统允许跨室匹配。"
+                    },
+                    {
+                        "id": "10-45",
+                        "name": "腾讯正编转外包回流标记",
+                        "submission_criteria": "候选人具备腾讯历史从业经历。",
+                        "description": "系统在简历匹配环节，自动解析候选人简历的详细工作履历及职责描述。若存在腾讯正式岗位工作经历记录，系统自动将该候选人标记为\"正编转外包受控\"状态。"
+                    },
+                    {
+                        "id": "10-46",
+                        "name": "腾讯正编转外包回流凭证校验",
+                        "submission_criteria": "候选人已被标记为\"正编转外包受控\"状态。",
+                        "description": "系统在检测到候选人处于\"正编转外包受控\"状态时，自动锁定该候选人的推荐流程，并向HSM发送通知，要求其获取腾讯采购部门出具的同意回流书面凭证并上传至系统。系统仅在识别到该凭证成功上传后，自动解除锁定并允许继续执行推荐流程。若凭证未上传，系统持续锁定推荐流程。"
+                    },
+                    {
+                        "id": "10-49",
+                        "name": "字节正编员工回流标记与凭证校验",
+                        "submission_criteria": "候选人简历已完成解析，工作经历数据已结构化。",
+                        "description": "系统在简历匹配环节，若识别到候选人工作经历中包含字节跳动正式雇员工作经历，系统自动锁定该候选人的推荐流程，并向招聘专员发送通知及创建待办任务，要求其获取并上传合规凭证。"
+                    },
+                    {
+                        "id": "10-51",
+                        "name": "字节正编回流客户BP确认放行",
+                        "submission_criteria": "候选人通过合规凭证校验",
+                        "description": "系统在候选人通过合规凭证校验后，自动判断合规凭证内容，仅在合规内容包含客户BP返回的\"无异常且可回流\"确认后，方可将该候选人的简历推送至客户。若客户BP返回\"不可回流\"或超时未响应，系统终止该候选人的推荐流程。"
+                    },
+                    {
+                        "id": "10-56",
+                        "name": "腾娱互动子公司回流冷冻期拦截",
+                        "submission_criteria": "候候选人的历史工作履历中包含“深圳市腾娱互动科技有限公司”的任职记录。",
+                        "description": "匹配腾讯岗位简历时，检查候选人历史工作经历是否包含“深圳市腾娱互动科技有限公司”。若包含，提取其从该公司离职的具体日期并计算距今时间间隔。若间隔不足6个月，拦截并跳过该候选人与所有腾讯岗位的匹配；若间隔达到或超过6个月，允许正常匹配。"
+                    }
+                ]
+            }
+        ],
+
+        "system_prompt": "作为人力资源合规审查专家，你的任务是在候选人进入简历匹配环节前，依据公司规则与客户规则对候选人的基本信息和简历信息进行合规审查。你将调用 Ontology 获取候选人、岗位、客户及规则集等结构化数据，按 action 配置的 steps 与规则列表逐条评估候选人是否符合要求，审查结果将决定该候选人能否进入下一步的简历匹配。",
+
+        "user_prompt": "根据输入的 candidate_id、resume_id、job_position_id 和 action_name，依次从 Ontology 获取候选人基本信息和简历信息、岗位信息、客户与部门名称、以及当前 action 下的 action steps 与每个 step 关联的规则列表。首先逐 step 逐条规则通过客户名称、客户部门、executor='Agent'、enforcementLevel='mandatory'过滤需要检查的rule，然后比对候选人信息是否符合规则要求（若候选人信息中无可用于判断的有效内容，则该条规则按通过处理），任何一条规则不符合则终止检查，所有规则中只要有一条不符合整体就判为不通过，否则被判为通过，最后输出 JSON 格式的整体检查结果，包含每条规则的通过情况及原因说明。",
+
+        "tool_use": [],
+        "side_effects": {
+            "data_changes": [
+                {
+                    "object_type": "Candidate_Match_Result",
+                    "action": "CREATE",
+                    "property_impacted": [
+                        "candidate_match_result_id",
+                        "client_id",
+                        "candidate_id",
+                        "job_position_id",
+                        "rule_check_result",
+                        "rule_check_reason"
+                    ],
+                    "description": "为候选人与每个匹配岗位创建匹配结果记录写入规则检查结论('通过'或'未通过')和原因。"
+                }
+            ],
+            "notifications": [
+                {
+                    "recipient": "招聘专员",
+                    "channel": "InApp",
+                    "condition": "规则检查通过",
+                    "message": "{{candidate.name}} - {{job.name}} 规则检查通过，将自动进入简历匹配环节。",
+                    "triggered_event": ""
+                },
+                {
+                    "recipient": "招聘专员",
+                    "channel": "Email, InApp",
+                    "condition": "规则检查未通过",
+                    "message": "{{candidate.name}} - {{job.name}} 规则检查失败，原因为：{{candidate_match_result.rule_check_reason}}，将不会自动进入简历匹配环节。",
+                    "triggered_event": ""
+                }
+            ]
+        },
+        "triggered_event": [
+            "MATCH_RULE_CHECK_PASSED",
+            "MATCH_RULE_CHECK_FAILED"
+        ]
+    },
+    {
+        "id": "10-2",
+        "name": "matchResume",
+        "description": "对已经通过简历匹配规则检查的候选人简历进行智能匹配评估，评估候选人简历是否符合招聘岗位要求，包括学历、工作年限、薪资期望、技能匹配度等。匹配结果决定候选人是否进入后续面试或推荐环节。",
+        "submission_criteria": "1. RESUME_PROCESSED事件已送达\n2. 候选人(Candidate)记录已创建且candidate_id非空\n3. 候选人简历(Resume)已完成结构化解析\n4. 至少一个有效的招聘岗位(Job_Requisition)记录存在且hc_status不为\"已关闭\"",
+        "object_type": "action",
+        "category": "简历匹配",
+        "actor": [
+            "Agent"
+        ],
+        "trigger": [
+            "MATCH_RULE_CHECK_PASSED"
+        ],
+        "target_objects": [
+            "Candidate",
+            "Resume",
+            "Job_Requisition",
+            "Job_Requisition_Specification",
+            "Application",
+            "Candidate_Match_Result",
+            "Blacklist",
+            "Client",
+            "Client_Department",
+            "Salary_Scheme",
+            "Candidate_Expectation"
+        ],
+        "inputs": [
+            {
+                "name": "candidate_id",
+                "type": "String",
+                "description": "待匹配的候选人唯一编号。系统中必须存在对应的Candidate记录且状态不为\"已锁定冲突\"。本Action所有步骤基于此ID读取候选人的身份信息/学历/经验/状态等数据执行匹配评估。",
+                "source_object": "Candidate.candidate_id",
+                "required": true
+            },
+            {
+                "name": "resume_id",
+                "type": "String",
+                "description": "待匹配的候选人简历唯一编号。系统中必须存在对应的Resume记录且已完成结构化解析(work_experience/education_experience/skill_tags等字段非空)。本Action基于此ID读取简历的结构化数据执行硬性要求比对和加分项评估。",
+                "source_object": "Resume.resume_id",
+                "required": true
+            },
+            {
+                "name": "job_requisition_id",
+                "type": "String",
+                "description": "候选人待匹配的招聘岗位编号。系统中必须存在对应的Job_Requisition记录且hc_status不为\"已关闭\"。",
+                "source_object": "Job_Requisition.job_requisition_id",
+                "required": true
+            }
+        ],
+        "outputs": [
+            {
+                "name": "match_results",
+                "type": "String",
+                "description": "候选人与岗位的匹配结果。存储为JSON字符串，每条记录包含job_requisition_id/匹配状态(匹配/不匹配)/匹配得分/各维度评分明细/推荐建议。"
+            },
+            {
+                "name": "overall_status",
+                "type": "String",
+                "description": "候选人整体匹配状态,值为匹配或不匹配,决定后续是否进入面试或推荐环节。"
+            }
+        ],
+        "action_steps": [
+            {
+            "order": "1",
+            "name": "callRoboHireForMatch",
+            "description": "An automated logic unit that calls the RoboHire external API to perform resume-to-job matching for a candidate applying to a specific client position. This logic is triggered by a resume processing completion event. It validates input data, constructs the API payload from the Ontology, calls the RoboHire matching API, handles the response, analyzes the result, and updates the Candidate and Application objects in the Ontology accordingly. It also enforces blacklist rules and manages candidate state transitions throughout the recruitment pipeline.",
+            "object_type": "logic",
+            "submission_criteria": "A resume processing completion event has been received and a Candidate record has been successfully created in the Ontology.",
+            "logic": [
+                {
+                    "id": "step-1",
+                    "name": "checkInputData",
+                    "description": "Validate that all required input fields are present in the event message payload before proceeding.\n\nRequired fields:\n- candidate_id: unique identifier of the Candidate object in the Ontology\n- application_id: unique identifier of the Application object in the Ontology\n- job_id: unique identifier of the Job Position object in the Ontology\n- client_id: unique identifier of the Client object in the Ontology\n\nLogic:\n- Extract each required field from the incoming event message payload.\n- If all required fields are present and non-empty, proceed to step-2.\n- If any required field is missing or null, log a structured error with the field name and reason (e.g., 'candidate_id is missing from event payload'), mark this logic execution as SKIPPED, and do NOT proceed to step-2 or beyond.\n\nOutput: a validated input context object containing {candidate_id, application_id, job_id, client_id}."
+                },
+                {
+                    "id": "step-2",
+                    "name": "constructInputForRoboHire",
+                    "description": "Retrieve the necessary data from the Ontology and construct the JSON input payload for the RoboHire API.\n\nData retrieval:\n- Using job_id, query the Ontology to retrieve the Job Position object and extract the field: jd_text (the full text content of the job description / job requirements).\n- Using candidate_id, query the Ontology to retrieve the Candidate object and extract the field: resume_text (the full plain-text content of the candidate's resume).\n\nValidation:\n- If jd_text is empty or null, log error 'Job description text is missing for job_id={job_id}' and abort.\n- If resume_text is empty or null, log error 'Resume text is missing for candidate_id={candidate_id}' and abort.\n\nConstruct the API input payload as a JSON object:\n{\n  \"resume\": \"<value of resume_text>\",\n  \"jd\": \"<value of jd_text>\"\n}\n\nOutput: a JSON object {resume, jd} ready to be used as the HTTP request body in step-3."
+                },
+                {
+                    "id": "step-3",
+                    "name": "callRoboHireAPI",
+                    "description": "Send an HTTP POST request to the RoboHire match-resume API using the payload constructed in step-2.\n\nAPI details:\n- Method: POST\n- URL: https://robohire.io/api/v1/match-resume\n- Headers:\n  - X-API-Key: <value of ROBOHIRE_API_KEY from environment/config>\n  - Content-Type: application/json\n- Body: the JSON payload from step-2\n\nExample equivalent curl:\ncurl -X POST 'https://robohire.io/api/v1/match-resume' \\\n  -H 'X-API-Key: rh_YOUR_API_KEY' \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"resume\": \"..resume text..\", \"jd\": \"..job requirements..\"}'\n\nTimeout: set HTTP request timeout to 30 seconds.\n\nRetry policy: on HTTP 5xx or network timeout, retry up to 3 times with exponential backoff (1s, 2s, 4s). Do not retry on HTTP 4xx errors.\n\nOutput: the raw HTTP response object containing {status_code, response_body}. Pass both to step-4."
+                },
+                {
+                    "id": "step-4",
+                    "name": "handleRoboHireResponse",
+                    "description": "Parse and handle the HTTP response returned from the RoboHire API in step-3.\n\nSuccess case (HTTP 200):\n- Parse the response body as JSON.\n- Extract the following fields from the response:\n  - match_score: numeric score (e.g., 0.0 to 1.0 or 0 to 100)\n  - match_status: string (e.g., 'matched', 'not_matched', 'pending')\n  - match_summary: string summary of the matching result\n  - match_details: detailed breakdown object (skills match, experience match, etc.)\n  - risk_flags: array of any flagged risk items returned by RoboHire\n- Store the full raw response in the database as a Match_Resume_Result record linked to {candidate_id, application_id, job_id}.\n- Update the Match_Resume_Result object in the Ontology with the parsed fields above.\n- Proceed to step-5.\n\nFailure case (HTTP 4xx or 5xx, or response body is not valid JSON, or retries exhausted):\n- Log a structured error containing: {candidate_id, application_id, job_id, http_status_code, error_message}.\n- Set the matching result status to 'FAILED' in the Match_Resume_Result object in the Ontology.\n- Do NOT proceed to step-5 or beyond.\n- Emit a failure event so downstream notification logic can alert the recruiter.\n\nOutput: parsed match result object {match_score, match_status, match_summary, match_details, risk_flags}."
+                },
+                {
+                    "id": "step-5",
+                    "name": "analyzeMatchResult",
+                    "description": "Analyze the parsed match result from step-4, generate insights, and update the Application object in the Ontology.\n\nInsight generation:\n- From match_details, extract key matched and unmatched dimensions (e.g., skill gaps, experience delta, certification match).\n- Generate structured tags (key-value pairs) summarizing insights, e.g.:\n  - {tag: 'skill_match', value: 'Python: matched, Java: missing'}\n  - {tag: 'experience_match', value: '3 years required, 2 years found'}\n  - {tag: 'risk_flag', value: 'EHS departure code detected'}\n- Store these tags in the Ontology linked to the Candidate and Application objects.\n\nApplication status update (update the Application object in the Ontology using application_id):\n- If match_status == 'matched': set Application.stage = '匹配通过'\n- If match_status == 'not_matched': set Application.stage = '已淘汰', set Application.elimination_reason = match_summary\n- If match_status == 'pending': set Application.stage = '待定', set Application.pending_reason = match_summary\n- In all cases: set Application.match_score = match_score, Application.match_result_id = <id of Match_Resume_Result record>\n\nOutput: updated Application object and generated tag list. Proceed to step-6."
+                },
+                {
+                    "id": "step-6",
+                    "name": "updateCandidateState",
+                    "description": "Update the state fields of the Candidate object in the Ontology based on the match result and any risk signals detected.\n\nUsing candidate_id, update the Candidate object as follows:\n\nMatching outcome:\n- If match_status == 'matched': advance Candidate.recruitment_stage to the next stage in the defined recruitment pipeline (e.g., '简历筛选通过' → '待面试').\n- If match_status == 'not_matched': set Candidate.recruitment_stage = '已淘汰'.\n- If match_status == 'pending': set Candidate.recruitment_stage = '待定', set Candidate.pending_reason = match_summary.\n\nBlacklist status:\n- If risk_flags contains any blacklist-related flags (detected from RoboHire response or from blacklist rule evaluation in step-7): set Candidate.blacklist_status = the corresponding blacklist category string (e.g., '腾讯-淘汰退场').\n- If HSM has verified and confirmed elimination of the candidate: set Candidate.blacklist_status = '腾讯-淘汰退场'.\n\nLock status:\n- If any backflow check lock conditions are met (e.g., candidate previously worked for the client or affiliated company within the lock period): set Candidate.is_locked = true, set Candidate.lock_reason = <reason string>, set Candidate.lock_expiry_date = <calculated expiry date>.\n\nOutput: updated Candidate object persisted in the Ontology."
+                },
+                {
+                    "id": "step-7",
+                    "name": "handleBlacklistRules",
+                    "description": "Evaluate the candidate against all defined blacklist rules. If any high-risk rule is triggered, create a Blacklist record in the database and update the Candidate object accordingly.\n\nRule evaluation:\n- Load all active blacklist rules from the rules configuration (e.g., from a rules engine or config store).\n- Evaluate each rule against the candidate's profile data (e.g., employment history, departure codes, previous client associations).\n\nKnown high-risk rule example:\n- Rule ID: A13(1) — EHS departure code for former Huawei / Honor employees.\n  Trigger condition: Candidate has a recorded departure coded as EHS from Huawei or Honor.\n  Action: flag as HIGH_RISK blacklist.\n\nIf any blacklist rule is triggered:\n- Create a new Blacklist record in the database with the following fields:\n  - candidate_id\n  - rule_id: the ID of the triggered rule (e.g., 'A13(1)')\n  - rule_description: human-readable description of the rule\n  - risk_level: 'HIGH' / 'MEDIUM' / 'LOW'\n  - lock_reason: a descriptive string explaining why the candidate is locked\n  - lock_duration_days: the number of days the lock applies (from rule config)\n  - lock_start_date: today's date\n  - lock_expiry_date: lock_start_date + lock_duration_days\n  - created_at: current timestamp\n- Update Candidate.blacklist_status in the Ontology to reflect the triggered rule category.\n- Update Candidate.is_locked = true with the corresponding lock_reason and lock_expiry_date.\n\nIf no blacklist rules are triggered:\n- Log 'No blacklist rules triggered for candidate_id={candidate_id}' and proceed normally.\n\nOutput: Blacklist record(s) created in DB (if applicable), Candidate object updated in Ontology."
+                }
+            ]
+            }
+        ],
+        "system_prompt": "As a recruitment assistant, your task is to evaluate the suitability of a candidate for specific job positions based on their resume and the job requirements. You will call the RoboHire API to perform an intelligent matching assessment, which includes checking against blacklist rules, evaluating hard requirements, identifying missing information, assessing positive attributes, and conducting backflow checks. The matching results will determine whether the candidate proceeds to the next stage of interviews or direct recommendations.",
+        "user_prompt": "Analyze the candidate's resume and job requirements, call the RoboHire API to get the matching results, and update the Candidate, Application, and Candidate_Match_Result records in the database accordingly. If the candidate hits any blacklist rule, update the Candidate record and create a Blacklist record if necessary. Finally, generate notifications for HSM and recruiters based on specific conditions related to the matching results.",
+        "typescript_code": "",
+        "tool_use": [
+            "POST 'https://robohire.io/api/v1/match-resume'"
+        ],
+        "side_effects": {
+            "data_changes": [
+                {
+                    "object_type": "Candidate_Match_Result",
+                    "action": "CREATE",
+                    "property_impacted": [
+                        "candidate_match_result_id",
+                        "client_id",
+                        "candidate_id",
+                        "job_position_id",
+                        "overall_match_score",
+                        "overall_fit_verdict",
+                        "overall_fit_summary",
+                        "overall_match_grade"
+                    ],
+                    "description": "更新和记录候选人与匹配岗位的匹配结果，决定是否进入后续面试和推荐环节，下游推荐包生成和统计分析依赖此记录。"
+                },
+                {
+                    "object_type": "Application",
+                    "action": "MODIFY",
+                    "property_impacted": [
+                        "status",
+                        "stage",
+                        "matching_score"
+                    ],
+                    "description": "更新职位投递申请的匹配得分(matching_score)和流程状态(status/stage)。匹配通过时stage更新为\"匹配通过\";不匹配时status更新为\"已淘汰\"。"
+                },
+                {
+                    "object_type": "Candidate",
+                    "action": "MODIFY",
+                    "property_impacted": [
+                        "state",
+                        "blacklist_status",
+                        "is_locked"
+                    ],
+                    "description": "根据匹配结果更新候选人状态:匹配通过时state更新为对应流程位置;命中黑名单时更新blacklist_status;回流检查涉及锁定时更新is_locked;HSM核实确认为淘汰退场时更新blacklist_status为\"腾讯-淘汰退场\"。"
+                },
+                {
+                    "object_type": "Blacklist",
+                    "action": "CREATE",
+                    "property_impacted": [
+                        "blacklist_id",
+                        "candidate_id",
+                        "client_id",
+                        "lock_reason",
+                        "lock_duration"
+                    ],
+                    "description": "若候选人命中高风险黑名单规则(如华腾/中软高风险离职编码)则创建黑名单记录写入锁定原因和时长。"
+                }
+            ]
+        },
+        "notifications": [
+            {
+                "recipient": "HSM",
+                "channel": ["InApp", "Email"],
+                "condition": "",
+                "logic": "通知HSM：候选人匹配结果已生成，请前往系统查看详情。\n\n【匹配通过】候选人符合岗位要求，建议尽快与客户同步推荐意向，并协调后续商务跟进节奏。\n\n【不匹配】候选人未达到岗位要求，通知中包含主要不匹配原因，建议评估是否需要重新开启候选人搜寻或调整客户需求预期。\n\n【命中黑名单】候选人触发风险规则，通知中包含具体风险类型及风险等级。建议在与客户沟通前谨慎处理，避免商务风险。如候选人被标记为淘汰退场，通知将包含淘汰原因及建议的后续客户沟通措辞。\n\n【待定 - 缺失信息】候选人资料不完整，通知中包含缺失字段清单。建议协调招聘专员加快信息补全，并视情况决定是否暂缓向客户推荐。\n\n【待定 - 需人工核查】候选人存在需核查内容，通知中包含核查项目说明。建议等待核查结论后再决定是否向客户推进。\n\n【待定 - 需HSM判定】候选人匹配存在边界情况，需HSM结合客户需求和商务背景作出最终判定。通知中包含待判定的具体内容和参考建议，请及时在系统中录入判定结果。",
+                "triggered_event": ""
+            },
+            {
+                "recipient": "招聘专员",
+                "channel": ["InApp", "Email"],
+                "condition": "",
+                "logic": "通知招聘专员：候选人匹配结果已生成，请前往系统查看详情并执行后续操作。\n\n【匹配通过】候选人符合岗位要求，建议及时更新候选人状态，并推进简历提交或面试安排流程。\n\n【不匹配】候选人未达到岗位要求，通知中包含具体不匹配原因（如技能差距、经验不符等）。建议根据原因判断是否需要补充资料重新评估，或将候选人标记为不适合并归档。\n\n【命中黑名单】候选人触发风险规则，通知中包含风险类型及等级说明。请勿在风险核实前推进候选人至下一流程。如候选人被标记为淘汰退场，通知将包含淘汰原因及建议的候选人沟通方式和档案处理建议。\n\n【待定 - 缺失信息】候选人资料存在缺口，通知中包含具体缺失字段及建议的补全方式（如联系候选人补充证明材料）。请尽快完成信息补全并重新触发匹配。\n\n【待定 - 需人工核查】候选人存在需人工核查的内容，通知中包含核查项说明及建议操作步骤。请按照指引完成核查并在系统中更新核查结果。\n\n【待定 - 需面试官判定】候选人需面试官进行专业能力评估，通知中包含待判定内容及建议的评估维度。请及时安排面试并在系统中录入面试反馈。\n\n【待定 - 需HSM判定】候选人匹配结论需等待HSM从客户需求和商务视角作出判定，请暂缓后续操作，待HSM录入判定结果后再执行下一步流程。",
+                "triggered_event": ""
+        }
+        ],
+        "triggered_event": [
+            "MATCH_PASSED_NEED_INTERVIEW",
+            "MATCH_PASSED_NO_INTERVIEW",
+            "MATCH_FAILED"
+        ]
+    }
+    ]
+}

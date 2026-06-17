@@ -192,6 +192,11 @@ WHAT TO EXTRACT
   (Stage 4), one-off values, report names, UI labels, or section headings.
 - For each object: PascalCase singular "name" (+ "nameZh"), a one-sentence "description"
   (+ "descriptionZh"), its ATTRIBUTES, and its RELATIONSHIPS to other objects in THIS output.
+- Also set "objectClass": "data" (a business entity) or "system" (an application / external
+  system the document references — a CRM, ERP, partner portal, or service the business
+  integrates with), and a one-paragraph "relationshipNote" {en,zh} stating how this object
+  relates to the OTHER objects (who owns it, what it references, what references it). The
+  relationshipNote is the human-readable summary of the edges you emit in "relationships".
 
 COMMONLY MISSED — sweep for ALL of these explicitly (extractors systematically under-report them):
 - LOOKUP / REFERENCE / MASTER DATA: tiers, categories, regions, rate tables, code lists,
@@ -239,6 +244,11 @@ OUTPUT CONTRACT — return EXACTLY this shape (one JSON object):
       "nameZh": "客户",
       "description": "A party that places orders.",
       "descriptionZh": "下订单的一方。",
+      "objectClass": "data",
+      "relationshipNote": {
+        "en": "A Customer places one or more Orders and holds exactly one CreditProfile.",
+        "zh": "客户下达一个或多个订单，并持有唯一的信用档案。"
+      },
       "attributes": [
         { "name": "customer_id", "nameZh": "客户编号", "type": "uuid", "required": true,
           "keyRole": "pk", "description": "Unique identity." },
@@ -330,6 +340,12 @@ METHOD (follow exactly — the numbered sentences ARE your sections)
    "info" (documentary / derivation).
 7. "trigger" (optional): { "description": "...", "onEventTypeId"?: "event:..." } — when the
    rule is evaluated. Omit onEventTypeId if no event is known yet.
+8. EXECUTION SEMANTICS (optional, align with "severity"):
+   - "executor": "human" | "agent" — who carries the rule out. Default "agent" unless the
+     document clearly assigns it to a person/role.
+   - "enforcementLevel": "mandatory" (must hold) | "optional" (advisory).
+   - "failurePolicy": "block" (a violation aborts the gated action) | "warn" (surfaced only).
+   Keep them consistent with severity: block => mandatory + block; warn/info => optional + warn.
 
 COMMONLY MISSED — hunt for ALL of these explicitly (they hide outside the obvious "must" sentences):
 - NUMERIC THRESHOLDS buried in prose: "orders above $10,000", "no more than 3 attempts",
@@ -370,6 +386,7 @@ OUTPUT CONTRACT — return EXACTLY this shape:
         "predicate": "order.status != 'Fulfilled' || payment.amount >= invoice.total || customer.tier == 'Enterprise'",
         "bindings": [{ "var": "order", "objectTypeId": "objectType:order" }] },
       "kind": "state_transition", "severity": "block",
+      "executor": "agent", "enforcementLevel": "mandatory", "failurePolicy": "block",
       "appliesToObjectTypeIds": ["objectType:order","objectType:payment","objectType:customer"],
       "appliesToAttributes": ["objectType:order.status"],
       "trigger": { "description": "on Order.status transition to Fulfilled" },

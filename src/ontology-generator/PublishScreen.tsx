@@ -299,7 +299,7 @@ export default function PublishScreen({ t, lang, ctrl }: PublishScreenProps) {
 // files with content in a <pre> and copy / download buttons.
 // ===========================================================================
 
-const TARGET_ORDER: GeneratorTarget[] = ['agent-code', 'prompts', 'manifest'];
+const TARGET_ORDER: GeneratorTarget[] = ['agent-code', 'prompts', 'manifest', 'spec'];
 
 function ArtifactTabs({ t, bundles }: { t: Strings; bundles: GeneratedBundle[] }) {
   // Order the tabs by the canonical target order, keeping only what we received.
@@ -315,7 +315,13 @@ function ArtifactTabs({ t, bundles }: { t: Strings; bundles: GeneratedBundle[] }
   const current = tabs.find((b) => b.target === active) ?? tabs[0];
 
   const tabLabel = (target: GeneratorTarget): string =>
-    target === 'agent-code' ? t.agentCode : target === 'prompts' ? t.prompts : t.manifest;
+    target === 'agent-code'
+      ? t.agentCode
+      : target === 'prompts'
+        ? t.prompts
+        : target === 'spec'
+          ? t.specFormat
+          : t.manifest;
 
   if (tabs.length === 0) {
     return null;

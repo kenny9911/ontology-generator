@@ -234,6 +234,18 @@ export interface ObjectType extends NodeProvenance {
   descriptionZh?: string;
   attributes: ObjectAttribute[];
   /**
+   * Spec-format classification: 'data' (a business entity) vs 'system' (an
+   * application / external system the ontology references). Optional; the
+   * spec-format projection falls back to a name heuristic when absent.
+   */
+  objectClass?: 'data' | 'system';
+  /**
+   * LLM-authored prose describing how this object relates to the OTHER objects
+   * — the spec-format `relationship_description`. Optional; the projection
+   * synthesizes one from `Ontology.relationships` + FK attributes when absent.
+   */
+  relationshipNote?: Bilingual;
+  /**
    * Cached index of outbound Relationship ids for THIS object (UI/codegen
    * convenience). Authoritative edge list is `Ontology.relationships`.
    */
@@ -303,6 +315,16 @@ export interface Rule extends NodeProvenance {
   kind: RuleKind;
   /** block aborts a gated action; warn surfaces; info documents. */
   severity: Severity;
+  /**
+   * Spec-format execution semantics (all optional; the spec-format projection
+   * derives sensible defaults from `severity` / referencing actions when absent):
+   *  - `executor` — who carries the rule out ('human' | 'agent').
+   *  - `enforcementLevel` — 'mandatory' (must hold) vs 'optional' (advisory).
+   *  - `failurePolicy` — on violation, 'block' the gated action vs 'warn' only.
+   */
+  executor?: 'human' | 'agent';
+  enforcementLevel?: 'mandatory' | 'optional';
+  failurePolicy?: 'warn' | 'block';
   /** ObjectType ids this rule constrains. At least one. */
   appliesToObjectTypeIds: string[];
   /** Specific attributes referenced, "objectTypeId.attr" form. Optional. */
@@ -1116,7 +1138,7 @@ export interface InferenceResult {
 // 11. Generation projections (derived artifacts — NOT stored in the ontology)
 // ===========================================================================
 
-export type GeneratorTarget = 'agent-code' | 'prompts' | 'manifest';
+export type GeneratorTarget = 'agent-code' | 'prompts' | 'manifest' | 'spec';
 
 export interface GeneratedFile {
   path: string;

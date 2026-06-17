@@ -74,6 +74,12 @@ interface RawObject {
   nameZh?: unknown;
   description?: unknown;
   descriptionZh?: unknown;
+  /** Spec-format classification ('data' | 'system'); also accepted as `type`. */
+  objectClass?: unknown;
+  type?: unknown;
+  /** Spec-format relationship prose; also accepted as `relationship_description`. */
+  relationshipNote?: unknown;
+  relationship_description?: unknown;
   attributes?: unknown;
   display?: { emoji?: unknown; color?: unknown };
   sources?: unknown;
@@ -142,6 +148,24 @@ function toKeyRole(v: unknown): KeyRole {
 function toCardinality(v: unknown): Cardinality {
   const s = typeof v === 'string' ? v.toLowerCase() : '';
   return CARDINALITIES.has(s as Cardinality) ? (s as Cardinality) : 'many_to_many';
+}
+
+/** Coerce the spec-format object classification; undefined when unrecognized. */
+function toObjectClass(v: unknown): 'data' | 'system' | undefined {
+  const s = typeof v === 'string' ? v.toLowerCase() : '';
+  return s === 'data' || s === 'system' ? s : undefined;
+}
+
+/** Coerce an optional bilingual blob (or bare string) into `{en,zh}` or undefined. */
+function optBilingual(v: unknown): { en: string; zh: string } | undefined {
+  if (typeof v === 'string' && v.trim().length > 0) return { en: v, zh: v };
+  if (v && typeof v === 'object' && !Array.isArray(v)) {
+    const o = v as { en?: unknown; zh?: unknown };
+    const en = typeof o.en === 'string' ? o.en : '';
+    const zh = typeof o.zh === 'string' ? o.zh : '';
+    if (en || zh) return { en: en || zh, zh: zh || en };
+  }
+  return undefined;
 }
 
 /**
@@ -309,6 +333,14 @@ export async function extractObjects(
         if (attributes.length > 0 && existing.attributes.length === 0) {
           existing.attributes = attributes;
         }
+        if (!existing.objectClass) {
+          const oc = toObjectClass(ro?.objectClass ?? ro?.type);
+          if (oc) existing.objectClass = oc;
+        }
+        if (!existing.relationshipNote) {
+          const rn = optBilingual(ro?.relationshipNote ?? ro?.relationship_description);
+          if (rn) existing.relationshipNote = rn;
+        }
         if (modelId) chunkObjectId.set(modelId, existing.id);
         chunkObjectId.set(key, existing.id);
         continue;
@@ -336,6 +368,10 @@ export async function extractObjects(
         if (emoji) obj.display.emoji = emoji;
         if (color) obj.display.color = color;
       }
+      const objectClass = toObjectClass(ro?.objectClass ?? ro?.type);
+      if (objectClass) obj.objectClass = objectClass;
+      const relationshipNote = optBilingual(ro?.relationshipNote ?? ro?.relationship_description);
+      if (relationshipNote) obj.relationshipNote = relationshipNote;
 
       objectByName.set(key, obj);
       objects.push(obj);
