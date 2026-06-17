@@ -33,7 +33,8 @@
 import type {
   Ontology,
   ObjectType,
-  ObjectAttribute,
+  ObjectProperty,
+  PropertyType,
   ActionType,
   ActionIO,
   Process,
@@ -194,23 +195,35 @@ function buildIndex(o: Ontology, warnings: string[]): CodeIndex {
   return { objectInterfaceById, objectById, ruleById, actionById, toolNameByActionId, fnNameByProcessId };
 }
 
-/** Resolve a single attribute's TS type, honoring enum/reference/array. */
-function attributeTsType(attr: ObjectAttribute, idx: CodeIndex): string {
-  // Reference / FK -> referenced interface (or its id literal if missing).
-  if (attr.type === 'reference' || attr.keyRole === 'fk') {
-    if (attr.refObjectTypeId) {
-      const iface = idx.objectInterfaceById.get(attr.refObjectTypeId);
+/** Map a human-facing PropertyType to a TS type. */
+function propertyTypeToTs(type: PropertyType): string {
+  switch (type) {
+    case 'Integer':
+    case 'Float':
+      return 'number';
+    case 'Boolean':
+      return 'boolean';
+    case 'List<String>':
+      return 'string[]';
+    case 'Date':
+    case 'Timestamp':
+    case 'String':
+    default:
+      return 'string';
+  }
+}
+
+/** Resolve a single property's TS type, honoring foreign-key references. */
+function propertyTsType(prop: ObjectProperty, idx: CodeIndex): string {
+  // Foreign key -> referenced interface (or string if the target is missing).
+  if (prop.is_foreign_key) {
+    if (prop.references) {
+      const iface = idx.objectInterfaceById.get(prop.references);
       if (iface) return iface;
     }
     return 'string';
   }
-  if (attr.type === 'enum') {
-    if (attr.enumValues && attr.enumValues.length > 0) {
-      return attr.enumValues.map((v: string) => strLit(v)).join(' | ');
-    }
-    return 'string';
-  }
-  return scalarDataTypeToTs(attr.type);
+  return propertyTypeToTs(prop.type);
 }
 
 // ---------------------------------------------------------------------------
@@ -237,19 +250,21 @@ function generateTypesFile(o: Ontology, idx: CodeIndex): GeneratedFile {
     lines.push(` * @ontologyId ${obj.id}`);
     lines.push(' */');
     lines.push(`export interface ${iface} {`);
-    if (obj.attributes.length === 0) {
+    if (obj.properties.length === 0) {
       lines.push('  [key: string]: unknown;');
     }
-    for (const attr of obj.attributes) {
-      const tsType = attributeTsType(attr, idx);
-      const optional = attr.required ? '' : '?';
-      const propName = toSnakeCase(attr.name);
+    for (const prop of obj.properties) {
+      const tsType = propertyTsType(prop, idx);
+      // The spec property shape has no per-field required flag; the primary key
+      // is the only field treated as always-present.
+      const optional = prop.name === obj.primary_key ? '' : '?';
+      const propName = toSnakeCase(prop.name);
       const tags: string[] = [];
-      if (attr.keyRole && attr.keyRole !== 'none') tags.push(attr.keyRole.toUpperCase());
-      if (attr.type === 'reference' && attr.refObjectTypeId) tags.push(`-> ${attr.refObjectTypeId}`);
+      if (prop.name === obj.primary_key) tags.push('PK');
+      if (prop.is_foreign_key && prop.references) tags.push(`FK -> ${prop.references}`);
       const inline = tags.length ? ` // ${tags.join(' ')}` : '';
-      const attrDesc = commentSafe(attr.description);
-      if (attrDesc) lines.push(`  /** ${attrDesc} */`);
+      const propDesc = commentSafe(prop.description);
+      if (propDesc) lines.push(`  /** ${propDesc} */`);
       lines.push(`  ${propName}${optional}: ${tsType};${inline}`);
     }
     lines.push('}');

@@ -44,57 +44,47 @@
       "nameZh": "职位",
       "description": "A funded headcount slot in Workday with budget and salary band, against which Requisitions are opened.",
       "descriptionZh": "Workday 中带预算与薪资范围的已拨款编制名额，需求基于该职位发起。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Requisition opened against Position. Position priced by SalaryBand. Position.salary_band_id references SalaryBand.",
+      "primary_key": "position_id",
+      "properties": [
         {
           "name": "position_id",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
+          "type": "String",
+          "description": "",
           "nameZh": "职位ID"
         },
         {
           "name": "job_profile",
-          "type": "string",
-          "required": false,
-          "keyRole": "none"
+          "type": "String",
+          "description": ""
         },
         {
           "name": "cost_center",
-          "type": "string",
-          "required": false,
-          "keyRole": "none"
+          "type": "String",
+          "description": ""
         },
         {
           "name": "funded_headcount",
-          "type": "integer",
-          "required": false,
-          "keyRole": "none",
+          "type": "Integer",
           "description": "Approved headcount for this position."
         },
         {
           "name": "annual_budget",
-          "type": "decimal",
-          "required": false,
-          "keyRole": "none",
+          "type": "Float",
           "description": "Annual budget, decimal(12,2)."
         },
         {
           "name": "salary_band_id",
-          "type": "reference",
-          "required": false,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:salary-band"
+          "type": "String",
+          "description": "",
+          "is_foreign_key": true,
+          "references": "objectType:salary-band"
         },
         {
           "name": "status",
-          "type": "enum",
-          "required": false,
-          "keyRole": "none",
-          "enumValues": [
-            "Open",
-            "Frozen",
-            "Filled"
-          ]
+          "type": "List<String>",
+          "description": ""
         }
       ],
       "relationshipIds": [
@@ -131,50 +121,45 @@
       "nameZh": "薪资范围",
       "description": "The published salary band (min/mid/max) for a job level and location zone, mastered in Workday.",
       "descriptionZh": "按职级与地区发布的薪资范围（最低/中位/最高），主数据在 Workday。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Position priced by SalaryBand. Offer priced against SalaryBand.",
+      "primary_key": "salary_band_id",
+      "properties": [
         {
           "name": "salary_band_id",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
+          "type": "String",
+          "description": "",
           "nameZh": "薪资范围ID"
         },
         {
           "name": "job_level",
-          "type": "string",
-          "required": false,
-          "keyRole": "none"
+          "type": "String",
+          "description": ""
         },
         {
           "name": "location_zone",
-          "type": "string",
-          "required": false,
-          "keyRole": "none"
+          "type": "String",
+          "description": ""
         },
         {
           "name": "currency",
-          "type": "string",
-          "required": false,
-          "keyRole": "none",
+          "type": "String",
           "description": "ISO 4217 char(3)."
         },
         {
           "name": "min_salary",
-          "type": "money",
-          "required": false,
-          "keyRole": "none"
+          "type": "Float",
+          "description": ""
         },
         {
           "name": "mid_salary",
-          "type": "money",
-          "required": false,
-          "keyRole": "none"
+          "type": "Float",
+          "description": ""
         },
         {
           "name": "max_salary",
-          "type": "money",
-          "required": false,
-          "keyRole": "none"
+          "type": "Float",
+          "description": ""
         }
       ],
       "relationshipIds": [
@@ -211,66 +196,53 @@
       "nameZh": "招聘需求",
       "description": "A hiring request opened against a Position in Greenhouse, moving Draft -> Approved -> Open -> Filled/Closed.",
       "descriptionZh": "在 Greenhouse 中基于职位开立的招聘请求，状态从草稿到审批通过、开放，再到填补/关闭。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Requisition opened against Position. Application applies to Requisition. Offer fills Requisition. Requisition.position_id references Position. Requisition.hiring_manager_id references Worker.",
+      "primary_key": "requisition_id",
+      "properties": [
         {
           "name": "requisition_id",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
+          "type": "String",
+          "description": "",
           "nameZh": "需求ID"
         },
         {
           "name": "position_id",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:position"
+          "type": "String",
+          "description": "",
+          "is_foreign_key": true,
+          "references": "objectType:position"
         },
         {
           "name": "hiring_manager_id",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:worker"
+          "type": "String",
+          "description": "",
+          "is_foreign_key": true,
+          "references": "objectType:worker"
         },
         {
           "name": "recruiter_id",
-          "type": "string",
-          "required": false,
-          "keyRole": "none"
+          "type": "String",
+          "description": ""
         },
         {
           "name": "title",
-          "type": "string",
-          "required": false,
-          "keyRole": "none"
+          "type": "String",
+          "description": ""
         },
         {
           "name": "status",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Draft",
-            "Pending Approval",
-            "Approved",
-            "Rejected",
-            "Open",
-            "Filled",
-            "Closed"
-          ]
+          "type": "List<String>",
+          "description": ""
         },
         {
           "name": "opened_at",
-          "type": "datetime",
-          "required": false,
-          "keyRole": "none"
+          "type": "Timestamp",
+          "description": ""
         },
         {
           "name": "closed_at",
-          "type": "datetime",
-          "required": false,
-          "keyRole": "none",
+          "type": "Timestamp",
           "description": "Nullable; set when the requisition is filled or closed."
         }
       ],
@@ -310,51 +282,39 @@
       "nameZh": "候选人",
       "description": "A person being considered for one or more Requisitions, deduplicated globally by email in Greenhouse.",
       "descriptionZh": "被一项或多项招聘需求考虑的人选，在 Greenhouse 中按邮箱全局去重。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Candidate submits Application. Candidate undergoes BackgroundCheck.",
+      "primary_key": "candidate_id",
+      "properties": [
         {
           "name": "candidate_id",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
+          "type": "String",
+          "description": "",
           "nameZh": "候选人ID"
         },
         {
           "name": "email",
-          "type": "string",
-          "required": true,
-          "keyRole": "none",
+          "type": "String",
           "description": "Unique dedup key."
         },
         {
           "name": "full_name",
-          "type": "string",
-          "required": false,
-          "keyRole": "none"
+          "type": "String",
+          "description": ""
         },
         {
           "name": "is_internal",
-          "type": "boolean",
-          "required": false,
-          "keyRole": "none",
+          "type": "Boolean",
           "description": "True when the candidate is a current employee (per R18)."
         },
         {
           "name": "source",
-          "type": "enum",
-          "required": false,
-          "keyRole": "none",
-          "enumValues": [
-            "Inbound",
-            "Sourced",
-            "Referral",
-            "Agency"
-          ]
+          "type": "List<String>",
+          "description": ""
         },
         {
           "name": "consent_retention_until",
-          "type": "date",
-          "required": false,
-          "keyRole": "none",
+          "type": "Date",
           "description": "Nullable; talent-pool retention consent date (per R16)."
         }
       ],
@@ -393,55 +353,44 @@
       "nameZh": "申请",
       "description": "The unique link between one Candidate and one Requisition, advancing through staged review to Hired or Rejected.",
       "descriptionZh": "一名候选人与一项招聘需求之间的唯一关联，经分阶段评审推进至录用或拒绝。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Candidate submits Application. Application applies to Requisition. Application has stage InterviewStage. Application has assessment Assessment. Application results in Offer. Application.candidate_id references Candidate. Application.requisition_id references Requisition.",
+      "primary_key": "application_id",
+      "properties": [
         {
           "name": "application_id",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
+          "type": "String",
+          "description": "",
           "nameZh": "申请ID"
         },
         {
           "name": "candidate_id",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:candidate"
+          "type": "String",
+          "description": "",
+          "is_foreign_key": true,
+          "references": "objectType:candidate"
         },
         {
           "name": "requisition_id",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:requisition"
+          "type": "String",
+          "description": "",
+          "is_foreign_key": true,
+          "references": "objectType:requisition"
         },
         {
           "name": "current_stage",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Application Review",
-            "Recruiter Screen",
-            "Assessment",
-            "Onsite",
-            "Offer",
-            "Hired",
-            "Rejected"
-          ]
+          "type": "List<String>",
+          "description": ""
         },
         {
           "name": "disposition_reason",
-          "type": "string",
-          "required": false,
-          "keyRole": "none",
+          "type": "String",
           "description": "Nullable; required when Rejected (per R17)."
         },
         {
           "name": "created_at",
-          "type": "datetime",
-          "required": false,
-          "keyRole": "none"
+          "type": "Timestamp",
+          "description": ""
         }
       ],
       "relationshipIds": [
@@ -482,54 +431,49 @@
       "nameZh": "面试阶段",
       "description": "A structured interview stage of an Application, bound to an InterviewPanel of at least three Interviewers including a Bar Raiser.",
       "descriptionZh": "申请的一个结构化面试阶段，绑定至少由三名面试官（含一名 Bar Raiser）组成的面试小组。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Application has stage InterviewStage. InterviewStage has scorecard Scorecard. InterviewStage.application_id references Application. InterviewStage.bar_raiser_id references Worker.",
+      "primary_key": "stage_id",
+      "properties": [
         {
           "name": "stage_id",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
+          "type": "String",
+          "description": "",
           "nameZh": "阶段ID"
         },
         {
           "name": "application_id",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:application"
+          "type": "String",
+          "description": "",
+          "is_foreign_key": true,
+          "references": "objectType:application"
         },
         {
           "name": "stage_name",
-          "type": "string",
-          "required": false,
-          "keyRole": "none"
+          "type": "String",
+          "description": ""
         },
         {
           "name": "panel_id",
-          "type": "string",
-          "required": false,
-          "keyRole": "none",
+          "type": "String",
           "description": "Identifier of the InterviewPanel for this stage."
         },
         {
           "name": "interviewer_ids",
-          "type": "array",
-          "required": false,
-          "keyRole": "none",
+          "type": "List<String>",
           "description": "Min length 3 (per R5)."
         },
         {
           "name": "bar_raiser_id",
-          "type": "reference",
-          "required": false,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:worker",
-          "description": "Bar Raiser member (per R14)."
+          "type": "String",
+          "description": "Bar Raiser member (per R14).",
+          "is_foreign_key": true,
+          "references": "objectType:worker"
         },
         {
           "name": "scheduled_at",
-          "type": "datetime",
-          "required": false,
-          "keyRole": "none"
+          "type": "Timestamp",
+          "description": ""
         }
       ],
       "relationshipIds": [
@@ -567,52 +511,46 @@
       "nameZh": "评分表",
       "description": "One Interviewer's structured recommendation for an Application at a given InterviewStage.",
       "descriptionZh": "某面试官在指定面试阶段对一份申请给出的结构化推荐意见。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "InterviewStage has scorecard Scorecard. Scorecard.application_id references Application. Scorecard.stage_id references InterviewStage. Scorecard.interviewer_id references Worker.",
+      "primary_key": "scorecard_id",
+      "properties": [
         {
           "name": "scorecard_id",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
+          "type": "String",
+          "description": "",
           "nameZh": "评分表ID"
         },
         {
           "name": "application_id",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:application"
+          "type": "String",
+          "description": "",
+          "is_foreign_key": true,
+          "references": "objectType:application"
         },
         {
           "name": "stage_id",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:interview-stage"
+          "type": "String",
+          "description": "",
+          "is_foreign_key": true,
+          "references": "objectType:interview-stage"
         },
         {
           "name": "interviewer_id",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:worker"
+          "type": "String",
+          "description": "",
+          "is_foreign_key": true,
+          "references": "objectType:worker"
         },
         {
           "name": "recommendation",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Strong Yes",
-            "Yes",
-            "No",
-            "Strong No"
-          ]
+          "type": "List<String>",
+          "description": ""
         },
         {
           "name": "submitted_at",
-          "type": "datetime",
-          "required": false,
-          "keyRole": "none"
+          "type": "Timestamp",
+          "description": ""
         }
       ],
       "relationshipIds": [
@@ -649,33 +587,32 @@
       "nameZh": "技术测评",
       "description": "A HackerRank technical assessment for an Application, scored as a percentage against a 70% pass threshold.",
       "descriptionZh": "针对某份申请的 HackerRank 技术测评，按百分比评分，及格线为 70%。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Application has assessment Assessment. Assessment.application_id references Application.",
+      "primary_key": "assessment_id",
+      "properties": [
         {
           "name": "assessment_id",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
+          "type": "String",
+          "description": "",
           "nameZh": "测评ID"
         },
         {
           "name": "application_id",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:application"
+          "type": "String",
+          "description": "",
+          "is_foreign_key": true,
+          "references": "objectType:application"
         },
         {
           "name": "score_pct",
-          "type": "decimal",
-          "required": false,
-          "keyRole": "none",
+          "type": "Float",
           "description": "Percentage score; pass threshold 70% (per R7)."
         },
         {
           "name": "completed_at",
-          "type": "datetime",
-          "required": false,
-          "keyRole": "none"
+          "type": "Timestamp",
+          "description": ""
         }
       ],
       "relationshipIds": [
@@ -712,79 +649,60 @@
       "nameZh": "录用通知",
       "description": "A compensation offer for an Application, priced against a SalaryBand and signed via DocuSign through its lifecycle.",
       "descriptionZh": "针对某份申请的薪酬录用通知，依据薪资范围定价，并经 DocuSign 在其生命周期内签署。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Application results in Offer. Offer fills Requisition. Offer priced against SalaryBand. Offer.application_id references Application. Offer.requisition_id references Requisition. Offer.salary_band_id references SalaryBand.",
+      "primary_key": "offer_id",
+      "properties": [
         {
           "name": "offer_id",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
+          "type": "String",
+          "description": "",
           "nameZh": "录用ID"
         },
         {
           "name": "application_id",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:application"
+          "type": "String",
+          "description": "",
+          "is_foreign_key": true,
+          "references": "objectType:application"
         },
         {
           "name": "requisition_id",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:requisition"
+          "type": "String",
+          "description": "",
+          "is_foreign_key": true,
+          "references": "objectType:requisition"
         },
         {
           "name": "salary_band_id",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:salary-band"
+          "type": "String",
+          "description": "",
+          "is_foreign_key": true,
+          "references": "objectType:salary-band"
         },
         {
           "name": "base_salary",
-          "type": "money",
-          "required": false,
-          "keyRole": "none"
+          "type": "Float",
+          "description": ""
         },
         {
           "name": "signon_bonus",
-          "type": "money",
-          "required": false,
-          "keyRole": "none",
+          "type": "Float",
           "description": "Sign-on bonus; cap per R13."
         },
         {
           "name": "band_status",
-          "type": "enum",
-          "required": false,
-          "keyRole": "none",
-          "enumValues": [
-            "InBand",
-            "AboveBand",
-            "BelowBand"
-          ]
+          "type": "List<String>",
+          "description": ""
         },
         {
           "name": "status",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Draft",
-            "Pending Approval",
-            "Approved",
-            "Extended",
-            "Accepted",
-            "Declined",
-            "Expired"
-          ]
+          "type": "List<String>",
+          "description": ""
         },
         {
           "name": "expires_at",
-          "type": "date",
-          "required": false,
-          "keyRole": "none",
+          "type": "Date",
           "description": "Expiry date, <= 7 business days after extension (per R9)."
         }
       ],
@@ -824,65 +742,45 @@
       "nameZh": "审批",
       "description": "A polymorphic approval record against a Requisition or an Offer, capturing approver, level, and decision.",
       "descriptionZh": "针对招聘需求或录用通知的多态审批记录，记录审批人、级别与决定。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Approval has no documented relationships to other objects.",
+      "primary_key": "approval_id",
+      "properties": [
         {
           "name": "approval_id",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
+          "type": "String",
+          "description": "",
           "nameZh": "审批ID"
         },
         {
           "name": "subject_type",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Requisition",
-            "Offer"
-          ]
+          "type": "List<String>",
+          "description": ""
         },
         {
           "name": "subject_id",
-          "type": "string",
-          "required": true,
-          "keyRole": "none",
+          "type": "String",
           "description": "Polymorphic reference to a Requisition or Offer, discriminated by subject_type (per §5). Not a single-target FK, so no refObjectTypeId."
         },
         {
           "name": "approver_id",
-          "type": "string",
-          "required": false,
-          "keyRole": "none"
+          "type": "String",
+          "description": ""
         },
         {
           "name": "approval_level",
-          "type": "enum",
-          "required": false,
-          "keyRole": "none",
-          "enumValues": [
-            "Manager",
-            "HRBP",
-            "Finance",
-            "VP"
-          ]
+          "type": "List<String>",
+          "description": ""
         },
         {
           "name": "decision",
-          "type": "enum",
-          "required": false,
-          "keyRole": "none",
-          "enumValues": [
-            "Approved",
-            "Rejected",
-            "Pending"
-          ]
+          "type": "List<String>",
+          "description": ""
         },
         {
           "name": "decided_at",
-          "type": "datetime",
-          "required": false,
-          "keyRole": "none"
+          "type": "Timestamp",
+          "description": ""
         }
       ],
       "relationshipIds": [],
@@ -917,45 +815,39 @@
       "nameZh": "背景调查",
       "description": "A Checkr background screening for a Candidate tied to an accepted Offer, gating conversion to Worker.",
       "descriptionZh": "针对与已接受录用关联的候选人的 Checkr 背景调查，作为转为正式员工的前置门槛。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Candidate undergoes BackgroundCheck. BackgroundCheck.candidate_id references Candidate. BackgroundCheck.offer_id references Offer.",
+      "primary_key": "check_id",
+      "properties": [
         {
           "name": "check_id",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
+          "type": "String",
+          "description": "",
           "nameZh": "背调ID"
         },
         {
           "name": "candidate_id",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:candidate"
+          "type": "String",
+          "description": "",
+          "is_foreign_key": true,
+          "references": "objectType:candidate"
         },
         {
           "name": "offer_id",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:offer"
+          "type": "String",
+          "description": "",
+          "is_foreign_key": true,
+          "references": "objectType:offer"
         },
         {
           "name": "result",
-          "type": "enum",
-          "required": false,
-          "keyRole": "none",
-          "enumValues": [
-            "Clear",
-            "Consider",
-            "Suspended"
-          ],
+          "type": "List<String>",
           "description": "Hire gate per R10."
         },
         {
           "name": "completed_at",
-          "type": "datetime",
-          "required": false,
-          "keyRole": "none"
+          "type": "Timestamp",
+          "description": ""
         }
       ],
       "relationshipIds": [
@@ -992,32 +884,29 @@
       "nameZh": "员工",
       "description": "A Workday Worker record — the hired employee, and the identity backing HiringManagers and Interviewers.",
       "descriptionZh": "Workday 中的员工记录——已入职员工，同时也是招聘经理与面试官的身份载体。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Worker has no documented relationships to other objects.",
+      "primary_key": "worker_id",
+      "properties": [
         {
           "name": "worker_id",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
+          "type": "String",
+          "description": "",
           "nameZh": "员工ID"
         },
         {
           "name": "email",
-          "type": "string",
-          "required": true,
-          "keyRole": "none",
+          "type": "String",
           "description": "Unique."
         },
         {
           "name": "department",
-          "type": "string",
-          "required": false,
-          "keyRole": "none"
+          "type": "String",
+          "description": ""
         },
         {
           "name": "is_bar_raiser_certified",
-          "type": "boolean",
-          "required": false,
-          "keyRole": "none",
+          "type": "Boolean",
           "description": "True for trained Bar Raisers (per R14)."
         }
       ],

@@ -113,33 +113,24 @@ function runChecks(o: Ontology, issues: ValidationIssue[]): void {
   // 1. Referential integrity + closed-vocabulary + provenance, per layer.
   // =========================================================================
 
-  // ---- ObjectTypes: attributes (enum / reference / fk) + sources. ---------
+  // ---- ObjectTypes: properties (foreign-key references) + sources. --------
   for (const obj of objects) {
     requireSources(obj.id, obj.provenance, obj.sources, false, issues);
 
-    for (const attr of arr(obj.attributes)) {
-      const path = `attributes.${attr.name}`;
-      if (attr.type === 'enum' && !nonEmptyArr(attr.enumValues)) {
-        issues.push({
-          level: 'error',
-          kind: 'enum_without_values',
-          from: obj.id,
-          field: `${path}.enumValues`,
-          message: `Enum attribute "${attr.name}" has no enumValues`,
-        });
-      }
-      const isRef = attr.type === 'reference' || attr.keyRole === 'fk';
-      if (isRef && !attr.refObjectTypeId) {
+    for (const prop of arr(obj.properties)) {
+      if (!prop.is_foreign_key) continue;
+      const path = `properties.${prop.name}`;
+      if (!prop.references) {
         issues.push({
           level: 'error',
           kind: 'reference_without_target',
           from: obj.id,
-          field: `${path}.refObjectTypeId`,
-          message: `Reference/fk attribute "${attr.name}" has no refObjectTypeId`,
+          field: `${path}.references`,
+          message: `Foreign-key property "${prop.name}" has no references`,
         });
-      } else if (isRef && attr.refObjectTypeId && !objectIds.has(attr.refObjectTypeId)) {
-        dangling(obj.id, `${path}.refObjectTypeId`, attr.refObjectTypeId,
-          'Attribute references unknown ObjectType id', issues);
+      } else if (!objectIds.has(prop.references)) {
+        dangling(obj.id, `${path}.references`, prop.references,
+          'Property references unknown ObjectType id', issues);
       }
     }
   }

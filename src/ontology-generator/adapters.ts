@@ -26,7 +26,8 @@
 import type {
   Ontology,
   ObjectType,
-  ObjectAttribute,
+  ObjectProperty,
+  PropertyType,
   Rule,
   ActionType,
   EventType,
@@ -35,7 +36,6 @@ import type {
   SourceRef,
   SourceDocument,
   DataType,
-  KeyRole,
   ActorRef,
   WorkflowStep,
   EventField,
@@ -309,13 +309,22 @@ function toObjectType(
   knownObjectNames: Set<string>,
 ): ObjectType {
   const id = objectId(o.name);
+  const properties = o.attrs.map((a) => toProperty(a, knownObjectNames));
+  const pkAttr = o.attrs.find((a) => a.role === 'pk');
+  const primary_key = pkAttr ? pkAttr.name : `${id.replace(PREFIX.object, '').replace(/-/g, '_')}_id`;
   return {
     id,
     uuid: demoUuid(id),
     name: o.name,
     nameZh: o.zh,
     description: `${o.name} — discovered across ${o.sources} source references.`,
-    attributes: o.attrs.map((a) => toAttribute(a, knownObjectNames)),
+    type: 'data',
+    relationship_description:
+      o.relations.length > 0
+        ? o.relations.map((r) => `${o.name} ${r}`).join('; ')
+        : `${o.name} has no documented relationships to other objects.`,
+    primary_key,
+    properties,
     sources: [synthSource(primarySource, `${o.name} entity referenced across the corpus.`)],
     confidence: o.confidence,
     provenance: 'inferred',
@@ -324,28 +333,52 @@ function toObjectType(
   };
 }
 
-function toAttribute(a: OntAttr, knownObjectNames: Set<string>): ObjectAttribute {
-  const parsed = parseAttrType(a.type, knownObjectNames);
-  const keyRole: KeyRole = a.role === 'pk' ? 'pk' : a.role === 'fk' ? 'fk' : 'none';
+/** Map the internal DataType the demo parser yields to the spec PropertyType. */
+function dataTypeToPropertyType(t: DataType): PropertyType {
+  switch (t) {
+    case 'integer':
+      return 'Integer';
+    case 'decimal':
+    case 'money':
+      return 'Float';
+    case 'boolean':
+      return 'Boolean';
+    case 'date':
+      return 'Date';
+    case 'datetime':
+      return 'Timestamp';
+    case 'enum':
+    case 'array':
+      return 'List<String>';
+    default:
+      return 'String';
+  }
+}
 
-  // The validator requires a refObjectTypeId for any reference-typed OR fk
-  // attribute. Resolve it from the parsed reference target, else from the
-  // attribute name convention (e.g. `customer_id` -> Customer).
-  let refObjectTypeId: string | undefined;
+function toProperty(a: OntAttr, knownObjectNames: Set<string>): ObjectProperty {
+  const parsed = parseAttrType(a.type, knownObjectNames);
+
+  // Resolve a foreign-key target from the parsed reference, else from the
+  // attribute-name convention (e.g. `customer_id` -> Customer).
+  let references: string | undefined;
   if (parsed.refTargetName) {
-    refObjectTypeId = objectId(parsed.refTargetName);
-  } else if (keyRole === 'fk') {
-    refObjectTypeId = inferRefFromAttrName(a.name, knownObjectNames);
+    references = objectId(parsed.refTargetName);
+  } else if (a.role === 'fk') {
+    references = inferRefFromAttrName(a.name, knownObjectNames);
   }
 
-  return {
+  const prop: ObjectProperty = {
     name: a.name,
-    type: parsed.type,
-    required: a.req,
-    keyRole,
-    enumValues: parsed.enumValues,
-    refObjectTypeId,
+    type: dataTypeToPropertyType(parsed.type),
+    description: parsed.enumValues && parsed.enumValues.length > 0
+      ? `One of: ${parsed.enumValues.join(', ')}.`
+      : `${a.name}.`,
   };
+  if (references) {
+    prop.is_foreign_key = true;
+    prop.references = references;
+  }
+  return prop;
 }
 
 /** `customer_id` -> objectType:customer when "Customer" is a known object. */
@@ -761,7 +794,7 @@ export function ontologyToDataset(o: Ontology, lang: Lang = 'en'): Dataset {
     color: obj.display?.color ?? 'accent',
     confidence: obj.confidence,
     sources: obj.sources.length,
-    attrs: obj.attributes.map(attributeToView),
+    attrs: obj.properties.map((p) => propertyToView(p, obj.primary_key)),
     relations: relsBySource.get(obj.id) ?? [],
   }));
 
@@ -821,25 +854,18 @@ export function ontologyToDataset(o: Ontology, lang: Lang = 'en'): Dataset {
   };
 }
 
-function attributeToView(a: ObjectAttribute): OntAttr {
+function propertyToView(p: ObjectProperty, primaryKey: string): OntAttr {
   return {
-    name: a.name,
-    type: viewTypeString(a),
-    role: a.keyRole === 'none' ? undefined : a.keyRole,
-    req: a.required,
+    name: p.name,
+    type: viewTypeString(p),
+    role: p.name === primaryKey ? 'pk' : p.is_foreign_key ? 'fk' : undefined,
+    req: p.name === primaryKey,
   };
 }
 
-function viewTypeString(a: ObjectAttribute): string {
-  if (a.type === 'enum' && a.enumValues && a.enumValues.length > 0) {
-    return `Enum<${a.enumValues.join('|')}>`;
+function viewTypeString(p: ObjectProperty): string {
+  if (p.is_foreign_key && p.references) {
+    return `Reference<${pascalCase(p.references.replace(PREFIX.object, ''))}>`;
   }
-  if (a.type === 'reference' && a.refObjectTypeId) {
-    return `Reference<${pascalCase(a.refObjectTypeId.replace(PREFIX.object, ''))}>`;
-  }
-  return capitalize(a.type);
-}
-
-function capitalize(s: string): string {
-  return s.length > 0 ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+  return p.type;
 }

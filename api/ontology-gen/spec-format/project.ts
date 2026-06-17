@@ -27,7 +27,7 @@ import type {
   ActionType,
   DataType,
   EventType,
-  ObjectAttribute,
+  ObjectProperty,
   ObjectType,
   Ontology,
   Process,
@@ -188,8 +188,7 @@ interface SpecCtx {
 }
 
 function defaultPrimaryKey(o: ObjectType, specId: string): string {
-  const pk = (o.attributes ?? []).find((a) => a.keyRole === 'pk');
-  return pk ? pk.name : `${snake(specId)}_id`;
+  return (o.primary_key && o.primary_key.trim()) || `${snake(specId)}_id`;
 }
 
 function buildCtx(o: Ontology): SpecCtx {
@@ -249,19 +248,19 @@ function buildCtx(o: Ontology): SpecCtx {
 // Objects.
 // ===========================================================================
 
-function projectProperty(attr: ObjectAttribute, ctx: SpecCtx): SpecObjectProperty {
-  const prop: SpecObjectProperty = {
-    name: attr.name,
-    type: mapDataType(attr.type),
-    description: attr.description?.trim() || `${humanize(attr.name)}.`,
+function projectProperty(prop: ObjectProperty, ctx: SpecCtx): SpecObjectProperty {
+  const out: SpecObjectProperty = {
+    name: prop.name,
+    type: prop.type,
+    description: prop.description?.trim() || `${humanize(prop.name)}.`,
   };
   // A foreign key is only marked when its target object is actually present, so
   // `references` always resolves to an emitted spec object id.
-  if (attr.refObjectTypeId && ctx.objSpecId.has(attr.refObjectTypeId)) {
-    prop.is_foreign_key = true;
-    prop.references = ctx.objSpecId.get(attr.refObjectTypeId)!;
+  if (prop.is_foreign_key && prop.references && ctx.objSpecId.has(prop.references)) {
+    out.is_foreign_key = true;
+    out.references = ctx.objSpecId.get(prop.references)!;
   }
-  return prop;
+  return out;
 }
 
 function synthesizeRelationshipDescription(o: ObjectType, ctx: SpecCtx): string {
@@ -276,9 +275,9 @@ function synthesizeRelationshipDescription(o: ObjectType, ctx: SpecCtx): string 
     }
   }
 
-  for (const attr of o.attributes ?? []) {
-    if (attr.refObjectTypeId && ctx.objName.has(attr.refObjectTypeId)) {
-      parts.push(`${o.name}.${attr.name} references ${ctx.objName.get(attr.refObjectTypeId)}.`);
+  for (const p of o.properties ?? []) {
+    if (p.is_foreign_key && p.references && ctx.objName.has(p.references)) {
+      parts.push(`${o.name}.${p.name} references ${ctx.objName.get(p.references)}.`);
     }
   }
 
@@ -295,13 +294,11 @@ function projectObject(o: ObjectType, ctx: SpecCtx): SpecObject {
     id: specId,
     name: o.name || specId,
     description: o.description?.trim() || '',
-    type: o.objectClass ?? heuristicObjectClass(o),
+    type: o.type ?? heuristicObjectClass(o),
     relationship_description:
-      o.relationshipNote?.en?.trim() ||
-      o.relationshipNote?.zh?.trim() ||
-      synthesizeRelationshipDescription(o, ctx),
-    primary_key: ctx.objPk.get(o.id) ?? defaultPrimaryKey(o, specId),
-    properties: (o.attributes ?? []).map((a) => projectProperty(a, ctx)),
+      o.relationship_description?.trim() || synthesizeRelationshipDescription(o, ctx),
+    primary_key: o.primary_key?.trim() || ctx.objPk.get(o.id) || defaultPrimaryKey(o, specId),
+    properties: (o.properties ?? []).map((p) => projectProperty(p, ctx)),
   };
 }
 

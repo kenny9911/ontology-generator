@@ -23,6 +23,8 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 
 import type { ObjectType, Ontology } from '../api/_shared/ontology-schema.js';
+import { PROPERTY_TYPES } from '../api/_shared/ontology-schema.js';
+import { validateOntology } from '../api/_shared/ontology-validate.js';
 import {
   ontologyToSpec,
   ontologyToSpecObjectsFile,
@@ -221,10 +223,10 @@ async function main(): Promise<void> {
     assertEq(eventSpecName('customer.signup.submitted'), 'CUSTOMER_SIGNUP_SUBMITTED', 'multi');
   });
 
-  await check('defaultPrimaryKey prefers the pk attribute, else <id>_id', () => {
-    const withPk = { attributes: [{ name: 'order_no', type: 'string', required: true, keyRole: 'pk' }] } as unknown as ObjectType;
-    assertEq(defaultPrimaryKey(withPk, 'Order'), 'order_no', 'pk attr');
-    const noPk = { attributes: [{ name: 'x', type: 'string', required: false, keyRole: 'none' }] } as unknown as ObjectType;
+  await check('defaultPrimaryKey prefers the object primary_key, else <id>_id', () => {
+    const withPk = { primary_key: 'order_no' } as unknown as ObjectType;
+    assertEq(defaultPrimaryKey(withPk, 'Order'), 'order_no', 'explicit primary_key');
+    const noPk = { properties: [{ name: 'x', type: 'String', description: '' }] } as unknown as ObjectType;
     assertEq(defaultPrimaryKey(noPk, 'Job_Requisition_Specification'), 'job_requisition_specification_id', 'default');
   });
 
@@ -318,12 +320,15 @@ async function main(): Promise<void> {
           name: 'PurchaseOrder',
           nameZh: '采购订单',
           description: 'A PO.',
-          attributes: [{ name: 'amount', type: 'money', required: true, keyRole: 'none' }],
+          type: 'data',
+          relationship_description: '',
+          // primary_key intentionally omitted -> projection must default it.
+          properties: [{ name: 'amount', type: 'Float', description: 'Amount.' }],
           sources: [{ documentId: 'd', documentName: 'd', snippet: 's' }],
           confidence: 1,
           provenance: 'extracted',
           reviewState: 'accepted',
-        },
+        } as unknown as ObjectType,
       ],
     };
     const spec = ontologyToSpec(o);
@@ -337,17 +342,19 @@ async function main(): Promise<void> {
       objects: [
         {
           id: 'objectType:order', uuid: 'u1', name: 'Order', nameZh: '订单', description: 'o',
-          attributes: [
-            { name: 'order_id', type: 'uuid', required: true, keyRole: 'pk' },
-            { name: 'customer_id', type: 'uuid', required: true, keyRole: 'fk', refObjectTypeId: 'objectType:customer' },
-            { name: 'ghost_id', type: 'uuid', required: false, keyRole: 'fk', refObjectTypeId: 'objectType:ghost' },
+          type: 'data', relationship_description: '', primary_key: 'order_id',
+          properties: [
+            { name: 'order_id', type: 'String', description: 'PK.' },
+            { name: 'customer_id', type: 'String', description: 'FK.', is_foreign_key: true, references: 'objectType:customer' },
+            { name: 'ghost_id', type: 'String', description: 'Dangling FK.', is_foreign_key: true, references: 'objectType:ghost' },
           ],
           sources: [{ documentId: 'd', documentName: 'd', snippet: 's' }],
           confidence: 1, provenance: 'extracted', reviewState: 'accepted',
         },
         {
           id: 'objectType:customer', uuid: 'u2', name: 'Customer', nameZh: '客户', description: 'c',
-          attributes: [{ name: 'customer_id', type: 'uuid', required: true, keyRole: 'pk' }],
+          type: 'data', relationship_description: '', primary_key: 'customer_id',
+          properties: [{ name: 'customer_id', type: 'String', description: 'PK.' }],
           sources: [{ documentId: 'd', documentName: 'd', snippet: 's' }],
           confidence: 1, provenance: 'extracted', reviewState: 'accepted',
         },
@@ -368,7 +375,8 @@ async function main(): Promise<void> {
       ...baseOntology(),
       objects: [{
         id: 'objectType:order', uuid: 'u1', name: 'Order', nameZh: '订单', description: 'o',
-        attributes: [{ name: 'order_id', type: 'uuid', required: true, keyRole: 'pk' }],
+        type: 'data', relationship_description: '', primary_key: 'order_id',
+        properties: [{ name: 'order_id', type: 'String', description: 'PK.' }],
         sources: [{ documentId: 'd', documentName: 'd', snippet: 's' }], confidence: 1, provenance: 'extracted', reviewState: 'accepted',
       }],
       rules: [
@@ -399,18 +407,20 @@ async function main(): Promise<void> {
     assertEq(soft.executor, 'Human', 'executor passthrough');
   });
 
-  await check('system object classified by heuristic when objectClass absent', () => {
+  await check('system object classified by heuristic when type absent', () => {
     const o: Ontology = {
       ...baseOntology(),
       objects: [
         {
+          // `type` intentionally omitted -> projection must apply the heuristic.
           id: 'objectType:raas-system', uuid: 'u1', name: 'RAAS_System', nameZh: 'RAAS系统', description: 's',
-          attributes: [], sources: [{ documentId: 'd', documentName: 'd', snippet: 's' }],
+          relationship_description: '', primary_key: 'raas_system_id', properties: [],
+          sources: [{ documentId: 'd', documentName: 'd', snippet: 's' }],
           confidence: 1, provenance: 'extracted', reviewState: 'accepted',
-        },
+        } as unknown as ObjectType,
         {
           id: 'objectType:candidate', uuid: 'u2', name: 'Candidate', nameZh: '候选人', description: 'c',
-          objectClass: 'data', attributes: [],
+          type: 'data', relationship_description: '', primary_key: 'candidate_id', properties: [],
           sources: [{ documentId: 'd', documentName: 'd', snippet: 's' }],
           confidence: 1, provenance: 'extracted', reviewState: 'accepted',
         },
@@ -437,6 +447,59 @@ async function main(): Promise<void> {
     assert(isRec(f.metadata), 'metadata present');
     assert(typeof f.metadata.project_name === 'string', 'project_name');
     assert(Array.isArray(f.objects), 'objects array');
+  });
+
+  // -------------------------------------------------------------------------
+  section('7. CANONICAL object schema conformance (the migrated internal model)');
+
+  const PROP_TYPE_SET = new Set<string>(PROPERTY_TYPES);
+  const isValidPropType = (t: unknown): boolean =>
+    typeof t === 'string' && (PROP_TYPE_SET.has(t) || /^List<.+>$/.test(t));
+
+  for (const { file, ontology } of fixtures) {
+    await check(`${file}: every canonical object uses the spec field shape`, () => {
+      const objectIds = new Set(ontology.objects.map((o) => o.id));
+      for (const o of ontology.objects) {
+        // object-level required fields
+        assert(o.type === 'data' || o.type === 'system', `${o.id}: type must be data|system, got ${JSON.stringify(o.type)}`);
+        assert(typeof o.relationship_description === 'string' && o.relationship_description.length > 0, `${o.id}: relationship_description must be a non-empty string`);
+        assert(typeof o.primary_key === 'string' && o.primary_key.length > 0, `${o.id}: primary_key must be a non-empty string`);
+        assert(Array.isArray(o.properties), `${o.id}: properties must be an array`);
+        // legacy fields must be GONE
+        assert(!('attributes' in o), `${o.id}: legacy "attributes" must be removed`);
+        for (const p of o.properties) {
+          assert(typeof p.name === 'string' && p.name.length > 0, `${o.id}.${p.name}: property name`);
+          assert(isValidSpecishType(p.type), `${o.id}.${p.name}: type "${p.type}" not in the closed property vocabulary`);
+          assert(typeof p.description === 'string', `${o.id}.${p.name}: description must be a string`);
+          assert(!('keyRole' in p), `${o.id}.${p.name}: legacy "keyRole" must be removed`);
+          assert(!('enumValues' in p), `${o.id}.${p.name}: legacy "enumValues" must be removed`);
+          assert(!('refObjectTypeId' in p), `${o.id}.${p.name}: legacy "refObjectTypeId" must be removed`);
+          if (p.is_foreign_key) {
+            assert(typeof p.references === 'string' && objectIds.has(p.references), `${o.id}.${p.name}: fk references must resolve to an object id`);
+          }
+        }
+      }
+      function isValidSpecishType(t: unknown): boolean {
+        return isValidPropType(t);
+      }
+    });
+  }
+
+  await check('no canonical property type is a legacy/lowercase DataType', () => {
+    for (const { ontology } of fixtures) {
+      for (const o of ontology.objects) {
+        for (const p of o.properties) {
+          assert(p.type !== 'enum' && p.type !== 'string' && p.type !== 'uuid', `${o.id}.${p.name}: legacy type ${p.type}`);
+        }
+      }
+    }
+  });
+
+  await check('migrated fixtures still pass the canonical validateOntology', () => {
+    for (const { file, ontology } of fixtures) {
+      const errors = validateOntology(ontology).filter((i) => i.level === 'error');
+      assert(errors.length === 0, `${file}: ${errors.length} validator error(s): ${errors.slice(0, 3).map((e) => `${e.kind}@${e.from}`).join(', ')}`);
+    }
   });
 
   // -------------------------------------------------------------------------

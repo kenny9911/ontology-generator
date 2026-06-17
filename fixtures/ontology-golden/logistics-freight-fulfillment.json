@@ -44,61 +44,45 @@
       "nameZh": "订单",
       "description": "A client purchase order received via the EDI 940 Warehouse Shipping Order, validated and accepted in TMS, then decomposed into one or more Consignments.",
       "descriptionZh": "通过 EDI 940 仓储发货单接收的客户订单，在 TMS 中校验并接受后，分解为一个或多个货件。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Order decomposed into Consignment.",
+      "primary_key": "order_id",
+      "properties": [
         {
           "name": "order_id",
-          "nameZh": "订单编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "ORD-######### primary key."
+          "type": "String",
+          "description": "ORD-######### primary key.",
+          "nameZh": "订单编号"
         },
         {
           "name": "client_id",
-          "nameZh": "客户编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "none",
-          "description": "FK to client master."
+          "type": "String",
+          "description": "FK to client master.",
+          "nameZh": "客户编号"
         },
         {
           "name": "status",
-          "nameZh": "状态",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Received",
-            "Accepted",
-            "Rejected"
-          ]
+          "type": "List<String>",
+          "description": "",
+          "nameZh": "状态"
         },
         {
           "name": "requested_ship_date",
-          "nameZh": "请求发运日期",
-          "type": "date",
-          "required": false,
-          "keyRole": "none"
+          "type": "Date",
+          "description": "",
+          "nameZh": "请求发运日期"
         },
         {
           "name": "ship_to_party",
-          "nameZh": "收货方",
-          "type": "string",
-          "required": true,
-          "keyRole": "none"
+          "type": "String",
+          "description": "",
+          "nameZh": "收货方"
         },
         {
           "name": "source_transaction",
-          "nameZh": "来源交易",
-          "type": "enum",
-          "required": false,
-          "keyRole": "none",
-          "enumValues": [
-            "EDI940",
-            "API",
-            "Manual"
-          ],
-          "description": "Provenance of intake."
+          "type": "List<String>",
+          "description": "Provenance of intake.",
+          "nameZh": "来源交易"
         }
       ],
       "relationshipIds": [
@@ -135,76 +119,61 @@
       "nameZh": "货件",
       "description": "The goods destined for a single ship-to party, managed in WMS; the customs sub-process and international handling are driven off this object.",
       "descriptionZh": "发往单一收货方的货物，由 WMS 管理；报关子流程与国际处理均以此对象为基础。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Order decomposed into Consignment. Shipment groups Consignment. Consignment has customs declaration CustomsDeclaration. Consignment.order_id references Order. Consignment.shipment_id references Shipment.",
+      "primary_key": "consignment_id",
+      "properties": [
         {
           "name": "consignment_id",
-          "nameZh": "货件编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "CON-######### primary key."
+          "type": "String",
+          "description": "CON-######### primary key.",
+          "nameZh": "货件编号"
         },
         {
           "name": "order_id",
+          "type": "String",
+          "description": "FK to Order.orderId.",
           "nameZh": "订单编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:order",
-          "description": "FK to Order.orderId."
+          "is_foreign_key": true,
+          "references": "objectType:order"
         },
         {
           "name": "shipment_id",
+          "type": "String",
+          "description": "FK to Shipment.shipmentId; nullable until planned.",
           "nameZh": "运单编号",
-          "type": "reference",
-          "required": false,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:shipment",
-          "description": "FK to Shipment.shipmentId; nullable until planned."
+          "is_foreign_key": true,
+          "references": "objectType:shipment"
         },
         {
           "name": "is_international",
-          "nameZh": "是否国际",
-          "type": "boolean",
-          "required": true,
-          "keyRole": "none",
-          "description": "Drives the customs sub-process."
+          "type": "Boolean",
+          "description": "Drives the customs sub-process.",
+          "nameZh": "是否国际"
         },
         {
           "name": "declared_value_usd",
-          "nameZh": "申报价值（美元）",
-          "type": "decimal",
-          "required": false,
-          "keyRole": "none",
-          "description": "Used by Rule R8 and R19."
+          "type": "Float",
+          "description": "Used by Rule R8 and R19.",
+          "nameZh": "申报价值（美元）"
         },
         {
           "name": "weight_kg",
-          "nameZh": "重量（千克）",
-          "type": "decimal",
-          "required": false,
-          "keyRole": "none"
+          "type": "Float",
+          "description": "",
+          "nameZh": "重量（千克）"
         },
         {
           "name": "status",
-          "nameZh": "状态",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Created",
-            "Staged",
-            "Departed",
-            "Delivered"
-          ]
+          "type": "List<String>",
+          "description": "",
+          "nameZh": "状态"
         },
         {
           "name": "hs_codes",
-          "nameZh": "HS编码",
-          "type": "array",
-          "required": false,
-          "keyRole": "none",
-          "description": "Harmonized System codes."
+          "type": "List<String>",
+          "description": "Harmonized System codes.",
+          "nameZh": "HS编码"
         }
       ],
       "relationshipIds": [
@@ -243,79 +212,63 @@
       "nameZh": "运单",
       "description": "A freight movement in TMS that groups one or more Consignments along a Lane, is tendered to a Carrier, and is tracked from In Transit to Delivered against a committed delivery window.",
       "descriptionZh": "TMS 中的货运运输，沿某条运线归集一个或多个货件，向承运商招标，并在承诺送达窗口内从在途跟踪至已送达。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Shipment groups Consignment. Shipment runs on Lane. Shipment tendered to Carrier. Shipment governed by SLA. Shipment has stop Stop. Shipment has tracking event TrackingEvent. Shipment has pod ProofOfDelivery. Shipment.lane_id references Lane. Shipment.carrier_id references Carrier. Shipment.sla_id references SLA.",
+      "primary_key": "shipment_id",
+      "properties": [
         {
           "name": "shipment_id",
-          "nameZh": "运单编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "SHP-######### primary key."
+          "type": "String",
+          "description": "SHP-######### primary key.",
+          "nameZh": "运单编号"
         },
         {
           "name": "lane_id",
+          "type": "String",
+          "description": "FK to Lane.laneId.",
           "nameZh": "运线编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:lane",
-          "description": "FK to Lane.laneId."
+          "is_foreign_key": true,
+          "references": "objectType:lane"
         },
         {
           "name": "carrier_id",
+          "type": "String",
+          "description": "FK to Carrier.carrierId; set at tender.",
           "nameZh": "承运商编号",
-          "type": "reference",
-          "required": false,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:carrier",
-          "description": "FK to Carrier.carrierId; set at tender."
+          "is_foreign_key": true,
+          "references": "objectType:carrier"
         },
         {
           "name": "sla_id",
+          "type": "String",
+          "description": "FK to SLA.slaId.",
           "nameZh": "SLA编号",
-          "type": "reference",
-          "required": false,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:sla",
-          "description": "FK to SLA.slaId."
+          "is_foreign_key": true,
+          "references": "objectType:sla"
         },
         {
           "name": "status",
-          "nameZh": "状态",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Planned",
-            "Tendered",
-            "In Transit",
-            "Delivered",
-            "Cancelled"
-          ]
+          "type": "List<String>",
+          "description": "",
+          "nameZh": "状态"
         },
         {
           "name": "committed_delivery_window",
-          "nameZh": "承诺送达窗口",
-          "type": "datetime",
-          "required": false,
-          "keyRole": "none",
-          "description": "Timestamp range derived from SLA."
+          "type": "Timestamp",
+          "description": "Timestamp range derived from SLA.",
+          "nameZh": "承诺送达窗口"
         },
         {
           "name": "linehaul_charge_usd",
-          "nameZh": "干线运费（美元）",
-          "type": "decimal",
-          "required": false,
-          "keyRole": "none",
-          "description": "Basis for service-failure credit (Rule R4)."
+          "type": "Float",
+          "description": "Basis for service-failure credit (Rule R4).",
+          "nameZh": "干线运费（美元）"
         },
         {
           "name": "pro_number",
-          "nameZh": "承运确认号",
-          "type": "string",
-          "required": false,
-          "keyRole": "none",
-          "description": "Carrier confirmation (PRO/booking) number."
+          "type": "String",
+          "description": "Carrier confirmation (PRO/booking) number.",
+          "nameZh": "承运确认号"
         }
       ],
       "relationshipIds": [
@@ -358,57 +311,47 @@
       "nameZh": "站点",
       "description": "An ordered pickup or delivery location on a Shipment's route, with an appointment window against which dwell and detention are measured.",
       "descriptionZh": "运单路线上有序的提货或送货地点，带有约定时间窗口，用于衡量停留与滞留时间。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Shipment has stop Stop. Stop.shipment_id references Shipment.",
+      "primary_key": "stop_id",
+      "properties": [
         {
           "name": "stop_id",
-          "nameZh": "站点编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "Primary key."
+          "type": "String",
+          "description": "Primary key.",
+          "nameZh": "站点编号"
         },
         {
           "name": "shipment_id",
+          "type": "String",
+          "description": "FK to Shipment.shipmentId.",
           "nameZh": "运单编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:shipment",
-          "description": "FK to Shipment.shipmentId."
+          "is_foreign_key": true,
+          "references": "objectType:shipment"
         },
         {
           "name": "sequence",
-          "nameZh": "序号",
-          "type": "integer",
-          "required": true,
-          "keyRole": "none",
-          "description": "pickup=1, delivery=last."
+          "type": "Integer",
+          "description": "pickup=1, delivery=last.",
+          "nameZh": "序号"
         },
         {
           "name": "stop_type",
-          "nameZh": "类型",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Pickup",
-            "Delivery"
-          ]
+          "type": "List<String>",
+          "description": "",
+          "nameZh": "类型"
         },
         {
           "name": "appointment_window",
-          "nameZh": "约定窗口",
-          "type": "datetime",
-          "required": false,
-          "keyRole": "none",
-          "description": "Dwell measured against this (Rule R17)."
+          "type": "Timestamp",
+          "description": "Dwell measured against this (Rule R17).",
+          "nameZh": "约定窗口"
         },
         {
           "name": "actual_arrival",
-          "nameZh": "实际到达",
-          "type": "datetime",
-          "required": false,
-          "keyRole": "none"
+          "type": "Timestamp",
+          "description": "",
+          "nameZh": "实际到达"
         }
       ],
       "relationshipIds": [
@@ -445,49 +388,39 @@
       "nameZh": "承运商",
       "description": "A motor carrier identified by its SCAC code, qualified per Lane, governed by on-time performance and cargo-insurance thresholds, and the counterparty to tenders and service-failure claims.",
       "descriptionZh": "以 SCAC 代码标识的汽车承运商，按运线资格审核，受准时率与货物保险阈值约束，是招标与服务失败索赔的对手方。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Shipment tendered to Carrier. Lane approves Carrier. ServiceFailureClaim filed against Carrier.",
+      "primary_key": "carrier_id",
+      "properties": [
         {
           "name": "carrier_id",
-          "nameZh": "承运商编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "SCAC (Standard Carrier Alpha Code) primary key."
+          "type": "String",
+          "description": "SCAC (Standard Carrier Alpha Code) primary key.",
+          "nameZh": "承运商编号"
         },
         {
           "name": "name",
-          "nameZh": "名称",
-          "type": "string",
-          "required": true,
-          "keyRole": "none"
+          "type": "String",
+          "description": "",
+          "nameZh": "名称"
         },
         {
           "name": "on_time_rate_30d",
-          "nameZh": "30天准时率",
-          "type": "decimal",
-          "required": false,
-          "keyRole": "none",
-          "description": "0–1; governs performance hold (Rule R16)."
+          "type": "Float",
+          "description": "0–1; governs performance hold (Rule R16).",
+          "nameZh": "30天准时率"
         },
         {
           "name": "cargo_insurance_usd",
-          "nameZh": "货物保险额（美元）",
-          "type": "decimal",
-          "required": false,
-          "keyRole": "none",
-          "description": "Governs high-value tender (Rule R19)."
+          "type": "Float",
+          "description": "Governs high-value tender (Rule R19).",
+          "nameZh": "货物保险额（美元）"
         },
         {
           "name": "status",
-          "nameZh": "状态",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Active",
-            "PerformanceHold",
-            "Suspended"
-          ]
+          "type": "List<String>",
+          "description": "",
+          "nameZh": "状态"
         }
       ],
       "relationshipIds": [
@@ -526,48 +459,39 @@
       "nameZh": "运线",
       "description": "An origin–destination corridor in TMS with a commitment tier (Guaranteed or Standard) and an approved-carrier roster that governs which Carriers may be tendered freight.",
       "descriptionZh": "TMS 中的起讫点走廊，带有承诺等级（保证或标准）与经批准的承运商名单，决定哪些承运商可被招标。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Shipment runs on Lane. Lane approves Carrier. Lane has sla SLA.",
+      "primary_key": "lane_id",
+      "properties": [
         {
           "name": "lane_id",
-          "nameZh": "运线编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "LN-#### primary key."
+          "type": "String",
+          "description": "LN-#### primary key.",
+          "nameZh": "运线编号"
         },
         {
           "name": "origin_region",
-          "nameZh": "起始区域",
-          "type": "string",
-          "required": true,
-          "keyRole": "none"
+          "type": "String",
+          "description": "",
+          "nameZh": "起始区域"
         },
         {
           "name": "destination_region",
-          "nameZh": "目的区域",
-          "type": "string",
-          "required": true,
-          "keyRole": "none"
+          "type": "String",
+          "description": "",
+          "nameZh": "目的区域"
         },
         {
           "name": "commitment_tier",
-          "nameZh": "承诺等级",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Guaranteed",
-            "Standard"
-          ],
-          "description": "Drives credit eligibility (Rule R3)."
+          "type": "List<String>",
+          "description": "Drives credit eligibility (Rule R3).",
+          "nameZh": "承诺等级"
         },
         {
           "name": "approved_carrier_ids",
-          "nameZh": "批准承运商",
-          "type": "array",
-          "required": false,
-          "keyRole": "none",
-          "description": "FK to Carrier.carrierId (Rule R2)."
+          "type": "List<String>",
+          "description": "FK to Carrier.carrierId (Rule R2).",
+          "nameZh": "批准承运商"
         }
       ],
       "relationshipIds": [
@@ -606,39 +530,35 @@
       "nameZh": "服务等级协议",
       "description": "The service-level commitment attached to a Lane that defines the committed transit hours and the credit schedule against which a Shipment's delivery window is evaluated.",
       "descriptionZh": "附加于运线的服务级别承诺，定义承诺运输时长与信用减免方案，用以评估运单送达窗口。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Shipment governed by SLA. Lane has sla SLA. SLA.lane_id references Lane.",
+      "primary_key": "sla_id",
+      "properties": [
         {
           "name": "sla_id",
-          "nameZh": "SLA编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "Primary key."
+          "type": "String",
+          "description": "Primary key.",
+          "nameZh": "SLA编号"
         },
         {
           "name": "lane_id",
+          "type": "String",
+          "description": "FK to Lane.laneId.",
           "nameZh": "运线编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:lane",
-          "description": "FK to Lane.laneId."
+          "is_foreign_key": true,
+          "references": "objectType:lane"
         },
         {
           "name": "transit_hours",
-          "nameZh": "运输时长（小时）",
-          "type": "integer",
-          "required": true,
-          "keyRole": "none",
-          "description": "Committed transit time."
+          "type": "Integer",
+          "description": "Committed transit time.",
+          "nameZh": "运输时长（小时）"
         },
         {
           "name": "credit_schedule_ref",
-          "nameZh": "信用方案引用",
-          "type": "string",
-          "required": false,
-          "keyRole": "none",
-          "description": "Reference to CSA §7.4."
+          "type": "String",
+          "description": "Reference to CSA §7.4.",
+          "nameZh": "信用方案引用"
         }
       ],
       "relationshipIds": [
@@ -676,73 +596,53 @@
       "nameZh": "报关单",
       "description": "The customs filing for an international Consignment submitted to the broker via CBP-Link, carrying entry type, duties, and any export-license reference; it must be Accepted before departure.",
       "descriptionZh": "通过 CBP-Link 向报关行提交的国际货件报关申报，载有进口类型、关税及任何出口许可引用；须在发运前被接受。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Consignment has customs declaration CustomsDeclaration. CustomsDeclaration.consignment_id references Consignment.",
+      "primary_key": "declaration_id",
+      "properties": [
         {
           "name": "declaration_id",
-          "nameZh": "报关单编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "CD-######### primary key."
+          "type": "String",
+          "description": "CD-######### primary key.",
+          "nameZh": "报关单编号"
         },
         {
           "name": "consignment_id",
+          "type": "String",
+          "description": "FK to Consignment.consignmentId.",
           "nameZh": "货件编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:consignment",
-          "description": "FK to Consignment.consignmentId."
+          "is_foreign_key": true,
+          "references": "objectType:consignment"
         },
         {
           "name": "entry_type",
-          "nameZh": "进口类型",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Formal",
-            "Informal",
-            "InBond"
-          ],
-          "description": "Rule R8, E1."
+          "type": "List<String>",
+          "description": "Rule R8, E1.",
+          "nameZh": "进口类型"
         },
         {
           "name": "status",
-          "nameZh": "状态",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Draft",
-            "Filed",
-            "Accepted",
-            "Held",
-            "Rejected"
-          ]
+          "type": "List<String>",
+          "description": "",
+          "nameZh": "状态"
         },
         {
           "name": "duties_assigned_usd",
-          "nameZh": "已核定关税（美元）",
-          "type": "decimal",
-          "required": false,
-          "keyRole": "none",
-          "description": "Set on acceptance."
+          "type": "Float",
+          "description": "Set on acceptance.",
+          "nameZh": "已核定关税（美元）"
         },
         {
           "name": "export_license_ref",
-          "nameZh": "出口许可引用",
-          "type": "string",
-          "required": false,
-          "keyRole": "none",
-          "description": "Required for controlled goods (Rule R9)."
+          "type": "String",
+          "description": "Required for controlled goods (Rule R9).",
+          "nameZh": "出口许可引用"
         },
         {
           "name": "broker_reference",
-          "nameZh": "报关行引用",
-          "type": "string",
-          "required": false,
-          "keyRole": "none"
+          "type": "String",
+          "description": "",
+          "nameZh": "报关行引用"
         }
       ],
       "relationshipIds": [
@@ -779,53 +679,41 @@
       "nameZh": "轨迹事件",
       "description": "A canonicalized shipment status record appended to a Shipment from inbound EDI 214 messages, mapping raw EDI status codes to lifecycle states and driving SLA re-evaluation.",
       "descriptionZh": "从入站 EDI 214 报文追加到运单上的规范化状态记录，将原始 EDI 状态码映射为生命周期状态并触发 SLA 重新评估。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Shipment has tracking event TrackingEvent. TrackingEvent.shipment_id references Shipment.",
+      "primary_key": "event_id",
+      "properties": [
         {
           "name": "event_id",
-          "nameZh": "事件编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "Primary key."
+          "type": "String",
+          "description": "Primary key.",
+          "nameZh": "事件编号"
         },
         {
           "name": "shipment_id",
+          "type": "String",
+          "description": "FK to Shipment.shipmentId.",
           "nameZh": "运单编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:shipment",
-          "description": "FK to Shipment.shipmentId."
+          "is_foreign_key": true,
+          "references": "objectType:shipment"
         },
         {
           "name": "edi_status_code",
-          "nameZh": "EDI状态码",
-          "type": "string",
-          "required": true,
-          "keyRole": "none",
-          "description": "Raw EDI 214 code, e.g., AF, X3, AG, D1."
+          "type": "String",
+          "description": "Raw EDI 214 code, e.g., AF, X3, AG, D1.",
+          "nameZh": "EDI状态码"
         },
         {
           "name": "canonical_status",
-          "nameZh": "规范状态",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Departed",
-            "InTransit",
-            "ArrivedDelivery",
-            "Delivered",
-            "Exception"
-          ],
-          "description": "Mapped value."
+          "type": "List<String>",
+          "description": "Mapped value.",
+          "nameZh": "规范状态"
         },
         {
           "name": "event_timestamp",
-          "nameZh": "事件时间",
-          "type": "datetime",
-          "required": true,
-          "keyRole": "none"
+          "type": "Timestamp",
+          "description": "",
+          "nameZh": "事件时间"
         }
       ],
       "relationshipIds": [
@@ -862,46 +750,41 @@
       "nameZh": "签收凭证",
       "description": "The captured evidence of delivery in WMS — timestamp plus recipient signature, or a geotagged photo in lieu of signature — without which a Shipment may not be marked Delivered.",
       "descriptionZh": "WMS 中采集的送达证据——时间戳加收件人签名，或在无签名时以带地理标记的照片代替——缺此运单不得标记为已送达。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Shipment has pod ProofOfDelivery. ProofOfDelivery.shipment_id references Shipment.",
+      "primary_key": "pod_id",
+      "properties": [
         {
           "name": "pod_id",
-          "nameZh": "签收编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "POD-######### primary key."
+          "type": "String",
+          "description": "POD-######### primary key.",
+          "nameZh": "签收编号"
         },
         {
           "name": "shipment_id",
+          "type": "String",
+          "description": "FK to Shipment.shipmentId.",
           "nameZh": "运单编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:shipment",
-          "description": "FK to Shipment.shipmentId."
+          "is_foreign_key": true,
+          "references": "objectType:shipment"
         },
         {
           "name": "delivery_timestamp",
-          "nameZh": "送达时间",
-          "type": "datetime",
-          "required": true,
-          "keyRole": "none",
-          "description": "Required (Rule R12)."
+          "type": "Timestamp",
+          "description": "Required (Rule R12).",
+          "nameZh": "送达时间"
         },
         {
           "name": "signature_name",
-          "nameZh": "签名",
-          "type": "string",
-          "required": false,
-          "keyRole": "none"
+          "type": "String",
+          "description": "",
+          "nameZh": "签名"
         },
         {
           "name": "photo_uri",
-          "nameZh": "照片地址",
-          "type": "string",
-          "required": false,
-          "keyRole": "none",
-          "description": "Required if no signature (Rule R12)."
+          "type": "String",
+          "description": "Required if no signature (Rule R12).",
+          "nameZh": "照片地址"
         }
       ],
       "relationshipIds": [
@@ -938,80 +821,55 @@
       "nameZh": "异常",
       "description": "A TMS record opened automatically on an SLA breach or customs hold, classified by type and liability, that drives whether a service-failure claim is raised and is not closed until any linked claim is terminal.",
       "descriptionZh": "在 SLA 违约或海关扣留时由 TMS 自动开立的记录，按类型与责任归属分类，决定是否提起服务失败索赔，且在任何关联索赔进入终态前不得关闭。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Exception raises ServiceFailureClaim. Exception.shipment_id references Shipment. Exception.consignment_id references Consignment.",
+      "primary_key": "exception_id",
+      "properties": [
         {
           "name": "exception_id",
-          "nameZh": "异常编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "EXC-######### primary key."
+          "type": "String",
+          "description": "EXC-######### primary key.",
+          "nameZh": "异常编号"
         },
         {
           "name": "shipment_id",
+          "type": "String",
+          "description": "FK to Shipment.shipmentId; nullable.",
           "nameZh": "运单编号",
-          "type": "reference",
-          "required": false,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:shipment",
-          "description": "FK to Shipment.shipmentId; nullable."
+          "is_foreign_key": true,
+          "references": "objectType:shipment"
         },
         {
           "name": "consignment_id",
+          "type": "String",
+          "description": "FK to Consignment.consignmentId; nullable.",
           "nameZh": "货件编号",
-          "type": "reference",
-          "required": false,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:consignment",
-          "description": "FK to Consignment.consignmentId; nullable."
+          "is_foreign_key": true,
+          "references": "objectType:consignment"
         },
         {
           "name": "exception_type",
-          "nameZh": "类型",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "SLA_BREACH",
-            "CUSTOMS_HOLD",
-            "DAMAGE",
-            "LOST"
-          ]
+          "type": "List<String>",
+          "description": "",
+          "nameZh": "类型"
         },
         {
           "name": "liability",
-          "nameZh": "责任归属",
-          "type": "enum",
-          "required": false,
-          "keyRole": "none",
-          "enumValues": [
-            "CARRIER",
-            "CUSTOMER",
-            "INTERNAL",
-            "FORCE_MAJEURE"
-          ],
-          "description": "Set at classification."
+          "type": "List<String>",
+          "description": "Set at classification.",
+          "nameZh": "责任归属"
         },
         {
           "name": "credit_eligible",
-          "nameZh": "可减免",
-          "type": "boolean",
-          "required": false,
-          "keyRole": "none",
-          "description": "Drives claim (Rule R14)."
+          "type": "Boolean",
+          "description": "Drives claim (Rule R14).",
+          "nameZh": "可减免"
         },
         {
           "name": "status",
-          "nameZh": "状态",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Open",
-            "Classified",
-            "Resolved",
-            "Closed"
-          ]
+          "type": "List<String>",
+          "description": "",
+          "nameZh": "状态"
         }
       ],
       "relationshipIds": [
@@ -1048,63 +906,49 @@
       "nameZh": "服务失败索赔",
       "description": "A credit claim raised against a Carrier for a service failure on a guaranteed Lane, carrying the calculated credit amount and cited CSA clause; it must be submitted within 30 days and reach a terminal state before its Exception closes.",
       "descriptionZh": "针对保证运线服务失败向承运商提起的减免索赔，载有计算的减免金额与引用的 CSA 条款；须在 30 天内提交，并在其异常关闭前进入终态。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Exception raises ServiceFailureClaim. ServiceFailureClaim filed against Carrier. ServiceFailureClaim.exception_id references Exception. ServiceFailureClaim.carrier_id references Carrier.",
+      "primary_key": "claim_id",
+      "properties": [
         {
           "name": "claim_id",
-          "nameZh": "索赔编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "CLM-######### primary key."
+          "type": "String",
+          "description": "CLM-######### primary key.",
+          "nameZh": "索赔编号"
         },
         {
           "name": "exception_id",
+          "type": "String",
+          "description": "FK to Exception.exceptionId.",
           "nameZh": "异常编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:exception",
-          "description": "FK to Exception.exceptionId."
+          "is_foreign_key": true,
+          "references": "objectType:exception"
         },
         {
           "name": "carrier_id",
+          "type": "String",
+          "description": "FK to Carrier.carrierId.",
           "nameZh": "承运商编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:carrier",
-          "description": "FK to Carrier.carrierId."
+          "is_foreign_key": true,
+          "references": "objectType:carrier"
         },
         {
           "name": "credit_amount_usd",
-          "nameZh": "减免金额（美元）",
-          "type": "decimal",
-          "required": false,
-          "keyRole": "none",
-          "description": "Per credit schedule (Rule R4)."
+          "type": "Float",
+          "description": "Per credit schedule (Rule R4).",
+          "nameZh": "减免金额（美元）"
         },
         {
           "name": "cited_clause",
-          "nameZh": "引用条款",
-          "type": "string",
-          "required": false,
-          "keyRole": "none",
-          "description": "e.g., \"CSA §7.3\"."
+          "type": "String",
+          "description": "e.g., \"CSA §7.3\".",
+          "nameZh": "引用条款"
         },
         {
           "name": "status",
-          "nameZh": "状态",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Draft",
-            "Submitted",
-            "Settled",
-            "Credited",
-            "Contested",
-            "WrittenOff"
-          ]
+          "type": "List<String>",
+          "description": "",
+          "nameZh": "状态"
         }
       ],
       "relationshipIds": [

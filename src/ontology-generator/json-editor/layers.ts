@@ -39,15 +39,78 @@ export function idPrefixFor(layer: EditorLayer): string {
   return ID_PREFIX[layer];
 }
 
+/** The array key each layer is wrapped under in the editor doc (matches the
+ *  reference sample files; the "Workflow" tab == processes => "workflows"). */
+const LAYER_DOC_KEY: Record<EditorLayer, string> = {
+  objects: 'objects',
+  rules: 'rules',
+  actions: 'actions',
+  events: 'events',
+  processes: 'workflows',
+};
+
+export function layerDocKey(layer: EditorLayer): string {
+  return LAYER_DOC_KEY[layer];
+}
+
 /** The nodes of one layer (never mutates `o`). Missing layer → []. */
 export function extractLayer(o: Ontology, layer: EditorLayer): unknown[] {
   const arr = (o as unknown as Record<EditorLayer, unknown>)[layer];
   return Array.isArray(arr) ? (arr as unknown[]) : [];
 }
 
-/** Pretty-print a layer's node array as 2-space JSON. */
+/** Pretty-print a layer's node array as 2-space JSON (bare array). */
 export function serializeLayer(arr: unknown[]): string {
   return JSON.stringify(arr, null, 2);
+}
+
+/** The per-layer metadata header (mirrors the reference sample files). */
+export interface LayerMetadata {
+  project_name: string;
+  document_type: string;
+  version: string;
+  last_updated: string;
+  description: string;
+}
+
+const LAYER_DOC_DESC: Record<EditorLayer, string> = {
+  objects: 'Data objects (entities) — properties + relationships.',
+  rules: 'Business rules governing decisions.',
+  actions: 'Action definitions — inputs, steps, side effects.',
+  events: 'Event definitions — payloads and state mutations.',
+  processes: 'Workflow definitions — ordered action steps.',
+};
+
+/** Build the metadata header for a layer doc from the ontology envelope. */
+export function layerMetadata(o: Ontology, layer: EditorLayer): LayerMetadata {
+  const meta = (o as unknown as { metadata?: { updatedAt?: string; createdAt?: string } }).metadata;
+  const updated = meta?.updatedAt || meta?.createdAt || '';
+  return {
+    project_name: o.name || String(o.id ?? '').replace(/^ontology:/, ''),
+    document_type: '本体定义 (Ontology Schema)',
+    version: String((o as unknown as { version?: number }).version ?? 1),
+    last_updated: updated ? updated.slice(0, 10) : '',
+    description: LAYER_DOC_DESC[layer],
+  };
+}
+
+/** Pretty-print a layer as the metadata-wrapped editor doc:
+ *  `{ "metadata": {...}, "<layer>": [ ...nodes ] }`. */
+export function serializeLayerDoc(layer: EditorLayer, arr: unknown[], o: Ontology): string {
+  return JSON.stringify({ metadata: layerMetadata(o, layer), [LAYER_DOC_KEY[layer]]: arr }, null, 2);
+}
+
+/** Unwrap a parsed editor doc to its node array. Accepts a bare array OR a
+ *  `{ metadata?, <key>: [...] }` wrapper (the first array-valued, non-metadata
+ *  property wins). Returns null when no node array is present. */
+function unwrapDoc(value: unknown): unknown[] | null {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'object' && value !== null) {
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (k !== 'metadata' && Array.isArray(v)) return v;
+    }
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -110,16 +173,17 @@ export function parseLayer(text: string): ParseLayerResult {
   }
 
   const value = parsed.value;
-  if (!Array.isArray(value)) {
+  const unwrapped = unwrapDoc(value);
+  if (!unwrapped) {
     return {
       ok: false,
-      issues: [{ kind: 'not_an_array', message: 'Each layer must be a JSON array of nodes.' }],
+      issues: [{ kind: 'not_an_array', message: 'Each layer must be a JSON array of nodes (optionally wrapped in { metadata, <layer>: [...] }).' }],
       repaired: repaired.changed,
       repairFixes,
     };
   }
 
-  const nodes = value as unknown[];
+  const nodes = unwrapped;
   const issues: LayerIssue[] = [];
   const seenIds = new Set<string>();
   let allObjects = true;

@@ -287,9 +287,11 @@ export function objectCompleteness(o: ObjectType): number {
     nonEmpty(o.name),
     nonEmpty(o.nameZh),
     nonEmpty(o.description),
-    Array.isArray(o.attributes) && o.attributes.length > 0,
-    // every attribute has a closed-vocab type
-    Array.isArray(o.attributes) && o.attributes.every((a) => nonEmpty(a.name) && nonEmpty(a.type)),
+    nonEmpty(o.primary_key),
+    o.type === 'data' || o.type === 'system',
+    Array.isArray(o.properties) && o.properties.length > 0,
+    // every property has a name + closed-vocab type
+    Array.isArray(o.properties) && o.properties.every((p) => nonEmpty(p.name) && nonEmpty(p.type)),
   ];
   return ratio(checks.filter(Boolean).length, checks.length);
 }

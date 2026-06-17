@@ -28,7 +28,7 @@ export async function runLinkSynthesis(ctx: StageContext, docName: string): Prom
   const objects = ctx.objects.map((o) => ({
     id: o.id,
     name: o.name,
-    attributes: o.attributes?.map((a) => ({ name: a.name, keyRole: a.keyRole, ref: a.refObjectTypeId })),
+    properties: o.properties?.map((p) => ({ name: p.name, is_foreign_key: p.is_foreign_key, references: p.references })),
   }));
   const existing = ctx.relationships.map((r) => ({
     id: r.id,

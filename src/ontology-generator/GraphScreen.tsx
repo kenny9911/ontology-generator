@@ -1032,10 +1032,10 @@ function ObjectDetail({ o, t, lang }: { o: ObjectType; t: Strings; lang: Lang })
         <div style={{ fontSize: 12, color: 'var(--fg-3)', marginBottom: 8 }}>{o.nameZh}</div>
       )}
       <div className="mono-cap" style={{ marginBottom: 6 }}>
-        {t.attributes} · {o.attributes.length}
+        {t.attributes} · {o.properties.length}
       </div>
       <div className="scroll" style={{ maxHeight: 220, display: 'grid', gap: 4 }}>
-        {o.attributes.map((a, i) => (
+        {o.properties.map((p, i) => (
           <div
             key={i}
             style={{
@@ -1049,10 +1049,13 @@ function ObjectDetail({ o, t, lang }: { o: ObjectType; t: Strings; lang: Lang })
               fontSize: 11,
             }}
           >
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.name}</span>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {p.name === o.primary_key ? '◆ ' : p.is_foreign_key ? '◇ ' : ''}
+              {p.name}
+            </span>
             <span style={{ color: 'var(--fg-4)', flexShrink: 0 }}>
-              {a.keyRole !== 'none' ? a.keyRole.toUpperCase() + ' · ' : ''}
-              {a.type}
+              {p.is_foreign_key ? 'FK · ' : ''}
+              {p.type}
             </span>
           </div>
         ))}

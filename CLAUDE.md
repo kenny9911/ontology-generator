@@ -315,7 +315,10 @@ via `llm.settings`; it works in demo mode too (no LLM key needed).
 `canVisit` always true, and reachable with or without a run via its own
 historical-ontology picker). Five tabs (Data Objects / Rules / Actions / Events /
 **Workflow** == `processes`) each edit one ontology layer's JSON in a single
-Monaco instance backed by five persistent models. Validation is two-tier: Monaco's
+Monaco instance backed by five persistent models. Each tab's buffer is the
+**metadata-wrapped doc** `{ metadata, <layer>: [ …nodes ] }` (processes wraps under
+`"workflows"`, matching the reference samples) — `serializeLayerDoc` builds it and
+`parseLayer` unwraps it (a bare array still parses, for back-compat). Validation is two-tier: Monaco's
 JSON language service gives inline syntax + per-layer JSON-Schema squiggles, and
 our own `validateOntology` runs over a reassembled candidate for cross-tab
 semantics — both feed one diagnostics panel with click-to-locate and one-click
@@ -340,6 +343,16 @@ library. UI strings are bilingual (en/zh) via [i18n.ts](src/ontology-generator/i
 
 ## Schema conventions (honor on both copies)
 
+- **ObjectType is spec-shaped.** An object carries `type` ('data' | 'system'),
+  `relationship_description` (prose; the key input for inter-object edges),
+  `primary_key` (default `<id>_id`), and `properties: ObjectProperty[]` —
+  `{ name, type, description, is_foreign_key?, references? }` where `type` is the
+  human-facing `PROPERTY_TYPES` vocabulary (`String`/`Integer`/`Float`/`Boolean`/
+  `Date`/`Timestamp`/`List<String>`; `enum`/`array` → `List<String>`). There is
+  **no** `attributes`/`keyRole`/`enumValues`/`refObjectTypeId` anymore; `references`
+  holds the target ObjectType **id** (ids keep the `objectType:` prefix, so
+  cross-layer refs are unchanged). The other four layers still use the internal
+  shape and reach the sample format only through the spec-format projection below.
 - Cross-references between nodes are **always by `id`** — a stable, kind-prefixed
   slug minted by `makeId` ([api/_shared/ids.ts](api/_shared/ids.ts)). `uuid` is for
   storage/Neo4j joins only.

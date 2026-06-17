@@ -40,7 +40,8 @@ export const DATA_TYPE_ENUM = [
   'uuid', 'enum', 'reference', 'json', 'array',
 ] as const;
 export const SEVERITY_ENUM = ['info', 'warn', 'block'] as const;
-const KEY_ROLE_ENUM = ['pk', 'fk', 'none'] as const;
+const PROPERTY_TYPE_ENUM = ['String', 'Integer', 'Float', 'Boolean', 'Date', 'Timestamp', 'List<String>'] as const;
+const OBJECT_CLASS_ENUM = ['data', 'system'] as const;
 const PROVENANCE_ENUM = ['extracted', 'inferred', 'merged', 'human'] as const;
 const REVIEW_ENUM = ['pending', 'accepted', 'edited', 'merged', 'rejected'] as const;
 const RULE_KIND_ENUM = [
@@ -77,24 +78,26 @@ const sharedProps: Record<string, JsonSchemaDoc> = {
 };
 
 const objectsSchema = layerArray('^objectType:', {
-  required: ['id', 'name', 'nameZh'],
+  required: ['id', 'name', 'type', 'primary_key', 'properties'],
   properties: {
     ...sharedProps,
     name: str,
     nameZh: str,
     description: str,
-    attributes: {
+    type: enumOf(OBJECT_CLASS_ENUM),
+    relationship_description: str,
+    primary_key: str,
+    properties: {
       type: 'array',
       items: {
         type: 'object',
-        required: ['name', 'type'],
+        required: ['name', 'type', 'description'],
         properties: {
           name: str,
-          type: enumOf(DATA_TYPE_ENUM),
-          keyRole: enumOf(KEY_ROLE_ENUM),
-          required: bool,
-          enumValues: strArray,
-          refObjectTypeId: str,
+          type: enumOf(PROPERTY_TYPE_ENUM),
+          description: str,
+          is_foreign_key: bool,
+          references: str,
         },
         additionalProperties: true,
       },

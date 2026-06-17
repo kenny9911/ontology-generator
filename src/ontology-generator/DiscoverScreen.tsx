@@ -181,7 +181,7 @@ function stageCounts(stages: { stage: Stage; count: number }[] | undefined): Rec
 
 function countAttributes(objects: ObjectType[] | undefined): number {
   if (!objects) return 0;
-  return objects.reduce((n, o) => n + o.attributes.length, 0);
+  return objects.reduce((n, o) => n + o.properties.length, 0);
 }
 
 /** Map a canonical ObjectType onto the OntObject VIEW shape EmergingGraph wants. */

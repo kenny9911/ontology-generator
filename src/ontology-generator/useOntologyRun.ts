@@ -49,6 +49,7 @@ import { STAGE_ORDER } from '@/ontology/schema/types';
 
 import { DATASETS } from './data';
 import { datasetToOntology } from './adapters';
+import { normalizeOntologyObjects } from './normalize-objects';
 import * as api from './api';
 import type { RunStartInput, SampleCorpus, OntologySummary } from './api';
 
@@ -296,8 +297,12 @@ export function useOntologyRun(): OntologyRunController {
   // so `save`/`publish`/`reRunStage`/`acceptAll` always read the freshest model.
   const ontologyRef = useRef<Ontology | null>(null);
   const commitOntology = useCallback((next: Ontology | null) => {
-    ontologyRef.current = next;
-    setOntology(next);
+    // Normalize legacy `attributes`-shaped objects to the spec `properties` shape
+    // on the way in (idempotent), so every screen + the JSON editor see one shape
+    // even when an OLD stored ontology is reopened.
+    const normalized = next ? normalizeOntologyObjects(next) : null;
+    ontologyRef.current = normalized;
+    setOntology(normalized);
   }, []);
 
   // ---- setup ---------------------------------------------------------------

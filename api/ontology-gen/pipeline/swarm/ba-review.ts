@@ -17,7 +17,7 @@ const SEV = new Set<string>(['info', 'warn', 'block']);
 /** A compact ids + names + key-fields projection of the ontology for review. */
 function digest(o: Ontology): unknown {
   return {
-    objects: o.objects.map((n) => ({ id: n.id, name: n.name, attributes: n.attributes?.map((a) => a.name) })),
+    objects: o.objects.map((n) => ({ id: n.id, name: n.name, properties: n.properties?.map((p) => p.name) })),
     relationships: o.relationships.map((n) => ({ id: n.id, name: n.name, from: n.sourceObjectTypeId, to: n.targetObjectTypeId })),
     rules: o.rules.map((n) => ({ id: n.id, title: n.title, statement: n.statement?.en, severity: n.severity })),
     actions: o.actions.map((n) => ({ id: n.id, name: n.name, inputs: n.inputs?.map((i) => i.name), emits: n.emitsEvents?.map((e) => e.eventTypeId) })),

@@ -83,12 +83,12 @@ function ruleLabel(rule: Rule): string {
 function projectObject(obj: ObjectType, out: Triple[]): void {
   out.push(lit(obj.id, 'kind', 'object'));
   out.push(lit(obj.id, 'label', obj.name));
-  for (const attr of obj.attributes) {
-    const aId = attrId(obj, attr.name);
+  for (const prop of obj.properties ?? []) {
+    const aId = attrId(obj, prop.name);
     out.push(ref(obj.id, 'has_attribute', aId));
-    out.push(lit(aId, 'has_type', attr.type));
-    if ((attr.keyRole === 'fk' || attr.type === 'reference') && attr.refObjectTypeId) {
-      out.push(ref(aId, 'references', attr.refObjectTypeId));
+    out.push(lit(aId, 'has_type', prop.type));
+    if (prop.is_foreign_key && prop.references) {
+      out.push(ref(aId, 'references', prop.references));
     }
   }
 }
@@ -185,7 +185,7 @@ export function tripleLabelMap(o: Ontology): Record<string, string> {
   const map: Record<string, string> = {};
   for (const obj of o.objects) {
     map[obj.id] = obj.name;
-    for (const attr of obj.attributes) map[attrId(obj, attr.name)] = `${obj.name}.${attr.name}`;
+    for (const prop of obj.properties ?? []) map[attrId(obj, prop.name)] = `${obj.name}.${prop.name}`;
   }
   for (const rel of o.relationships) map[rel.id] = rel.name;
   for (const rule of o.rules) map[rule.id] = ruleLabel(rule);

@@ -44,69 +44,51 @@
       "nameZh": "零件",
       "description": "A manufactured or purchased item identified by part_number, carrying its currently effective revision, safety classification, and inspection requirement; SAP ECC MARA/MARC master.",
       "descriptionZh": "由 part_number 标识的制造或采购物料，携带当前生效修订、安全分级与检验要求；SAP ECC MARA/MARC 主数据。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "BillOfMaterials includes Part. BillOfMaterials assembles Part. EngineeringChange affects Part. WorkOrder produces Part. Supplier supplies Part. InspectionLot inspects Part. NonConformance affects Part.",
+      "primary_key": "part_number",
+      "properties": [
         {
           "name": "part_number",
-          "nameZh": "零件号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "Primary key. Format NN-A (e.g. 12-A)."
+          "type": "String",
+          "description": "Primary key. Format NN-A (e.g. 12-A).",
+          "nameZh": "零件号"
         },
         {
           "name": "revision",
-          "nameZh": "修订",
-          "type": "string",
-          "required": true,
-          "keyRole": "none",
-          "description": "Currently effective revision, e.g. E."
+          "type": "String",
+          "description": "Currently effective revision, e.g. E.",
+          "nameZh": "修订"
         },
         {
           "name": "description",
-          "nameZh": "描述",
-          "type": "string",
-          "required": false,
-          "keyRole": "none"
+          "type": "String",
+          "description": "",
+          "nameZh": "描述"
         },
         {
           "name": "safety_class",
-          "nameZh": "安全分级",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Standard",
-            "Significant",
-            "Critical"
-          ],
-          "description": "Drives [R-03],[R-13],[R-15]."
+          "type": "List<String>",
+          "description": "Drives [R-03],[R-13],[R-15].",
+          "nameZh": "安全分级"
         },
         {
           "name": "inspection_required",
-          "nameZh": "需检验",
-          "type": "boolean",
-          "required": true,
-          "keyRole": "none",
-          "description": "Drives [R-07]."
+          "type": "Boolean",
+          "description": "Drives [R-07].",
+          "nameZh": "需检验"
         },
         {
           "name": "unit_of_measure",
-          "nameZh": "计量单位",
-          "type": "string",
-          "required": false,
-          "keyRole": "none"
+          "type": "String",
+          "description": "",
+          "nameZh": "计量单位"
         },
         {
           "name": "make_or_buy",
-          "nameZh": "自制或外购",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Make",
-            "Buy"
-          ],
-          "description": "Buy parts link to a Supplier."
+          "type": "List<String>",
+          "description": "Buy parts link to a Supplier.",
+          "nameZh": "自制或外购"
         }
       ],
       "relationshipIds": [
@@ -138,53 +120,47 @@
       "nameZh": "物料清单",
       "description": "The revisioned component structure of an assembled Part, with an effectivity window and a component list; SAP ECC STKO/STPO.",
       "descriptionZh": "已装配零件的修订化组件结构，含生效期窗口与组件清单；SAP ECC STKO/STPO。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "BillOfMaterials includes Part. BillOfMaterials assembles Part. EngineeringChange produces BillOfMaterials. WorkOrder built to BillOfMaterials. BillOfMaterials.parent_part_number references Part.",
+      "primary_key": "bom_id",
+      "properties": [
         {
           "name": "bom_id",
-          "nameZh": "物料清单编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "Primary key."
+          "type": "String",
+          "description": "Primary key.",
+          "nameZh": "物料清单编号"
         },
         {
           "name": "parent_part_number",
+          "type": "String",
+          "description": "FK -> Part.part_number. The assembled Part.",
           "nameZh": "母件零件号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:part",
-          "description": "FK -> Part.part_number. The assembled Part."
+          "is_foreign_key": true,
+          "references": "objectType:part"
         },
         {
           "name": "bom_revision",
-          "nameZh": "清单修订",
-          "type": "string",
-          "required": true,
-          "keyRole": "none"
+          "type": "String",
+          "description": "",
+          "nameZh": "清单修订"
         },
         {
           "name": "effective_from",
-          "nameZh": "生效起始日",
-          "type": "date",
-          "required": true,
-          "keyRole": "none",
-          "description": "Governed by [R-06]."
+          "type": "Date",
+          "description": "Governed by [R-06].",
+          "nameZh": "生效起始日"
         },
         {
           "name": "effective_to",
-          "nameZh": "生效结束日",
-          "type": "date",
-          "required": false,
-          "keyRole": "none"
+          "type": "Date",
+          "description": "",
+          "nameZh": "生效结束日"
         },
         {
           "name": "components",
-          "nameZh": "组件清单",
-          "type": "array",
-          "required": true,
-          "keyRole": "none",
-          "description": "List of {part_number (FK -> Part), quantity, component_revision}."
+          "type": "List<String>",
+          "description": "List of {part_number (FK -> Part), quantity, component_revision}.",
+          "nameZh": "组件清单"
         }
       ],
       "relationshipIds": [
@@ -215,80 +191,57 @@
       "nameZh": "工程变更",
       "description": "A governed request to change product structure, moving Draft -> Classified -> Approved/Rejected -> Released; Jira ECR record.",
       "descriptionZh": "对产品结构的受控变更请求，状态为草稿->已分类->已批准/已拒绝->已发布；Jira ECR 记录。",
-      "attributes": [
+      "type": "system",
+      "relationship_description": "EngineeringChange affects Part. EngineeringChange produces BillOfMaterials.",
+      "primary_key": "ecr_id",
+      "properties": [
         {
           "name": "ecr_id",
-          "nameZh": "变更编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "Primary key. Format ECR-#####."
+          "type": "String",
+          "description": "Primary key. Format ECR-#####.",
+          "nameZh": "变更编号"
         },
         {
           "name": "status",
-          "nameZh": "状态",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Draft",
-            "Classified",
-            "Approved",
-            "Rejected",
-            "Released"
-          ]
+          "type": "List<String>",
+          "description": "",
+          "nameZh": "状态"
         },
         {
           "name": "category",
-          "nameZh": "类别",
-          "type": "enum",
-          "required": false,
-          "keyRole": "none",
-          "enumValues": [
-            "Minor",
-            "Major",
-            "Safety"
-          ],
-          "description": "Set by ClassifyEngineeringChange."
+          "type": "List<String>",
+          "description": "Set by ClassifyEngineeringChange.",
+          "nameZh": "类别"
         },
         {
           "name": "affected_parts",
-          "nameZh": "受影响零件",
-          "type": "array",
-          "required": true,
-          "keyRole": "none",
-          "description": "List (FK -> Part.part_number)."
+          "type": "List<String>",
+          "description": "List (FK -> Part.part_number).",
+          "nameZh": "受影响零件"
         },
         {
           "name": "safety_classified",
-          "nameZh": "安全分类标记",
-          "type": "boolean",
-          "required": false,
-          "keyRole": "none",
-          "description": "Drives [R-03]."
+          "type": "Boolean",
+          "description": "Drives [R-03].",
+          "nameZh": "安全分类标记"
         },
         {
           "name": "requires_second_approval",
-          "nameZh": "需二次批准",
-          "type": "boolean",
-          "required": false,
-          "keyRole": "none"
+          "type": "Boolean",
+          "description": "",
+          "nameZh": "需二次批准"
         },
         {
           "name": "emergency",
-          "nameZh": "紧急变更",
-          "type": "boolean",
-          "required": false,
-          "keyRole": "none",
-          "description": "Exception E2 to [R-06]."
+          "type": "Boolean",
+          "description": "Exception E2 to [R-06].",
+          "nameZh": "紧急变更"
         },
         {
           "name": "approver_ids",
-          "nameZh": "批准人编号",
-          "type": "array",
-          "required": false,
-          "keyRole": "none",
-          "description": "Quorum check [R-05]."
+          "type": "List<String>",
+          "description": "Quorum check [R-05].",
+          "nameZh": "批准人编号"
         }
       ],
       "relationshipIds": [
@@ -319,62 +272,49 @@
       "nameZh": "生产工单",
       "description": "A shop-floor order to build a parent Part against a frozen BOM revision, progressing Created -> Released -> InProcess -> Closed (or Blocked); SAP ECC AUFK/AFKO.",
       "descriptionZh": "依冻结的清单修订生产母件的车间工单，状态为已创建->已下达->进行中->已关闭（或已冻结）；SAP ECC AUFK/AFKO。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "WorkOrder built to BillOfMaterials. WorkOrder produces Part. InspectionLot against WorkOrder. WorkOrder.parent_part_number references Part. WorkOrder.bom_id references BillOfMaterials.",
+      "primary_key": "work_order_id",
+      "properties": [
         {
           "name": "work_order_id",
-          "nameZh": "工单编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "Primary key. Format WO-######."
+          "type": "String",
+          "description": "Primary key. Format WO-######.",
+          "nameZh": "工单编号"
         },
         {
           "name": "parent_part_number",
+          "type": "String",
+          "description": "FK -> Part.",
           "nameZh": "母件零件号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:part",
-          "description": "FK -> Part."
+          "is_foreign_key": true,
+          "references": "objectType:part"
         },
         {
           "name": "bom_id",
+          "type": "String",
+          "description": "FK -> BillOfMaterials.bom_id. Revision frozen at release per [R-09].",
           "nameZh": "物料清单编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:billOfMaterials",
-          "description": "FK -> BillOfMaterials.bom_id. Revision frozen at release per [R-09]."
+          "is_foreign_key": true,
+          "references": "objectType:billOfMaterials"
         },
         {
           "name": "bom_revision",
-          "nameZh": "清单修订",
-          "type": "string",
-          "required": true,
-          "keyRole": "none",
-          "description": "The revision built to."
+          "type": "String",
+          "description": "The revision built to.",
+          "nameZh": "清单修订"
         },
         {
           "name": "status",
-          "nameZh": "状态",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Created",
-            "Released",
-            "InProcess",
-            "Closed",
-            "Blocked"
-          ],
-          "description": "[R-01],[R-16]."
+          "type": "List<String>",
+          "description": "[R-01],[R-16].",
+          "nameZh": "状态"
         },
         {
           "name": "quantity",
-          "nameZh": "数量",
-          "type": "integer",
-          "required": true,
-          "keyRole": "none"
+          "type": "Integer",
+          "description": "",
+          "nameZh": "数量"
         }
       ],
       "relationshipIds": [
@@ -405,42 +345,33 @@
       "nameZh": "供应商",
       "description": "A vendor of purchased Parts, carrying a qualification status and a rolling 90-day rejection rate; SAP ECC LFA1.",
       "descriptionZh": "外购零件的供应商，携带资格状态与滚动 90 天拒收率；SAP ECC LFA1。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Supplier supplies Part. Supplier responsible for NonConformance.",
+      "primary_key": "supplier_id",
+      "properties": [
         {
           "name": "supplier_id",
-          "nameZh": "供应商编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "Primary key."
+          "type": "String",
+          "description": "Primary key.",
+          "nameZh": "供应商编号"
         },
         {
           "name": "name",
-          "nameZh": "名称",
-          "type": "string",
-          "required": true,
-          "keyRole": "none"
+          "type": "String",
+          "description": "",
+          "nameZh": "名称"
         },
         {
           "name": "qualification_status",
-          "nameZh": "资格状态",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Approved",
-            "Conditional",
-            "Disqualified"
-          ],
-          "description": "[R-10]."
+          "type": "List<String>",
+          "description": "[R-10].",
+          "nameZh": "资格状态"
         },
         {
           "name": "rejection_rate_90d",
-          "nameZh": "90天拒收率",
-          "type": "decimal",
-          "required": false,
-          "keyRole": "none",
-          "description": "Drives [R-11] (threshold 2%)."
+          "type": "Float",
+          "description": "Drives [R-11] (threshold 2%).",
+          "nameZh": "90天拒收率"
         }
       ],
       "relationshipIds": [
@@ -471,74 +402,57 @@
       "nameZh": "检验批",
       "description": "A quality lot opened against a finished or incoming Part lot, carrying a sampling plan and a usage-decision status; SAP ECC QALS.",
       "descriptionZh": "针对成品或来料零件批开立的质量批，携带抽样计划与使用决策状态；SAP ECC QALS。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "InspectionLot inspects Part. InspectionLot against WorkOrder. Inspection records InspectionLot. InspectionLot.part_number references Part. InspectionLot.work_order_id references WorkOrder. InspectionLot.supplier_id references Supplier.",
+      "primary_key": "lot_id",
+      "properties": [
         {
           "name": "lot_id",
-          "nameZh": "批号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "Primary key. Format LOT-########."
+          "type": "String",
+          "description": "Primary key. Format LOT-########.",
+          "nameZh": "批号"
         },
         {
           "name": "part_number",
+          "type": "String",
+          "description": "FK -> Part.",
           "nameZh": "零件号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:part",
-          "description": "FK -> Part."
+          "is_foreign_key": true,
+          "references": "objectType:part"
         },
         {
           "name": "work_order_id",
+          "type": "String",
+          "description": "FK -> WorkOrder. Null for incoming inspection.",
           "nameZh": "工单编号",
-          "type": "reference",
-          "required": false,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:workOrder",
-          "description": "FK -> WorkOrder. Null for incoming inspection."
+          "is_foreign_key": true,
+          "references": "objectType:workOrder"
         },
         {
           "name": "supplier_id",
+          "type": "String",
+          "description": "FK -> Supplier. Set for incoming inspection.",
           "nameZh": "供应商编号",
-          "type": "reference",
-          "required": false,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:supplier",
-          "description": "FK -> Supplier. Set for incoming inspection."
+          "is_foreign_key": true,
+          "references": "objectType:supplier"
         },
         {
           "name": "lot_type",
-          "nameZh": "批类型",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "InProcess",
-            "Final",
-            "Incoming"
-          ]
+          "type": "List<String>",
+          "description": "",
+          "nameZh": "批类型"
         },
         {
           "name": "sample_size",
-          "nameZh": "样本量",
-          "type": "integer",
-          "required": true,
-          "keyRole": "none"
+          "type": "Integer",
+          "description": "",
+          "nameZh": "样本量"
         },
         {
           "name": "status",
-          "nameZh": "状态",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Open",
-            "InProcess",
-            "Accepted",
-            "Rejected"
-          ],
-          "description": "[R-04],[R-08]."
+          "type": "List<String>",
+          "description": "[R-04],[R-08].",
+          "nameZh": "状态"
         }
       ],
       "relationshipIds": [
@@ -570,66 +484,53 @@
       "nameZh": "检验记录",
       "description": "The recorded result of measuring an InspectionLot's characteristics, with a defect count and an aggregate Pass/Fail; immutable once posted; Quality Data Mart.",
       "descriptionZh": "对检验批特性测量后的结果记录，含缺陷数与汇总合格/不合格；过账后不可更改；质量数据集市。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Inspection records InspectionLot. Inspection.lot_id references InspectionLot.",
+      "primary_key": "inspection_id",
+      "properties": [
         {
           "name": "inspection_id",
-          "nameZh": "检验编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "Primary key."
+          "type": "String",
+          "description": "Primary key.",
+          "nameZh": "检验编号"
         },
         {
           "name": "lot_id",
+          "type": "String",
+          "description": "FK -> InspectionLot.",
           "nameZh": "批号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:inspectionLot",
-          "description": "FK -> InspectionLot."
+          "is_foreign_key": true,
+          "references": "objectType:inspectionLot"
         },
         {
           "name": "characteristics",
-          "nameZh": "特性清单",
-          "type": "array",
-          "required": true,
-          "keyRole": "none",
-          "description": "List of {name, measured_value, result enum(Pass,Fail)}."
+          "type": "List<String>",
+          "description": "List of {name, measured_value, result enum(Pass,Fail)}.",
+          "nameZh": "特性清单"
         },
         {
           "name": "defect_count",
-          "nameZh": "缺陷数",
-          "type": "integer",
-          "required": true,
-          "keyRole": "none",
-          "description": "Compared to AQL number [R-08]."
+          "type": "Integer",
+          "description": "Compared to AQL number [R-08].",
+          "nameZh": "缺陷数"
         },
         {
           "name": "aggregate_result",
-          "nameZh": "汇总结果",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Pass",
-            "Fail"
-          ]
+          "type": "List<String>",
+          "description": "",
+          "nameZh": "汇总结果"
         },
         {
           "name": "inspected_by",
-          "nameZh": "检验员",
-          "type": "string",
-          "required": false,
-          "keyRole": "none",
-          "description": "Quality Inspector id."
+          "type": "String",
+          "description": "Quality Inspector id.",
+          "nameZh": "检验员"
         },
         {
           "name": "posted",
-          "nameZh": "已过账",
-          "type": "boolean",
-          "required": true,
-          "keyRole": "none",
-          "description": "Once true, immutable per [R-17]."
+          "type": "Boolean",
+          "description": "Once true, immutable per [R-17].",
+          "nameZh": "已过账"
         }
       ],
       "relationshipIds": [
@@ -659,83 +560,63 @@
       "nameZh": "不合格品",
       "description": "A quality defect record opened on a rejected lot, carrying severity, owner, and status Open -> Assigned -> Dispositioned -> Closed; Quality Data Mart.",
       "descriptionZh": "针对拒收批开立的质量缺陷记录，携带严重度、负责人及状态：开立->已分派->已处置->已关闭；质量数据集市。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "NonConformance affects Part. NonConformance resolved by Disposition. CorrectiveAction resolves NonConformance. Supplier responsible for NonConformance. NonConformance.part_number references Part. NonConformance.lot_id references InspectionLot. NonConformance.supplier_id references Supplier.",
+      "primary_key": "ncr_id",
+      "properties": [
         {
           "name": "ncr_id",
-          "nameZh": "不合格编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "Primary key. Format NCR-#####."
+          "type": "String",
+          "description": "Primary key. Format NCR-#####.",
+          "nameZh": "不合格编号"
         },
         {
           "name": "part_number",
+          "type": "String",
+          "description": "FK -> Part.",
           "nameZh": "零件号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:part",
-          "description": "FK -> Part."
+          "is_foreign_key": true,
+          "references": "objectType:part"
         },
         {
           "name": "lot_id",
+          "type": "String",
+          "description": "FK -> InspectionLot.",
           "nameZh": "批号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:inspectionLot",
-          "description": "FK -> InspectionLot."
+          "is_foreign_key": true,
+          "references": "objectType:inspectionLot"
         },
         {
           "name": "supplier_id",
+          "type": "String",
+          "description": "FK -> Supplier.",
           "nameZh": "供应商编号",
-          "type": "reference",
-          "required": false,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:supplier",
-          "description": "FK -> Supplier."
+          "is_foreign_key": true,
+          "references": "objectType:supplier"
         },
         {
           "name": "severity",
-          "nameZh": "严重度",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Minor",
-            "Major",
-            "Critical"
-          ],
-          "description": "[R-20]."
+          "type": "List<String>",
+          "description": "[R-20].",
+          "nameZh": "严重度"
         },
         {
           "name": "owner_id",
-          "nameZh": "负责人编号",
-          "type": "string",
-          "required": false,
-          "keyRole": "none",
-          "description": "Assigned within 24h [R-12]."
+          "type": "String",
+          "description": "Assigned within 24h [R-12].",
+          "nameZh": "负责人编号"
         },
         {
           "name": "status",
-          "nameZh": "状态",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Open",
-            "Assigned",
-            "Dispositioned",
-            "Closed"
-          ]
+          "type": "List<String>",
+          "description": "",
+          "nameZh": "状态"
         },
         {
           "name": "opened_at",
-          "nameZh": "开立时间",
-          "type": "datetime",
-          "required": true,
-          "keyRole": "none",
-          "description": "Clock for [R-12],[R-15]."
+          "type": "Timestamp",
+          "description": "Clock for [R-12],[R-15].",
+          "nameZh": "开立时间"
         }
       ],
       "relationshipIds": [
@@ -768,46 +649,35 @@
       "nameZh": "处置",
       "description": "The decision on how to handle a nonconforming lot — UseAsIs, Rework, ReturnToSupplier, Quarantine, or Scrap — with optional QM sign-off; Quality Data Mart.",
       "descriptionZh": "对不合格批的处置决定——照用、返工、退供应商、隔离或报废——并视需要由质量经理签核；质量数据集市。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "NonConformance resolved by Disposition. Disposition.ncr_id references NonConformance.",
+      "primary_key": "disposition_id",
+      "properties": [
         {
           "name": "disposition_id",
-          "nameZh": "处置编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "Primary key."
+          "type": "String",
+          "description": "Primary key.",
+          "nameZh": "处置编号"
         },
         {
           "name": "ncr_id",
+          "type": "String",
+          "description": "FK -> NonConformance.",
           "nameZh": "不合格编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:nonConformance",
-          "description": "FK -> NonConformance."
+          "is_foreign_key": true,
+          "references": "objectType:nonConformance"
         },
         {
           "name": "decision",
-          "nameZh": "决定",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "UseAsIs",
-            "Rework",
-            "ReturnToSupplier",
-            "Quarantine",
-            "Scrap"
-          ],
-          "description": "[R-02],[R-13]."
+          "type": "List<String>",
+          "description": "[R-02],[R-13].",
+          "nameZh": "决定"
         },
         {
           "name": "approved_by",
-          "nameZh": "批准人",
-          "type": "string",
-          "required": false,
-          "keyRole": "none",
-          "description": "QM sign-off when required [R-13],[R-19]."
+          "type": "String",
+          "description": "QM sign-off when required [R-13],[R-19].",
+          "nameZh": "批准人"
         }
       ],
       "relationshipIds": [
@@ -837,57 +707,47 @@
       "nameZh": "纠正措施",
       "description": "A CAPA opened from a disposition and root-cause analysis, with a due date and verification gate; must be verified effective before its NonConformance can close; Quality Data Mart.",
       "descriptionZh": "由处置与根因分析开立的纠正措施(CAPA)，含到期日与验证关卡；其不合格品关闭前必须验证有效；质量数据集市。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "CorrectiveAction resolves NonConformance. CorrectiveAction.ncr_id references NonConformance.",
+      "primary_key": "capa_id",
+      "properties": [
         {
           "name": "capa_id",
-          "nameZh": "纠正措施编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "Primary key. Format CAPA-#####."
+          "type": "String",
+          "description": "Primary key. Format CAPA-#####.",
+          "nameZh": "纠正措施编号"
         },
         {
           "name": "ncr_id",
+          "type": "String",
+          "description": "FK -> NonConformance.",
           "nameZh": "不合格编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:nonConformance",
-          "description": "FK -> NonConformance."
+          "is_foreign_key": true,
+          "references": "objectType:nonConformance"
         },
         {
           "name": "root_cause",
-          "nameZh": "根本原因",
-          "type": "string",
-          "required": false,
-          "keyRole": "none"
+          "type": "String",
+          "description": "",
+          "nameZh": "根本原因"
         },
         {
           "name": "due_date",
-          "nameZh": "到期日",
-          "type": "date",
-          "required": false,
-          "keyRole": "none"
+          "type": "Date",
+          "description": "",
+          "nameZh": "到期日"
         },
         {
           "name": "verified_effective",
-          "nameZh": "已验证有效",
-          "type": "boolean",
-          "required": true,
-          "keyRole": "none",
-          "description": "Gate for [R-18]."
+          "type": "Boolean",
+          "description": "Gate for [R-18].",
+          "nameZh": "已验证有效"
         },
         {
           "name": "status",
-          "nameZh": "状态",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Open",
-            "InVerification",
-            "Closed"
-          ]
+          "type": "List<String>",
+          "description": "",
+          "nameZh": "状态"
         }
       ],
       "relationshipIds": [

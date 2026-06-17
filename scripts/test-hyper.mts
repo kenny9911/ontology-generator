@@ -166,11 +166,11 @@ function nodeIdSet(o: Ontology): Set<string> {
   return ids;
 }
 
-/** All valid attribute pseudo-ids '<objectId>.<attrName>' of a fixture. */
+/** All valid property pseudo-ids '<objectId>.<propName>' of a fixture. */
 function attrIdSet(o: Ontology): Set<string> {
   const ids = new Set<string>();
   for (const obj of o.objects) {
-    for (const attr of obj.attributes) ids.add(`${obj.id}.${attr.name}`);
+    for (const prop of obj.properties ?? []) ids.add(`${obj.id}.${prop.name}`);
   }
   return ids;
 }

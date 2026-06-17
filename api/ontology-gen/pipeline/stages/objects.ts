@@ -28,14 +28,13 @@ import { randomUUID } from 'crypto';
 import type {
   Cardinality,
   Confidence,
-  DataType,
-  KeyRole,
-  ObjectAttribute,
+  ObjectProperty,
   ObjectType,
+  PropertyType,
   Relationship,
   SourceRef,
 } from '../../../_shared/ontology-schema.js';
-import { DATA_TYPES } from '../../../_shared/ontology-schema.js';
+import { PROPERTY_TYPES } from '../../../_shared/ontology-schema.js';
 import { makeId } from '../../../_shared/ids.js';
 import { executeLLMWithTracking } from '../../llm.js';
 import type { ExecuteLLMOptions } from '../../llm.js';
@@ -56,16 +55,17 @@ interface RawSourceRef {
   line?: unknown;
 }
 
-interface RawAttribute {
+interface RawProperty {
   name?: unknown;
   nameZh?: unknown;
   type?: unknown;
-  required?: unknown;
-  keyRole?: unknown;
-  enumValues?: unknown;
-  refObjectTypeId?: unknown;
   description?: unknown;
   descriptionZh?: unknown;
+  is_foreign_key?: unknown;
+  references?: unknown;
+  // legacy shapes accepted as a fallback:
+  keyRole?: unknown;
+  refObjectTypeId?: unknown;
 }
 
 interface RawObject {
@@ -74,12 +74,16 @@ interface RawObject {
   nameZh?: unknown;
   description?: unknown;
   descriptionZh?: unknown;
-  /** Spec-format classification ('data' | 'system'); also accepted as `type`. */
-  objectClass?: unknown;
+  /** 'data' | 'system' (also accepted under the legacy key `objectClass`). */
   type?: unknown;
-  /** Spec-format relationship prose; also accepted as `relationship_description`. */
-  relationshipNote?: unknown;
+  objectClass?: unknown;
+  /** Prose describing this object's relationships (also legacy `relationshipNote`). */
   relationship_description?: unknown;
+  relationshipNote?: unknown;
+  /** The primary-key property name. */
+  primary_key?: unknown;
+  /** The object's fields (also accepted under the legacy key `attributes`). */
+  properties?: unknown;
   attributes?: unknown;
   display?: { emoji?: unknown; color?: unknown };
   sources?: unknown;
@@ -108,8 +112,7 @@ interface RawObjectsPayload {
 //  Small pure helpers (closed-vocab coercion + defensive JSON parsing).
 // ---------------------------------------------------------------------------
 
-const DATA_TYPE_SET = new Set<string>(DATA_TYPES as readonly string[]);
-const KEY_ROLES = new Set<KeyRole>(['pk', 'fk', 'none']);
+const PROPERTY_TYPE_SET = new Set<string>(PROPERTY_TYPES as readonly string[]);
 const CARDINALITIES = new Set<Cardinality>([
   'one_to_one',
   'one_to_many',
@@ -134,15 +137,40 @@ function rawConfidence(v: unknown): Confidence {
   return typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0.5;
 }
 
-/** Coerce to the closed DataType vocabulary; anything unknown falls back to 'string'. */
-function toDataType(v: unknown): DataType {
-  const s = typeof v === 'string' ? v.toLowerCase() : '';
-  return (DATA_TYPE_SET.has(s) ? s : 'string') as DataType;
-}
-
-function toKeyRole(v: unknown): KeyRole {
-  const s = typeof v === 'string' ? v.toLowerCase() : '';
-  return KEY_ROLES.has(s as KeyRole) ? (s as KeyRole) : 'none';
+/**
+ * Coerce any model-emitted type token to the closed PropertyType vocabulary.
+ * Accepts the spec forms ("String", "List<String>"), the legacy internal
+ * DataType forms ("string", "enum", "datetime", …), and loose synonyms.
+ */
+function toPropertyType(v: unknown): PropertyType {
+  const raw = typeof v === 'string' ? v.trim() : '';
+  if (!raw) return 'String';
+  if (PROPERTY_TYPE_SET.has(raw)) return raw as PropertyType;
+  if (/^list<.+>$/i.test(raw)) return 'List<String>';
+  switch (raw.toLowerCase()) {
+    case 'integer':
+    case 'int':
+      return 'Integer';
+    case 'decimal':
+    case 'money':
+    case 'float':
+    case 'number':
+    case 'double':
+      return 'Float';
+    case 'boolean':
+    case 'bool':
+      return 'Boolean';
+    case 'date':
+      return 'Date';
+    case 'datetime':
+    case 'timestamp':
+      return 'Timestamp';
+    case 'enum':
+    case 'array':
+      return 'List<String>';
+    default:
+      return 'String'; // string / uuid / reference / json / text / unknown
+  }
 }
 
 function toCardinality(v: unknown): Cardinality {
@@ -150,22 +178,48 @@ function toCardinality(v: unknown): Cardinality {
   return CARDINALITIES.has(s as Cardinality) ? (s as Cardinality) : 'many_to_many';
 }
 
-/** Coerce the spec-format object classification; undefined when unrecognized. */
+/** Coerce the object classification ('data' | 'system'); undefined when unknown. */
 function toObjectClass(v: unknown): 'data' | 'system' | undefined {
   const s = typeof v === 'string' ? v.toLowerCase() : '';
   return s === 'data' || s === 'system' ? s : undefined;
 }
 
-/** Coerce an optional bilingual blob (or bare string) into `{en,zh}` or undefined. */
-function optBilingual(v: unknown): { en: string; zh: string } | undefined {
-  if (typeof v === 'string' && v.trim().length > 0) return { en: v, zh: v };
+const SYSTEM_RE =
+  /(system|platform|gateway|portal|\bapi\b|\berp\b|\bcrm\b|\brms\b|engine|middleware|database|系统|平台|网关|中台|引擎)/i;
+
+/** Heuristic 'data' vs 'system' classification from the object's names. */
+function classify(name: string, id: string, nameZh: string): 'data' | 'system' {
+  return SYSTEM_RE.test(`${id} ${name} ${nameZh}`) ? 'system' : 'data';
+}
+
+/** Pull a plain string from a string or a {en,zh} blob (prefers en). */
+function optString(v: unknown): string | undefined {
+  if (typeof v === 'string' && v.trim().length > 0) return v.trim();
   if (v && typeof v === 'object' && !Array.isArray(v)) {
     const o = v as { en?: unknown; zh?: unknown };
-    const en = typeof o.en === 'string' ? o.en : '';
-    const zh = typeof o.zh === 'string' ? o.zh : '';
-    if (en || zh) return { en: en || zh, zh: zh || en };
+    const en = typeof o.en === 'string' ? o.en.trim() : '';
+    const zh = typeof o.zh === 'string' ? o.zh.trim() : '';
+    return en || zh || undefined;
   }
   return undefined;
+}
+
+/** snake-case slug of an object id (prefix stripped), e.g. "objectType:Job_Spec" -> "job_spec". */
+function idSlug(id: string): string {
+  return id
+    .replace(/^objectType:/, '')
+    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+    .replace(/[^A-Za-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toLowerCase();
+}
+
+/** The default primary key: an existing `<slug>_id` / `*_id` property, else `<slug>_id`. */
+function guessPrimaryKey(id: string, props: ObjectProperty[]): string {
+  const want = `${idSlug(id)}_id`;
+  if (props.some((p) => p.name === want)) return want;
+  const idProp = props.find((p) => /_id$/i.test(p.name));
+  return idProp ? idProp.name : want;
 }
 
 /**
@@ -218,37 +272,37 @@ function mapSources(rawSources: unknown, documentId: string, documentName: strin
   return refs;
 }
 
-function mapAttributes(rawAttrs: unknown): ObjectAttribute[] {
-  const arr = Array.isArray(rawAttrs) ? (rawAttrs as RawAttribute[]) : [];
-  const out: ObjectAttribute[] = [];
+/**
+ * Map the model's raw properties to typed `ObjectProperty[]`. A foreign-key
+ * reference is captured RAW here (a name or id the model emitted); a later pass
+ * (`resolveReferences`) rewrites it to the canonical object id or drops it.
+ */
+function mapProperties(rawProps: unknown): ObjectProperty[] {
+  const arr = Array.isArray(rawProps) ? (rawProps as RawProperty[]) : [];
+  const out: ObjectProperty[] = [];
   for (const a of arr) {
     const name = str(a?.name).trim();
     if (!name) continue;
-    const type = toDataType(a?.type);
-    const keyRole = toKeyRole(a?.keyRole);
-    const attr: ObjectAttribute = {
+    const prop: ObjectProperty = {
       name,
-      type,
-      required: a?.required === true,
-      keyRole,
+      type: toPropertyType(a?.type),
+      description: str(a?.description).trim(),
     };
     const nameZh = optStr(a?.nameZh);
-    if (nameZh) attr.nameZh = nameZh;
-    const description = optStr(a?.description);
-    if (description) attr.description = description;
+    if (nameZh) prop.nameZh = nameZh;
     const descriptionZh = optStr(a?.descriptionZh);
-    if (descriptionZh) attr.descriptionZh = descriptionZh;
-    // enumValues iff type === 'enum'
-    if (type === 'enum' && Array.isArray(a?.enumValues)) {
-      const vals = (a.enumValues as unknown[]).filter((v): v is string => typeof v === 'string');
-      if (vals.length > 0) attr.enumValues = vals;
+    if (descriptionZh) prop.descriptionZh = descriptionZh;
+    // Foreign key: accept the new `references` or the legacy `refObjectTypeId`,
+    // and treat keyRole 'fk' / is_foreign_key as the flag.
+    const ref = optStr(a?.references) ?? optStr(a?.refObjectTypeId);
+    const flagged = a?.is_foreign_key === true || a?.keyRole === 'fk';
+    if (ref) {
+      prop.is_foreign_key = true;
+      prop.references = ref;
+    } else if (flagged) {
+      prop.is_foreign_key = true;
     }
-    // refObjectTypeId iff type === 'reference' OR keyRole === 'fk'
-    if (type === 'reference' || keyRole === 'fk') {
-      const ref = optStr(a?.refObjectTypeId);
-      if (ref) attr.refObjectTypeId = ref;
-    }
-    out.push(attr);
+    out.push(prop);
   }
   return out;
 }
@@ -321,8 +375,9 @@ export async function extractObjects(
       const key = name.toLowerCase();
       const sources = mapSources(ro?.sources, documentId, documentName);
       const confidence = rawConfidence(ro?.confidence);
-      const attributes = mapAttributes(ro?.attributes);
+      const properties = mapProperties(ro?.properties ?? ro?.attributes);
       const modelId = str(ro?.id).trim();
+      const relDesc = optString(ro?.relationship_description ?? ro?.relationshipNote);
 
       const existing = objectByName.get(key);
       if (existing) {
@@ -330,30 +385,31 @@ export async function extractObjects(
         // and remember this chunk's model id maps to the canonical id.
         existing.sources.push(...sources);
         if (confidence > existing.confidence) existing.confidence = confidence;
-        if (attributes.length > 0 && existing.attributes.length === 0) {
-          existing.attributes = attributes;
+        if (properties.length > 0 && existing.properties.length === 0) {
+          existing.properties = properties;
         }
-        if (!existing.objectClass) {
-          const oc = toObjectClass(ro?.objectClass ?? ro?.type);
-          if (oc) existing.objectClass = oc;
-        }
-        if (!existing.relationshipNote) {
-          const rn = optBilingual(ro?.relationshipNote ?? ro?.relationship_description);
-          if (rn) existing.relationshipNote = rn;
-        }
+        const oc = toObjectClass(ro?.type ?? ro?.objectClass);
+        if (oc) existing.type = oc;
+        if (!existing.relationship_description && relDesc) existing.relationship_description = relDesc;
+        const pk = str(ro?.primary_key).trim();
+        if (pk && !existing.primary_key) existing.primary_key = pk;
         if (modelId) chunkObjectId.set(modelId, existing.id);
         chunkObjectId.set(key, existing.id);
         continue;
       }
 
       const id = makeId('object', name, ctx.taken);
+      const nameZh = str(ro?.nameZh);
       const obj: ObjectType = {
         id,
         uuid: randomUUID(),
         name,
-        nameZh: str(ro?.nameZh),
+        nameZh,
         description: str(ro?.description),
-        attributes,
+        type: toObjectClass(ro?.type ?? ro?.objectClass) ?? classify(name, id, nameZh),
+        relationship_description: relDesc ?? '',
+        primary_key: str(ro?.primary_key).trim() || guessPrimaryKey(id, properties),
+        properties,
         sources,
         confidence,
         provenance: 'extracted',
@@ -368,10 +424,6 @@ export async function extractObjects(
         if (emoji) obj.display.emoji = emoji;
         if (color) obj.display.color = color;
       }
-      const objectClass = toObjectClass(ro?.objectClass ?? ro?.type);
-      if (objectClass) obj.objectClass = objectClass;
-      const relationshipNote = optBilingual(ro?.relationshipNote ?? ro?.relationship_description);
-      if (relationshipNote) obj.relationshipNote = relationshipNote;
 
       objectByName.set(key, obj);
       objects.push(obj);
@@ -438,6 +490,77 @@ export async function extractObjects(
     }
   }
 
+  // --- post-passes (now that ALL objects across chunks are known) -----------
+  resolveReferences(objects);
+  fillRelationshipDescriptions(objects, relationships);
+  for (const o of objects) {
+    if (!o.primary_key) o.primary_key = guessPrimaryKey(o.id, o.properties);
+  }
+
   ctx.log(`[objects] extracted ${objects.length} objects, ${relationships.length} relationships`);
   return { objects, relationships };
+}
+
+/**
+ * Rewrite each foreign-key property's `references` (a raw model name/id) to the
+ * canonical object id. Unresolvable references are dropped (with the fk flag) so
+ * the validator never sees a dangling `references`.
+ */
+function resolveReferences(objects: ObjectType[]): void {
+  const idSet = new Set(objects.map((o) => o.id));
+  const byName = new Map(objects.map((o) => [o.name.toLowerCase(), o.id] as const));
+  const bySlug = new Map(objects.map((o) => [idSlug(o.id), o.id] as const));
+
+  const resolve = (raw: string): string | undefined => {
+    if (idSet.has(raw)) return raw;
+    const lc = raw.toLowerCase();
+    if (byName.has(lc)) return byName.get(lc);
+    const slug = idSlug(raw);
+    if (bySlug.has(slug)) return bySlug.get(slug);
+    return undefined;
+  };
+
+  for (const o of objects) {
+    for (const p of o.properties) {
+      if (!p.references) {
+        // is_foreign_key with no reference at all: clear the flag.
+        if (p.is_foreign_key) delete p.is_foreign_key;
+        continue;
+      }
+      const resolved = resolve(p.references);
+      if (resolved && resolved !== o.id) {
+        p.references = resolved;
+        p.is_foreign_key = true;
+      } else {
+        delete p.references;
+        delete p.is_foreign_key;
+      }
+    }
+  }
+}
+
+/** Synthesize a relationship_description for any object the model left blank. */
+function fillRelationshipDescriptions(objects: ObjectType[], relationships: Relationship[]): void {
+  const nameById = new Map(objects.map((o) => [o.id, o.name] as const));
+  for (const o of objects) {
+    if (o.relationship_description && o.relationship_description.trim()) continue;
+    const parts: string[] = [];
+    for (const rel of relationships) {
+      const verb = rel.name.replace(/_/g, ' ');
+      if (rel.sourceObjectTypeId === o.id && nameById.has(rel.targetObjectTypeId)) {
+        parts.push(`${o.name} ${verb} ${nameById.get(rel.targetObjectTypeId)}.`);
+      } else if (rel.targetObjectTypeId === o.id && nameById.has(rel.sourceObjectTypeId)) {
+        parts.push(`${nameById.get(rel.sourceObjectTypeId)} ${verb} ${o.name}.`);
+      }
+    }
+    for (const p of o.properties) {
+      if (p.references && nameById.has(p.references)) {
+        parts.push(`${o.name}.${p.name} references ${nameById.get(p.references)}.`);
+      }
+    }
+    const deduped = Array.from(new Set(parts));
+    o.relationship_description = deduped.length
+      ? deduped.join(' ')
+      : `${o.name} has no documented relationships to other objects.`;
+  }
 }

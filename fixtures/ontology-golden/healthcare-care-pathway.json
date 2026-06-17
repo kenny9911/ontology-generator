@@ -41,40 +41,33 @@
       "nameZh": "患者",
       "description": "A person who receives or is scheduled to receive care; the canonical patient identifier is the MRN. Mastered in Epic EHR.",
       "descriptionZh": "接受或计划接受诊疗的人；以病案号（MRN）作为唯一标识，主数据存于 Epic 电子病历系统。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Patient has Encounter. Patient has Coverage.",
+      "primary_key": "mrn",
+      "properties": [
         {
           "name": "mrn",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
+          "type": "String",
           "description": "Medical Record Number; the canonical patient identifier."
         },
         {
           "name": "last_name",
-          "type": "string",
-          "required": true,
-          "keyRole": "none",
+          "type": "String",
           "description": "Legal last name."
         },
         {
           "name": "first_name",
-          "type": "string",
-          "required": true,
-          "keyRole": "none",
+          "type": "String",
           "description": "Legal first name."
         },
         {
           "name": "date_of_birth",
-          "type": "date",
-          "required": true,
-          "keyRole": "none",
+          "type": "Date",
           "description": "Used with name for identity matching."
         },
         {
           "name": "enterprise_id",
-          "type": "uuid",
-          "required": false,
-          "keyRole": "none",
+          "type": "String",
           "description": "Cross-facility master-patient-index key."
         }
       ],
@@ -113,66 +106,46 @@
       "nameZh": "就诊",
       "description": "A single contact between a Patient and the health system, the spine of both the clinical and revenue-cycle pathways; identified by EncounterID.",
       "descriptionZh": "患者与医疗系统之间的一次接触，是临床路径与收入周期的主线；以 EncounterID 标识。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Patient has Encounter. Encounter contains Order. Encounter contains Procedure. Encounter contains Diagnosis. Encounter accrues Charge. Encounter billed as Claim. Encounter.mrn references Patient.",
+      "primary_key": "encounter_id",
+      "properties": [
         {
           "name": "encounter_id",
-          "type": "integer",
-          "required": true,
-          "keyRole": "pk",
+          "type": "Integer",
           "description": "Primary key (bigint) in Epic EHR."
         },
         {
           "name": "mrn",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:patient",
-          "description": "Owning patient."
+          "type": "String",
+          "description": "Owning patient.",
+          "is_foreign_key": true,
+          "references": "objectType:patient"
         },
         {
           "name": "encounter_class",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Inpatient",
-            "Outpatient",
-            "Emergency",
-            "Observation"
-          ]
+          "type": "List<String>",
+          "description": ""
         },
         {
           "name": "emergency_flag",
-          "type": "boolean",
-          "required": false,
-          "keyRole": "none",
+          "type": "Boolean",
           "description": "Drives the R-02 / R-04 EMTALA exception."
         },
         {
           "name": "triage_timestamp",
-          "type": "datetime",
-          "required": false,
-          "keyRole": "none",
+          "type": "Timestamp",
           "description": "Anchor for the sepsis clock (R-08)."
         },
         {
           "name": "discharge_date",
-          "type": "date",
-          "required": false,
-          "keyRole": "none",
+          "type": "Date",
           "description": "Anchor for R-03, R-10, R-12 deadlines."
         },
         {
           "name": "status",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Open",
-            "Discharged",
-            "CodingComplete",
-            "Billed"
-          ]
+          "type": "List<String>",
+          "description": ""
         }
       ],
       "relationshipIds": [
@@ -221,52 +194,40 @@
       "nameZh": "保险覆盖",
       "description": "An active insurance benefit linking a Patient to a payer plan; its status is set by eligibility verification (271).",
       "descriptionZh": "将患者与付款方计划关联的有效保险权益；其状态由资格核验（271 应答）设定。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Patient has Coverage. Claim billed to Coverage. Coverage.mrn references Patient.",
+      "primary_key": "coverage_id",
+      "properties": [
         {
           "name": "coverage_id",
-          "type": "integer",
-          "required": true,
-          "keyRole": "pk"
+          "type": "Integer",
+          "description": ""
         },
         {
           "name": "mrn",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:patient",
-          "description": "Owning patient."
+          "type": "String",
+          "description": "Owning patient.",
+          "is_foreign_key": true,
+          "references": "objectType:patient"
         },
         {
           "name": "payer_id",
-          "type": "string",
-          "required": true,
-          "keyRole": "none",
+          "type": "String",
           "description": "Payer/plan identifier."
         },
         {
           "name": "member_id",
-          "type": "string",
-          "required": true,
-          "keyRole": "none",
+          "type": "String",
           "description": "Subscriber's member number."
         },
         {
           "name": "status",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Active",
-            "Inactive",
-            "Termed"
-          ],
+          "type": "List<String>",
           "description": "Set by VerifyEligibility (271)."
         },
         {
           "name": "eligibility_checked_at",
-          "type": "datetime",
-          "required": false,
-          "keyRole": "none",
+          "type": "Timestamp",
           "description": "Supports R-02."
         }
       ],
@@ -305,53 +266,43 @@
       "nameZh": "医嘱",
       "description": "A clinician instruction for a Procedure, medication, or test, each referencing a catalog Procedure; identified by OrderID.",
       "descriptionZh": "医师下达的诊疗、用药或检查指令，每条引用目录中的诊疗操作；以 OrderID 标识。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Encounter contains Order. Order references Procedure. Order.encounter_id references Encounter. Order.procedure_id references Procedure.",
+      "primary_key": "order_id",
+      "properties": [
         {
           "name": "order_id",
-          "type": "integer",
-          "required": true,
-          "keyRole": "pk"
+          "type": "Integer",
+          "description": ""
         },
         {
           "name": "encounter_id",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:encounter"
+          "type": "String",
+          "description": "",
+          "is_foreign_key": true,
+          "references": "objectType:encounter"
         },
         {
           "name": "procedure_id",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:procedure",
-          "description": "Catalog procedure ordered."
+          "type": "String",
+          "description": "Catalog procedure ordered.",
+          "is_foreign_key": true,
+          "references": "objectType:procedure"
         },
         {
           "name": "ordering_provider_npi",
-          "type": "string",
-          "required": true,
-          "keyRole": "none",
+          "type": "String",
           "description": "Ordering provider NPI."
         },
         {
           "name": "placed_at",
-          "type": "datetime",
-          "required": true,
-          "keyRole": "none",
+          "type": "Timestamp",
           "description": "Start of the R-06 24-hour authorization SLA."
         },
         {
           "name": "status",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Placed",
-            "AuthPending",
-            "Released",
-            "Cancelled"
-          ]
+          "type": "List<String>",
+          "description": ""
         }
       ],
       "relationshipIds": [
@@ -389,53 +340,45 @@
       "nameZh": "诊疗操作",
       "description": "A billable clinical service coded with CPT/HCPCS; a high-cost designated Procedure may require Prior Authorization; identified by ProcedureID.",
       "descriptionZh": "以 CPT/HCPCS 编码的可计费临床服务；高费用指定操作可能需要事前授权；以 ProcedureID 标识。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Encounter contains Procedure. Order references Procedure. Diagnosis supports Procedure. PriorAuthorization authorizes Procedure. Charge generated from Procedure. Procedure.encounter_id references Encounter.",
+      "primary_key": "procedure_id",
+      "properties": [
         {
           "name": "procedure_id",
-          "type": "integer",
-          "required": true,
-          "keyRole": "pk"
+          "type": "Integer",
+          "description": ""
         },
         {
           "name": "encounter_id",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:encounter"
+          "type": "String",
+          "description": "",
+          "is_foreign_key": true,
+          "references": "objectType:encounter"
         },
         {
           "name": "cpt_code",
-          "type": "string",
-          "required": true,
-          "keyRole": "none",
+          "type": "String",
           "description": "CPT/HCPCS code."
         },
         {
           "name": "billed_amount",
-          "type": "decimal",
-          "required": false,
-          "keyRole": "none",
+          "type": "Float",
           "description": "Drives the R-04 $1,500 authorization threshold."
         },
         {
           "name": "requires_auth",
-          "type": "boolean",
-          "required": false,
-          "keyRole": "none",
+          "type": "Boolean",
           "description": "Designated-procedure flag."
         },
         {
           "name": "start_time",
-          "type": "datetime",
-          "required": false,
-          "keyRole": "none",
+          "type": "Timestamp",
           "description": "Documented service start."
         },
         {
           "name": "stop_time",
-          "type": "datetime",
-          "required": false,
-          "keyRole": "none",
+          "type": "Timestamp",
           "description": "Documented service stop."
         }
       ],
@@ -484,41 +427,38 @@
       "nameZh": "诊断",
       "description": "A coded condition (ICD-10-CM) documented for an Encounter and linked to supporting Procedures for medical necessity; identified by DiagnosisID.",
       "descriptionZh": "针对一次就诊记录的 ICD-10-CM 编码病情，与支持性诊疗操作关联以证明医疗必要性；以 DiagnosisID 标识。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Encounter contains Diagnosis. Diagnosis supports Procedure. Diagnosis.encounter_id references Encounter. Diagnosis.linked_procedure_id references Procedure.",
+      "primary_key": "diagnosis_id",
+      "properties": [
         {
           "name": "diagnosis_id",
-          "type": "integer",
-          "required": true,
-          "keyRole": "pk"
+          "type": "Integer",
+          "description": ""
         },
         {
           "name": "encounter_id",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:encounter"
+          "type": "String",
+          "description": "",
+          "is_foreign_key": true,
+          "references": "objectType:encounter"
         },
         {
           "name": "icd10_code",
-          "type": "string",
-          "required": true,
-          "keyRole": "none",
+          "type": "String",
           "description": "ICD-10-CM code."
         },
         {
           "name": "is_primary",
-          "type": "boolean",
-          "required": false,
-          "keyRole": "none",
+          "type": "Boolean",
           "description": "Principal diagnosis flag."
         },
         {
           "name": "linked_procedure_id",
-          "type": "reference",
-          "required": false,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:procedure",
-          "description": "Supports R-09 / R-13 linkage."
+          "type": "String",
+          "description": "Supports R-09 / R-13 linkage.",
+          "is_foreign_key": true,
+          "references": "objectType:procedure"
         }
       ],
       "relationshipIds": [
@@ -556,65 +496,53 @@
       "nameZh": "事前授权",
       "description": "A payer approval required before delivering a designated Procedure, valid for approved units within an approval window; identified by AuthID.",
       "descriptionZh": "在实施指定诊疗操作前所需的付款方批准，在批准窗口内对批准单位数有效；以 AuthID 标识。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "PriorAuthorization authorizes Procedure. PriorAuthorization.encounter_id references Encounter. PriorAuthorization.procedure_id references Procedure.",
+      "primary_key": "auth_id",
+      "properties": [
         {
           "name": "auth_id",
-          "type": "integer",
-          "required": true,
-          "keyRole": "pk"
+          "type": "Integer",
+          "description": ""
         },
         {
           "name": "encounter_id",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:encounter"
+          "type": "String",
+          "description": "",
+          "is_foreign_key": true,
+          "references": "objectType:encounter"
         },
         {
           "name": "procedure_id",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:procedure"
+          "type": "String",
+          "description": "",
+          "is_foreign_key": true,
+          "references": "objectType:procedure"
         },
         {
           "name": "payer_id",
-          "type": "string",
-          "required": true,
-          "keyRole": "none"
+          "type": "String",
+          "description": ""
         },
         {
           "name": "approval_number",
-          "type": "string",
-          "required": false,
-          "keyRole": "none",
+          "type": "String",
           "description": "Returned on the 278 approval."
         },
         {
           "name": "approved_units",
-          "type": "integer",
-          "required": false,
-          "keyRole": "none",
+          "type": "Integer",
           "description": "Constrains R-07."
         },
         {
           "name": "expiration_date",
-          "type": "date",
-          "required": false,
-          "keyRole": "none",
+          "type": "Date",
           "description": "Date-of-service check (R-07)."
         },
         {
           "name": "status",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Requested",
-            "Approved",
-            "Denied",
-            "Pended"
-          ]
+          "type": "List<String>",
+          "description": ""
         }
       ],
       "relationshipIds": [
@@ -651,46 +579,42 @@
       "nameZh": "费用项",
       "description": "A financial line item generated from a documented Procedure, mapped to an active Charge Description Master line; identified by ChargeID.",
       "descriptionZh": "由已记录的诊疗操作生成的财务明细行，映射到有效的收费主数据（CDM）行；以 ChargeID 标识。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Charge generated from Procedure. Encounter accrues Charge. Claim includes Charge. Charge.encounter_id references Encounter. Charge.procedure_id references Procedure.",
+      "primary_key": "charge_id",
+      "properties": [
         {
           "name": "charge_id",
-          "type": "integer",
-          "required": true,
-          "keyRole": "pk"
+          "type": "Integer",
+          "description": ""
         },
         {
           "name": "encounter_id",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:encounter"
+          "type": "String",
+          "description": "",
+          "is_foreign_key": true,
+          "references": "objectType:encounter"
         },
         {
           "name": "procedure_id",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:procedure"
+          "type": "String",
+          "description": "",
+          "is_foreign_key": true,
+          "references": "objectType:procedure"
         },
         {
           "name": "cdm_code",
-          "type": "string",
-          "required": true,
-          "keyRole": "none",
+          "type": "String",
           "description": "Charge Description Master code; the CDM is an external master (not a modeled ObjectType) and the line must be active on the date of service (R-11)."
         },
         {
           "name": "amount",
-          "type": "decimal",
-          "required": true,
-          "keyRole": "none",
+          "type": "Float",
           "description": "Charge amount."
         },
         {
           "name": "posted_at",
-          "type": "datetime",
-          "required": false,
-          "keyRole": "none",
+          "type": "Timestamp",
           "description": "Late-charge window anchor (R-12)."
         }
       ],
@@ -730,68 +654,48 @@
       "nameZh": "理赔单",
       "description": "A billing submission to a payer covering one Encounter's Charges, scrubbed and submitted as an EDI 837; identified by ClaimID.",
       "descriptionZh": "向付款方提交、覆盖一次就诊全部费用项的账单，经清洗后以 EDI 837 提交；以 ClaimID 标识。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Encounter billed as Claim. Claim billed to Coverage. Claim includes Charge. Claim incurs Denial. Claim.encounter_id references Encounter. Claim.coverage_id references Coverage.",
+      "primary_key": "claim_id",
+      "properties": [
         {
           "name": "claim_id",
-          "type": "integer",
-          "required": true,
-          "keyRole": "pk"
+          "type": "Integer",
+          "description": ""
         },
         {
           "name": "encounter_id",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:encounter"
+          "type": "String",
+          "description": "",
+          "is_foreign_key": true,
+          "references": "objectType:encounter"
         },
         {
           "name": "coverage_id",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:coverage"
+          "type": "String",
+          "description": "",
+          "is_foreign_key": true,
+          "references": "objectType:coverage"
         },
         {
           "name": "total_billed",
-          "type": "decimal",
-          "required": true,
-          "keyRole": "none",
+          "type": "Float",
           "description": "Sum of linked Charges."
         },
         {
           "name": "frequency_code",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "1",
-            "7",
-            "8"
-          ],
+          "type": "List<String>",
           "description": "7 = replacement claim (R-16)."
         },
         {
           "name": "submitted_at",
-          "type": "datetime",
-          "required": false,
-          "keyRole": "none",
+          "type": "Timestamp",
           "description": "Timely-filing check (R-03)."
         },
         {
           "name": "status",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Draft",
-            "Held",
-            "Ready",
-            "Submitted",
-            "Accepted",
-            "Rejected",
-            "Paid",
-            "Denied"
-          ]
+          "type": "List<String>",
+          "description": ""
         }
       ],
       "relationshipIds": [
@@ -831,59 +735,45 @@
       "nameZh": "拒付",
       "description": "A payer rejection of a Claim or line carrying a CARC/RARC reason, triaged and worked toward appeal or write-off; identified by DenialID.",
       "descriptionZh": "付款方对理赔单或行项的拒付，携带 CARC/RARC 原因码，经分诊后进入申诉或核销；以 DenialID 标识。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Claim incurs Denial. Denial.claim_id references Claim.",
+      "primary_key": "denial_id",
+      "properties": [
         {
           "name": "denial_id",
-          "type": "integer",
-          "required": true,
-          "keyRole": "pk"
+          "type": "Integer",
+          "description": ""
         },
         {
           "name": "claim_id",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:claim"
+          "type": "String",
+          "description": "",
+          "is_foreign_key": true,
+          "references": "objectType:claim"
         },
         {
           "name": "carc_code",
-          "type": "string",
-          "required": false,
-          "keyRole": "none",
+          "type": "String",
           "description": "Claim Adjustment Reason Code."
         },
         {
           "name": "rarc_code",
-          "type": "string",
-          "required": false,
-          "keyRole": "none",
+          "type": "String",
           "description": "Remittance Advice Remark Code."
         },
         {
           "name": "denied_amount",
-          "type": "decimal",
-          "required": false,
-          "keyRole": "none",
+          "type": "Float",
           "description": "Write-off authority thresholds (R-19)."
         },
         {
           "name": "category",
-          "type": "enum",
-          "required": false,
-          "keyRole": "none",
-          "enumValues": [
-            "Clinical",
-            "Coding",
-            "Authorization",
-            "Eligibility",
-            "Technical"
-          ]
+          "type": "List<String>",
+          "description": ""
         },
         {
           "name": "routed_at",
-          "type": "datetime",
-          "required": false,
-          "keyRole": "none",
+          "type": "Timestamp",
           "description": "2-business-day routing SLA (R-17)."
         }
       ],

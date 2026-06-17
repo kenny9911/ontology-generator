@@ -47,36 +47,33 @@
       "nameZh": "投保申请人",
       "description": "A prospective insured submitting a commercial property risk for underwriting.",
       "descriptionZh": "提交商业财产风险进行核保的潜在被保险人。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Applicant submits Submission. Applicant holds Policy.",
+      "primary_key": "applicant_id",
+      "properties": [
         {
           "name": "applicant_id",
-          "nameZh": "申请人编号",
-          "type": "uuid",
-          "required": true,
-          "keyRole": "pk"
+          "type": "String",
+          "description": "",
+          "nameZh": "申请人编号"
         },
         {
           "name": "legal_name",
-          "nameZh": "法定名称",
-          "type": "string",
-          "required": true,
-          "keyRole": "none"
+          "type": "String",
+          "description": "",
+          "nameZh": "法定名称"
         },
         {
           "name": "industry_code",
-          "nameZh": "行业代码",
-          "type": "string",
-          "required": false,
-          "keyRole": "none",
-          "description": "NAICS industry code."
+          "type": "String",
+          "description": "NAICS industry code.",
+          "nameZh": "行业代码"
         },
         {
           "name": "prior_loss_count_36m",
-          "nameZh": "过去36个月理赔次数",
-          "type": "integer",
-          "required": false,
-          "keyRole": "none",
-          "description": "Drives [BR-16] decline rule."
+          "type": "Integer",
+          "description": "Drives [BR-16] decline rule.",
+          "nameZh": "过去36个月理赔次数"
         }
       ],
       "relationshipIds": [
@@ -116,65 +113,47 @@
       "nameZh": "投保申请",
       "description": "A broker-originated application package for a commercial property risk, cleared and assessed before quoting.",
       "descriptionZh": "由经纪人发起的商业财产风险申请包，在报价前需完成查重与风险评估。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Applicant submits Submission. Submission assessed by RiskAssessment. Submission yields Quote. Submission.applicant_id references Applicant.",
+      "primary_key": "submission_id",
+      "properties": [
         {
           "name": "submission_id",
-          "nameZh": "投保申请编号",
-          "type": "uuid",
-          "required": true,
-          "keyRole": "pk"
+          "type": "String",
+          "description": "",
+          "nameZh": "投保申请编号"
         },
         {
           "name": "applicant_id",
+          "type": "String",
+          "description": "",
           "nameZh": "申请人编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:applicant"
+          "is_foreign_key": true,
+          "references": "objectType:applicant"
         },
         {
           "name": "total_insured_value",
-          "nameZh": "保险总价值",
-          "type": "decimal",
-          "required": false,
-          "keyRole": "none",
-          "description": "Drives [BR-02] facultative reinsurance threshold."
+          "type": "Float",
+          "description": "Drives [BR-02] facultative reinsurance threshold.",
+          "nameZh": "保险总价值"
         },
         {
           "name": "cat_zone_tier",
-          "nameZh": "巨灾区域等级",
-          "type": "enum",
-          "required": false,
-          "keyRole": "none",
-          "enumValues": [
-            "Tier1",
-            "Tier2",
-            "Tier3"
-          ],
-          "description": "Drives [BR-03] referral."
+          "type": "List<String>",
+          "description": "Drives [BR-03] referral.",
+          "nameZh": "巨灾区域等级"
         },
         {
           "name": "cleared",
-          "nameZh": "已查重",
-          "type": "boolean",
-          "required": true,
-          "keyRole": "none",
-          "description": "Duplicate-clearance flag per [BR-01]."
+          "type": "Boolean",
+          "description": "Duplicate-clearance flag per [BR-01].",
+          "nameZh": "已查重"
         },
         {
           "name": "status",
-          "nameZh": "状态",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "New",
-            "Cleared",
-            "Referred",
-            "Quoted",
-            "Bound",
-            "Declined"
-          ]
+          "type": "List<String>",
+          "description": "",
+          "nameZh": "状态"
         }
       ],
       "relationshipIds": [
@@ -215,36 +194,35 @@
       "nameZh": "风险评估",
       "description": "The underwriter's evaluation of a submission producing a risk score and proposed coverage list.",
       "descriptionZh": "核保人对投保申请的评估，产出风险评分及拟议承保险别清单。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Submission assessed by RiskAssessment. RiskAssessment.submission_id references Submission.",
+      "primary_key": "risk_assessment_id",
+      "properties": [
         {
           "name": "risk_assessment_id",
-          "nameZh": "风险评估编号",
-          "type": "uuid",
-          "required": true,
-          "keyRole": "pk"
+          "type": "String",
+          "description": "",
+          "nameZh": "风险评估编号"
         },
         {
           "name": "submission_id",
+          "type": "String",
+          "description": "",
           "nameZh": "投保申请编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:submission"
+          "is_foreign_key": true,
+          "references": "objectType:submission"
         },
         {
           "name": "risk_score",
-          "nameZh": "风险评分",
-          "type": "decimal",
-          "required": false,
-          "keyRole": "none"
+          "type": "Float",
+          "description": "",
+          "nameZh": "风险评分"
         },
         {
           "name": "referral_flagged",
-          "nameZh": "已标记转交",
-          "type": "boolean",
-          "required": false,
-          "keyRole": "none",
-          "description": "True when an eligibility threshold under [BR-02]/[BR-03] is hit."
+          "type": "Boolean",
+          "description": "True when an eligibility threshold under [BR-02]/[BR-03] is hit.",
+          "nameZh": "已标记转交"
         }
       ],
       "relationshipIds": [
@@ -275,43 +253,41 @@
       "nameZh": "报价",
       "description": "A priced offer of coverage with line-item premiums, deductibles, and limits, valid for a fixed window.",
       "descriptionZh": "含分项保费、免赔额与限额的承保报价，具固定有效期。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Submission yields Quote. Quote binds to Policy. Quote.submission_id references Submission.",
+      "primary_key": "quote_id",
+      "properties": [
         {
           "name": "quote_id",
-          "nameZh": "报价编号",
-          "type": "uuid",
-          "required": true,
-          "keyRole": "pk"
+          "type": "String",
+          "description": "",
+          "nameZh": "报价编号"
         },
         {
           "name": "submission_id",
+          "type": "String",
+          "description": "",
           "nameZh": "投保申请编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:submission"
+          "is_foreign_key": true,
+          "references": "objectType:submission"
         },
         {
           "name": "quoted_premium",
-          "nameZh": "报价保费",
-          "type": "money",
-          "required": true,
-          "keyRole": "none"
+          "type": "Float",
+          "description": "",
+          "nameZh": "报价保费"
         },
         {
           "name": "issued_date",
-          "nameZh": "出具日期",
-          "type": "date",
-          "required": true,
-          "keyRole": "none",
-          "description": "Drives [BR-14] 60-day validity."
+          "type": "Date",
+          "description": "Drives [BR-14] 60-day validity.",
+          "nameZh": "出具日期"
         },
         {
           "name": "expiry_date",
-          "nameZh": "失效日期",
-          "type": "date",
-          "required": true,
-          "keyRole": "none"
+          "type": "Date",
+          "description": "",
+          "nameZh": "失效日期"
         }
       ],
       "relationshipIds": [
@@ -351,59 +327,47 @@
       "nameZh": "保单",
       "description": "A bound commercial property insurance contract with an effective and expiry date, materializing coverages and premium.",
       "descriptionZh": "已承保的商业财产保险合同，具生效与失效日期，并落实各险别与保费。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Quote binds to Policy. Applicant holds Policy. Policy contains Coverage. Policy priced by Premium. Claim filed against Policy. Policy.applicant_id references Applicant.",
+      "primary_key": "policy_id",
+      "properties": [
         {
           "name": "policy_id",
-          "nameZh": "保单编号",
-          "type": "uuid",
-          "required": true,
-          "keyRole": "pk"
+          "type": "String",
+          "description": "",
+          "nameZh": "保单编号"
         },
         {
           "name": "policy_number",
-          "nameZh": "保单号",
-          "type": "string",
-          "required": true,
-          "keyRole": "none",
-          "description": "Business key, unique."
+          "type": "String",
+          "description": "Business key, unique.",
+          "nameZh": "保单号"
         },
         {
           "name": "applicant_id",
+          "type": "String",
+          "description": "",
           "nameZh": "申请人编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:applicant"
+          "is_foreign_key": true,
+          "references": "objectType:applicant"
         },
         {
           "name": "effective_date",
-          "nameZh": "生效日期",
-          "type": "date",
-          "required": true,
-          "keyRole": "none",
-          "description": "Drives [BR-07], [BR-08]."
+          "type": "Date",
+          "description": "Drives [BR-07], [BR-08].",
+          "nameZh": "生效日期"
         },
         {
           "name": "expiry_date",
-          "nameZh": "失效日期",
-          "type": "date",
-          "required": true,
-          "keyRole": "none",
-          "description": "Drives [BR-08]."
+          "type": "Date",
+          "description": "Drives [BR-08].",
+          "nameZh": "失效日期"
         },
         {
           "name": "status",
-          "nameZh": "状态",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Bound",
-            "Issued",
-            "InForce",
-            "Cancelled",
-            "Expired"
-          ]
+          "type": "List<String>",
+          "description": "",
+          "nameZh": "状态"
         }
       ],
       "relationshipIds": [
@@ -446,50 +410,41 @@
       "nameZh": "承保险别",
       "description": "A peril-specific grant of cover on a policy with a limit and deductible.",
       "descriptionZh": "保单上针对特定危险的承保，含限额与免赔额。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Policy contains Coverage. Exposure covers Coverage. Coverage.policy_id references Policy.",
+      "primary_key": "coverage_id",
+      "properties": [
         {
           "name": "coverage_id",
-          "nameZh": "险别编号",
-          "type": "uuid",
-          "required": true,
-          "keyRole": "pk"
+          "type": "String",
+          "description": "",
+          "nameZh": "险别编号"
         },
         {
           "name": "policy_id",
+          "type": "String",
+          "description": "",
           "nameZh": "保单编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:policy"
+          "is_foreign_key": true,
+          "references": "objectType:policy"
         },
         {
           "name": "peril",
-          "nameZh": "承保危险",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Fire",
-            "Wind",
-            "Flood",
-            "Theft",
-            "BusinessInterruption"
-          ]
+          "type": "List<String>",
+          "description": "",
+          "nameZh": "承保危险"
         },
         {
           "name": "limit",
-          "nameZh": "限额",
-          "type": "money",
-          "required": true,
-          "keyRole": "none"
+          "type": "Float",
+          "description": "",
+          "nameZh": "限额"
         },
         {
           "name": "deductible",
-          "nameZh": "免赔额",
-          "type": "money",
-          "required": true,
-          "keyRole": "none",
-          "description": "Drives [BR-15] $5,000 minimum."
+          "type": "Float",
+          "description": "Drives [BR-15] $5,000 minimum.",
+          "nameZh": "免赔额"
         }
       ],
       "relationshipIds": [
@@ -521,29 +476,29 @@
       "nameZh": "保费",
       "description": "The annual amount charged for a bound policy, computed by RatingEngine subject to a minimum-premium floor.",
       "descriptionZh": "已承保保单的年度收费，由费率引擎计算并受最低保费下限约束。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Policy priced by Premium. Premium.policy_id references Policy.",
+      "primary_key": "premium_id",
+      "properties": [
         {
           "name": "premium_id",
-          "nameZh": "保费编号",
-          "type": "uuid",
-          "required": true,
-          "keyRole": "pk"
+          "type": "String",
+          "description": "",
+          "nameZh": "保费编号"
         },
         {
           "name": "policy_id",
+          "type": "String",
+          "description": "",
           "nameZh": "保单编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:policy"
+          "is_foreign_key": true,
+          "references": "objectType:policy"
         },
         {
           "name": "annual_amount",
-          "nameZh": "年度金额",
-          "type": "money",
-          "required": true,
-          "keyRole": "none",
-          "description": "Drives [BR-06] $2,500 minimum."
+          "type": "Float",
+          "description": "Drives [BR-06] $2,500 minimum.",
+          "nameZh": "年度金额"
         }
       ],
       "relationshipIds": [
@@ -574,69 +529,53 @@
       "nameZh": "理赔案件",
       "description": "A reported loss against a policy, opened at First Notice of Loss and resolved through adjudication and settlement.",
       "descriptionZh": "针对保单报告的损失，于首次报损时立案，经理算与结案处理。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Claim filed against Policy. Claim comprises Exposure. Adjuster handles Claim. Claim recovers via Recovery. Claim.policy_number references Policy.",
+      "primary_key": "claim_id",
+      "properties": [
         {
           "name": "claim_id",
-          "nameZh": "案件编号",
-          "type": "uuid",
-          "required": true,
-          "keyRole": "pk"
+          "type": "String",
+          "description": "",
+          "nameZh": "案件编号"
         },
         {
           "name": "claim_number",
-          "nameZh": "案件号",
-          "type": "string",
-          "required": true,
-          "keyRole": "none",
-          "description": "Business key, unique."
+          "type": "String",
+          "description": "Business key, unique.",
+          "nameZh": "案件号"
         },
         {
           "name": "policy_number",
+          "type": "String",
+          "description": "FK to Policy.policy_number.",
           "nameZh": "保单号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:policy",
-          "description": "FK to Policy.policy_number."
+          "is_foreign_key": true,
+          "references": "objectType:policy"
         },
         {
           "name": "date_of_loss",
-          "nameZh": "出险日期",
-          "type": "date",
-          "required": true,
-          "keyRole": "none",
-          "description": "Drives [BR-08]."
+          "type": "Date",
+          "description": "Drives [BR-08].",
+          "nameZh": "出险日期"
         },
         {
           "name": "fnol_timestamp",
-          "nameZh": "报案时间戳",
-          "type": "datetime",
-          "required": true,
-          "keyRole": "none",
-          "description": "Drives [BR-09] 48h clock."
+          "type": "Timestamp",
+          "description": "Drives [BR-09] 48h clock.",
+          "nameZh": "报案时间戳"
         },
         {
           "name": "estimated_incurred",
-          "nameZh": "预估已发生损失",
-          "type": "money",
-          "required": false,
-          "keyRole": "none",
-          "description": "Drives [BR-12]."
+          "type": "Float",
+          "description": "Drives [BR-12].",
+          "nameZh": "预估已发生损失"
         },
         {
           "name": "status",
-          "nameZh": "状态",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Open",
-            "Assigned",
-            "InReview",
-            "Settled",
-            "Closed",
-            "Stale"
-          ]
+          "type": "List<String>",
+          "description": "",
+          "nameZh": "状态"
         }
       ],
       "relationshipIds": [
@@ -678,57 +617,43 @@
       "nameZh": "赔付项",
       "description": "A claim's exposure to loss under a single coverage, carrying a coverage decision, reserve, and payment.",
       "descriptionZh": "理赔案件在单一险别下的损失敞口，承载承保决定、准备金与赔款。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Claim comprises Exposure. Exposure covers Coverage. Exposure reserves Reserve. Exposure pays ClaimPayment. Exposure.claim_id references Claim. Exposure.coverage_id references Coverage.",
+      "primary_key": "exposure_id",
+      "properties": [
         {
           "name": "exposure_id",
-          "nameZh": "赔付项编号",
-          "type": "uuid",
-          "required": true,
-          "keyRole": "pk"
+          "type": "String",
+          "description": "",
+          "nameZh": "赔付项编号"
         },
         {
           "name": "claim_id",
+          "type": "String",
+          "description": "",
           "nameZh": "案件编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:claim"
+          "is_foreign_key": true,
+          "references": "objectType:claim"
         },
         {
           "name": "coverage_id",
+          "type": "String",
+          "description": "",
           "nameZh": "险别编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:coverage"
+          "is_foreign_key": true,
+          "references": "objectType:coverage"
         },
         {
           "name": "coverage_decision",
-          "nameZh": "承保决定",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "InForce",
-            "OutOfForce",
-            "NeedsReview",
-            "CoverageDenied"
-          ],
-          "description": "Drives [BR-17]."
+          "type": "List<String>",
+          "description": "Drives [BR-17].",
+          "nameZh": "承保决定"
         },
         {
           "name": "status",
-          "nameZh": "状态",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Open",
-            "Reserved",
-            "Paying",
-            "Closed"
-          ],
-          "description": "Drives [BR-13]."
+          "type": "List<String>",
+          "description": "Drives [BR-13].",
+          "nameZh": "状态"
         }
       ],
       "relationshipIds": [
@@ -762,45 +687,41 @@
       "nameZh": "准备金",
       "description": "The estimated outstanding liability set aside on an open exposure, reviewed periodically and decremented on payment.",
       "descriptionZh": "为未结赔付项预留的预估未决负债，需定期复核并在赔付时冲减。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Exposure reserves Reserve. Reserve.exposure_id references Exposure.",
+      "primary_key": "reserve_id",
+      "properties": [
         {
           "name": "reserve_id",
-          "nameZh": "准备金编号",
-          "type": "uuid",
-          "required": true,
-          "keyRole": "pk"
+          "type": "String",
+          "description": "",
+          "nameZh": "准备金编号"
         },
         {
           "name": "exposure_id",
+          "type": "String",
+          "description": "",
           "nameZh": "赔付项编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:exposure"
+          "is_foreign_key": true,
+          "references": "objectType:exposure"
         },
         {
           "name": "amount",
-          "nameZh": "金额",
-          "type": "money",
-          "required": true,
-          "keyRole": "none",
-          "description": "Drives [BR-11] $250k approval."
+          "type": "Float",
+          "description": "Drives [BR-11] $250k approval.",
+          "nameZh": "金额"
         },
         {
           "name": "last_reviewed_date",
-          "nameZh": "最近复核日期",
-          "type": "date",
-          "required": false,
-          "keyRole": "none",
-          "description": "Drives [BR-10] 90-day review."
+          "type": "Date",
+          "description": "Drives [BR-10] 90-day review.",
+          "nameZh": "最近复核日期"
         },
         {
           "name": "approved_by",
-          "nameZh": "批准人",
-          "type": "uuid",
-          "required": false,
-          "keyRole": "none",
-          "description": "User id; nullable."
+          "type": "String",
+          "description": "User id; nullable.",
+          "nameZh": "批准人"
         }
       ],
       "relationshipIds": [
@@ -831,50 +752,41 @@
       "nameZh": "理赔赔款",
       "description": "A disbursement against an exposure, subject to adjuster/supervisor authority limits and approval.",
       "descriptionZh": "针对赔付项的赔款支付，受理算员/主管授权限额及审批约束。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Exposure pays ClaimPayment. ClaimPayment.exposure_id references Exposure.",
+      "primary_key": "payment_id",
+      "properties": [
         {
           "name": "payment_id",
-          "nameZh": "赔款编号",
-          "type": "uuid",
-          "required": true,
-          "keyRole": "pk"
+          "type": "String",
+          "description": "",
+          "nameZh": "赔款编号"
         },
         {
           "name": "exposure_id",
+          "type": "String",
+          "description": "",
           "nameZh": "赔付项编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:exposure"
+          "is_foreign_key": true,
+          "references": "objectType:exposure"
         },
         {
           "name": "amount",
-          "nameZh": "金额",
-          "type": "money",
-          "required": true,
-          "keyRole": "none",
-          "description": "Drives [BR-04], [BR-05]."
+          "type": "Float",
+          "description": "Drives [BR-04], [BR-05].",
+          "nameZh": "金额"
         },
         {
           "name": "authorized_by",
-          "nameZh": "授权人",
-          "type": "uuid",
-          "required": false,
-          "keyRole": "none",
-          "description": "User id."
+          "type": "String",
+          "description": "User id.",
+          "nameZh": "授权人"
         },
         {
           "name": "payment_status",
-          "nameZh": "支付状态",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Requested",
-            "Authorized",
-            "Issued",
-            "Voided"
-          ]
+          "type": "List<String>",
+          "description": "",
+          "nameZh": "支付状态"
         }
       ],
       "relationshipIds": [
@@ -905,41 +817,33 @@
       "nameZh": "理算员",
       "description": "A claims handler assigned to manage a claim and its exposures within a payment authority limit.",
       "descriptionZh": "受指派管理理赔案件及其赔付项的理算人员，具支付授权限额。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Adjuster handles Claim.",
+      "primary_key": "adjuster_id",
+      "properties": [
         {
           "name": "adjuster_id",
-          "nameZh": "理算员编号",
-          "type": "uuid",
-          "required": true,
-          "keyRole": "pk"
+          "type": "String",
+          "description": "",
+          "nameZh": "理算员编号"
         },
         {
           "name": "name",
-          "nameZh": "姓名",
-          "type": "string",
-          "required": true,
-          "keyRole": "none"
+          "type": "String",
+          "description": "",
+          "nameZh": "姓名"
         },
         {
           "name": "authority_limit",
-          "nameZh": "授权限额",
-          "type": "money",
-          "required": true,
-          "keyRole": "none",
-          "description": "Default 25000 per [BR-04]."
+          "type": "Float",
+          "description": "Default 25000 per [BR-04].",
+          "nameZh": "授权限额"
         },
         {
           "name": "seniority",
-          "nameZh": "资历",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Junior",
-            "Standard",
-            "Senior"
-          ],
-          "description": "Drives [BR-12]."
+          "type": "List<String>",
+          "description": "Drives [BR-12].",
+          "nameZh": "资历"
         }
       ],
       "relationshipIds": [
@@ -970,36 +874,35 @@
       "nameZh": "追偿",
       "description": "A subrogation recovery pursued against an identified liable third party after a claim is closed.",
       "descriptionZh": "理赔结案后针对已识别责任第三方进行的代位求偿追偿记录。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "Claim recovers via Recovery. Recovery.claim_id references Claim.",
+      "primary_key": "recovery_id",
+      "properties": [
         {
           "name": "recovery_id",
-          "nameZh": "追偿编号",
-          "type": "uuid",
-          "required": true,
-          "keyRole": "pk"
+          "type": "String",
+          "description": "",
+          "nameZh": "追偿编号"
         },
         {
           "name": "claim_id",
+          "type": "String",
+          "description": "",
           "nameZh": "案件编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:claim"
+          "is_foreign_key": true,
+          "references": "objectType:claim"
         },
         {
           "name": "liable_party",
-          "nameZh": "责任方",
-          "type": "string",
-          "required": true,
-          "keyRole": "none",
-          "description": "Drives [BR-19]."
+          "type": "String",
+          "description": "Drives [BR-19].",
+          "nameZh": "责任方"
         },
         {
           "name": "recovered_amount",
-          "nameZh": "追回金额",
-          "type": "money",
-          "required": false,
-          "keyRole": "none"
+          "type": "Float",
+          "description": "",
+          "nameZh": "追回金额"
         }
       ],
       "relationshipIds": [

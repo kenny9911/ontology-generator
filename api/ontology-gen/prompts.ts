@@ -190,13 +190,15 @@ WHAT TO EXTRACT
   between people, it is an object candidate — enumerate it.
 - DO NOT create objects for: verbs/operations (those are Actions, Stage 3), events
   (Stage 4), one-off values, report names, UI labels, or section headings.
-- For each object: PascalCase singular "name" (+ "nameZh"), a one-sentence "description"
-  (+ "descriptionZh"), its ATTRIBUTES, and its RELATIONSHIPS to other objects in THIS output.
-- Also set "objectClass": "data" (a business entity) or "system" (an application / external
-  system the document references — a CRM, ERP, partner portal, or service the business
-  integrates with), and a one-paragraph "relationshipNote" {en,zh} stating how this object
-  relates to the OTHER objects (who owns it, what it references, what references it). The
-  relationshipNote is the human-readable summary of the edges you emit in "relationships".
+- For each object emit: a PascalCase singular "name" (+ Chinese "nameZh"), a one-sentence
+  "description" (+ "descriptionZh"), a "type", a "relationship_description", a "primary_key",
+  its "properties", and its RELATIONSHIPS to other objects in THIS output.
+- "type" is "data" (a business entity) or "system" (an application / external system the
+  document references — a CRM, ERP, RMS, partner portal, or service the business integrates with).
+- "relationship_description" is prose stating how this object relates to the OTHER objects
+  (who owns it, what it references, what references it) — the human-readable summary of the
+  edges you emit in "relationships", and the key input for building inter-object relationships.
+- "primary_key" is the property name that uniquely identifies the object (default "<object>_id").
 
 COMMONLY MISSED — sweep for ALL of these explicitly (extractors systematically under-report them):
 - LOOKUP / REFERENCE / MASTER DATA: tiers, categories, regions, rate tables, code lists,
@@ -211,21 +213,20 @@ COMMONLY MISSED — sweep for ALL of these explicitly (extractors systematically
 - CONFIGURATION / POLICY ENTITIES: fee schedules, approval matrices, plan definitions,
   threshold tables — when the document treats configuration as managed data.
 - STATUSES WORTH MODELING: a lifecycle spelled out in prose ("draft, submitted, approved,
-  rejected") becomes an "enum" attribute with that EXACT value set on the owning object.
-- EVERY ATTRIBUTE MENTIONED ANYWHERE in the text — including ones mentioned only once,
-  in passing, or inside a rule or procedure description. Recognize the DataType:
-  money amounts (and their currency) => "money"; calendar dates => "date"; timestamps =>
-  "datetime"; identifiers/codes => "uuid" or "string" with keyRole "pk"/"fk"; enum value
-  sets spelled out in prose => "enum" with exact "enumValues"; percentages/ratios =>
-  "decimal"; yes/no facts phrased as conditions ("whether the customer has consented") =>
-  "boolean"; durations and counts => "integer" (with the constraint captured in Stage 2).
+  rejected") becomes a "List<String>" property whose description lists those EXACT values.
+- EVERY PROPERTY MENTIONED ANYWHERE in the text — including ones mentioned only once,
+  in passing, or inside a rule or procedure description. Recognize the type:
+  money amounts / percentages / ratios => "Float"; whole counts and durations => "Integer";
+  calendar dates => "Date"; timestamps => "Timestamp"; yes/no facts ("whether the customer has
+  consented") => "Boolean"; enumerated value sets or any multi-value field => "List<String>";
+  identifiers, codes, names, and free text => "String".
 
-ATTRIBUTE RULES
-- "name" in snake_case. "type" from the closed DataType vocabulary ONLY.
-- "keyRole" is "pk" (primary identifier), "fk" (points at another object), or "none".
-- If "type" is "enum", list "enumValues" exactly as written in the document.
-- If "keyRole" is "fk" OR "type" is "reference", set "refObjectTypeId" to the target object id.
-- "required": true only when the document implies the field is mandatory.
+PROPERTY RULES (the "properties" array)
+- Each property MUST have "name" (snake_case), "type", and a generic "description".
+- "type" is ONE of: String | Integer | Float | Boolean | Date | Timestamp | List<String>.
+- A property that points at ANOTHER object is a foreign key: set "is_foreign_key": true and
+  "references" to the target object's id (e.g. "objectType:customer").
+- Name the primary key once at the object level via "primary_key" — do not tag properties.
 
 RELATIONSHIP RULES (emitted as a TOP-LEVEL "relationships" array)
 - Each relationship is a first-class edge: a verb "name" (snake_case, e.g. "places",
@@ -244,16 +245,14 @@ OUTPUT CONTRACT — return EXACTLY this shape (one JSON object):
       "nameZh": "客户",
       "description": "A party that places orders.",
       "descriptionZh": "下订单的一方。",
-      "objectClass": "data",
-      "relationshipNote": {
-        "en": "A Customer places one or more Orders and holds exactly one CreditProfile.",
-        "zh": "客户下达一个或多个订单，并持有唯一的信用档案。"
-      },
-      "attributes": [
-        { "name": "customer_id", "nameZh": "客户编号", "type": "uuid", "required": true,
-          "keyRole": "pk", "description": "Unique identity." },
-        { "name": "tier", "type": "enum", "required": true, "keyRole": "none",
-          "enumValues": ["Standard","Premium","Enterprise"] }
+      "type": "data",
+      "relationship_description": "A Customer places one or more Orders and holds exactly one CreditProfile.",
+      "primary_key": "customer_id",
+      "properties": [
+        { "name": "customer_id", "nameZh": "客户编号", "type": "String", "description": "Unique identity of the customer." },
+        { "name": "tier", "type": "List<String>", "description": "Customer tier — one of Standard, Premium, Enterprise." },
+        { "name": "account_id", "nameZh": "账户编号", "type": "String", "is_foreign_key": true,
+          "references": "objectType:account", "description": "The CRM account this customer maps to." }
       ],
       "sources": [
         { "documentId": "", "documentName": "${docName}", "section": "§3.2",
@@ -280,9 +279,11 @@ NEGATIVE EXAMPLE: "Refund" is usually an action outcome / event, NOT an object �
 it as an object unless the document gives it identity and attributes of its own.
 
 ${SELF_CHECK}
-- [ ] Every attribute mentioned anywhere in the text appears on some object with a correct
-      DataType (money/date/datetime/enum/boolean recognized from prose, not defaulted).
-- [ ] Every status lifecycle spelled out in prose is an "enum" attribute with the exact values.
+- [ ] Every property mentioned anywhere in the text appears on some object with a correct
+      type (Float/Date/Timestamp/Boolean/List<String> recognized from prose, not defaulted).
+- [ ] Every status lifecycle spelled out in prose is a "List<String>" property listing the values.
+- [ ] Every object has "type", "primary_key", and "relationship_description" filled in.
+- [ ] Every foreign-key property sets "is_foreign_key" + "references" to a real object id.
 - [ ] Every party, document-as-entity, lookup table, and line item in the text was either
       emitted or consciously rejected as a non-entity.`;
 
@@ -812,11 +813,11 @@ skip is an operation downstream agents can never perform. Output ONLY a single J
 listing files.
 
 WHAT TO GENERATE
-1. One TS interface per ObjectType (in "types.ts") — no object skipped: attributes -> fields.
-   Map DataType -> TS:
-   string/uuid -> string; integer -> number; decimal/money -> number; boolean -> boolean;
-   date/datetime -> string (ISO); enum -> a string-literal union of enumValues; reference/fk ->
-   the referenced interface type; json -> unknown; array -> T[].
+1. One TS interface per ObjectType (in "types.ts") — no object skipped: properties -> fields.
+   Map property type -> TS:
+   String -> string; Integer/Float -> number; Boolean -> boolean; Date/Timestamp -> string (ISO);
+   List<String> -> string[]; a foreign-key property (is_foreign_key + references) -> the
+   referenced interface type.
 2. Event payload types (in "events.ts") as a discriminated union keyed by the event "name",
    derived from each EventType.payload — every event represented.
 3. One exported async function per ActionType (in "tools.ts") — every action, none skipped:
@@ -1194,7 +1195,7 @@ export function buildLinksPrompt(args: {
 
 ${SHARED_RULES}
 
-SWEEP DISCIPLINE (be exhaustive): systematically consider PAIRS of objects from the list — for each plausible pair, ask whether the domain implies an edge between them. Enumerate candidate edges BEFORE filtering, then keep the ones that are real. An attribute with keyRole/ref pointing at another object almost always implies an edge — check every such attribute.
+SWEEP DISCIPLINE (be exhaustive): systematically consider PAIRS of objects from the list — for each plausible pair, ask whether the domain implies an edge between them. Enumerate candidate edges BEFORE filtering, then keep the ones that are real. A property with is_foreign_key/references pointing at another object almost always implies an edge — check every such property.
 
 NEGATIVE-SPACE CHECKLIST — edge types extraction most often misses; walk each category against the object set:
 - OWNERSHIP / possession: a party owns, holds, or is responsible for an asset/account/record.

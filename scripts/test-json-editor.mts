@@ -30,6 +30,8 @@ import {
   idPrefixFor,
   extractLayer,
   serializeLayer,
+  serializeLayerDoc,
+  layerDocKey,
   parseLayer,
   mergeLayer,
   type EditorLayer,
@@ -52,6 +54,7 @@ import {
 import { validateOntology } from '../api/_shared/ontology-validate.js';
 import { DATA_TYPES, SEVERITY_LEVELS, SCHEMA_VERSION_NUMBER } from '../api/_shared/ontology-schema.js';
 import type { Ontology } from '../api/_shared/ontology-schema.js';
+import { normalizeOntologyObjects } from '../src/ontology-generator/normalize-objects';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const GOLDEN_DIR = path.join(ROOT, 'fixtures/ontology-golden');
@@ -421,7 +424,8 @@ function sectionSuggest(g0: Ontology): void {
   section('12. suggestFixes / applySuggestion');
   check('12.1 clean golden layer → []', () => assertEq(suggestFixes(g0.objects, 'objects').length, 0, '12.1'));
   const mk = (over: Record<string, unknown>): Record<string, unknown> => ({
-    id: 'objectType:x', name: 'X', nameZh: 'X', confidence: 0.5, reviewState: 'pending', provenance: 'human', sources: [], attributes: [], ...over,
+    id: 'objectType:x', name: 'X', nameZh: 'X', confidence: 0.5, reviewState: 'pending', provenance: 'human', sources: [],
+    type: 'data', relationship_description: '', primary_key: 'x_id', properties: [], ...over,
   });
   check('12.2 missing nameZh → fill', () => {
     const n = mk({ name: 'Order' }); delete n.nameZh;
@@ -446,12 +450,12 @@ function sectionSuggest(g0: Ontology): void {
     const f = suggestFixes([n], 'objects').find((x) => x.field === 'provenance')!;
     assertEq((applySuggestion([n], f) as Record<string, unknown>[])[0]!.provenance, 'human', '12.5');
   });
-  check('12.6 bad attr type → nearest', () => {
-    const n = mk({ attributes: [{ name: 'a', type: 'str' }] });
+  check('12.6 bad property type → nearest', () => {
+    const n = mk({ properties: [{ name: 'a', type: 'Strng', description: 'd' }] });
     const f = suggestFixes([n], 'objects').find((x) => x.kind === 'bad_enum')!;
     assert(!!f, '12.6 flagged');
-    const out = applySuggestion([n], f) as Record<string, { attributes: Record<string, unknown>[] }>[];
-    assertEq((out[0]! as unknown as { attributes: Record<string, unknown>[] }).attributes[0]!.type, 'string', '12.6 fixed');
+    const out = applySuggestion([n], f) as Record<string, { properties: Record<string, unknown>[] }>[];
+    assertEq((out[0]! as unknown as { properties: Record<string, unknown>[] }).properties[0]!.type, 'String', '12.6 fixed');
   });
   check('12.7 bad rule severity → block', () => {
     const r = { id: 'rule:x', statement: { en: 'a', zh: 'b' }, kind: 'validation', severity: 'blocker', confidence: 0.5, reviewState: 'pending', provenance: 'human', sources: [] };
@@ -465,12 +469,15 @@ function sectionSuggest(g0: Ontology): void {
     assert(!!f, '12.8 flagged');
     assertEq((applySuggestion([n], f) as Record<string, unknown>[])[0]!.id, 'objectType:order', '12.8 fixed');
   });
-  check('12.9 enum without values flagged', () => {
-    const n = mk({ attributes: [{ name: 'a', type: 'enum' }] });
-    assert(suggestFixes([n], 'objects').some((x) => x.kind === 'enum_without_values'), '12.9');
+  check('12.9 valid List<String> property → no bad type flag', () => {
+    const n = mk({ properties: [{ name: 'a', type: 'List<String>', description: 'd' }] });
+    assert(
+      !suggestFixes([n], 'objects').some((x) => x.kind === 'bad_enum' && x.field === 'properties.0.type'),
+      '12.9',
+    );
   });
-  check('12.10 reference without target (not fixable)', () => {
-    const n = mk({ attributes: [{ name: 'a', type: 'reference' }] });
+  check('12.10 foreign key without references (not fixable)', () => {
+    const n = mk({ properties: [{ name: 'a', type: 'String', description: 'd', is_foreign_key: true }] });
     const f = suggestFixes([n], 'objects').find((x) => x.kind === 'reference_without_target')!;
     assert(!!f && !f.fixable, '12.10');
   });
@@ -597,27 +604,28 @@ function sectionValidateIntegration(g0: Ontology): void {
     const cand = buildCandidateOntology(g0, { objects: [obj, ...g0.objects.slice(1)] });
     assert(!validateOntology(cand).some((i) => i.kind === 'missing_source' && i.from === obj.id), '14.6');
   });
-  check('14.7 enum attr no values → enum_without_values', () => {
-    const obj = { ...g0.objects[0]!, attributes: [{ name: 'k', type: 'enum', required: false, keyRole: 'none' }] };
+  check('14.7 fk property without references → reference_without_target', () => {
+    const obj = { ...g0.objects[0]!, properties: [{ name: 'k', type: 'String', description: 'd', is_foreign_key: true }] };
     const cand = buildCandidateOntology(g0, { objects: [obj, ...g0.objects.slice(1)] });
-    assert(validateOntology(cand).some((i) => i.kind === 'enum_without_values'), '14.7');
+    assert(validateOntology(cand).some((i) => i.kind === 'reference_without_target'), '14.7');
   });
   check('14.8 garbage candidate never throws', () => {
     const cand = buildCandidateOntology(g0, { objects: [], rules: [], actions: [], events: [], processes: [] });
     assert(Array.isArray(validateOntology(cand)), '14.8');
   });
   check('14.9 suggester ⊆ validator for shared kinds', () => {
-    // every enum_without_values / reference_without_target the suggester flags is
-    // also flagged by the canonical validator on the assembled candidate.
+    // every reference_without_target the suggester flags is also flagged by the
+    // canonical validator on the assembled candidate.
     const obj = {
       id: 'objectType:probe', name: 'P', nameZh: 'P', confidence: 0.5, reviewState: 'accepted', provenance: 'inferred', sources: [],
-      attributes: [{ name: 'e', type: 'enum', required: false, keyRole: 'none' }, { name: 'r', type: 'reference', required: false, keyRole: 'none' }],
+      type: 'data', relationship_description: '', primary_key: 'probe_id',
+      properties: [{ name: 'r', type: 'String', description: 'd', is_foreign_key: true }],
     };
     const sugg = suggestFixes([obj], 'objects');
     const cand = buildCandidateOntology(g0, { objects: [...g0.objects, obj] });
     const vKinds = new Set(validateOntology(cand).map((i) => i.kind));
     for (const s of sugg) {
-      if (s.kind === 'enum_without_values' || s.kind === 'reference_without_target') {
+      if (s.kind === 'reference_without_target') {
         assert(vKinds.has(s.kind), `14.9 validator missing ${s.kind}`);
       }
     }
@@ -637,6 +645,116 @@ function sectionSchemaDrift(): void {
   });
   check('15.4 id pattern present per layer', () => {
     for (const l of LAYER_KEYS) assert(!!LAYER_SCHEMAS[l].items?.properties?.id?.pattern, `15.4 ${l}`);
+  });
+}
+
+function sectionMetadataWrapper(g0: Ontology): void {
+  section('16. metadata wrapper + spec field names (objects)');
+
+  check('16.1 serializeLayerDoc wraps as { metadata, <key>: [...] }', () => {
+    for (const l of LAYER_KEYS) {
+      const arr = extractLayer(g0, l);
+      const doc = JSON.parse(serializeLayerDoc(l, arr, g0)) as Record<string, unknown>;
+      assert(typeof doc.metadata === 'object' && doc.metadata !== null, `16.1 ${l} metadata`);
+      const key = layerDocKey(l);
+      assert(Array.isArray(doc[key]), `16.1 ${l} array under "${key}"`);
+      assertEq((doc[key] as unknown[]).length, arr.length, `16.1 ${l} length`);
+      const meta = doc.metadata as Record<string, unknown>;
+      for (const f of ['project_name', 'document_type', 'version', 'last_updated', 'description']) {
+        assert(typeof meta[f] === 'string', `16.1 ${l} metadata.${f}`);
+      }
+    }
+  });
+
+  check('16.2 parseLayer unwraps a metadata-wrapped doc back to nodes', () => {
+    for (const l of LAYER_KEYS) {
+      const arr = extractLayer(g0, l);
+      const pr = parseLayer(serializeLayerDoc(l, arr, g0));
+      assert(pr.ok, `16.2 ${l} ok`);
+      assertEq(pr.nodes?.length, arr.length, `16.2 ${l} node count`);
+    }
+  });
+
+  check('16.3 parseLayer still accepts a bare array (back-compat)', () => {
+    const arr = extractLayer(g0, 'objects');
+    const pr = parseLayer(serializeLayer(arr));
+    assert(pr.ok, '16.3 ok');
+    assertEq(pr.nodes?.length, arr.length, '16.3 count');
+  });
+
+  check('16.4 processes layer wraps under "workflows" (matches sample)', () => {
+    assertEq(layerDocKey('processes'), 'workflows', '16.4');
+  });
+
+  check('16.5 objects schema exposes the sample field names', () => {
+    const objItem = LAYER_SCHEMAS.objects.items?.properties ?? {};
+    for (const f of ['id', 'name', 'description', 'type', 'relationship_description', 'primary_key', 'properties']) {
+      assert(f in objItem, `16.5 object missing "${f}"`);
+    }
+    const propItem = objItem.properties?.items?.properties ?? {};
+    for (const f of ['name', 'type', 'description', 'is_foreign_key', 'references']) {
+      assert(f in propItem, `16.5 property missing "${f}"`);
+    }
+    // legacy keys must be gone from the schema
+    for (const f of ['attributes', 'keyRole', 'enumValues', 'refObjectTypeId']) {
+      assert(!(f in objItem) && !(f in propItem), `16.5 legacy "${f}" still present`);
+    }
+  });
+}
+
+function sectionNormalize(g0: Ontology): void {
+  section('17. legacy → spec object normalization (back-compat)');
+
+  // Build a LEGACY-shaped ontology from the (migrated) golden by reverting one
+  // object to the old `attributes` form, then assert normalization restores it.
+  const refTarget = g0.objects[0]!.id;
+  const legacyObj = {
+    id: 'objectType:legacy', uuid: 'lg', name: 'LegacyThing', nameZh: '旧对象',
+    description: 'd', confidence: 1, provenance: 'extracted', reviewState: 'accepted',
+    sources: [{ documentId: 'd', documentName: 'd', snippet: 's' }],
+    attributes: [
+      { name: 'legacy_id', type: 'uuid', required: true, keyRole: 'pk' },
+      { name: 'amount', type: 'money', required: false, keyRole: 'none' },
+      { name: 'status', type: 'enum', required: false, keyRole: 'none', enumValues: ['a', 'b'] },
+      { name: 'owner_id', type: 'uuid', required: false, keyRole: 'fk', refObjectTypeId: refTarget },
+    ],
+  } as unknown as Ontology['objects'][number];
+  // PREPEND (keep all original objects) so existing cross-layer refs still resolve.
+  const legacy = { ...g0, objects: [legacyObj, ...g0.objects] } as Ontology;
+
+  check('17.1 legacy attributes → properties + type/primary_key', () => {
+    const norm = normalizeOntologyObjects(legacy);
+    const o = norm.objects.find((x) => x.id === 'objectType:legacy')!;
+    assert(Array.isArray(o.properties) && o.properties.length === 4, '17.1 properties');
+    assert(!('attributes' in o), '17.1 attributes removed');
+    assertEq(o.type, 'data', '17.1 type');
+    assertEq(o.primary_key, 'legacy_id', '17.1 primary_key from pk attr');
+    assert(o.relationship_description.length > 0, '17.1 relationship_description');
+  });
+
+  check('17.2 type mapping: money→Float, enum→List<String>, uuid→String', () => {
+    const o = normalizeOntologyObjects(legacy).objects.find((x) => x.id === 'objectType:legacy')!;
+    const by = new Map(o.properties.map((p) => [p.name, p.type] as const));
+    assertEq(by.get('amount'), 'Float', '17.2 money');
+    assertEq(by.get('status'), 'List<String>', '17.2 enum');
+    assertEq(by.get('legacy_id'), 'String', '17.2 uuid');
+  });
+
+  check('17.3 fk attribute → is_foreign_key + references (resolves)', () => {
+    const o = normalizeOntologyObjects(legacy).objects.find((x) => x.id === 'objectType:legacy')!;
+    const fk = o.properties.find((p) => p.name === 'owner_id')!;
+    assertEq(fk.is_foreign_key, true, '17.3 flagged');
+    assertEq(fk.references, refTarget, '17.3 references');
+  });
+
+  check('17.4 idempotent on an already-migrated ontology (same reference)', () => {
+    // g0 is already migrated → normalization must be a no-op (returns the same object).
+    assert(normalizeOntologyObjects(g0) === g0, '17.4 no-op identity');
+  });
+
+  check('17.5 normalized legacy ontology passes the canonical validator', () => {
+    const errors = validateOntology(normalizeOntologyObjects(legacy)).filter((i) => i.level === 'error');
+    assert(errors.length === 0, `17.5 ${errors.map((e) => e.kind).join(',')}`);
   });
 }
 
@@ -662,6 +780,8 @@ async function main(): Promise<void> {
   sectionBuildCandidate(g0);
   sectionValidateIntegration(g0);
   sectionSchemaDrift();
+  sectionMetadataWrapper(g0);
+  sectionNormalize(g0);
 
   console.log('\n== Summary ==');
   let pass = 0;

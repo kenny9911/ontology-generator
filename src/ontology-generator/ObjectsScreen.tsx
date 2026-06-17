@@ -13,11 +13,13 @@ import type { Strings } from './i18n';
 import type { OntologyRunController } from './useOntologyRun';
 import type {
   ObjectType,
-  ObjectAttribute,
+  ObjectProperty,
+  PropertyType,
   Relationship,
   SourceRef,
   ReviewStatus,
 } from '@/ontology/schema/types';
+import { PROPERTY_TYPES } from '@/ontology/schema/types';
 
 interface ObjectsScreenProps {
   t: Strings;
@@ -76,6 +78,11 @@ export default function ObjectsScreen({ t, lang, ctrl }: ObjectsScreenProps) {
   const [editName, setEditName] = useState('');
   const [editNameZh, setEditNameZh] = useState('');
   const [editDesc, setEditDesc] = useState('');
+  const [editDescZh, setEditDescZh] = useState('');
+  const [editType, setEditType] = useState<'data' | 'system'>('data');
+  const [editRelDesc, setEditRelDesc] = useState('');
+  const [editPk, setEditPk] = useState('');
+  const [editProps, setEditProps] = useState<ObjectProperty[]>([]);
   const [mergeOpen, setMergeOpen] = useState(false);
 
   const sel = objects.find((o) => o.id === selectedId);
@@ -105,8 +112,8 @@ export default function ObjectsScreen({ t, lang, ctrl }: ObjectsScreenProps) {
     if (!sel) return [];
     const out: { cite: SourceRef; from: string }[] = [];
     for (const c of sel.sources ?? []) out.push({ cite: c, from: sel.name });
-    for (const a of sel.attributes) {
-      for (const c of a.sources ?? []) out.push({ cite: c, from: `${sel.name}.${a.name}` });
+    for (const p of sel.properties) {
+      for (const c of p.sources ?? []) out.push({ cite: c, from: `${sel.name}.${p.name}` });
     }
     return out;
   }, [sel]);
@@ -116,16 +123,55 @@ export default function ObjectsScreen({ t, lang, ctrl }: ObjectsScreenProps) {
     setEditName(sel.name);
     setEditNameZh(sel.nameZh);
     setEditDesc(sel.description);
+    setEditDescZh(sel.descriptionZh ?? '');
+    setEditType(sel.type);
+    setEditRelDesc(sel.relationship_description ?? '');
+    setEditPk(sel.primary_key ?? '');
+    // Deep-copy properties so row edits don't mutate the working ontology until save.
+    setEditProps((sel.properties ?? []).map((p) => ({ ...p })));
     setEditing(true);
     setMergeOpen(false);
   }
 
+  function updateProp(i: number, patch: Partial<ObjectProperty>) {
+    setEditProps((prev) => prev.map((p, j) => (j === i ? { ...p, ...patch } : p)));
+  }
+  function addProp() {
+    setEditProps((prev) => [...prev, { name: '', type: 'String', description: '' }]);
+  }
+  function removeProp(i: number) {
+    setEditProps((prev) => prev.filter((_, j) => j !== i));
+  }
+
   async function commitEdit() {
     if (!sel) return;
+    // Normalize properties: drop blank-named rows; keep references only when fk.
+    const cleaned: ObjectProperty[] = editProps
+      .map((p) => {
+        const out: ObjectProperty = {
+          name: p.name.trim(),
+          type: p.type,
+          description: p.description ?? '',
+        };
+        if (p.nameZh) out.nameZh = p.nameZh;
+        if (p.descriptionZh) out.descriptionZh = p.descriptionZh;
+        if (p.is_foreign_key && p.references) {
+          out.is_foreign_key = true;
+          out.references = p.references;
+        }
+        if (p.sources) out.sources = p.sources;
+        return out;
+      })
+      .filter((p) => p.name.length > 0);
     ctrl.editEntity('object', sel.id, {
       name: editName,
       nameZh: editNameZh,
       description: editDesc,
+      descriptionZh: editDescZh,
+      type: editType,
+      relationship_description: editRelDesc,
+      primary_key: editPk.trim() || `${sel.id.replace(/^objectType:/, '').replace(/[^a-z0-9]+/gi, '_').toLowerCase()}_id`,
+      properties: cleaned,
     });
     setEditing(false);
     await ctrl.save();
@@ -230,7 +276,7 @@ export default function ObjectsScreen({ t, lang, ctrl }: ObjectsScreenProps) {
                     )}
                   </div>
                   <div className="mono-cap">
-                    {o.attributes.length} {t.attributes.toLowerCase()} ·{' '}
+                    {o.properties.length} {t.attributes.toLowerCase()} ·{' '}
                     {relationships.filter((r) => r.sourceObjectTypeId === o.id || r.targetObjectTypeId === o.id).length} rel
                   </div>
                 </div>
@@ -269,7 +315,7 @@ export default function ObjectsScreen({ t, lang, ctrl }: ObjectsScreenProps) {
             </span>
             <div style={{ flex: 1, minWidth: 200 }}>
               {editing ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 460 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 520 }}>
                   <input
                     className="ctl"
                     style={{ borderRadius: 'var(--r-2)', padding: '8px 12px', fontFamily: 'var(--font-display)', fontSize: 18 }}
@@ -286,10 +332,48 @@ export default function ObjectsScreen({ t, lang, ctrl }: ObjectsScreenProps) {
                   />
                   <textarea
                     className="ctl"
-                    style={{ borderRadius: 'var(--r-2)', padding: '8px 12px', minHeight: 64, resize: 'vertical', fontFamily: 'var(--font-body)' }}
+                    style={{ borderRadius: 'var(--r-2)', padding: '8px 12px', minHeight: 48, resize: 'vertical', fontFamily: 'var(--font-body)' }}
                     value={editDesc}
                     onChange={(e) => setEditDesc(e.target.value)}
-                    placeholder={t.description}
+                    placeholder={`${t.description} (EN)`}
+                  />
+                  <textarea
+                    className="ctl"
+                    style={{ borderRadius: 'var(--r-2)', padding: '8px 12px', minHeight: 48, resize: 'vertical', fontFamily: 'var(--font-body)' }}
+                    value={editDescZh}
+                    onChange={(e) => setEditDescZh(e.target.value)}
+                    placeholder={`${t.description} (中文)`}
+                  />
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <label className="mono-cap" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {t.objectClass}
+                      <select
+                        className="ctl"
+                        style={{ borderRadius: 'var(--r-2)', padding: '6px 10px' }}
+                        value={editType}
+                        onChange={(e) => setEditType(e.target.value === 'system' ? 'system' : 'data')}
+                      >
+                        <option value="data">data</option>
+                        <option value="system">system</option>
+                      </select>
+                    </label>
+                    <label className="mono-cap" style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 160 }}>
+                      {t.primaryKey}
+                      <input
+                        className="ctl"
+                        style={{ borderRadius: 'var(--r-2)', padding: '6px 10px', fontFamily: 'var(--font-mono)', flex: 1 }}
+                        value={editPk}
+                        onChange={(e) => setEditPk(e.target.value)}
+                        placeholder="primary_key"
+                      />
+                    </label>
+                  </div>
+                  <textarea
+                    className="ctl"
+                    style={{ borderRadius: 'var(--r-2)', padding: '8px 12px', minHeight: 56, resize: 'vertical', fontFamily: 'var(--font-body)' }}
+                    value={editRelDesc}
+                    onChange={(e) => setEditRelDesc(e.target.value)}
+                    placeholder={t.relationshipDescription}
                   />
                 </div>
               ) : (
@@ -307,13 +391,29 @@ export default function ObjectsScreen({ t, lang, ctrl }: ObjectsScreenProps) {
                         {t.autoDetected}
                       </span>
                     )}
+                    <span
+                      className="tag"
+                      style={
+                        sel.type === 'system'
+                          ? {
+                              background: 'color-mix(in oklab, var(--accent) 14%, transparent)',
+                              color: 'var(--accent)',
+                              borderColor: 'color-mix(in oklab, var(--accent) 30%, transparent)',
+                            }
+                          : undefined
+                      }
+                    >
+                      {sel.type === 'system' ? t.classSystem : t.classData}
+                    </span>
                   </div>
-                  {sel.description && (
+                  {(lang === 'zh' && sel.descriptionZh ? sel.descriptionZh : sel.description) && (
                     <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--fg-2)', lineHeight: 1.55, maxWidth: 620 }}>
                       {lang === 'zh' && sel.descriptionZh ? sel.descriptionZh : sel.description}
                     </p>
                   )}
                   <div className="mono-cap" style={{ marginTop: 4 }}>
+                    {t.primaryKey}: <span style={{ color: 'var(--accent)', fontFamily: 'var(--font-mono)' }}>{sel.primary_key}</span>
+                    {' · '}
                     {t.confidence}: <span style={{ color: 'var(--accent-2)' }}>{(sel.confidence * 100).toFixed(1)}%</span>
                     {' · '}
                     {selCitations.length} {t.sources.toLowerCase()}
@@ -413,88 +513,164 @@ export default function ObjectsScreen({ t, lang, ctrl }: ObjectsScreenProps) {
             </div>
           </div>
 
-          {/* ----------------------------- Attributes ------------------------- */}
-          <section>
-            <div className="mono-cap" style={{ marginBottom: 'var(--s-3)' }}>
-              {t.attributes}
-            </div>
-            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1.4fr 1.5fr 110px 110px',
-                  padding: '10px var(--s-4)',
-                  fontSize: 11,
-                  fontFamily: 'var(--font-mono)',
-                  color: 'var(--fg-4)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  background: 'var(--bg-2)',
-                  borderBottom: '1px solid var(--line)',
-                }}
-              >
-                <span>name</span>
-                <span>{t.type}</span>
-                <span>{t.role}</span>
-                <span>{t.constraint}</span>
+          {/* ---------------------- Relationship description ------------------ */}
+          {!editing && (
+            <section>
+              <div className="mono-cap" style={{ marginBottom: 'var(--s-3)' }}>
+                {t.relationshipDescription}
               </div>
-              {sel.attributes.map((a: ObjectAttribute, i) => (
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--fg-2)', lineHeight: 1.6, maxWidth: 720 }}>
+                {sel.relationship_description || (lang === 'zh' ? '（暂无关系描述）' : '(no relationship description)')}
+              </p>
+            </section>
+          )}
+
+          {/* ----------------------------- Properties ------------------------- */}
+          <section>
+            <div className="mono-cap" style={{ marginBottom: 'var(--s-3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>{t.attributes}</span>
+              {editing && (
+                <button className="btn ghost" style={{ padding: '4px 10px', fontSize: 12 }} onClick={addProp}>
+                  + {t.addProperty}
+                </button>
+              )}
+            </div>
+
+            {editing ? (
+              /* ---- editable property rows ---- */
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {editProps.map((p, i) => (
+                  <div
+                    key={i}
+                    className="card"
+                    style={{ padding: 'var(--s-3)', display: 'grid', gap: 6 }}
+                  >
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      <input
+                        className="ctl"
+                        style={{ borderRadius: 'var(--r-2)', padding: '6px 10px', fontFamily: 'var(--font-mono)', flex: '2 1 140px' }}
+                        value={p.name}
+                        onChange={(e) => updateProp(i, { name: e.target.value })}
+                        placeholder="name"
+                      />
+                      <select
+                        className="ctl"
+                        style={{ borderRadius: 'var(--r-2)', padding: '6px 10px', flex: '1 1 120px' }}
+                        value={p.type}
+                        onChange={(e) => updateProp(i, { type: e.target.value as PropertyType })}
+                      >
+                        {PROPERTY_TYPES.map((ty) => (
+                          <option key={ty} value={ty}>{ty}</option>
+                        ))}
+                      </select>
+                      <button
+                        className="btn ghost"
+                        style={{ padding: '6px 10px', fontSize: 12, flexShrink: 0 }}
+                        onClick={() => removeProp(i)}
+                        title={t.remove}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <input
+                      className="ctl"
+                      style={{ borderRadius: 'var(--r-2)', padding: '6px 10px' }}
+                      value={p.description}
+                      onChange={(e) => updateProp(i, { description: e.target.value })}
+                      placeholder={t.description}
+                    />
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--fg-3)' }}>
+                        <input
+                          type="checkbox"
+                          checked={p.is_foreign_key === true}
+                          onChange={(e) =>
+                            updateProp(i, e.target.checked ? { is_foreign_key: true } : { is_foreign_key: false, references: undefined })
+                          }
+                        />
+                        {t.foreignKey}
+                      </label>
+                      {p.is_foreign_key && (
+                        <select
+                          className="ctl"
+                          style={{ borderRadius: 'var(--r-2)', padding: '6px 10px', flex: 1, minWidth: 160 }}
+                          value={p.references ?? ''}
+                          onChange={(e) => updateProp(i, { references: e.target.value || undefined })}
+                        >
+                          <option value="">{t.references}…</option>
+                          {objects
+                            .filter((o) => o.id !== sel.id)
+                            .map((o) => (
+                              <option key={o.id} value={o.id}>{o.name}</option>
+                            ))}
+                        </select>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {editProps.length === 0 && (
+                  <div className="mono-cap">{lang === 'zh' ? '暂无属性' : 'No properties'}</div>
+                )}
+              </div>
+            ) : (
+              /* ---- read-only: name | type | description ---- */
+              <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
                 <div
-                  key={a.name + i}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: '1.4fr 1.5fr 110px 110px',
+                    gridTemplateColumns: '1.4fr 130px 2fr',
                     padding: '10px var(--s-4)',
-                    alignItems: 'center',
-                    fontSize: 13,
-                    borderBottom: i < sel.attributes.length - 1 ? '1px solid var(--line-soft)' : 'none',
+                    fontSize: 11,
+                    fontFamily: 'var(--font-mono)',
+                    color: 'var(--fg-4)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    background: 'var(--bg-2)',
+                    borderBottom: '1px solid var(--line)',
                   }}
                 >
-                  {/* name + key marker + zh */}
-                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 500, minWidth: 0 }}>
-                    {a.keyRole === 'pk' && <span style={{ color: 'var(--accent-2)', marginRight: 6 }}>◆</span>}
-                    {a.keyRole === 'fk' && <span style={{ color: 'var(--accent)', marginRight: 6 }}>◇</span>}
-                    {a.name}
-                    {lang === 'zh' && a.nameZh && (
-                      <span style={{ color: 'var(--fg-4)', fontSize: 11, marginLeft: 6, fontFamily: 'var(--font-body)' }}>
-                        {a.nameZh}
-                      </span>
-                    )}
-                  </span>
-                  {/* type + enum / ref detail */}
-                  <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--fg-3)', fontSize: 12, minWidth: 0 }}>
-                    {a.type}
-                    {a.type === 'enum' && a.enumValues && a.enumValues.length > 0 && (
-                      <span style={{ color: 'var(--fg-4)' }}>{` ‹${a.enumValues.join(' | ')}›`}</span>
-                    )}
-                    {(a.type === 'reference' || a.keyRole === 'fk') && a.refObjectTypeId && (
-                      <span style={{ color: 'var(--accent)' }}>{` → ${nameOf(a.refObjectTypeId)}`}</span>
-                    )}
-                  </span>
-                  {/* role badge */}
-                  <span>
-                    {a.keyRole === 'pk' && (
-                      <span
-                        className="tag"
-                        style={{
-                          background: 'color-mix(in oklab, var(--accent-2) 14%, transparent)',
-                          color: 'var(--accent-2)',
-                          borderColor: 'color-mix(in oklab, var(--accent-2) 30%, transparent)',
-                        }}
-                      >
-                        {t.pk}
-                      </span>
-                    )}
-                    {a.keyRole === 'fk' && <span className="tag">{t.fk}</span>}
-                    {a.keyRole === 'none' && <span style={{ color: 'var(--fg-4)' }}>{t.keyRoleNone}</span>}
-                  </span>
-                  {/* required */}
-                  <span style={{ color: a.required ? 'var(--warn)' : 'var(--fg-4)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>
-                    {a.required ? t.required.toUpperCase() : t.optional.toLowerCase()}
-                  </span>
+                  <span>name</span>
+                  <span>{t.type}</span>
+                  <span>{t.description}</span>
                 </div>
-              ))}
-            </div>
+                {sel.properties.map((p: ObjectProperty, i) => (
+                  <div
+                    key={p.name + i}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1.4fr 130px 2fr',
+                      padding: '10px var(--s-4)',
+                      alignItems: 'start',
+                      fontSize: 13,
+                      borderBottom: i < sel.properties.length - 1 ? '1px solid var(--line-soft)' : 'none',
+                    }}
+                  >
+                    {/* name + key markers + zh */}
+                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 500, minWidth: 0 }}>
+                      {p.name === sel.primary_key && <span style={{ color: 'var(--accent-2)', marginRight: 6 }} title={t.primaryKey}>◆</span>}
+                      {p.is_foreign_key && <span style={{ color: 'var(--accent)', marginRight: 6 }} title={t.foreignKey}>◇</span>}
+                      {p.name}
+                      {lang === 'zh' && p.nameZh && (
+                        <span style={{ color: 'var(--fg-4)', fontSize: 11, marginLeft: 6, fontFamily: 'var(--font-body)' }}>
+                          {p.nameZh}
+                        </span>
+                      )}
+                    </span>
+                    {/* type + fk ref */}
+                    <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--fg-3)', fontSize: 12, minWidth: 0 }}>
+                      {p.type}
+                      {p.is_foreign_key && p.references && (
+                        <span style={{ color: 'var(--accent)', display: 'block' }}>{`→ ${nameOf(p.references)}`}</span>
+                      )}
+                    </span>
+                    {/* description */}
+                    <span style={{ color: 'var(--fg-2)', fontSize: 12, lineHeight: 1.5, minWidth: 0 }}>
+                      {(lang === 'zh' && p.descriptionZh ? p.descriptionZh : p.description) || '—'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
 
           {/* ---------------------------- Relationships ----------------------- */}

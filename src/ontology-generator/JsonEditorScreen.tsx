@@ -36,6 +36,7 @@ import {
 import {
   extractLayer,
   serializeLayer,
+  serializeLayerDoc,
   parseLayer,
   type EditorLayer,
 } from './json-editor/layers';
@@ -224,7 +225,7 @@ export default function JsonEditorScreen({ t, lang, ctrl }: JsonEditorScreenProp
       for (const ts of modelsRef.current.values()) ts.model.dispose();
       modelsRef.current.clear();
       for (const { layer } of TABS) {
-        const text = ontology ? serializeLayer(extractLayer(ontology, layer)) : '[]';
+        const text = ontology ? serializeLayerDoc(layer, extractLayer(ontology, layer), ontology) : '[]';
         const uri = m.Uri.parse(layerUri(layer));
         const existing = m.editor.getModel(uri);
         if (existing) existing.dispose();
@@ -292,7 +293,7 @@ export default function JsonEditorScreen({ t, lang, ctrl }: JsonEditorScreenProp
     for (const { layer } of TABS) {
       const ts = modelsRef.current.get(layer);
       if (!ts || dirtyRef.current[layer]) continue;
-      const text = serializeLayer(extractLayer(ontology, layer));
+      const text = serializeLayerDoc(layer, extractLayer(ontology, layer), ontology);
       ts.baseline = text;
       if (ts.model.getValue() !== text) ts.model.setValue(text);
       setDirtyLayer(layer, false);
@@ -374,7 +375,7 @@ export default function JsonEditorScreen({ t, lang, ctrl }: JsonEditorScreenProp
           (s) => s.index === sug.index && s.field === sug.field && s.kind === sug.kind,
         ) ?? sug;
       const next = applySuggestion(pr.nodes, fresh);
-      const text = serializeLayer(next);
+      const text = ontology ? serializeLayerDoc(item.layer, next, ontology) : serializeLayer(next);
       if (item.layer !== active) switchTab(item.layer);
       ts.model.setValue(text);
       scheduleRecompute();
@@ -398,7 +399,7 @@ export default function JsonEditorScreen({ t, lang, ctrl }: JsonEditorScreenProp
         if (fixable.length === 0) break;
         nodes = applySuggestion(nodes, fixable[0]!);
       }
-      text = serializeLayer(nodes);
+      text = ontology ? serializeLayerDoc(active, nodes, ontology) : serializeLayer(nodes);
     }
     if (text !== ts.model.getValue()) {
       const editor = editorRef.current;

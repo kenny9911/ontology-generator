@@ -201,22 +201,42 @@ interface NodeProvenance {
 // 2. ObjectType (extracted FIRST, most carefully)
 // ===========================================================================
 
-export interface ObjectAttribute {
+/**
+ * Closed, human-facing property type vocabulary (the spec format). Mapped from
+ * the internal DATA_TYPES during extraction: integer→Integer; decimal/money→
+ * Float; boolean→Boolean; date→Date; datetime→Timestamp; enum/array→List<String>;
+ * everything else (string/uuid/reference/json)→String.
+ */
+export const PROPERTY_TYPES = [
+  'String',
+  'Integer',
+  'Float',
+  'Boolean',
+  'Date',
+  'Timestamp',
+  'List<String>',
+] as const;
+export type PropertyType = (typeof PROPERTY_TYPES)[number];
+
+/**
+ * One property (field) of an ObjectType — the spec-format shape. A foreign-key
+ * property sets `is_foreign_key` + `references` (the target ObjectType.id).
+ */
+export interface ObjectProperty {
   /** Unique within its ObjectType. snake_case, e.g. "order_id". */
   name: string;
+  /** Human-facing closed-vocabulary type. */
+  type: PropertyType;
+  /** Generic description of the field (language-natural). */
+  description: string;
+  /** True when this property points at another object (a foreign key). */
+  is_foreign_key?: boolean;
+  /** Set iff `is_foreign_key` — the referenced ObjectType.id. */
+  references?: string;
+  // ---- retained bilingual / receipt extras (optional) ----
   nameZh?: string;
-  /** Closed-vocabulary type. Enums via `enumValues`, refs via `refObjectTypeId`. */
-  type: DataType;
-  required: boolean;
-  /** 'pk' | 'fk' | 'none'. Explicit (default 'none') so reviewers always see it. */
-  keyRole: KeyRole;
-  /** Present iff type === 'enum'. Allowed values, in document order. */
-  enumValues?: string[];
-  /** Present iff type === 'reference' OR keyRole === 'fk'. Target ObjectType.id. */
-  refObjectTypeId?: string;
-  description?: string;
   descriptionZh?: string;
-  /** Attribute-level citation when available. */
+  /** Property-level citation when available. */
   sources?: SourceRef[];
   confidence?: Confidence;
 }
@@ -230,21 +250,21 @@ export interface ObjectType extends NodeProvenance {
   name: string;
   /** Chinese name, e.g. "订单". REQUIRED (bilingual product). */
   nameZh: string;
+  /** Description (the document's language; the UI shows descriptionZh when zh). */
   description: string;
   descriptionZh?: string;
-  attributes: ObjectAttribute[];
+  /** 'data' (a business entity) vs 'system' (an application / external system). */
+  type: 'data' | 'system';
   /**
-   * Spec-format classification: 'data' (a business entity) vs 'system' (an
-   * application / external system the ontology references). Optional; the
-   * spec-format projection falls back to a name heuristic when absent.
+   * Prose describing how this object relates to the OTHER objects — the key
+   * input for building inter-object relationships. Synthesizable from
+   * `Ontology.relationships` + FK properties when the model omits it.
    */
-  objectClass?: 'data' | 'system';
-  /**
-   * LLM-authored prose describing how this object relates to the OTHER objects
-   * — the spec-format `relationship_description`. Optional; the projection
-   * synthesizes one from `Ontology.relationships` + FK attributes when absent.
-   */
-  relationshipNote?: Bilingual;
+  relationship_description: string;
+  /** The primary-key property name. Defaults to `<id>_id`. */
+  primary_key: string;
+  /** The object's fields/properties (the spec-format shape). */
+  properties: ObjectProperty[];
   /**
    * Cached index of outbound Relationship ids for THIS object (UI/codegen
    * convenience). Authoritative edge list is `Ontology.relationships`.
