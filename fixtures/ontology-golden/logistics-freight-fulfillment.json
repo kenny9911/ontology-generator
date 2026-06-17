@@ -1356,6 +1356,22 @@
     {
       "id": "rule:order-assigned-to-consignment",
       "uuid": "30000000000000000000000000000001",
+      "specificScenarioStage": "On shipment planning",
+      "businessLogicRuleName": "Order must have a Consignment before planning",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On shipment planning",
+      "standardizedLogicRule": "An Order must be assigned to at least one Consignment before a Shipment may be planned.",
+      "relatedEntities": [
+        "Order (Order)",
+        "Consignment (Consignment)",
+        "Shipment (Shipment)"
+      ],
+      "businessBackgroundReason": "Constraints that must hold before a Shipment can be planned from accepted Orders and Consignments.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Order must have a Consignment before planning",
       "titleZh": "订单计划前须分配货件",
       "statement": {
@@ -1403,6 +1419,22 @@
     {
       "id": "rule:tender-only-qualified-carrier",
       "uuid": "30000000000000000000000000000002",
+      "specificScenarioStage": "On tender",
+      "businessLogicRuleName": "Tender only to Lane-qualified Carrier",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On tender",
+      "standardizedLogicRule": "A Shipment must be tendered to a Carrier that is qualified for the Shipment's Lane; a Carrier not listed on the Lane's approved-carrier roster may not be tendered freight on that Lane.",
+      "relatedEntities": [
+        "Shipment (Shipment)",
+        "Carrier (Carrier)",
+        "Lane (Lane)"
+      ],
+      "businessBackgroundReason": "Rules governing which Carriers may be tendered freight by Lane qualification, performance, and high-value insurance.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Tender only to Lane-qualified Carrier",
       "titleZh": "仅向运线合格承运商招标",
       "statement": {
@@ -1458,6 +1490,23 @@
     {
       "id": "rule:guaranteed-lane-credit",
       "uuid": "30000000000000000000000000000003",
+      "specificScenarioStage": "On SLA evaluation",
+      "businessLogicRuleName": "Missed guaranteed Lane qualifies for credit",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On SLA evaluation",
+      "standardizedLogicRule": "A Shipment on a guaranteed Lane that misses its committed delivery window is required to qualify for a service-failure credit from the Carrier.",
+      "relatedEntities": [
+        "Shipment (Shipment)",
+        "Lane (Lane)",
+        "SLA (Sla)",
+        "Carrier (Carrier)"
+      ],
+      "businessBackgroundReason": "How a guaranteed-Lane SLA miss qualifies for, sizes, and time-bounds a service-failure credit.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Missed guaranteed Lane qualifies for credit",
       "titleZh": "保证运线超时享有减免",
       "statement": {
@@ -1497,6 +1546,21 @@
     {
       "id": "rule:credit-schedule",
       "uuid": "30000000000000000000000000000004",
+      "specificScenarioStage": "On claim drafting",
+      "businessLogicRuleName": "Service-failure credit schedule",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On claim drafting",
+      "standardizedLogicRule": "The service-failure credit on a guaranteed Lane shall equal 25% of the linehaul charge when delivery is late by up to 24 hours, and 100% of the linehaul charge when delivery is late by more than 24 hours.",
+      "relatedEntities": [
+        "ServiceFailureClaim (Service_Failure_Claim)",
+        "Shipment (Shipment)"
+      ],
+      "businessBackgroundReason": "How a guaranteed-Lane SLA miss qualifies for, sizes, and time-bounds a service-failure credit.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Service-failure credit schedule",
       "titleZh": "服务失败减免方案",
       "statement": {
@@ -1537,6 +1601,21 @@
     {
       "id": "rule:claim-window-30d",
       "uuid": "30000000000000000000000000000005",
+      "specificScenarioStage": "On claim submission",
+      "businessLogicRuleName": "Claim must be submitted within 30 days",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On claim submission",
+      "standardizedLogicRule": "A ServiceFailureClaim must be submitted to the Carrier within 30 calendar days of the ShipmentDelivered event, or the claim is waived.",
+      "relatedEntities": [
+        "ServiceFailureClaim (Service_Failure_Claim)",
+        "Shipment (Shipment)"
+      ],
+      "businessBackgroundReason": "How a guaranteed-Lane SLA miss qualifies for, sizes, and time-bounds a service-failure credit.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Claim must be submitted within 30 days",
       "titleZh": "索赔须在 30 天内提交",
       "statement": {
@@ -1574,6 +1653,21 @@
     {
       "id": "rule:international-departure-customs",
       "uuid": "30000000000000000000000000000006",
+      "specificScenarioStage": "On departure of an international Consignment",
+      "businessLogicRuleName": "International Consignment needs Accepted customs to depart",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On departure of an international Consignment",
+      "standardizedLogicRule": "An international Consignment may not depart the origin facility until its CustomsDeclaration status is Accepted and duties are assigned.",
+      "relatedEntities": [
+        "Consignment (Consignment)",
+        "CustomsDeclaration (Customs_Declaration)"
+      ],
+      "businessBackgroundReason": "Trade-compliance gates for international Consignments — entry type, filing lead time, export licensing, and departure clearance.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "International Consignment needs Accepted customs to depart",
       "titleZh": "国际货件须报关接受后方可发运",
       "statement": {
@@ -1628,6 +1722,21 @@
     {
       "id": "rule:customs-filing-lead-time",
       "uuid": "30000000000000000000000000000007",
+      "specificScenarioStage": "On customs filing",
+      "businessLogicRuleName": "Customs filing lead time by mode",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On customs filing",
+      "standardizedLogicRule": "A CustomsDeclaration is required to be filed at least 24 hours before the scheduled departure for any ocean Consignment and at least 4 hours before for any air Consignment.",
+      "relatedEntities": [
+        "CustomsDeclaration (Customs_Declaration)",
+        "Consignment (Consignment)"
+      ],
+      "businessBackgroundReason": "Trade-compliance gates for international Consignments — entry type, filing lead time, export licensing, and departure clearance.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Customs filing lead time by mode",
       "titleZh": "按运输方式的报关提前时限",
       "statement": {
@@ -1664,6 +1773,21 @@
     {
       "id": "rule:formal-entry-threshold",
       "uuid": "30000000000000000000000000000008",
+      "specificScenarioStage": "On entry-type selection",
+      "businessLogicRuleName": "Formal entry at or above USD 2,500",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On entry-type selection",
+      "standardizedLogicRule": "Any Consignment with a declared customs value at or above USD 2,500 must include a formal entry with a licensed customs broker; below USD 2,500 an informal entry may be used.",
+      "relatedEntities": [
+        "Consignment (Consignment)",
+        "CustomsDeclaration (Customs_Declaration)"
+      ],
+      "businessBackgroundReason": "Trade-compliance gates for international Consignments — entry type, filing lead time, export licensing, and departure clearance.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Formal entry at or above USD 2,500",
       "titleZh": "USD 2,500 及以上须正式报关",
       "statement": {
@@ -1718,6 +1842,21 @@
     {
       "id": "rule:controlled-goods-license",
       "uuid": "30000000000000000000000000000009",
+      "specificScenarioStage": "On departure release for controlled goods",
+      "businessLogicRuleName": "Controlled goods need export-license reference",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On departure release for controlled goods",
+      "standardizedLogicRule": "A Consignment whose contents include controlled or dual-use commodities shall not be released for departure without a recorded export-license reference on its CustomsDeclaration.",
+      "relatedEntities": [
+        "Consignment (Consignment)",
+        "CustomsDeclaration (Customs_Declaration)"
+      ],
+      "businessBackgroundReason": "Trade-compliance gates for international Consignments — entry type, filing lead time, export licensing, and departure clearance.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Controlled goods need export-license reference",
       "titleZh": "管制货物须有出口许可引用",
       "statement": {
@@ -1757,6 +1896,22 @@
     {
       "id": "rule:in-transit-requires-pickup-tracking",
       "uuid": "3000000000000000000000000000000a",
+      "specificScenarioStage": "On Shipment.status → In Transit",
+      "businessLogicRuleName": "In Transit requires pickup Stop and first TrackingEvent",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On Shipment.status → In Transit",
+      "standardizedLogicRule": "A Shipment may not be marked In Transit until the pickup Stop is confirmed and the first TrackingEvent is recorded.",
+      "relatedEntities": [
+        "Shipment (Shipment)",
+        "Stop (Stop)",
+        "TrackingEvent (Tracking_Event)"
+      ],
+      "businessBackgroundReason": "Mandatory status-gate controls for marking a Shipment In Transit and Delivered with valid proof of delivery.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "In Transit requires pickup Stop and first TrackingEvent",
       "titleZh": "在途须确认提货站点与首条轨迹",
       "statement": {
@@ -1798,6 +1953,21 @@
     {
       "id": "rule:delivered-requires-pod",
       "uuid": "3000000000000000000000000000000b",
+      "specificScenarioStage": "On Shipment.status → Delivered",
+      "businessLogicRuleName": "Delivered requires captured POD",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On Shipment.status → Delivered",
+      "standardizedLogicRule": "A Shipment may not be marked Delivered without a captured ProofOfDelivery.",
+      "relatedEntities": [
+        "Shipment (Shipment)",
+        "ProofOfDelivery (Proof_Of_Delivery)"
+      ],
+      "businessBackgroundReason": "Mandatory status-gate controls for marking a Shipment In Transit and Delivered with valid proof of delivery.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Delivered requires captured POD",
       "titleZh": "已送达须采集签收凭证",
       "statement": {
@@ -1852,6 +2022,20 @@
     {
       "id": "rule:pod-content",
       "uuid": "3000000000000000000000000000000c",
+      "specificScenarioStage": "On POD capture",
+      "businessLogicRuleName": "POD must include timestamp and signature or photo",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On POD capture",
+      "standardizedLogicRule": "A ProofOfDelivery must include a delivery timestamp and a recipient signature; a delivery left without signature is required to capture a geotagged photo in lieu of signature.",
+      "relatedEntities": [
+        "ProofOfDelivery (Proof_Of_Delivery)"
+      ],
+      "businessBackgroundReason": "Mandatory status-gate controls for marking a Shipment In Transit and Delivered with valid proof of delivery.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "POD must include timestamp and signature or photo",
       "titleZh": "签收凭证须含时间戳与签名或照片",
       "statement": {
@@ -1902,6 +2086,22 @@
     {
       "id": "rule:exception-auto-open-15min",
       "uuid": "3000000000000000000000000000000d",
+      "specificScenarioStage": "On SLABreached or CustomsHeld",
+      "businessLogicRuleName": "Exception opens within 15 minutes of breach",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On SLABreached or CustomsHeld",
+      "standardizedLogicRule": "An Exception must be opened automatically within 15 minutes of an SLABreached or CustomsHeld event.",
+      "relatedEntities": [
+        "Exception (Exception)",
+        "Shipment (Shipment)",
+        "Consignment (Consignment)"
+      ],
+      "businessBackgroundReason": "Lifecycle rules for opening, classifying, and closing Exceptions and their linked claims.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Exception opens within 15 minutes of breach",
       "titleZh": "异常须在违约后 15 分钟内开立",
       "statement": {
@@ -1940,6 +2140,22 @@
     {
       "id": "rule:carrier-liability-generates-claim",
       "uuid": "3000000000000000000000000000000e",
+      "specificScenarioStage": "On exception classification",
+      "businessLogicRuleName": "Carrier liability on guaranteed Lane generates claim",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On exception classification",
+      "standardizedLogicRule": "An Exception classified as liability = CARRIER on a guaranteed Lane is required to generate a ServiceFailureClaim; an Exception classified as FORCE_MAJEURE may not generate a claim.",
+      "relatedEntities": [
+        "Exception (Exception)",
+        "ServiceFailureClaim (Service_Failure_Claim)",
+        "Lane (Lane)"
+      ],
+      "businessBackgroundReason": "Lifecycle rules for opening, classifying, and closing Exceptions and their linked claims.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Carrier liability on guaranteed Lane generates claim",
       "titleZh": "保证运线承运商责任须生成索赔",
       "statement": {
@@ -1991,6 +2207,20 @@
     {
       "id": "rule:claim-approval-10k",
       "uuid": "3000000000000000000000000000000f",
+      "specificScenarioStage": "On claim submission",
+      "businessLogicRuleName": "Claims over USD 10,000 need Director approval",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On claim submission",
+      "standardizedLogicRule": "A ServiceFailureClaim exceeding USD 10,000 in credit value must receive Operations Director approval before submission to the Carrier.",
+      "relatedEntities": [
+        "ServiceFailureClaim (Service_Failure_Claim)"
+      ],
+      "businessBackgroundReason": "Monetary and temporal thresholds requiring approval or governing claim eligibility windows.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Claims over USD 10,000 need Director approval",
       "titleZh": "超过 USD 10,000 的索赔须总监审批",
       "statement": {
@@ -2039,6 +2269,22 @@
     {
       "id": "rule:carrier-performance-hold",
       "uuid": "30000000000000000000000000000010",
+      "specificScenarioStage": "On carrier performance evaluation / tender",
+      "businessLogicRuleName": "Carrier below 95% on-time placed on hold",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On carrier performance evaluation / tender",
+      "standardizedLogicRule": "A Carrier whose rolling 30-day on-time delivery rate falls below 95% on a guaranteed Lane shall be placed on a performance-review hold and may not be tendered new guaranteed-Lane freight until reinstated.",
+      "relatedEntities": [
+        "Carrier (Carrier)",
+        "Lane (Lane)",
+        "Shipment (Shipment)"
+      ],
+      "businessBackgroundReason": "Rules governing which Carriers may be tendered freight by Lane qualification, performance, and high-value insurance.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Carrier below 95% on-time placed on hold",
       "titleZh": "准时率低于 95% 的承运商进入审查冻结",
       "statement": {
@@ -2090,6 +2336,21 @@
     {
       "id": "rule:detention-dwell-2h",
       "uuid": "30000000000000000000000000000011",
+      "specificScenarioStage": "On detention assessment",
+      "businessLogicRuleName": "Detention claimable only beyond 2h dwell",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On detention assessment",
+      "standardizedLogicRule": "A detention charge may be claimed by the Carrier only when dwell at a Stop exceeds 2 hours beyond the scheduled appointment window.",
+      "relatedEntities": [
+        "Stop (Stop)",
+        "Carrier (Carrier)"
+      ],
+      "businessBackgroundReason": "Monetary and temporal thresholds requiring approval or governing claim eligibility windows.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Detention claimable only beyond 2h dwell",
       "titleZh": "滞留费仅超 2 小时停留方可索取",
       "statement": {
@@ -2130,6 +2391,22 @@
     {
       "id": "rule:carmack-9-month-claim",
       "uuid": "30000000000000000000000000000012",
+      "specificScenarioStage": "On damage/loss claim filing",
+      "businessLogicRuleName": "Damage/loss claim within 9 months (Carmack)",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On damage/loss claim filing",
+      "standardizedLogicRule": "A damaged or lost Consignment claim must be filed by the customer within 9 months of the delivery date or the date delivery should have occurred, per the Carmack Amendment.",
+      "relatedEntities": [
+        "Consignment (Consignment)",
+        "Exception (Exception)",
+        "ServiceFailureClaim (Service_Failure_Claim)"
+      ],
+      "businessBackgroundReason": "Monetary and temporal thresholds requiring approval or governing claim eligibility windows.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Damage/loss claim within 9 months (Carmack)",
       "titleZh": "损坏/灭失索赔须在 9 个月内（卡马克修正案）",
       "statement": {
@@ -2167,6 +2444,22 @@
     {
       "id": "rule:high-value-insured-carrier",
       "uuid": "30000000000000000000000000000013",
+      "specificScenarioStage": "On high-value tender",
+      "businessLogicRuleName": "High-value Shipment needs insured Carrier and visibility",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On high-value tender",
+      "standardizedLogicRule": "A high-value Shipment with declared cargo value exceeding USD 100,000 must be tendered only to a Carrier carrying cargo insurance of at least the declared value and shall require a team-driver or in-transit-visibility commitment.",
+      "relatedEntities": [
+        "Shipment (Shipment)",
+        "Carrier (Carrier)",
+        "Consignment (Consignment)"
+      ],
+      "businessBackgroundReason": "Rules governing which Carriers may be tendered freight by Lane qualification, performance, and high-value insurance.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "High-value Shipment needs insured Carrier and visibility",
       "titleZh": "高价值运单须保险承运商与可视性",
       "statement": {
@@ -2223,6 +2516,21 @@
     {
       "id": "rule:exception-close-requires-terminal-claim",
       "uuid": "30000000000000000000000000000014",
+      "specificScenarioStage": "On exception close",
+      "businessLogicRuleName": "Exception closes only when claim is terminal",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On exception close",
+      "standardizedLogicRule": "An Exception may not be closed until its linked ServiceFailureClaim, if any, is in a terminal state (Settled, Credited, or WrittenOff).",
+      "relatedEntities": [
+        "Exception (Exception)",
+        "ServiceFailureClaim (Service_Failure_Claim)"
+      ],
+      "businessBackgroundReason": "Lifecycle rules for opening, classifying, and closing Exceptions and their linked claims.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Exception closes only when claim is terminal",
       "titleZh": "异常仅在索赔进入终态后方可关闭",
       "statement": {

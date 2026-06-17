@@ -391,6 +391,51 @@ function RuleCard({ t, lang, ctrl, rule, index, open, sev, objectName, onToggle 
             </div>
           )}
 
+          {/* Spec-format execution semantics + scenario metadata */}
+          <div
+            style={{
+              padding: 'var(--s-4) var(--s-5)',
+              borderBottom: '1px solid var(--line)',
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 8,
+              alignItems: 'center',
+            }}
+          >
+            <span className="tag">{t.executor}: {rule.executor}</span>
+            <span className="tag">{t.enforcementLevel}: {rule.enforcementLevel}</span>
+            <span className="tag">{t.failurePolicy}: {rule.failurePolicy}</span>
+            <span className="tag">{t.applicableClient}: {rule.applicableClient}</span>
+            {rule.applicableDepartment && rule.applicableDepartment !== 'N/A' && (
+              <span className="tag">{rule.applicableDepartment}</span>
+            )}
+          </div>
+          {(rule.specificScenarioStage || rule.submissionCriteria || rule.businessBackgroundReason || rule.ruleSource) && (
+            <div
+              style={{
+                padding: 'var(--s-4) var(--s-5)',
+                borderBottom: '1px solid var(--line)',
+                display: 'grid',
+                gap: 6,
+                fontSize: 12,
+                color: 'var(--fg-2)',
+              }}
+            >
+              {rule.specificScenarioStage && (
+                <div><span className="mono-cap" style={{ color: 'var(--fg-4)' }}>{t.specificScenarioStage}: </span>{rule.specificScenarioStage}</div>
+              )}
+              {rule.submissionCriteria && (
+                <div><span className="mono-cap" style={{ color: 'var(--fg-4)' }}>{t.submissionCriteria}: </span>{rule.submissionCriteria}</div>
+              )}
+              {rule.businessBackgroundReason && (
+                <div><span className="mono-cap" style={{ color: 'var(--fg-4)' }}>{t.businessBackgroundReason}: </span>{rule.businessBackgroundReason}</div>
+              )}
+              {rule.ruleSource && (
+                <div><span className="mono-cap" style={{ color: 'var(--fg-4)' }}>{t.ruleSource}: </span>{rule.ruleSource}</div>
+              )}
+            </div>
+          )}
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
             {/* Formal expression */}
             <div style={{ padding: 'var(--s-5)', borderRight: '1px solid var(--line)' }}>

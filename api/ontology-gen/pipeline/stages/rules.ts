@@ -52,11 +52,13 @@ const RULE_KINDS: ReadonlySet<RuleKind> = new Set<RuleKind>([
 
 const SEVERITIES: ReadonlySet<Severity> = new Set<Severity>(SEVERITY_LEVELS);
 
-// Spec-format execution semantics (optional). Coerced from the model output;
-// the spec-format projection derives defaults from `severity` when absent.
-function toExecutor(v: unknown): 'human' | 'agent' | undefined {
+// Spec-format execution semantics. Coerced from the model output; defaults are
+// derived from `severity` in buildRule when the model omits them.
+function toExecutor(v: unknown): 'Human' | 'Agent' | undefined {
   const s = typeof v === 'string' ? v.toLowerCase() : '';
-  return s === 'human' || s === 'agent' ? s : undefined;
+  if (s === 'human') return 'Human';
+  if (s === 'agent') return 'Agent';
+  return undefined;
 }
 function toEnforcementLevel(v: unknown): 'mandatory' | 'optional' | undefined {
   const s = typeof v === 'string' ? v.toLowerCase() : '';
@@ -65,6 +67,18 @@ function toEnforcementLevel(v: unknown): 'mandatory' | 'optional' | undefined {
 function toFailurePolicy(v: unknown): 'warn' | 'block' | undefined {
   const s = typeof v === 'string' ? v.toLowerCase() : '';
   return s === 'warn' || s === 'block' ? s : undefined;
+}
+
+/** "objectType:credit-assessment" -> "Credit_Assessment" (spec-format object id). */
+function specObjectIdOf(id: string): string {
+  const bare = id.replace(/^objectType:/, '');
+  const words = bare.replace(/([a-z0-9])([A-Z])/g, '$1 $2').split(/[^A-Za-z0-9]+/).filter(Boolean);
+  return words.map((w) => w[0]!.toUpperCase() + w.slice(1)).join('_') || bare;
+}
+
+/** "state_transition" -> "State Transition". */
+function titleizeKind(kind: string): string {
+  return kind.split('_').map((w) => (w ? w[0]!.toUpperCase() + w.slice(1) : w)).join(' ');
 }
 
 /** A numbered sentence handed to the prompt + used to recover snippets. */
@@ -277,9 +291,26 @@ function buildRule(
   const trigger = coerceTrigger(raw.trigger);
   const sources = coerceSources(raw.sources, sentenceByIdx, docName);
 
-  const executor = toExecutor(raw.executor);
-  const enforcementLevel = toEnforcementLevel(raw.enforcementLevel);
-  const failurePolicy = toFailurePolicy(raw.failurePolicy);
+  const executor: 'Human' | 'Agent' = toExecutor(raw.executor) ?? 'Agent';
+  const enforcementLevel: 'mandatory' | 'optional' =
+    toEnforcementLevel(raw.enforcementLevel) ?? (severity === 'block' ? 'mandatory' : 'optional');
+  const failurePolicy: 'warn' | 'block' =
+    toFailurePolicy(raw.failurePolicy) ?? (severity === 'block' ? 'block' : 'warn');
+
+  // Spec-format display fields — taken from the model when present, else derived
+  // deterministically from the structural fields.
+  const objName = (oid: string): string => ctx.objects.find((o) => o.id === oid)?.name ?? oid;
+  const relatedEntities = appliesToObjectTypeIds.map((oid) => `${objName(oid)} (${specObjectIdOf(oid)})`);
+  const standardizedLogicRule = str(raw.standardizedLogicRule).trim() || en;
+  const businessLogicRuleName = str(raw.businessLogicRuleName).trim() || title;
+  const specificScenarioStage =
+    str(raw.specificScenarioStage).trim() || trigger?.description?.trim() || titleizeKind(kind);
+  const submissionCriteria =
+    str(raw.submissionCriteria).trim() || trigger?.description?.trim() || expression?.predicate?.trim() || '';
+  const businessBackgroundReason = str(raw.businessBackgroundReason).trim();
+  const ruleSource = str(raw.ruleSource).trim() || sources[0]?.documentName?.trim() || docName || '文档';
+  const applicableClient = str(raw.applicableClient).trim() || '通用';
+  const applicableDepartment = str(raw.applicableDepartment).trim() || 'N/A';
 
   const id = makeId('rule', title, ctx.taken);
   const uuid = `${id}#${ctx.ontologyId}`;
@@ -287,6 +318,18 @@ function buildRule(
   const rule: Rule = {
     id,
     uuid,
+    specificScenarioStage,
+    businessLogicRuleName,
+    applicableClient,
+    applicableDepartment,
+    submissionCriteria,
+    standardizedLogicRule,
+    relatedEntities,
+    businessBackgroundReason,
+    ruleSource,
+    executor,
+    enforcementLevel,
+    failurePolicy,
     title,
     ...(zh ? { titleZh: str(raw.titleZh) || zh } : {}),
     statement: { en, zh: zh || en },
@@ -294,9 +337,6 @@ function buildRule(
     ...(expression ? { expression } : {}),
     kind,
     severity,
-    ...(executor ? { executor } : {}),
-    ...(enforcementLevel ? { enforcementLevel } : {}),
-    ...(failurePolicy ? { failurePolicy } : {}),
     appliesToObjectTypeIds,
     ...(appliesToAttributes.length > 0 ? { appliesToAttributes } : {}),
     ...(trigger ? { trigger } : {}),

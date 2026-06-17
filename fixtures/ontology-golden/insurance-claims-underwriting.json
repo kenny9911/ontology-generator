@@ -931,6 +931,20 @@
     {
       "id": "rule:br-01-submission-clearance",
       "uuid": "30000000000000000000000000000001",
+      "specificScenarioStage": "on SubmissionReceived, before risk assessment",
+      "businessLogicRuleName": "Duplicate clearance within 2 business days",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on SubmissionReceived, before risk assessment",
+      "standardizedLogicRule": "Every Submission shall be cleared against existing Policy and Submission records for the same Applicant within 2 business days of receipt, and a duplicate submission may not proceed to risk assessment.",
+      "relatedEntities": [
+        "Submission (Submission)"
+      ],
+      "businessBackgroundReason": "Clearance, referral, reinsurance, and decline gates before quoting.",
+      "ruleSource": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Duplicate clearance within 2 business days",
       "titleZh": "2个工作日内查重",
       "statement": {
@@ -981,6 +995,20 @@
     {
       "id": "rule:br-02-tiv-facultative-reinsurance",
       "uuid": "30000000000000000000000000000002",
+      "specificScenarioStage": "before GenerateQuote",
+      "businessLogicRuleName": "TIV over $50M needs facultative reinsurance",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "before GenerateQuote",
+      "standardizedLogicRule": "A Submission for a single insured location with a Total Insured Value exceeding $50,000,000 may not be quoted without a documented facultative reinsurance arrangement on file.",
+      "relatedEntities": [
+        "Submission (Submission)"
+      ],
+      "businessBackgroundReason": "Clearance, referral, reinsurance, and decline gates before quoting.",
+      "ruleSource": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "TIV over $50M needs facultative reinsurance",
       "titleZh": "保险总价值超5000万需临分再保",
       "statement": {
@@ -1030,6 +1058,21 @@
     {
       "id": "rule:br-03-referral-threshold",
       "uuid": "30000000000000000000000000000003",
+      "specificScenarioStage": "on AssessRisk, raises ReferralRaised",
+      "businessLogicRuleName": "Tier-1 cat zone or limit over $10M referral",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on AssessRisk, raises ReferralRaised",
+      "standardizedLogicRule": "A Submission whose property is located in a Tier-1 catastrophe-exposed zone, or whose proposed limit exceeds $10,000,000, is required to be referred to an Underwriting Manager for approval before a Quote is issued.",
+      "relatedEntities": [
+        "Submission (Submission)",
+        "RiskAssessment (Risk_Assessment)"
+      ],
+      "businessBackgroundReason": "Clearance, referral, reinsurance, and decline gates before quoting.",
+      "ruleSource": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Tier-1 cat zone or limit over $10M referral",
       "titleZh": "一级巨灾区或限额超1000万需转交",
       "statement": {
@@ -1081,6 +1124,21 @@
     {
       "id": "rule:br-06-minimum-premium",
       "uuid": "30000000000000000000000000000004",
+      "specificScenarioStage": "on GenerateQuote / BindPolicy",
+      "businessLogicRuleName": "Minimum annual premium $2,500",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on GenerateQuote / BindPolicy",
+      "standardizedLogicRule": "A bound Policy must carry an annual Premium of at least the minimum-premium floor of $2,500, regardless of computed rate.",
+      "relatedEntities": [
+        "Premium (Premium)",
+        "Policy (Policy)"
+      ],
+      "businessBackgroundReason": "Premium floor, deductible floor, quote validity, and effective-date window at quote/bind.",
+      "ruleSource": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Minimum annual premium $2,500",
       "titleZh": "最低年度保费2500美元",
       "statement": {
@@ -1131,6 +1189,20 @@
     {
       "id": "rule:br-07-binding-effective-date-window",
       "uuid": "30000000000000000000000000000005",
+      "specificScenarioStage": "on BindPolicy",
+      "businessLogicRuleName": "Backdating / forward-dating window",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on BindPolicy",
+      "standardizedLogicRule": "A Policy may not be bound with an effective date more than 30 days in the past, and may not be bound with an effective date in the future beyond 90 days.",
+      "relatedEntities": [
+        "Policy (Policy)"
+      ],
+      "businessBackgroundReason": "Premium floor, deductible floor, quote validity, and effective-date window at quote/bind.",
+      "ruleSource": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Backdating / forward-dating window",
       "titleZh": "追溯与提前生效窗口",
       "statement": {
@@ -1180,6 +1252,20 @@
     {
       "id": "rule:br-14-quote-validity",
       "uuid": "30000000000000000000000000000006",
+      "specificScenarioStage": "on BindPolicy",
+      "businessLogicRuleName": "Quote valid 60 days",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on BindPolicy",
+      "standardizedLogicRule": "A Quote is valid for 60 days from issuance, and a Quote that has expired may not be bound without re-rating.",
+      "relatedEntities": [
+        "Quote (Quote)"
+      ],
+      "businessBackgroundReason": "Premium floor, deductible floor, quote validity, and effective-date window at quote/bind.",
+      "ruleSource": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Quote valid 60 days",
       "titleZh": "报价有效期60天",
       "statement": {
@@ -1229,6 +1315,20 @@
     {
       "id": "rule:br-15-deductible-minimum",
       "uuid": "30000000000000000000000000000007",
+      "specificScenarioStage": "on GenerateQuote / BindPolicy",
+      "businessLogicRuleName": "Deductible minimum $5,000",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on GenerateQuote / BindPolicy",
+      "standardizedLogicRule": "A Coverage deductible may not be set below the underwriting-guideline minimum of $5,000 for any commercial property peril.",
+      "relatedEntities": [
+        "Coverage (Coverage)"
+      ],
+      "businessBackgroundReason": "Premium floor, deductible floor, quote validity, and effective-date window at quote/bind.",
+      "ruleSource": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Deductible minimum $5,000",
       "titleZh": "免赔额最低5000美元",
       "statement": {
@@ -1278,6 +1378,21 @@
     {
       "id": "rule:br-16-applicant-loss-history-decline",
       "uuid": "30000000000000000000000000000008",
+      "specificScenarioStage": "on AssessRisk",
+      "businessLogicRuleName": "Decline on 2+ total losses in 36m",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on AssessRisk",
+      "standardizedLogicRule": "An Applicant with two or more total-loss claims in the prior 36 months shall be declined unless an Underwriting Manager records a written exception.",
+      "relatedEntities": [
+        "Applicant (Applicant)",
+        "Submission (Submission)"
+      ],
+      "businessBackgroundReason": "Clearance, referral, reinsurance, and decline gates before quoting.",
+      "ruleSource": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Decline on 2+ total losses in 36m",
       "titleZh": "36个月内2次以上全损则拒保",
       "statement": {
@@ -1332,6 +1447,22 @@
     {
       "id": "rule:br-08-coverage-in-force-dates",
       "uuid": "30000000000000000000000000000009",
+      "specificScenarioStage": "on VerifyCoverage",
+      "businessLogicRuleName": "No coverage outside policy period",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on VerifyCoverage",
+      "standardizedLogicRule": "No Coverage applies to a loss whose date of loss precedes the Policy effective date or follows the Policy expiry date.",
+      "relatedEntities": [
+        "Claim (Claim)",
+        "Policy (Policy)",
+        "Coverage (Coverage)"
+      ],
+      "businessBackgroundReason": "In-force date checks at FNOL.",
+      "ruleSource": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "No coverage outside policy period",
       "titleZh": "保险期间外不予承保",
       "statement": {
@@ -1390,6 +1521,22 @@
     {
       "id": "rule:br-09-reserve-within-48h",
       "uuid": "3000000000000000000000000000000a",
+      "specificScenarioStage": "on ExposureOpened",
+      "businessLogicRuleName": "Reserve set within 48 hours of FNOL",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on ExposureOpened",
+      "standardizedLogicRule": "A Reserve must be set within 48 hours of First Notice of Loss on every open Exposure.",
+      "relatedEntities": [
+        "Reserve (Reserve)",
+        "Exposure (Exposure)",
+        "Claim (Claim)"
+      ],
+      "businessBackgroundReason": "Reserve timing, periodic review, and large-loss approval.",
+      "ruleSource": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Reserve set within 48 hours of FNOL",
       "titleZh": "报案后48小时内设立准备金",
       "statement": {
@@ -1446,6 +1593,21 @@
     {
       "id": "rule:br-10-reserve-review-90d",
       "uuid": "3000000000000000000000000000000b",
+      "specificScenarioStage": "on ReserveReviewDue",
+      "businessLogicRuleName": "Reserve reviewed every 90 days",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on ReserveReviewDue",
+      "standardizedLogicRule": "Every open Exposure is required to have its Reserve reviewed for adequacy at least every 90 days.",
+      "relatedEntities": [
+        "Reserve (Reserve)",
+        "Exposure (Exposure)"
+      ],
+      "businessBackgroundReason": "Reserve timing, periodic review, and large-loss approval.",
+      "ruleSource": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Reserve reviewed every 90 days",
       "titleZh": "准备金每90天复核",
       "statement": {
@@ -1497,6 +1659,21 @@
     {
       "id": "rule:br-04-adjuster-payment-authority",
       "uuid": "3000000000000000000000000000000c",
+      "specificScenarioStage": "on IssueClaimPayment",
+      "businessLogicRuleName": "Adjuster payment authority $25,000",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on IssueClaimPayment",
+      "standardizedLogicRule": "A ClaimPayment may not exceed the assigned Adjuster's authority limit of $25,000 per payment.",
+      "relatedEntities": [
+        "ClaimPayment (Claim_Payment)",
+        "Adjuster (Adjuster)"
+      ],
+      "businessBackgroundReason": "Adjuster/supervisor/manager payment authority ladder.",
+      "ruleSource": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Adjuster payment authority $25,000",
       "titleZh": "理算员赔付授权2.5万美元",
       "statement": {
@@ -1552,6 +1729,21 @@
     {
       "id": "rule:br-05-payment-escalation",
       "uuid": "3000000000000000000000000000000d",
+      "specificScenarioStage": "on IssueClaimPayment, raises PaymentAuthorizationRequested",
+      "businessLogicRuleName": "Supervisor / Manager payment escalation",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on IssueClaimPayment, raises PaymentAuthorizationRequested",
+      "standardizedLogicRule": "A ClaimPayment above the Adjuster authority limit must be approved by a Claims Supervisor, and a ClaimPayment above the Supervisor limit of $100,000 shall be escalated to the Claims Manager.",
+      "relatedEntities": [
+        "ClaimPayment (Claim_Payment)",
+        "Adjuster (Adjuster)"
+      ],
+      "businessBackgroundReason": "Adjuster/supervisor/manager payment authority ladder.",
+      "ruleSource": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Supervisor / Manager payment escalation",
       "titleZh": "主管/经理赔付升级审批",
       "statement": {
@@ -1603,6 +1795,20 @@
     {
       "id": "rule:br-11-large-loss-reserve-approval",
       "uuid": "3000000000000000000000000000000e",
+      "specificScenarioStage": "on SetReserve, raises ReserveApprovalRequested",
+      "businessLogicRuleName": "Reserve >= $250,000 needs manager approval",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on SetReserve, raises ReserveApprovalRequested",
+      "standardizedLogicRule": "A Reserve set at or above $250,000 on any single Exposure is required to receive Claims Manager approval before it is posted.",
+      "relatedEntities": [
+        "Reserve (Reserve)"
+      ],
+      "businessBackgroundReason": "Reserve timing, periodic review, and large-loss approval.",
+      "ruleSource": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Reserve >= $250,000 needs manager approval",
       "titleZh": "准备金达25万美元需经理批准",
       "statement": {
@@ -1654,6 +1860,21 @@
     {
       "id": "rule:br-12-senior-adjuster-assignment",
       "uuid": "3000000000000000000000000000000f",
+      "specificScenarioStage": "on CoverageConfirmed, before AssignAdjuster completes",
+      "businessLogicRuleName": "Large loss to senior adjuster in 24h",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on CoverageConfirmed, before AssignAdjuster completes",
+      "standardizedLogicRule": "A Claim with an estimated total incurred loss at or above $500,000 must be assigned to a senior Adjuster within 24 hours of coverage confirmation.",
+      "relatedEntities": [
+        "Claim (Claim)",
+        "Adjuster (Adjuster)"
+      ],
+      "businessBackgroundReason": "Assignment, closure, payment eligibility, and stale-claim handling.",
+      "ruleSource": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Large loss to senior adjuster in 24h",
       "titleZh": "大额损失24小时内指派资深理算员",
       "statement": {
@@ -1710,6 +1931,21 @@
     {
       "id": "rule:br-13-no-close-with-reserve",
       "uuid": "30000000000000000000000000000010",
+      "specificScenarioStage": "on CloseExposure",
+      "businessLogicRuleName": "No exposure closure with open reserve",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on CloseExposure",
+      "standardizedLogicRule": "An Exposure may not be closed while any Reserve balance remains greater than zero on that Exposure.",
+      "relatedEntities": [
+        "Exposure (Exposure)",
+        "Reserve (Reserve)"
+      ],
+      "businessBackgroundReason": "Assignment, closure, payment eligibility, and stale-claim handling.",
+      "ruleSource": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "No exposure closure with open reserve",
       "titleZh": "有准备金余额不得关闭赔付项",
       "statement": {
@@ -1766,6 +2002,21 @@
     {
       "id": "rule:br-17-no-payment-out-of-force",
       "uuid": "30000000000000000000000000000011",
+      "specificScenarioStage": "on IssueClaimPayment",
+      "businessLogicRuleName": "No payment when coverage out of force / denied",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on IssueClaimPayment",
+      "standardizedLogicRule": "A ClaimPayment may not be issued on an Exposure whose coverage decision is OutOfForce or CoverageDenied.",
+      "relatedEntities": [
+        "Exposure (Exposure)",
+        "ClaimPayment (Claim_Payment)"
+      ],
+      "businessBackgroundReason": "Assignment, closure, payment eligibility, and stale-claim handling.",
+      "ruleSource": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "No payment when coverage out of force / denied",
       "titleZh": "承保失效或被拒时不得赔付",
       "statement": {
@@ -1816,6 +2067,20 @@
     {
       "id": "rule:br-18-stale-claim-flag",
       "uuid": "30000000000000000000000000000012",
+      "specificScenarioStage": "scheduled inactivity scan",
+      "businessLogicRuleName": "Flag stale claim after 30 days inactivity",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "scheduled inactivity scan",
+      "standardizedLogicRule": "A Claim that has had no adjuster activity for 30 consecutive days must be flagged as stale and routed to the Claims Supervisor for review.",
+      "relatedEntities": [
+        "Claim (Claim)"
+      ],
+      "businessBackgroundReason": "Assignment, closure, payment eligibility, and stale-claim handling.",
+      "ruleSource": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Flag stale claim after 30 days inactivity",
       "titleZh": "30天无活动则标记为陈旧案件",
       "statement": {
@@ -1865,6 +2130,21 @@
     {
       "id": "rule:br-19-recovery-preconditions",
       "uuid": "30000000000000000000000000000013",
+      "specificScenarioStage": "on OpenSubrogation",
+      "businessLogicRuleName": "Recovery only on closed claim with liable party",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on OpenSubrogation",
+      "standardizedLogicRule": "A Recovery may only be opened on a Claim that is closed and carries an identified liable third party.",
+      "relatedEntities": [
+        "Recovery (Recovery)",
+        "Claim (Claim)"
+      ],
+      "businessBackgroundReason": "Subrogation preconditions and immutable audit trail.",
+      "ruleSource": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Recovery only on closed claim with liable party",
       "titleZh": "仅对已结案且有责任方的案件追偿",
       "statement": {
@@ -1921,6 +2201,21 @@
     {
       "id": "rule:br-20-immutable-audit-trail",
       "uuid": "30000000000000000000000000000014",
+      "specificScenarioStage": "on any ClaimPayment or Reserve write",
+      "businessLogicRuleName": "Immutable audit of payments and reserve changes",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on any ClaimPayment or Reserve write",
+      "standardizedLogicRule": "Every ClaimPayment and every Reserve change shall be recorded with the acting user, timestamp, and prior value, and such audit records may not be altered or deleted.",
+      "relatedEntities": [
+        "ClaimPayment (Claim_Payment)",
+        "Reserve (Reserve)"
+      ],
+      "businessBackgroundReason": "Subrogation preconditions and immutable audit trail.",
+      "ruleSource": "Claims & Underwriting Business Rules (POL-CLM-UW-RULES-062)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Immutable audit of payments and reserve changes",
       "titleZh": "赔款与准备金变更不可篡改的审计",
       "statement": {

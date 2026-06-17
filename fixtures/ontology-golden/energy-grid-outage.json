@@ -992,6 +992,22 @@
     {
       "id": "rule:transmission-inspection-interval",
       "uuid": "70143142536475869a1023142564045a",
+      "specificScenarioStage": "On inspection-interval timer or missed interval",
+      "businessLogicRuleName": "Transmission inspection within rated interval",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On inspection-interval timer or missed interval",
+      "standardizedLogicRule": "A transmission-class Asset must have a completed Inspection within its rated inspection interval, and a missed interval shall automatically raise a priority MaintenanceWorkOrder.",
+      "relatedEntities": [
+        "Asset (Asset)",
+        "Inspection (Inspection)",
+        "MaintenanceWorkOrder (Maintenance_Work_Order)"
+      ],
+      "businessBackgroundReason": "Rules governing asset inspection cadence, fail handling, and in-service condition limits (POL-GRID-COMP-009 §2).",
+      "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Transmission inspection within rated interval",
       "titleZh": "输电资产须在额定间隔内完成巡检",
       "statement": {
@@ -1044,6 +1060,21 @@
     {
       "id": "rule:failed-inspection-raises-wo-24h",
       "uuid": "71243142536475869b1023142564056b",
+      "specificScenarioStage": "On Inspection result = fail",
+      "businessLogicRuleName": "Failed inspection raises corrective WO within 24h",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On Inspection result = fail",
+      "standardizedLogicRule": "An Inspection that returns a fail result is required to generate a corrective MaintenanceWorkOrder within 24 hours of the inspection completion timestamp.",
+      "relatedEntities": [
+        "Inspection (Inspection)",
+        "MaintenanceWorkOrder (Maintenance_Work_Order)"
+      ],
+      "businessBackgroundReason": "Rules governing asset inspection cadence, fail handling, and in-service condition limits (POL-GRID-COMP-009 §2).",
+      "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Failed inspection raises corrective WO within 24h",
       "titleZh": "巡检不通过须在24小时内开纠正工单",
       "statement": {
@@ -1099,6 +1130,20 @@
     {
       "id": "rule:inspection-cadence-by-class",
       "uuid": "72343142536475869c1023142564067c",
+      "specificScenarioStage": "On inspection scheduling",
+      "businessLogicRuleName": "Inspection cadence by asset class",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On inspection scheduling",
+      "standardizedLogicRule": "A distribution-class Asset must be inspected at least once every 36 months, and a transmission-class Asset at least once every 12 months.",
+      "relatedEntities": [
+        "Asset (Asset)"
+      ],
+      "businessBackgroundReason": "Rules governing asset inspection cadence, fail handling, and in-service condition limits (POL-GRID-COMP-009 §2).",
+      "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Inspection cadence by asset class",
       "titleZh": "按资产等级的巡检周期",
       "statement": {
@@ -1148,6 +1193,21 @@
     {
       "id": "rule:low-condition-score-service-limit",
       "uuid": "73443142536475869d1023142564078d",
+      "specificScenarioStage": "Constraint",
+      "businessLogicRuleName": "Low condition score in-service limit",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "asset.conditionScore >= 40 || daysInService <= 30 || hasApprovedWorkOrder",
+      "standardizedLogicRule": "An Asset whose condition score falls below 40 on the 0–100 health scale shall not remain in service beyond 30 days without an approved MaintenanceWorkOrder on file.",
+      "relatedEntities": [
+        "Asset (Asset)",
+        "MaintenanceWorkOrder (Maintenance_Work_Order)"
+      ],
+      "businessBackgroundReason": "Rules governing asset inspection cadence, fail handling, and in-service condition limits (POL-GRID-COMP-009 §2).",
+      "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Low condition score in-service limit",
       "titleZh": "低状态评分的在役期限",
       "statement": {
@@ -1194,6 +1254,21 @@
     {
       "id": "rule:safety-asset-second-engineer-close",
       "uuid": "74543142536475869e1023142564089e",
+      "specificScenarioStage": "On MaintenanceWorkOrder close attempt",
+      "businessLogicRuleName": "Safety-classified asset close requires second engineer",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On MaintenanceWorkOrder close attempt",
+      "standardizedLogicRule": "A MaintenanceWorkOrder against a safety-classified Asset may not be closed without a second qualified engineer's approval recorded in Maximo.",
+      "relatedEntities": [
+        "MaintenanceWorkOrder (Maintenance_Work_Order)",
+        "Asset (Asset)"
+      ],
+      "businessBackgroundReason": "Approval gates on the MaintenanceWorkOrder lifecycle (POL-GRID-COMP-009 §3).",
+      "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Safety-classified asset close requires second engineer",
       "titleZh": "安全分类资产关闭须第二工程师批准",
       "statement": {
@@ -1249,6 +1324,20 @@
     {
       "id": "rule:high-cost-wo-asset-manager-approval",
       "uuid": "75643142536475869f102314256409af",
+      "specificScenarioStage": "Before crew assignment on approval",
+      "businessLogicRuleName": "High-cost WO requires Asset Manager approval",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "Before crew assignment on approval",
+      "standardizedLogicRule": "A MaintenanceWorkOrder with an estimated cost above $250,000 is required to obtain Asset Manager approval before crew assignment.",
+      "relatedEntities": [
+        "MaintenanceWorkOrder (Maintenance_Work_Order)"
+      ],
+      "businessBackgroundReason": "Approval gates on the MaintenanceWorkOrder lifecycle (POL-GRID-COMP-009 §3).",
+      "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "High-cost WO requires Asset Manager approval",
       "titleZh": "高成本工单须资产经理批准",
       "statement": {
@@ -1298,6 +1387,22 @@
     {
       "id": "rule:outage-reportable-threshold-1h",
       "uuid": "766431425364758601102314256410b0",
+      "specificScenarioStage": "On OutageConfirmed; starts the regulatory reporting clock",
+      "businessLogicRuleName": "Report outage over 50,000 ServicePoints within 1 hour",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On OutageConfirmed; starts the regulatory reporting clock",
+      "standardizedLogicRule": "An OutageEvent affecting more than 50,000 ServicePoints must be reported to the regulator within 1 hour of its detection timestamp.",
+      "relatedEntities": [
+        "OutageEvent (Outage_Event)",
+        "RegulatoryReport (Regulatory_Report)",
+        "ServicePoint (Service_Point)"
+      ],
+      "businessBackgroundReason": "PUC regulatory filing thresholds, deadlines, and approvals (POL-GRID-COMP-009 §4).",
+      "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Report outage over 50,000 ServicePoints within 1 hour",
       "titleZh": "超5万供电点停电须1小时内上报",
       "statement": {
@@ -1354,6 +1459,20 @@
     {
       "id": "rule:report-deadline-escalation",
       "uuid": "77743142536475860210231425641cd1",
+      "specificScenarioStage": "On filing deadline lapse",
+      "businessLogicRuleName": "Missed filing deadline escalates to Director",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On filing deadline lapse",
+      "standardizedLogicRule": "A RegulatoryReport that is not submitted before its computed filing deadline shall escalate automatically to the Director of Compliance.",
+      "relatedEntities": [
+        "RegulatoryReport (Regulatory_Report)"
+      ],
+      "businessBackgroundReason": "PUC regulatory filing thresholds, deadlines, and approvals (POL-GRID-COMP-009 §4).",
+      "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Missed filing deadline escalates to Director",
       "titleZh": "错过备案截止时间升级至总监",
       "statement": {
@@ -1404,6 +1523,22 @@
     {
       "id": "rule:major-event-director-approval",
       "uuid": "78843142536475860310231425642de2",
+      "specificScenarioStage": "On RegulatoryReport submission for major events",
+      "businessLogicRuleName": "Major event filing requires Director approval",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On RegulatoryReport submission for major events",
+      "standardizedLogicRule": "A RegulatoryReport for a major event affecting more than 100,000 ServicePoints may not be submitted without the Director of Compliance's recorded approval.",
+      "relatedEntities": [
+        "RegulatoryReport (Regulatory_Report)",
+        "OutageEvent (Outage_Event)",
+        "ServicePoint (Service_Point)"
+      ],
+      "businessBackgroundReason": "PUC regulatory filing thresholds, deadlines, and approvals (POL-GRID-COMP-009 §4).",
+      "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Major event filing requires Director approval",
       "titleZh": "重大事件备案须总监批准",
       "statement": {
@@ -1460,6 +1595,21 @@
     {
       "id": "rule:long-outage-root-cause-narrative",
       "uuid": "79943142536475860410231425643ef3",
+      "specificScenarioStage": "On RegulatoryReport compilation",
+      "businessLogicRuleName": "Long outage requires root-cause narrative",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On RegulatoryReport compilation",
+      "standardizedLogicRule": "An OutageEvent with a restoration duration exceeding 24 hours is required to include a root-cause narrative in its RegulatoryReport.",
+      "relatedEntities": [
+        "OutageEvent (Outage_Event)",
+        "RegulatoryReport (Regulatory_Report)"
+      ],
+      "businessBackgroundReason": "PUC regulatory filing thresholds, deadlines, and approvals (POL-GRID-COMP-009 §4).",
+      "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
+      "executor": "Human",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Long outage requires root-cause narrative",
       "titleZh": "长时间停电须含根因叙述",
       "statement": {
@@ -1514,6 +1664,21 @@
     {
       "id": "rule:vegetation-cycle-no-lapse-without-variance",
       "uuid": "7aa43142536475860510231425644004",
+      "specificScenarioStage": "On vegetation cycle lapse",
+      "businessLogicRuleName": "Vegetation cycle may not lapse without variance",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On vegetation cycle lapse",
+      "standardizedLogicRule": "Vegetation clearance on a high-voltage Feeder may not lapse beyond its assigned clearance cycle without a documented variance approved by the Asset Manager.",
+      "relatedEntities": [
+        "Feeder (Feeder)",
+        "MaintenanceWorkOrder (Maintenance_Work_Order)"
+      ],
+      "businessBackgroundReason": "Vegetation clearance cycle limits and variance handling (POL-GRID-COMP-009 §5, §8).",
+      "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Vegetation cycle may not lapse without variance",
       "titleZh": "植被清理周期未获变更不得逾期",
       "statement": {
@@ -1566,6 +1731,20 @@
     {
       "id": "rule:vegetation-cycle-max-months",
       "uuid": "7bb43142536475860610231425645115",
+      "specificScenarioStage": "Constraint",
+      "businessLogicRuleName": "Vegetation cycle maximum by zone",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "(feeder.voltageClass != 'high-voltage' || feeder.vegetationCycleMonths <= 48) && (!feeder.wildfireRiskZone || feeder.vegetationCycleMonths <= 24)",
+      "standardizedLogicRule": "A high-voltage Feeder must be cleared on a cycle no longer than 48 months, and a Feeder traversing a designated wildfire-risk zone must be cleared on a cycle no longer than 24 months.",
+      "relatedEntities": [
+        "Feeder (Feeder)"
+      ],
+      "businessBackgroundReason": "Vegetation clearance cycle limits and variance handling (POL-GRID-COMP-009 §5, §8).",
+      "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Vegetation cycle maximum by zone",
       "titleZh": "按区域的植被周期上限",
       "statement": {
@@ -1613,6 +1792,21 @@
     {
       "id": "rule:no-close-until-all-restored",
       "uuid": "7cc43142536475860710231425646226",
+      "specificScenarioStage": "On OutageEvent transition Restored → Closed",
+      "businessLogicRuleName": "No close until all ServicePoints AMI-confirmed",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On OutageEvent transition Restored → Closed",
+      "standardizedLogicRule": "An OutageEvent may not be advanced to the Closed state until every affected ServicePoint has returned an AMI power-restored confirmation.",
+      "relatedEntities": [
+        "OutageEvent (Outage_Event)",
+        "ServicePoint (Service_Point)"
+      ],
+      "businessBackgroundReason": "Outage state transitions, crew dispatch SLAs, switching safety, and close preconditions (POL-GRID-COMP-009 §6).",
+      "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "No close until all ServicePoints AMI-confirmed",
       "titleZh": "全部供电点AMI确认前不得关闭",
       "statement": {
@@ -1663,6 +1857,22 @@
     {
       "id": "rule:critical-care-dispatch-2h",
       "uuid": "7dd43142536475860810231425647337",
+      "specificScenarioStage": "On OutageConfirmed for critical-care customers",
+      "businessLogicRuleName": "Critical-care customer dispatch within 2 hours",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On OutageConfirmed for critical-care customers",
+      "standardizedLogicRule": "A Crew must be dispatched to any confirmed OutageEvent affecting a critical-care Customer within 2 hours of the outage confirmation timestamp.",
+      "relatedEntities": [
+        "OutageEvent (Outage_Event)",
+        "Crew (Crew)",
+        "Customer (Customer)"
+      ],
+      "businessBackgroundReason": "Outage state transitions, crew dispatch SLAs, switching safety, and close preconditions (POL-GRID-COMP-009 §6).",
+      "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Critical-care customer dispatch within 2 hours",
       "titleZh": "重症护理客户须2小时内派工",
       "statement": {
@@ -1718,6 +1928,21 @@
     {
       "id": "rule:critical-infrastructure-highest-priority",
       "uuid": "7ee43142536475860910231425648448",
+      "specificScenarioStage": "On OutageConfirmed scoping",
+      "businessLogicRuleName": "Critical-infrastructure highest restoration priority",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On OutageConfirmed scoping",
+      "standardizedLogicRule": "An OutageEvent affecting a critical-infrastructure ServicePoint (hospital, water plant, emergency services) shall be assigned the highest restoration priority regardless of the affected ServicePoint count.",
+      "relatedEntities": [
+        "OutageEvent (Outage_Event)",
+        "ServicePoint (Service_Point)"
+      ],
+      "businessBackgroundReason": "Outage state transitions, crew dispatch SLAs, switching safety, and close preconditions (POL-GRID-COMP-009 §6).",
+      "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
+      "executor": "Human",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Critical-infrastructure highest restoration priority",
       "titleZh": "关键基础设施最高复电优先级",
       "statement": {
@@ -1771,6 +1996,22 @@
     {
       "id": "rule:no-switching-until-upstream-open",
       "uuid": "7ff43142536475860a10231425649559",
+      "specificScenarioStage": "Before switching during restoration; may be waived by Shift Supervisor for public safety",
+      "businessLogicRuleName": "No switching until upstream device confirmed open",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "Before switching during restoration; may be waived by Shift Supervisor for public safety",
+      "standardizedLogicRule": "A Crew may not perform switching on a Feeder until the upstream Substation device state is confirmed open in SCADA.",
+      "relatedEntities": [
+        "Crew (Crew)",
+        "Feeder (Feeder)",
+        "Substation (Substation)"
+      ],
+      "businessBackgroundReason": "Outage state transitions, crew dispatch SLAs, switching safety, and close preconditions (POL-GRID-COMP-009 §6).",
+      "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "No switching until upstream device confirmed open",
       "titleZh": "上游设备确认断开前不得操作开关",
       "statement": {
@@ -1822,6 +2063,22 @@
     {
       "id": "rule:emergency-wo-references-outage-and-asset",
       "uuid": "80043142536475860b1023142564a66a",
+      "specificScenarioStage": "On emergency MaintenanceWorkOrder creation during dispatch",
+      "businessLogicRuleName": "Emergency WO references outage and faulted asset",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On emergency MaintenanceWorkOrder creation during dispatch",
+      "standardizedLogicRule": "An emergency MaintenanceWorkOrder created from an active OutageEvent must reference both the parent OutageEvent and the faulted Asset.",
+      "relatedEntities": [
+        "MaintenanceWorkOrder (Maintenance_Work_Order)",
+        "OutageEvent (Outage_Event)",
+        "Asset (Asset)"
+      ],
+      "businessBackgroundReason": "Outage state transitions, crew dispatch SLAs, switching safety, and close preconditions (POL-GRID-COMP-009 §6).",
+      "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Emergency WO references outage and faulted asset",
       "titleZh": "紧急工单须关联停电与故障资产",
       "statement": {
@@ -1875,6 +2132,22 @@
     {
       "id": "rule:servicepoint-single-feeder-single-customer",
       "uuid": "81143142536475860c1023142564b77b",
+      "specificScenarioStage": "Enforced at the GIS sync boundary",
+      "businessLogicRuleName": "ServicePoint maps to exactly one Feeder and Customer",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "Enforced at the GIS sync boundary",
+      "standardizedLogicRule": "Every ServicePoint must be mapped to exactly one Feeder and exactly one Customer in the network model.",
+      "relatedEntities": [
+        "ServicePoint (Service_Point)",
+        "Feeder (Feeder)",
+        "Customer (Customer)"
+      ],
+      "businessBackgroundReason": "Network-model cardinality and customer notification obligations (POL-GRID-COMP-009 §7).",
+      "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "ServicePoint maps to exactly one Feeder and Customer",
       "titleZh": "供电点须精确映射一条馈线一个客户",
       "statement": {
@@ -1926,6 +2199,22 @@
     {
       "id": "rule:life-support-planned-outage-notice-48h",
       "uuid": "82243142536475860d1023142564c88c",
+      "specificScenarioStage": "Before a planned OutageEvent affecting a life-support customer",
+      "businessLogicRuleName": "Life-support customer 48h planned outage notice",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "Before a planned OutageEvent affecting a life-support customer",
+      "standardizedLogicRule": "A Customer flagged as life-support-dependent shall be notified of any planned OutageEvent affecting their ServicePoint at least 48 hours in advance.",
+      "relatedEntities": [
+        "Customer (Customer)",
+        "OutageEvent (Outage_Event)",
+        "ServicePoint (Service_Point)"
+      ],
+      "businessBackgroundReason": "Network-model cardinality and customer notification obligations (POL-GRID-COMP-009 §7).",
+      "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Life-support customer 48h planned outage notice",
       "titleZh": "生命维持客户须提前48小时通知计划停电",
       "statement": {
@@ -1980,6 +2269,20 @@
     {
       "id": "rule:cause-code-before-close",
       "uuid": "83343142536475860e1023142564d99d",
+      "specificScenarioStage": "On OutageEvent transition Restored → Closed",
+      "businessLogicRuleName": "Cause code required before close",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On OutageEvent transition Restored → Closed",
+      "standardizedLogicRule": "An OutageEvent cause code is required to be recorded before the OutageEvent may transition from Restored to Closed.",
+      "relatedEntities": [
+        "OutageEvent (Outage_Event)"
+      ],
+      "businessBackgroundReason": "Outage state transitions, crew dispatch SLAs, switching safety, and close preconditions (POL-GRID-COMP-009 §6).",
+      "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Cause code required before close",
       "titleZh": "关闭前须记录原因代码",
       "statement": {
@@ -2030,6 +2333,20 @@
     {
       "id": "rule:variance-max-90-days",
       "uuid": "84443142536475860f1023142564eaae",
+      "specificScenarioStage": "On documented variance under R-11",
+      "businessLogicRuleName": "Vegetation variance limited to 90 days",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On documented variance under R-11",
+      "standardizedLogicRule": "A documented variance under Rule R-11 must specify the affected Feeder, the reason, and an expiry date, and may not exceed 90 days.",
+      "relatedEntities": [
+        "Feeder (Feeder)"
+      ],
+      "businessBackgroundReason": "Vegetation clearance cycle limits and variance handling (POL-GRID-COMP-009 §5, §8).",
+      "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Vegetation variance limited to 90 days",
       "titleZh": "植被变更最长90天",
       "statement": {

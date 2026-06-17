@@ -307,7 +307,7 @@ function projectObject(o: ObjectType, ctx: SpecCtx): SpecObject {
 // ===========================================================================
 
 function deriveExecutor(r: Rule, ctx: SpecCtx): SpecExecutorInternal {
-  if (r.executor) return r.executor === 'human' ? 'Human' : 'Agent';
+  if (r.executor) return r.executor;
   const kinds = ctx.ruleActorKinds.get(r.id);
   if (kinds && kinds.has('human')) return 'Human';
   // Default: rules are agent-enforced unless evidence says a human carries them out.
@@ -315,22 +315,29 @@ function deriveExecutor(r: Rule, ctx: SpecCtx): SpecExecutorInternal {
 }
 type SpecExecutorInternal = 'Human' | 'Agent';
 
+const nonEmpty = (s: unknown): s is string => typeof s === 'string' && s.trim().length > 0;
+
 function firstClause(text: string): string {
   const m = text.split(/[.!?;:\n。！？；]/)[0]?.trim() ?? '';
   return m.length > 80 ? `${m.slice(0, 77)}...` : m || text.slice(0, 77);
 }
 
 function projectRule(r: Rule, ctx: SpecCtx): SpecRule {
+  // Prefer the canonical spec fields (now first-class on Rule); fall back to
+  // deriving from the structural fields for any older/partial node.
   const enforcementLevel =
     r.enforcementLevel ?? (r.severity === 'block' ? 'mandatory' : 'optional');
   const failurePolicy = r.failurePolicy ?? (r.severity === 'block' ? 'block' : 'warn');
 
-  const standardizedLogicRule =
-    r.statement?.en?.trim() || r.formal?.trim() || r.statement?.zh?.trim() || '';
+  const standardizedLogicRule = nonEmpty(r.standardizedLogicRule)
+    ? r.standardizedLogicRule
+    : r.statement?.en?.trim() || r.formal?.trim() || r.statement?.zh?.trim() || '';
 
-  const relatedEntities = (r.appliesToObjectTypeIds ?? [])
-    .filter((id) => ctx.objSpecId.has(id))
-    .map((id) => `${ctx.objName.get(id)} (${ctx.objSpecId.get(id)})`);
+  const relatedEntities = nonEmpty(r.relatedEntities?.[0]) || (r.relatedEntities?.length ?? 0) > 0
+    ? r.relatedEntities
+    : (r.appliesToObjectTypeIds ?? [])
+        .filter((id) => ctx.objSpecId.has(id))
+        .map((id) => `${ctx.objName.get(id)} (${ctx.objSpecId.get(id)})`);
 
   const groupRationale = r.groupId
     ? (ctx.ontology.ruleGroups ?? []).find((g) => g.id === r.groupId)?.rationale
@@ -338,16 +345,24 @@ function projectRule(r: Rule, ctx: SpecCtx): SpecRule {
 
   return {
     id: stripPrefix(r.id),
-    specificScenarioStage: r.trigger?.description?.trim() || humanize(r.kind),
-    businessLogicRuleName: r.title?.trim() || firstClause(standardizedLogicRule) || stripPrefix(r.id),
-    applicableClient: '通用',
-    applicableDepartment: 'N/A',
-    submissionCriteria: r.trigger?.description?.trim() || r.expression?.predicate?.trim() || '',
+    specificScenarioStage: nonEmpty(r.specificScenarioStage)
+      ? r.specificScenarioStage
+      : r.trigger?.description?.trim() || humanize(r.kind),
+    businessLogicRuleName: nonEmpty(r.businessLogicRuleName)
+      ? r.businessLogicRuleName
+      : r.title?.trim() || firstClause(standardizedLogicRule) || stripPrefix(r.id),
+    applicableClient: nonEmpty(r.applicableClient) ? r.applicableClient : '通用',
+    applicableDepartment: nonEmpty(r.applicableDepartment) ? r.applicableDepartment : 'N/A',
+    submissionCriteria: nonEmpty(r.submissionCriteria)
+      ? r.submissionCriteria
+      : r.trigger?.description?.trim() || r.expression?.predicate?.trim() || '',
     standardizedLogicRule,
     relatedEntities,
-    businessBackgroundReason: groupRationale?.trim() || '',
-    ruleSource: r.sources?.[0]?.documentName?.trim() || '文档',
-    executor: deriveExecutor(r, ctx),
+    businessBackgroundReason: nonEmpty(r.businessBackgroundReason)
+      ? r.businessBackgroundReason
+      : groupRationale?.trim() || '',
+    ruleSource: nonEmpty(r.ruleSource) ? r.ruleSource : r.sources?.[0]?.documentName?.trim() || '文档',
+    executor: r.executor ?? deriveExecutor(r, ctx),
     enforcementLevel,
     failurePolicy,
   };

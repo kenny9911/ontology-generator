@@ -1139,6 +1139,22 @@
     {
       "id": "rule:R-01-workorder-effective-revision",
       "uuid": "30000000000000000000000000000001",
+      "specificScenarioStage": "On WorkOrder release",
+      "businessLogicRuleName": "WorkOrder release requires effective revisions",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On WorkOrder release",
+      "standardizedLogicRule": "A WorkOrder may not be released unless every component Part in its BillOfMaterials is at the currently effective revision.",
+      "relatedEntities": [
+        "WorkOrder (Work_Order)",
+        "BillOfMaterials (Bill_Of_Materials)",
+        "Part (Part)"
+      ],
+      "businessBackgroundReason": "Section A of POL-QMS-08: controls on revision effectivity and the engineering-change gate.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "WorkOrder release requires effective revisions",
       "titleZh": "工单下达要求生效修订",
       "statement": {
@@ -1194,6 +1210,23 @@
     {
       "id": "rule:R-02-quarantine-blocks-release",
       "uuid": "30000000000000000000000000000002",
+      "specificScenarioStage": "Constraint",
+      "businessLogicRuleName": "Quarantine disposition blocks release",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "A component Part that has an open NonConformance with Disposition = Quarantine shall not be consumed by any newly released WorkOrder.",
+      "relatedEntities": [
+        "Part (Part)",
+        "NonConformance (Non_Conformance)",
+        "Disposition (Disposition)",
+        "WorkOrder (Work_Order)"
+      ],
+      "businessBackgroundReason": "Section A of POL-QMS-08: controls on revision effectivity and the engineering-change gate.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Quarantine disposition blocks release",
       "titleZh": "隔离处置阻止下达",
       "statement": {
@@ -1231,6 +1264,21 @@
     {
       "id": "rule:R-03-safety-second-approval",
       "uuid": "30000000000000000000000000000003",
+      "specificScenarioStage": "Authorization",
+      "businessLogicRuleName": "Safety changes need second approval",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "Any EngineeringChange that affects a Part whose safety_class is Critical is required to obtain a second engineer's approval before it may be released.",
+      "relatedEntities": [
+        "EngineeringChange (Engineering_Change)",
+        "Part (Part)"
+      ],
+      "businessBackgroundReason": "Section A of POL-QMS-08: controls on revision effectivity and the engineering-change gate.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Safety changes need second approval",
       "titleZh": "安全变更需二次批准",
       "statement": {
@@ -1267,6 +1315,22 @@
     {
       "id": "rule:R-04-no-ship-until-accepted",
       "uuid": "30000000000000000000000000000004",
+      "specificScenarioStage": "State Transition",
+      "businessLogicRuleName": "No ship until lot accepted; reject opens NCR",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "A finished lot may not ship until its InspectionLot is Accepted; a Rejected InspectionLot shall automatically open a NonConformance.",
+      "relatedEntities": [
+        "InspectionLot (Inspection_Lot)",
+        "NonConformance (Non_Conformance)",
+        "Part (Part)"
+      ],
+      "businessBackgroundReason": "Section B of POL-QMS-08: build, backflush, inspection and lot-closure controls.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "No ship until lot accepted; reject opens NCR",
       "titleZh": "检验合格前不得发运；拒收开立不合格品",
       "statement": {
@@ -1303,6 +1367,20 @@
     {
       "id": "rule:R-05-ccb-quorum",
       "uuid": "30000000000000000000000000000005",
+      "specificScenarioStage": "Constraint",
+      "businessLogicRuleName": "CCB quorum of three",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "An EngineeringChange must be approved by a Change Control Board quorum of at least three voting members before it moves to status Approved.",
+      "relatedEntities": [
+        "EngineeringChange (Engineering_Change)"
+      ],
+      "businessBackgroundReason": "Section A of POL-QMS-08: controls on revision effectivity and the engineering-change gate.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "CCB quorum of three",
       "titleZh": "变更委员会法定人数为三",
       "statement": {
@@ -1338,6 +1416,21 @@
     {
       "id": "rule:R-06-effective-from-lead-time",
       "uuid": "30000000000000000000000000000006",
+      "specificScenarioStage": "Temporal",
+      "businessLogicRuleName": "BOM effectivity lead time",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "A BillOfMaterials revision shall carry an effective_from date no fewer than 5 business days in the future, except that an EngineeringChange flagged emergency = true may be made effective immediately with VP of Quality approval.",
+      "relatedEntities": [
+        "BillOfMaterials (Bill_Of_Materials)",
+        "EngineeringChange (Engineering_Change)"
+      ],
+      "businessBackgroundReason": "Section A of POL-QMS-08: controls on revision effectivity and the engineering-change gate.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "BOM effectivity lead time",
       "titleZh": "物料清单生效提前期",
       "statement": {
@@ -1374,6 +1467,21 @@
     {
       "id": "rule:R-07-inspectionlot-required",
       "uuid": "30000000000000000000000000000007",
+      "specificScenarioStage": "Constraint",
+      "businessLogicRuleName": "InspectionLot required when flagged",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "An InspectionLot is required for every finished lot of any Part whose inspection_required flag is true.",
+      "relatedEntities": [
+        "InspectionLot (Inspection_Lot)",
+        "Part (Part)"
+      ],
+      "businessBackgroundReason": "Section B of POL-QMS-08: build, backflush, inspection and lot-closure controls.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "InspectionLot required when flagged",
       "titleZh": "需检验时必开检验批",
       "statement": {
@@ -1409,6 +1517,21 @@
     {
       "id": "rule:R-08-aql-acceptance",
       "uuid": "30000000000000000000000000000008",
+      "specificScenarioStage": "Derivation",
+      "businessLogicRuleName": "AQL acceptance number",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "An InspectionLot shall be set to Accepted only when the observed defect count is at or below the AQL 1.0 acceptance number for the applicable sample size; otherwise it must be set to Rejected.",
+      "relatedEntities": [
+        "InspectionLot (Inspection_Lot)",
+        "Inspection (Inspection)"
+      ],
+      "businessBackgroundReason": "Section B of POL-QMS-08: build, backflush, inspection and lot-closure controls.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "AQL acceptance number",
       "titleZh": "AQL 接收数",
       "statement": {
@@ -1446,6 +1569,22 @@
     {
       "id": "rule:R-09-backflush-frozen-revision",
       "uuid": "30000000000000000000000000000009",
+      "specificScenarioStage": "Constraint",
+      "businessLogicRuleName": "Backflush against frozen revision",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "Every component goods issue must be backflushed against the bom_revision recorded on the released WorkOrder, and may not be backflushed against a later revision.",
+      "relatedEntities": [
+        "WorkOrder (Work_Order)",
+        "BillOfMaterials (Bill_Of_Materials)",
+        "Part (Part)"
+      ],
+      "businessBackgroundReason": "Section B of POL-QMS-08: build, backflush, inspection and lot-closure controls.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Backflush against frozen revision",
       "titleZh": "按冻结修订倒冲",
       "statement": {
@@ -1482,6 +1621,20 @@
     {
       "id": "rule:R-10-approved-supplier-only",
       "uuid": "3000000000000000000000000000000a",
+      "specificScenarioStage": "Authorization",
+      "businessLogicRuleName": "Receive only from approved suppliers",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "Goods may be received only from a Supplier whose qualification_status is Approved.",
+      "relatedEntities": [
+        "Supplier (Supplier)"
+      ],
+      "businessBackgroundReason": "Section C of POL-QMS-08: supplier qualification and scorecard controls.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Receive only from approved suppliers",
       "titleZh": "仅从合格供应商收货",
       "statement": {
@@ -1516,6 +1669,20 @@
     {
       "id": "rule:R-11-rejection-rate-requalification",
       "uuid": "3000000000000000000000000000000b",
+      "specificScenarioStage": "Constraint",
+      "businessLogicRuleName": "Rejection-rate auto re-qualification",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "A Supplier whose incoming-lot rejection rate exceeds 2% over any rolling 90-day window shall be automatically flagged for re-qualification.",
+      "relatedEntities": [
+        "Supplier (Supplier)"
+      ],
+      "businessBackgroundReason": "Section C of POL-QMS-08: supplier qualification and scorecard controls.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Rejection-rate auto re-qualification",
       "titleZh": "拒收率自动再资格化",
       "statement": {
@@ -1550,6 +1717,20 @@
     {
       "id": "rule:R-12-ncr-owner-24h",
       "uuid": "3000000000000000000000000000000c",
+      "specificScenarioStage": "Temporal",
+      "businessLogicRuleName": "NCR owner within 24h",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "A NonConformance must be assigned an owner within 24 hours of being opened.",
+      "relatedEntities": [
+        "NonConformance (Non_Conformance)"
+      ],
+      "businessBackgroundReason": "Section D of POL-QMS-08: NCR triage, disposition sign-off, escalation and CAPA gating.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "NCR owner within 24h",
       "titleZh": "不合格品 24 小时内指派负责人",
       "statement": {
@@ -1585,6 +1766,21 @@
     {
       "id": "rule:R-13-useasis-rework-qm-signoff",
       "uuid": "3000000000000000000000000000000d",
+      "specificScenarioStage": "Authorization",
+      "businessLogicRuleName": "QM sign-off for UseAsIs/Rework on safety parts",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "A Disposition of UseAsIs or Rework on a Part whose safety_class is Critical is required to carry Quality Manager sign-off.",
+      "relatedEntities": [
+        "Disposition (Disposition)",
+        "Part (Part)"
+      ],
+      "businessBackgroundReason": "Section D of POL-QMS-08: NCR triage, disposition sign-off, escalation and CAPA gating.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "QM sign-off for UseAsIs/Rework on safety parts",
       "titleZh": "安全零件照用/返工需质量经理签核",
       "statement": {
@@ -1622,6 +1818,22 @@
     {
       "id": "rule:R-14-recurrence-capa",
       "uuid": "3000000000000000000000000000000e",
+      "specificScenarioStage": "Constraint",
+      "businessLogicRuleName": "Recurring NCR triggers CAPA",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "A NonConformance that recurs three or more times within any 90-day window for the same Part shall trigger a formal CorrectiveAction (CAPA).",
+      "relatedEntities": [
+        "NonConformance (Non_Conformance)",
+        "CorrectiveAction (Corrective_Action)",
+        "Part (Part)"
+      ],
+      "businessBackgroundReason": "Section D of POL-QMS-08: NCR triage, disposition sign-off, escalation and CAPA gating.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Recurring NCR triggers CAPA",
       "titleZh": "重复不合格触发纠正措施",
       "statement": {
@@ -1655,6 +1867,21 @@
     {
       "id": "rule:R-15-safety-escalation-4h",
       "uuid": "3000000000000000000000000000000f",
+      "specificScenarioStage": "Temporal",
+      "businessLogicRuleName": "Safety NCR escalation within 4h",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "A NonConformance involving a Part whose safety_class is Critical must be escalated to the Quality Manager within 4 hours of being opened.",
+      "relatedEntities": [
+        "NonConformance (Non_Conformance)",
+        "Part (Part)"
+      ],
+      "businessBackgroundReason": "Section D of POL-QMS-08: NCR triage, disposition sign-off, escalation and CAPA gating.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Safety NCR escalation within 4h",
       "titleZh": "安全不合格品 4 小时内升级",
       "statement": {
@@ -1691,6 +1918,21 @@
     {
       "id": "rule:R-16-no-close-open-lot",
       "uuid": "30000000000000000000000000000010",
+      "specificScenarioStage": "Constraint",
+      "businessLogicRuleName": "No WorkOrder close with open lot",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "A WorkOrder may not be closed while any linked InspectionLot remains in status Open or InProcess.",
+      "relatedEntities": [
+        "WorkOrder (Work_Order)",
+        "InspectionLot (Inspection_Lot)"
+      ],
+      "businessBackgroundReason": "Section B of POL-QMS-08: build, backflush, inspection and lot-closure controls.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "No WorkOrder close with open lot",
       "titleZh": "存在未结检验批不得关闭工单",
       "statement": {
@@ -1727,6 +1969,21 @@
     {
       "id": "rule:R-17-inspection-immutable",
       "uuid": "30000000000000000000000000000011",
+      "specificScenarioStage": "Constraint",
+      "businessLogicRuleName": "Inspection immutable after posting",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "An Inspection record may not be edited after its InspectionLot usage decision has been posted; corrections shall be made through a new, linked Inspection.",
+      "relatedEntities": [
+        "Inspection (Inspection)",
+        "InspectionLot (Inspection_Lot)"
+      ],
+      "businessBackgroundReason": "Section E of POL-QMS-08: record immutability, disposition authorization and customer-ship eligibility.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Inspection immutable after posting",
       "titleZh": "检验过账后不可更改",
       "statement": {
@@ -1762,6 +2019,21 @@
     {
       "id": "rule:R-18-capa-verified-before-close",
       "uuid": "30000000000000000000000000000012",
+      "specificScenarioStage": "State Transition",
+      "businessLogicRuleName": "CAPA verified before NCR close",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "A CorrectiveAction must be verified effective before its linked NonConformance may be set to status Closed.",
+      "relatedEntities": [
+        "CorrectiveAction (Corrective_Action)",
+        "NonConformance (Non_Conformance)"
+      ],
+      "businessBackgroundReason": "Section D of POL-QMS-08: NCR triage, disposition sign-off, escalation and CAPA gating.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "CAPA verified before NCR close",
       "titleZh": "纠正措施验证后方可关闭不合格品",
       "statement": {
@@ -1798,6 +2070,20 @@
     {
       "id": "rule:R-19-disposition-authorization",
       "uuid": "30000000000000000000000000000013",
+      "specificScenarioStage": "Authorization",
+      "businessLogicRuleName": "Only Quality Engineer posts Disposition",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "Only a Quality Engineer or higher is authorized to post a Disposition; a Quality Inspector may not post a Disposition.",
+      "relatedEntities": [
+        "Disposition (Disposition)"
+      ],
+      "businessBackgroundReason": "Section E of POL-QMS-08: record immutability, disposition authorization and customer-ship eligibility.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Only Quality Engineer posts Disposition",
       "titleZh": "仅质量工程师可过账处置",
       "statement": {
@@ -1832,6 +2118,21 @@
     {
       "id": "rule:R-20-no-ship-unresolved-major",
       "uuid": "30000000000000000000000000000014",
+      "specificScenarioStage": "Constraint",
+      "businessLogicRuleName": "No customer ship with unresolved Major/Critical NCR",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "A Part may not be released to a customer-facing shipment if any of its constituent component lots has an unresolved NonConformance with severity Major or Critical.",
+      "relatedEntities": [
+        "Part (Part)",
+        "NonConformance (Non_Conformance)"
+      ],
+      "businessBackgroundReason": "Section E of POL-QMS-08: record immutability, disposition authorization and customer-ship eligibility.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "No customer ship with unresolved Major/Critical NCR",
       "titleZh": "存在未解决重大/严重不合格不得发运客户",
       "statement": {

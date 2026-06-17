@@ -917,6 +917,21 @@
     {
       "id": "rule:r01-officer-authority-5m",
       "uuid": "40000000000000000000000000000001",
+      "specificScenarioStage": "on credit decision",
+      "businessLogicRuleName": "Credit Officer authority below USD 5M",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on credit decision",
+      "standardizedLogicRule": "A CreditMemo recommending a new LoanFacility shall be approved by a Credit Officer when the committed amount is at or below USD 5,000,000; above this amount the CreditMemo must be escalated to the Credit Committee.",
+      "relatedEntities": [
+        "CreditMemo (Credit_Memo)",
+        "LoanFacility (Loan_Facility)"
+      ],
+      "businessBackgroundReason": "Section A rules governing who may approve a facility and minimum eligibility to submit for decision.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Credit Officer authority below USD 5M",
       "titleZh": "信贷专员 500 万美元以下审批权限",
       "statement": {
@@ -972,6 +987,22 @@
     {
       "id": "rule:r02-weak-rating-requires-committee",
       "uuid": "40000000000000000000000000000002",
+      "specificScenarioStage": "on credit decision",
+      "businessLogicRuleName": "Weak rating requires Credit Committee approval",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on credit decision",
+      "standardizedLogicRule": "A LoanFacility with a Borrower RiskRating weaker than 6 (on the 1-10 scale where 10 is highest risk) may not be approved by a single Credit Officer and is required to receive Credit Committee approval regardless of amount.",
+      "relatedEntities": [
+        "LoanFacility (Loan_Facility)",
+        "RiskRating (Risk_Rating)",
+        "CreditMemo (Credit_Memo)"
+      ],
+      "businessBackgroundReason": "Section A rules governing who may approve a facility and minimum eligibility to submit for decision.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Weak rating requires Credit Committee approval",
       "titleZh": "弱评级须信贷委员会批准",
       "statement": {
@@ -1028,6 +1059,22 @@
     {
       "id": "rule:r03-facility-requires-covenant",
       "uuid": "40000000000000000000000000000003",
+      "specificScenarioStage": "before submission for credit decision",
+      "businessLogicRuleName": "Facility requires at least one covenant",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "before submission for credit decision",
+      "standardizedLogicRule": "Every LoanFacility must have at least one financial Covenant defined in its CreditMemo before it may be submitted for credit decision.",
+      "relatedEntities": [
+        "LoanFacility (Loan_Facility)",
+        "Covenant (Covenant)",
+        "CreditMemo (Credit_Memo)"
+      ],
+      "businessBackgroundReason": "Section A rules governing who may approve a facility and minimum eligibility to submit for decision.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Facility requires at least one covenant",
       "titleZh": "信贷额度须至少含一项契约",
       "statement": {
@@ -1076,6 +1123,21 @@
     {
       "id": "rule:r04-no-funding-until-booked-and-perfected",
       "uuid": "40000000000000000000000000000004",
+      "specificScenarioStage": "before disbursement / funding",
+      "businessLogicRuleName": "No funding until booked and security perfected",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "before disbursement / funding",
+      "standardizedLogicRule": "A LoanFacility may not be funded until both the FacilityBooked event and the SecurityPerfected event have been recorded, confirming all conditions precedent are satisfied.",
+      "relatedEntities": [
+        "LoanFacility (Loan_Facility)",
+        "Collateral (Collateral)"
+      ],
+      "businessBackgroundReason": "Conditions that must be satisfied before any facility may be funded.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "No funding until booked and security perfected",
       "titleZh": "未入账并完善担保前不得放款",
       "statement": {
@@ -1131,6 +1193,23 @@
     {
       "id": "rule:r05-no-drawdown-during-breach",
       "uuid": "40000000000000000000000000000005",
+      "specificScenarioStage": "on drawdown eligibility check",
+      "businessLogicRuleName": "No drawdown while covenant in breach without waiver",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on drawdown eligibility check",
+      "standardizedLogicRule": "A LoanFacility may not be drawn down while any financial Covenant is in breach, unless a WaiverRequest with status Granted is on file for that Covenant.",
+      "relatedEntities": [
+        "LoanFacility (Loan_Facility)",
+        "Covenant (Covenant)",
+        "WaiverRequest (Waiver_Request)",
+        "Drawdown (Drawdown)"
+      ],
+      "businessBackgroundReason": "Section B controls limiting when and how much may be drawn down.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "No drawdown while covenant in breach without waiver",
       "titleZh": "契约违约且无豁免时不得支用",
       "statement": {
@@ -1188,6 +1267,21 @@
     {
       "id": "rule:r06-drawdown-within-commitment",
       "uuid": "40000000000000000000000000000006",
+      "specificScenarioStage": "on drawdown eligibility check",
+      "businessLogicRuleName": "Drawdown within undrawn commitment",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on drawdown eligibility check",
+      "standardizedLogicRule": "A Drawdown may not exceed the undrawn available commitment of its LoanFacility.",
+      "relatedEntities": [
+        "Drawdown (Drawdown)",
+        "LoanFacility (Loan_Facility)"
+      ],
+      "businessBackgroundReason": "Section B controls limiting when and how much may be drawn down.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Drawdown within undrawn commitment",
       "titleZh": "支用不得超过未提取承诺",
       "statement": {
@@ -1244,6 +1338,21 @@
     {
       "id": "rule:r07-rating-refresh-12-months",
       "uuid": "40000000000000000000000000000007",
+      "specificScenarioStage": "on rating review scheduling",
+      "businessLogicRuleName": "Risk rating refreshed at least every 12 months",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on rating review scheduling",
+      "standardizedLogicRule": "A Borrower RiskRating must be refreshed at least every 12 months.",
+      "relatedEntities": [
+        "RiskRating (Risk_Rating)",
+        "Borrower (Borrower)"
+      ],
+      "businessBackgroundReason": "Section C rules on the cadence and authority of risk-rating refresh and assignment.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Risk rating refreshed at least every 12 months",
       "titleZh": "风险评级至少每 12 个月刷新",
       "statement": {
@@ -1294,6 +1403,22 @@
     {
       "id": "rule:r08-rating-refresh-30-days-after-breach",
       "uuid": "40000000000000000000000000000008",
+      "specificScenarioStage": "on covenant breach",
+      "businessLogicRuleName": "Rating refresh within 30 days of breach",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on covenant breach",
+      "standardizedLogicRule": "A Borrower RiskRating is required to be refreshed within 30 days after any covenant breach, and where this 30-day deadline falls before the scheduled annual review it shall take precedence.",
+      "relatedEntities": [
+        "RiskRating (Risk_Rating)",
+        "Covenant (Covenant)",
+        "Borrower (Borrower)"
+      ],
+      "businessBackgroundReason": "Section C rules on the cadence and authority of risk-rating refresh and assignment.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Rating refresh within 30 days of breach",
       "titleZh": "违约后 30 日内刷新评级",
       "statement": {
@@ -1349,6 +1474,22 @@
     {
       "id": "rule:r09-ltv-max-80-percent",
       "uuid": "40000000000000000000000000000009",
+      "specificScenarioStage": "on covenant test of LTV",
+      "businessLogicRuleName": "LTV must stay at or below 80%",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on covenant test of LTV",
+      "standardizedLogicRule": "A LoanFacility's loan-to-value must stay at or below 80% of the pledged Collateral fair value; a breach triggers a MarginCallNotice.",
+      "relatedEntities": [
+        "LoanFacility (Loan_Facility)",
+        "Collateral (Collateral)",
+        "MarginCallNotice (Margin_Call_Notice)"
+      ],
+      "businessBackgroundReason": "Section D rules constraining LTV, margin calls, and collateral appraisal.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "LTV must stay at or below 80%",
       "titleZh": "贷款价值比不得高于 80%",
       "statement": {
@@ -1405,6 +1546,20 @@
     {
       "id": "rule:r10-quarterly-covenant-test-45-days",
       "uuid": "40000000000000000000000000000010",
+      "specificScenarioStage": "on covenant test scheduling",
+      "businessLogicRuleName": "Quarterly covenant tested within 45 days of quarter end",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on covenant test scheduling",
+      "standardizedLogicRule": "A financial Covenant with a quarterly test_frequency must be tested within 45 calendar days of each fiscal quarter end.",
+      "relatedEntities": [
+        "Covenant (Covenant)"
+      ],
+      "businessBackgroundReason": "Section E testing cadence and breach thresholds for financial covenants.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Quarterly covenant tested within 45 days of quarter end",
       "titleZh": "季度契约须在季末 45 日内测试",
       "statement": {
@@ -1454,6 +1609,20 @@
     {
       "id": "rule:r11-dscr-breach-below-1-25",
       "uuid": "40000000000000000000000000000011",
+      "specificScenarioStage": "on covenant evaluation",
+      "businessLogicRuleName": "DSCR covenant breached below 1.25x",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on covenant evaluation",
+      "standardizedLogicRule": "A debt-service-coverage Covenant is breached when the tested ratio falls below 1.25x.",
+      "relatedEntities": [
+        "Covenant (Covenant)"
+      ],
+      "businessBackgroundReason": "Section E testing cadence and breach thresholds for financial covenants.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "DSCR covenant breached below 1.25x",
       "titleZh": "偿债保障比率低于 1.25 倍即违约",
       "statement": {
@@ -1505,6 +1674,20 @@
     {
       "id": "rule:r12-leverage-breach-above-3-5",
       "uuid": "40000000000000000000000000000012",
+      "specificScenarioStage": "on covenant evaluation",
+      "businessLogicRuleName": "Leverage covenant breached above 3.5x",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on covenant evaluation",
+      "standardizedLogicRule": "A leverage Covenant is breached when total funded debt to EBITDA exceeds 3.5x.",
+      "relatedEntities": [
+        "Covenant (Covenant)"
+      ],
+      "businessBackgroundReason": "Section E testing cadence and breach thresholds for financial covenants.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Leverage covenant breached above 3.5x",
       "titleZh": "杠杆比率高于 3.5 倍即违约",
       "statement": {
@@ -1556,6 +1739,20 @@
     {
       "id": "rule:r13-breach-escalation-2-days",
       "uuid": "40000000000000000000000000000013",
+      "specificScenarioStage": "on covenant breach",
+      "businessLogicRuleName": "Breach escalated to committee within 2 business days",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on covenant breach",
+      "standardizedLogicRule": "A CovenantBreached event must be escalated to the Credit Committee within 2 business days of detection, with a citation to the breached covenant clause and the relevant Loan Agreement section.",
+      "relatedEntities": [
+        "Covenant (Covenant)"
+      ],
+      "businessBackgroundReason": "Section E breach escalation timing and recurring-breach watch-listing.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Breach escalated to committee within 2 business days",
       "titleZh": "违约须在 2 个工作日内上报委员会",
       "statement": {
@@ -1606,6 +1803,22 @@
     {
       "id": "rule:r14-two-breaches-watch-list",
       "uuid": "40000000000000000000000000000014",
+      "specificScenarioStage": "on covenant breach accumulation",
+      "businessLogicRuleName": "Two breaches in 12 months places borrower on Watch List",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on covenant breach accumulation",
+      "standardizedLogicRule": "A Borrower with two or more covenant breaches within any rolling 12-month period shall be placed on the Watch List and may not receive new LoanFacility approvals until removed.",
+      "relatedEntities": [
+        "Borrower (Borrower)",
+        "LoanFacility (Loan_Facility)",
+        "Covenant (Covenant)"
+      ],
+      "businessBackgroundReason": "Section E breach escalation timing and recurring-breach watch-listing.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Two breaches in 12 months places borrower on Watch List",
       "titleZh": "12 个月内两次违约列入观察名单",
       "statement": {
@@ -1661,6 +1874,21 @@
     {
       "id": "rule:r15-waiver-committee-only-with-expiry",
       "uuid": "40000000000000000000000000000015",
+      "specificScenarioStage": "on waiver decision",
+      "businessLogicRuleName": "Waiver granted only by committee with expiry",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on waiver decision",
+      "standardizedLogicRule": "A WaiverRequest covering a financial covenant breach may be granted only by the Credit Committee and is required to specify an expiry date no later than the next scheduled covenant test.",
+      "relatedEntities": [
+        "WaiverRequest (Waiver_Request)",
+        "Covenant (Covenant)"
+      ],
+      "businessBackgroundReason": "Section F rules on who may grant waivers and their limits.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Waiver granted only by committee with expiry",
       "titleZh": "豁免仅委员会批准且须设到期日",
       "statement": {
@@ -1716,6 +1944,22 @@
     {
       "id": "rule:r16-margin-call-cure-10-days",
       "uuid": "40000000000000000000000000000016",
+      "specificScenarioStage": "on margin call issuance",
+      "businessLogicRuleName": "Margin call cured within 10 business days or default",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on margin call issuance",
+      "standardizedLogicRule": "A Borrower who receives a MarginCallNotice is required to cure the loan-to-value shortfall within 10 business days, after which the LoanFacility shall be classified as in default.",
+      "relatedEntities": [
+        "MarginCallNotice (Margin_Call_Notice)",
+        "LoanFacility (Loan_Facility)",
+        "Borrower (Borrower)"
+      ],
+      "businessBackgroundReason": "Section D rules constraining LTV, margin calls, and collateral appraisal.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Margin call cured within 10 business days or default",
       "titleZh": "追加保证金须 10 个工作日内补足否则违约",
       "statement": {
@@ -1772,6 +2016,21 @@
     {
       "id": "rule:r17-stale-drawdown-revalidation",
       "uuid": "40000000000000000000000000000017",
+      "specificScenarioStage": "before disbursement of a cleared drawdown",
+      "businessLogicRuleName": "Re-validate drawdown not funded within 5 business days",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "before disbursement of a cleared drawdown",
+      "standardizedLogicRule": "A Drawdown request that is not funded within 5 business days of being cleared is required to be re-validated against current Covenant states before disbursement.",
+      "relatedEntities": [
+        "Drawdown (Drawdown)",
+        "Covenant (Covenant)"
+      ],
+      "businessBackgroundReason": "Section B controls limiting when and how much may be drawn down.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Re-validate drawdown not funded within 5 business days",
       "titleZh": "5 个工作日内未放款的支用须重新校验",
       "statement": {
@@ -1822,6 +2081,21 @@
     {
       "id": "rule:r18-rating-9-10-committee-only",
       "uuid": "40000000000000000000000000000018",
+      "specificScenarioStage": "on risk rating assignment",
+      "businessLogicRuleName": "Rating of 9 or 10 requires Credit Committee review",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on risk rating assignment",
+      "standardizedLogicRule": "A RiskRating of 9 or 10 must be reviewed by the Credit Committee and may not be assigned by a Credit Analyst acting alone.",
+      "relatedEntities": [
+        "RiskRating (Risk_Rating)",
+        "Borrower (Borrower)"
+      ],
+      "businessBackgroundReason": "Section C rules on the cadence and authority of risk-rating refresh and assignment.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Rating of 9 or 10 requires Credit Committee review",
       "titleZh": "9 或 10 级评级须信贷委员会复核",
       "statement": {
@@ -1872,6 +2146,21 @@
     {
       "id": "rule:r19-collateral-reappraisal-18-months",
       "uuid": "40000000000000000000000000000019",
+      "specificScenarioStage": "on collateral re-appraisal scheduling",
+      "businessLogicRuleName": "Collateral re-appraised every 18 months or after margin call",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on collateral re-appraisal scheduling",
+      "standardizedLogicRule": "Collateral pledged against a LoanFacility must be re-appraised at least every 18 months, or within 30 days of a MarginCallNotice, whichever is sooner.",
+      "relatedEntities": [
+        "Collateral (Collateral)",
+        "MarginCallNotice (Margin_Call_Notice)"
+      ],
+      "businessBackgroundReason": "Section D rules constraining LTV, margin calls, and collateral appraisal.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Collateral re-appraised every 18 months or after margin call",
       "titleZh": "抵押物每 18 个月或追加保证金后重新评估",
       "statement": {
@@ -1922,6 +2211,22 @@
     {
       "id": "rule:r20-no-retroactive-waiver-after-margin-call",
       "uuid": "40000000000000000000000000000020",
+      "specificScenarioStage": "on waiver decision",
+      "businessLogicRuleName": "No retroactive waiver after a margin call",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on waiver decision",
+      "standardizedLogicRule": "A WaiverRequest may not be granted retroactively for a breach that has already triggered a MarginCallNotice.",
+      "relatedEntities": [
+        "WaiverRequest (Waiver_Request)",
+        "MarginCallNotice (Margin_Call_Notice)",
+        "Covenant (Covenant)"
+      ],
+      "businessBackgroundReason": "Section F rules on who may grant waivers and their limits.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "No retroactive waiver after a margin call",
       "titleZh": "追加保证金后不得追溯豁免",
       "statement": {

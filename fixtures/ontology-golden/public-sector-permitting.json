@@ -1013,6 +1013,22 @@
     {
       "id": "rule:document-verified-before-determination",
       "uuid": "44444444444444444444444444440001",
+      "specificScenarioStage": "before EvaluateEligibility / RecordDetermination",
+      "businessLogicRuleName": "All required Documents verified before Determination",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "before EvaluateEligibility / RecordDetermination",
+      "standardizedLogicRule": "An Application may not reach Determination until every required Document has been verified and is on file.",
+      "relatedEntities": [
+        "Application (Application)",
+        "Document (Document)",
+        "Determination (Determination)"
+      ],
+      "businessBackgroundReason": "Rules governing when and by whom Documents must be verified before a Case advances, plus the emergency-intake exception.",
+      "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "All required Documents verified before Determination",
       "titleZh": "裁定前须核验全部必需文件",
       "statement": {
@@ -1064,6 +1080,20 @@
     {
       "id": "rule:separation-of-duties-verification",
       "uuid": "44444444444444444444444444440002",
+      "specificScenarioStage": "Authorization",
+      "businessLogicRuleName": "Separation of duties on Document verification",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "document.verified_by != document.logged_by",
+      "standardizedLogicRule": "Each required Document must be verified by a Caseworker other than the Intake Clerk who logged it.",
+      "relatedEntities": [
+        "Document (Document)"
+      ],
+      "businessBackgroundReason": "Rules governing when and by whom Documents must be verified before a Case advances, plus the emergency-intake exception.",
+      "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Separation of duties on Document verification",
       "titleZh": "文件核验职责分离",
       "statement": {
@@ -1109,6 +1139,21 @@
     {
       "id": "rule:determination-time-limit",
       "uuid": "44444444444444444444444444440003",
+      "specificScenarioStage": "clock starts at ApplicationSubmitted",
+      "businessLogicRuleName": "Determination statutory time limit",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "clock starts at ApplicationSubmitted",
+      "standardizedLogicRule": "A Determination must be recorded within 30 business days of the ApplicationSubmitted event for benefit programs, and within 45 business days for permit applications.",
+      "relatedEntities": [
+        "Application (Application)",
+        "Determination (Determination)"
+      ],
+      "businessBackgroundReason": "Statutory time limits for recording a Determination and suspension/resumption of the clock.",
+      "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Determination statutory time limit",
       "titleZh": "裁定法定时限",
       "statement": {
@@ -1164,6 +1209,21 @@
     {
       "id": "rule:clock-suspend-on-return",
       "uuid": "44444444444444444444444444440004",
+      "specificScenarioStage": "on Application.status → ReturnedIncomplete",
+      "businessLogicRuleName": "Suspend the clock on ReturnedIncomplete",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on Application.status → ReturnedIncomplete",
+      "standardizedLogicRule": "The processing clock shall be suspended on the date an Application is set to ReturnedIncomplete and shall resume on the date the missing Document is received.",
+      "relatedEntities": [
+        "Application (Application)",
+        "Document (Document)"
+      ],
+      "businessBackgroundReason": "Statutory time limits for recording a Determination and suspension/resumption of the clock.",
+      "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Suspend the clock on ReturnedIncomplete",
       "titleZh": "退回不完整时暂停时钟",
       "statement": {
@@ -1204,6 +1264,22 @@
     {
       "id": "rule:income-threshold-ineligible",
       "uuid": "44444444444444444444444444440005",
+      "specificScenarioStage": "Validation",
+      "businessLogicRuleName": "Income over threshold is ineligible",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "household.annual_income > criterion.threshold_value ? determination.outcome == 'Denied' : true",
+      "standardizedLogicRule": "An Applicant whose Household income exceeds the published program threshold for their Household size is ineligible, and the resulting Determination must be Denied.",
+      "relatedEntities": [
+        "Household (Household)",
+        "EligibilityCriterion (Eligibility_Criterion)",
+        "Determination (Determination)"
+      ],
+      "businessBackgroundReason": "Substantive eligibility tests: income threshold, residency recency, and one-active-case limit.",
+      "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Income over threshold is ineligible",
       "titleZh": "收入超过阈值即不合格",
       "statement": {
@@ -1260,6 +1336,22 @@
     {
       "id": "rule:residency-document-recency",
       "uuid": "44444444444444444444444444440006",
+      "specificScenarioStage": "Validation",
+      "businessLogicRuleName": "Residency Document recency",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "document.doc_type != 'RESIDENCY' || daysBetween(document.dated_on, application.submitted_at) <= 90",
+      "standardizedLogicRule": "An Applicant is required to demonstrate residency within the jurisdiction by a Document dated no more than 90 days before the ApplicationSubmitted event.",
+      "relatedEntities": [
+        "Document (Document)",
+        "Applicant (Applicant)",
+        "Application (Application)"
+      ],
+      "businessBackgroundReason": "Substantive eligibility tests: income threshold, residency recency, and one-active-case limit.",
+      "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Residency Document recency",
       "titleZh": "居住证明时效",
       "statement": {
@@ -1312,6 +1404,21 @@
     {
       "id": "rule:supervisor-approval-threshold",
       "uuid": "44444444444444444444444444440007",
+      "specificScenarioStage": "threshold breach routes to EscalateForApproval",
+      "businessLogicRuleName": "Supervisor approval over value thresholds",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "threshold breach routes to EscalateForApproval",
+      "standardizedLogicRule": "A Caseworker may not record a Determination whose associated benefit value exceeds $25,000 annually or whose permit fee exceeds $5,000 without Supervisor approval.",
+      "relatedEntities": [
+        "Determination (Determination)",
+        "Payment (Payment)"
+      ],
+      "businessBackgroundReason": "Escalation thresholds, denial citation, ruleset versioning, and override justification governing Determinations.",
+      "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Supervisor approval over value thresholds",
       "titleZh": "超额须主管批准",
       "statement": {
@@ -1367,6 +1474,21 @@
     {
       "id": "rule:denial-must-cite-criterion",
       "uuid": "44444444444444444444444444440008",
+      "specificScenarioStage": "Constraint",
+      "businessLogicRuleName": "Denied Determination must cite criterion and rule",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "determination.outcome != 'Denied' || (determination.decisive_criterion_id != null && criterion.rule_citation != '')",
+      "standardizedLogicRule": "A Denied Determination shall include the specific EligibilityCriterion and the rule citation that was the basis for denial.",
+      "relatedEntities": [
+        "Determination (Determination)",
+        "EligibilityCriterion (Eligibility_Criterion)"
+      ],
+      "businessBackgroundReason": "Escalation thresholds, denial citation, ruleset versioning, and override justification governing Determinations.",
+      "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Denied Determination must cite criterion and rule",
       "titleZh": "拒绝裁定须援引条件与规则",
       "statement": {
@@ -1418,6 +1540,21 @@
     {
       "id": "rule:payment-cleared-before-issuance",
       "uuid": "44444444444444444444444444440009",
+      "specificScenarioStage": "on IssuePermit",
+      "businessLogicRuleName": "Payment cleared before Permit issuance",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on IssuePermit",
+      "standardizedLogicRule": "A Permit may not be issued until its associated Payment has cleared in full, unless the Applicant qualifies for a documented fee waiver.",
+      "relatedEntities": [
+        "Permit (Permit)",
+        "Payment (Payment)"
+      ],
+      "businessBackgroundReason": "Payment, inspection, expiry, re-inspection, and fee-waiver rules across the Permit lifecycle.",
+      "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Payment cleared before Permit issuance",
       "titleZh": "缴费结清后方可核发许可",
       "statement": {
@@ -1477,6 +1614,21 @@
     {
       "id": "rule:inspection-required-before-verified",
       "uuid": "44444444444444444444444444440010",
+      "specificScenarioStage": "on RecordInspectionResult",
+      "businessLogicRuleName": "Inspectable Permit requires passed Inspection",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on RecordInspectionResult",
+      "standardizedLogicRule": "A Permit in an inspectable class is required to undergo a physical Inspection, and may not move to Active-Verified status until that Inspection is recorded as Passed.",
+      "relatedEntities": [
+        "Permit (Permit)",
+        "Inspection (Inspection)"
+      ],
+      "businessBackgroundReason": "Payment, inspection, expiry, re-inspection, and fee-waiver rules across the Permit lifecycle.",
+      "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Inspectable Permit requires passed Inspection",
       "titleZh": "须验收许可须通过验收",
       "statement": {
@@ -1532,6 +1684,21 @@
     {
       "id": "rule:appeal-filing-window",
       "uuid": "44444444444444444444444444440011",
+      "specificScenarioStage": "window starts at DeterminationNotified",
+      "businessLogicRuleName": "Appeal filing window of 30 days",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "window starts at DeterminationNotified",
+      "standardizedLogicRule": "An Appeal must be filed within 30 calendar days of the DeterminationNotified event, after which the Determination is final.",
+      "relatedEntities": [
+        "Appeal (Appeal)",
+        "Determination (Determination)"
+      ],
+      "businessBackgroundReason": "Appeal filing window, benefit-reduction pause, and decision time limit.",
+      "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Appeal filing window of 30 days",
       "titleZh": "申诉 30 日提出期限",
       "statement": {
@@ -1586,6 +1753,22 @@
     {
       "id": "rule:pause-reduction-on-appeal",
       "uuid": "44444444444444444444444444440012",
+      "specificScenarioStage": "on AppealFiled until AppealDecided",
+      "businessLogicRuleName": "Pause benefit reduction once Appeal filed",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on AppealFiled until AppealDecided",
+      "standardizedLogicRule": "A benefit reduction or suspension shall be paused once an Appeal is filed and may not resume until the AppealDecided event.",
+      "relatedEntities": [
+        "Appeal (Appeal)",
+        "Case (Case)",
+        "Determination (Determination)"
+      ],
+      "businessBackgroundReason": "Appeal filing window, benefit-reduction pause, and decision time limit.",
+      "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Pause benefit reduction once Appeal filed",
       "titleZh": "提出申诉后暂停福利削减",
       "statement": {
@@ -1627,6 +1810,21 @@
     {
       "id": "rule:permit-expiry-12-months",
       "uuid": "44444444444444444444444444440013",
+      "specificScenarioStage": "Constraint",
+      "businessLogicRuleName": "Permit expiry within 12 months",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "application.permit_class == 'PERMANENT' || monthsBetween(permit.issued_at, permit.expires_at) <= 12",
+      "standardizedLogicRule": "An issued Permit shall carry an expiry date no later than 12 months after its issue date, unless the permit class is designated permanent in the Program Eligibility Manual.",
+      "relatedEntities": [
+        "Permit (Permit)",
+        "Application (Application)"
+      ],
+      "businessBackgroundReason": "Payment, inspection, expiry, re-inspection, and fee-waiver rules across the Permit lifecycle.",
+      "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Permit expiry within 12 months",
       "titleZh": "许可有效期不超过 12 个月",
       "statement": {
@@ -1678,6 +1876,21 @@
     {
       "id": "rule:failed-inspection-reinspect-window",
       "uuid": "44444444444444444444444444440014",
+      "specificScenarioStage": "on InspectionFailed",
+      "businessLogicRuleName": "Re-inspect failed Permit within 30 days or revoke",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on InspectionFailed",
+      "standardizedLogicRule": "A Permit whose Inspection is recorded as Failed must be re-inspected within 30 calendar days, after which an unresolved failure moves the Permit to Revoked.",
+      "relatedEntities": [
+        "Inspection (Inspection)",
+        "Permit (Permit)"
+      ],
+      "businessBackgroundReason": "Payment, inspection, expiry, re-inspection, and fee-waiver rules across the Permit lifecycle.",
+      "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Re-inspect failed Permit within 30 days or revoke",
       "titleZh": "验收不通过须 30 日内复检否则吊销",
       "statement": {
@@ -1733,6 +1946,21 @@
     {
       "id": "rule:determination-records-ruleset-version",
       "uuid": "44444444444444444444444444440015",
+      "specificScenarioStage": "Derivation",
+      "businessLogicRuleName": "Determination records ruleset version in force",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "determination.ruleset_version != ''",
+      "standardizedLogicRule": "A Determination must record the version of the EligibilityCriterion rule set that was in force on the determination date.",
+      "relatedEntities": [
+        "Determination (Determination)",
+        "EligibilityCriterion (Eligibility_Criterion)"
+      ],
+      "businessBackgroundReason": "Escalation thresholds, denial citation, ruleset versioning, and override justification governing Determinations.",
+      "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Determination records ruleset version in force",
       "titleZh": "裁定须记录生效规则集版本",
       "statement": {
@@ -1780,6 +2008,20 @@
     {
       "id": "rule:appeal-decision-time-limit",
       "uuid": "44444444444444444444444444440016",
+      "specificScenarioStage": "window starts at AppealFiled",
+      "businessLogicRuleName": "Appeal decision within 45 days",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "window starts at AppealFiled",
+      "standardizedLogicRule": "An Appeals Officer is required to issue the AppealDecided outcome within 45 calendar days of the AppealFiled event.",
+      "relatedEntities": [
+        "Appeal (Appeal)"
+      ],
+      "businessBackgroundReason": "Appeal filing window, benefit-reduction pause, and decision time limit.",
+      "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
+      "executor": "Human",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Appeal decision within 45 days",
       "titleZh": "申诉须 45 日内裁决",
       "statement": {
@@ -1830,6 +2072,22 @@
     {
       "id": "rule:recertification-interval",
       "uuid": "44444444444444444444444444440017",
+      "specificScenarioStage": "on recertification interval",
+      "businessLogicRuleName": "Recertify benefit Case every 12 months",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on recertification interval",
+      "standardizedLogicRule": "A benefit Case must be recertified at least every 12 months, and a Household may not continue receiving benefits past the recertification due date without a renewed Determination.",
+      "relatedEntities": [
+        "Case (Case)",
+        "Household (Household)",
+        "Determination (Determination)"
+      ],
+      "businessBackgroundReason": "Recertification interval and automatic suspension on lapse past the grace period.",
+      "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Recertify benefit Case every 12 months",
       "titleZh": "福利案件每 12 个月复核",
       "statement": {
@@ -1881,6 +2139,21 @@
     {
       "id": "rule:recert-lapse-suspend",
       "uuid": "44444444444444444444444444440018",
+      "specificScenarioStage": "on grace period lapse",
+      "businessLogicRuleName": "Suspend Case on recertification lapse past grace",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on grace period lapse",
+      "standardizedLogicRule": "A Case whose recertification lapses beyond a 14-day grace period shall be suspended automatically, and the associated Permit, if any, shall move to Expired.",
+      "relatedEntities": [
+        "Case (Case)",
+        "Permit (Permit)"
+      ],
+      "businessBackgroundReason": "Recertification interval and automatic suspension on lapse past the grace period.",
+      "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Suspend Case on recertification lapse past grace",
       "titleZh": "复核超宽限期失效则中止案件",
       "statement": {
@@ -1936,6 +2209,22 @@
     {
       "id": "rule:single-active-case-per-program",
       "uuid": "44444444444444444444444444440019",
+      "specificScenarioStage": "Constraint",
+      "businessLogicRuleName": "One Active benefit Case per program",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "activeBenefitCases(applicant, application.program_code) <= 1",
+      "standardizedLogicRule": "An Applicant may not hold more than one Active benefit Case for the same program at the same time.",
+      "relatedEntities": [
+        "Applicant (Applicant)",
+        "Case (Case)",
+        "Application (Application)"
+      ],
+      "businessBackgroundReason": "Substantive eligibility tests: income threshold, residency recency, and one-active-case limit.",
+      "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "One Active benefit Case per program",
       "titleZh": "每项目仅一活动福利案件",
       "statement": {
@@ -1988,6 +2277,21 @@
     {
       "id": "rule:override-requires-justification",
       "uuid": "44444444444444444444444444440020",
+      "specificScenarioStage": "Authorization",
+      "businessLogicRuleName": "Override requires Supervisor justification, not retroactive",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "An override of an automated ineligibility result requires a recorded Supervisor justification and may not be applied retroactively to prior Determinations.",
+      "relatedEntities": [
+        "Determination (Determination)",
+        "EligibilityCriterion (Eligibility_Criterion)"
+      ],
+      "businessBackgroundReason": "Escalation thresholds, denial citation, ruleset versioning, and override justification governing Determinations.",
+      "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Override requires Supervisor justification, not retroactive",
       "titleZh": "推翻须主管理由且不溯及",
       "statement": {
@@ -2024,6 +2328,22 @@
     {
       "id": "rule:fee-waiver-exception",
       "uuid": "44444444444444444444444444440021",
+      "specificScenarioStage": "Authorization",
+      "businessLogicRuleName": "Fee waiver exception requires verified hardship",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "A fee waiver, as an exception to the Payment-clearance rule, is granted only on a verified hardship Document and recorded against the Case.",
+      "relatedEntities": [
+        "Payment (Payment)",
+        "Document (Document)",
+        "Case (Case)"
+      ],
+      "businessBackgroundReason": "Payment, inspection, expiry, re-inspection, and fee-waiver rules across the Permit lifecycle.",
+      "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Fee waiver exception requires verified hardship",
       "titleZh": "费用豁免须经核验困难证明",
       "statement": {
@@ -2062,6 +2382,22 @@
     {
       "id": "rule:emergency-intake-exception",
       "uuid": "44444444444444444444444444440022",
+      "specificScenarioStage": "Authorization",
+      "businessLogicRuleName": "Emergency intake exception with later verification",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "As an exception to the verification rule, a Determination may issue on an unverified Document set where the Applicant presents a qualifying emergency, subject to verification within 10 business days.",
+      "relatedEntities": [
+        "Application (Application)",
+        "Document (Document)",
+        "Determination (Determination)"
+      ],
+      "businessBackgroundReason": "Rules governing when and by whom Documents must be verified before a Case advances, plus the emergency-intake exception.",
+      "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Emergency intake exception with later verification",
       "titleZh": "紧急受理例外须事后核验",
       "statement": {

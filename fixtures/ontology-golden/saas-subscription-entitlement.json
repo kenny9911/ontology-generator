@@ -1074,6 +1074,23 @@
     {
       "id": "rule:entitlements-match-plan",
       "uuid": "1728394051627a8b9c0d1e2f30415263",
+      "specificScenarioStage": "Continuous and nightly reconciliation",
+      "businessLogicRuleName": "Entitlements must match current Plan",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "Continuous and nightly reconciliation",
+      "standardizedLogicRule": "An Account's active Entitlements must at all times match the entitlement set defined by its current Subscription Plan.",
+      "relatedEntities": [
+        "Account (Account)",
+        "Entitlement (Entitlement)",
+        "Plan (Plan)",
+        "Subscription (Subscription)"
+      ],
+      "businessBackgroundReason": "Keeps the granted entitlement set consistent with the Plan and caps seat grants.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Entitlements must match current Plan",
       "titleZh": "权益须与当前套餐一致",
       "statement": {
@@ -1132,6 +1149,24 @@
     {
       "id": "rule:provision-after-invoice",
       "uuid": "28394051627a8b9c0d1e2f3041526374",
+      "specificScenarioStage": "Before Provision Entitlements (SOP step 1.5)",
+      "businessLogicRuleName": "Provision only after initial Invoice",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "Before Provision Entitlements (SOP step 1.5)",
+      "standardizedLogicRule": "A Subscription's Entitlements shall not be provisioned before the initial Invoice is issued, unless the Contract carries a net_terms flag.",
+      "relatedEntities": [
+        "Subscription (Subscription)",
+        "Entitlement (Entitlement)",
+        "Invoice (Invoice)",
+        "Contract (Contract)",
+        "Account (Account)"
+      ],
+      "businessBackgroundReason": "Controls when entitlements may be provisioned relative to invoicing, with net-terms exception.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Provision only after initial Invoice",
       "titleZh": "仅在初始发票后开通",
       "statement": {
@@ -1189,6 +1224,22 @@
     {
       "id": "rule:overage-billed-next-invoice",
       "uuid": "394051627a8b9c0d1e2f304152637485",
+      "specificScenarioStage": "At billing-period close",
+      "businessLogicRuleName": "Bill overage on next Invoice",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "At billing-period close",
+      "standardizedLogicRule": "Usage beyond a Plan's included quota must be billed as an overage line item on the next Invoice.",
+      "relatedEntities": [
+        "UsageRecord (Usage_Record)",
+        "Plan (Plan)",
+        "Invoice (Invoice)"
+      ],
+      "businessBackgroundReason": "Governs metering, overage calculation, invoice validity, and revenue recognition.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Bill overage on next Invoice",
       "titleZh": "超量计入下一张发票",
       "statement": {
@@ -1245,6 +1296,22 @@
     {
       "id": "rule:downgrade-no-early-revoke",
       "uuid": "4051627a8b9c0d1e2f30415263748596",
+      "specificScenarioStage": "On Plan downgrade",
+      "businessLogicRuleName": "Downgrade never revokes before period end",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On Plan downgrade",
+      "standardizedLogicRule": "A Plan downgrade may not revoke the removed features before the end of the current billing period.",
+      "relatedEntities": [
+        "Plan (Plan)",
+        "Entitlement (Entitlement)",
+        "Subscription (Subscription)"
+      ],
+      "businessBackgroundReason": "Keeps the granted entitlement set consistent with the Plan and caps seat grants.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Downgrade never revokes before period end",
       "titleZh": "降级不在周期结束前撤销",
       "statement": {
@@ -1301,6 +1368,22 @@
     {
       "id": "rule:drift-remediation-sla",
       "uuid": "51627a8b9c0d1e2f3041526374859607",
+      "specificScenarioStage": "On entitlement drift detection",
+      "businessLogicRuleName": "Remediate drift within one business day; escalate at 72h",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On entitlement drift detection",
+      "standardizedLogicRule": "Detected entitlement drift is required to be remediated within one business day, and drift unresolved beyond 72 hours must be escalated to the RevOps lead.",
+      "relatedEntities": [
+        "Entitlement (Entitlement)",
+        "ProvisioningTask (Provisioning_Task)",
+        "Subscription (Subscription)"
+      ],
+      "businessBackgroundReason": "Keeps the granted entitlement set consistent with the Plan and caps seat grants.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Remediate drift within one business day; escalate at 72h",
       "titleZh": "权益漂移须一个工作日内修复，超72小时升级",
       "statement": {
@@ -1349,6 +1432,22 @@
     {
       "id": "rule:unlimited-no-overage",
       "uuid": "627a8b9c0d1e2f304152637485960718",
+      "specificScenarioStage": "During overage calculation",
+      "businessLogicRuleName": "Unlimited tier incurs no overage",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "During overage calculation",
+      "standardizedLogicRule": "A Subscription on an unlimited-tier Contract shall not incur overage charges regardless of recorded usage.",
+      "relatedEntities": [
+        "Subscription (Subscription)",
+        "Contract (Contract)",
+        "Invoice (Invoice)"
+      ],
+      "businessBackgroundReason": "Governs metering, overage calculation, invoice validity, and revenue recognition.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Unlimited tier incurs no overage",
       "titleZh": "无限层级不产生超量费用",
       "statement": {
@@ -1405,6 +1504,20 @@
     {
       "id": "rule:discount-approval-thresholds",
       "uuid": "7a8b9c0d1e2f30415263748596071829",
+      "specificScenarioStage": "Before Contract signature, during quote validation",
+      "businessLogicRuleName": "Discount approval thresholds (20% Deal Desk, 40% VP)",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "Before Contract signature, during quote validation",
+      "standardizedLogicRule": "A quote whose discount exceeds 20% of list price must be approved by the Deal Desk, and a discount exceeding 40% is required to receive VP of Sales approval before the Contract may be signed.",
+      "relatedEntities": [
+        "Contract (Contract)"
+      ],
+      "businessBackgroundReason": "Gates that must pass before a Contract may be signed (discount thresholds, minimum term).",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Discount approval thresholds (20% Deal Desk, 40% VP)",
       "titleZh": "折扣审批阈值（20% Deal Desk，40% 销售副总）",
       "statement": {
@@ -1454,6 +1567,22 @@
     {
       "id": "rule:renewal-opens-t90",
       "uuid": "8b9c0d1e2f304152637485960718293a",
+      "specificScenarioStage": "At T-90 renewal window",
+      "businessLogicRuleName": "Open renewal no later than T-90",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "At T-90 renewal window",
+      "standardizedLogicRule": "A RenewalOpportunity must be opened no later than 90 days before the Subscription term-end date.",
+      "relatedEntities": [
+        "RenewalOpportunity (Renewal_Opportunity)",
+        "Subscription (Subscription)",
+        "Contract (Contract)"
+      ],
+      "businessBackgroundReason": "Timing and provisioning of renewals, upgrades, and trial conversion.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Open renewal no later than T-90",
       "titleZh": "续约商机最迟提前90天开立",
       "statement": {
@@ -1510,6 +1639,22 @@
     {
       "id": "rule:grace-period-14d",
       "uuid": "9c0d1e2f304152637485960718293a4b",
+      "specificScenarioStage": "When term-end passes without renewal",
+      "businessLogicRuleName": "Unrenewed subscription enters 14-day grace",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "When term-end passes without renewal",
+      "standardizedLogicRule": "A Subscription not renewed by its term-end date shall move to a 14-day grace period during which Entitlements remain active.",
+      "relatedEntities": [
+        "Subscription (Subscription)",
+        "Entitlement (Entitlement)",
+        "Contract (Contract)"
+      ],
+      "businessBackgroundReason": "Grace, dunning, suspension, reinstatement, and churn state transitions.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Unrenewed subscription enters 14-day grace",
       "titleZh": "未续约订阅进入14天宽限期",
       "statement": {
@@ -1561,6 +1706,21 @@
     {
       "id": "rule:suspend-on-grace-expiry",
       "uuid": "0d1e2f304152637485960718293a4b5c",
+      "specificScenarioStage": "On grace-period expiry (+14d)",
+      "businessLogicRuleName": "Suspend and revoke on grace expiry",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On grace-period expiry (+14d)",
+      "standardizedLogicRule": "A Subscription whose 14-day grace period expires without renewal must be suspended and all of its Entitlements revoked.",
+      "relatedEntities": [
+        "Subscription (Subscription)",
+        "Entitlement (Entitlement)"
+      ],
+      "businessBackgroundReason": "Grace, dunning, suspension, reinstatement, and churn state transitions.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Suspend and revoke on grace expiry",
       "titleZh": "宽限期满后暂停并撤销",
       "statement": {
@@ -1612,6 +1772,21 @@
     {
       "id": "rule:dunning-3-retries-10-days",
       "uuid": "1e2f304152637485960718293a4b5c6d",
+      "specificScenarioStage": "On Payment failure",
+      "businessLogicRuleName": "Dunning: max 3 retries over 10 days",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On Payment failure",
+      "standardizedLogicRule": "A failed Payment shall trigger a dunning sequence of no more than 3 automated retry attempts spread over 10 calendar days.",
+      "relatedEntities": [
+        "Payment (Payment)",
+        "Invoice (Invoice)"
+      ],
+      "businessBackgroundReason": "Grace, dunning, suspension, reinstatement, and churn state transitions.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Dunning: max 3 retries over 10 days",
       "titleZh": "催款：10天内最多3次重试",
       "statement": {
@@ -1663,6 +1838,23 @@
     {
       "id": "rule:reinstate-after-catchup",
       "uuid": "2f304152637485960718293a4b5c6d7e",
+      "specificScenarioStage": "On successful catch-up payment for a suspended subscription",
+      "businessLogicRuleName": "Reinstate only after catch-up payment; re-grant within 1h",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On successful catch-up payment for a suspended subscription",
+      "standardizedLogicRule": "A suspended Subscription may be reinstated only after a successful catch-up Payment clears all overdue Invoices, after which Entitlements must be re-granted within 1 hour.",
+      "relatedEntities": [
+        "Subscription (Subscription)",
+        "Payment (Payment)",
+        "Invoice (Invoice)",
+        "Entitlement (Entitlement)"
+      ],
+      "businessBackgroundReason": "Grace, dunning, suspension, reinstatement, and churn state transitions.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Reinstate only after catch-up payment; re-grant within 1h",
       "titleZh": "仅在补缴后恢复，并在1小时内重新授予",
       "statement": {
@@ -1721,6 +1913,21 @@
     {
       "id": "rule:churn-after-30-days",
       "uuid": "304152637485960718293a4b5c6d7e8f",
+      "specificScenarioStage": "When suspension exceeds 30 days",
+      "businessLogicRuleName": "Cancel after 30 days suspended",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "When suspension exceeds 30 days",
+      "standardizedLogicRule": "A Subscription that remains suspended for more than 30 consecutive days must be cancelled and its RenewalOpportunity closed as lost.",
+      "relatedEntities": [
+        "Subscription (Subscription)",
+        "RenewalOpportunity (Renewal_Opportunity)"
+      ],
+      "businessBackgroundReason": "Grace, dunning, suspension, reinstatement, and churn state transitions.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Cancel after 30 days suspended",
       "titleZh": "暂停超30天后取消",
       "statement": {
@@ -1776,6 +1983,21 @@
     {
       "id": "rule:one-active-subscription-per-product",
       "uuid": "4152637485960718293a4b5c6d7e8f90",
+      "specificScenarioStage": "On subscription creation",
+      "businessLogicRuleName": "One active subscription per product line",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On subscription creation",
+      "standardizedLogicRule": "An Account may not hold more than one active Subscription per product line at any time.",
+      "relatedEntities": [
+        "Account (Account)",
+        "Subscription (Subscription)"
+      ],
+      "businessBackgroundReason": "Uniqueness constraints enforced at subscription creation.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "One active subscription per product line",
       "titleZh": "每条产品线仅一个活动订阅",
       "statement": {
@@ -1827,6 +2049,21 @@
     {
       "id": "rule:invoice-references-subscription",
       "uuid": "52637485960718293a4b5c6d7e8f9001",
+      "specificScenarioStage": "Before Invoice issuance",
+      "businessLogicRuleName": "Invoice must reference a Subscription and have a line item",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "Before Invoice issuance",
+      "standardizedLogicRule": "Every Invoice must reference the Subscription that generated it and shall not be issued without at least one line item.",
+      "relatedEntities": [
+        "Invoice (Invoice)",
+        "Subscription (Subscription)"
+      ],
+      "businessBackgroundReason": "Governs metering, overage calculation, invoice validity, and revenue recognition.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Invoice must reference a Subscription and have a line item",
       "titleZh": "发票须引用订阅且至少含一个行项",
       "statement": {
@@ -1878,6 +2115,23 @@
     {
       "id": "rule:upgrade-immediate-prorated",
       "uuid": "637485960718293a4b5c6d7e8f900112",
+      "specificScenarioStage": "On mid-term Plan upgrade",
+      "businessLogicRuleName": "Mid-term upgrade provisioned immediately, prorated",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On mid-term Plan upgrade",
+      "standardizedLogicRule": "A mid-term upgrade is required to be provisioned immediately and the price difference shall be prorated on the next Invoice.",
+      "relatedEntities": [
+        "Subscription (Subscription)",
+        "Entitlement (Entitlement)",
+        "Invoice (Invoice)",
+        "Plan (Plan)"
+      ],
+      "businessBackgroundReason": "Timing and provisioning of renewals, upgrades, and trial conversion.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Mid-term upgrade provisioned immediately, prorated",
       "titleZh": "期中升级立即开通并按比例计费",
       "statement": {
@@ -1934,6 +2188,21 @@
     {
       "id": "rule:seat-grant-cap",
       "uuid": "7485960718293a4b5c6d7e8f90011223",
+      "specificScenarioStage": "On entitlement grant",
+      "businessLogicRuleName": "Seat grant cannot exceed purchased seats",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On entitlement grant",
+      "standardizedLogicRule": "A seat-based Entitlement may not grant more active seats than the seat count purchased on the Contract.",
+      "relatedEntities": [
+        "Entitlement (Entitlement)",
+        "Contract (Contract)"
+      ],
+      "businessBackgroundReason": "Keeps the granted entitlement set consistent with the Plan and caps seat grants.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Seat grant cannot exceed purchased seats",
       "titleZh": "席位授予不得超过已购席位数",
       "statement": {
@@ -1989,6 +2258,20 @@
     {
       "id": "rule:min-12-month-term",
       "uuid": "85960718293a4b5c6d7e8f9001122334",
+      "specificScenarioStage": "Before Contract signature",
+      "businessLogicRuleName": "Minimum 12-month term unless Finance exception",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "Before Contract signature",
+      "standardizedLogicRule": "A Contract term shall be a minimum of 12 months unless a month-to-month exception is approved by Finance.",
+      "relatedEntities": [
+        "Contract (Contract)"
+      ],
+      "businessBackgroundReason": "Gates that must pass before a Contract may be signed (discount thresholds, minimum term).",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Minimum 12-month term unless Finance exception",
       "titleZh": "最短12个月合同期，除非财务批准例外",
       "statement": {
@@ -2038,6 +2321,22 @@
     {
       "id": "rule:no-revenue-before-payment",
       "uuid": "960718293a4b5c6d7e8f900112233445",
+      "specificScenarioStage": "Before revenue recognition",
+      "businessLogicRuleName": "No revenue recognition before payment succeeds",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "Before revenue recognition",
+      "standardizedLogicRule": "Revenue may not be recognized against a Subscription until the corresponding Invoice Payment has succeeded.",
+      "relatedEntities": [
+        "Subscription (Subscription)",
+        "Invoice (Invoice)",
+        "Payment (Payment)"
+      ],
+      "businessBackgroundReason": "Governs metering, overage calculation, invoice validity, and revenue recognition.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "No revenue recognition before payment succeeds",
       "titleZh": "付款成功前不得确认收入",
       "statement": {
@@ -2089,6 +2388,21 @@
     {
       "id": "rule:trial-auto-convert-30d",
       "uuid": "0718293a4b5c6d7e8f90011223344556",
+      "specificScenarioStage": "At trial end",
+      "businessLogicRuleName": "Free trial auto-converts or suspends; max 30 days",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "At trial end",
+      "standardizedLogicRule": "A free-trial Subscription must auto-convert to a paid Plan at trial end or be suspended, and may not extend beyond 30 days without CSM approval.",
+      "relatedEntities": [
+        "Subscription (Subscription)",
+        "Plan (Plan)"
+      ],
+      "businessBackgroundReason": "Timing and provisioning of renewals, upgrades, and trial conversion.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Free trial auto-converts or suspends; max 30 days",
       "titleZh": "免费试用自动转换或暂停，最长30天",
       "statement": {

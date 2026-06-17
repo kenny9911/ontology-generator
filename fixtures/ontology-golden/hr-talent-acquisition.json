@@ -1239,6 +1239,21 @@
     {
       "id": "rule:offer-requires-approved-requisition",
       "uuid": "cf6a0250844d1b1fd4fa4008306edac5",
+      "specificScenarioStage": "Before an Offer transitions to Extended.",
+      "businessLogicRuleName": "Offer requires approved requisition",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "Before an Offer transitions to Extended.",
+      "standardizedLogicRule": "An Offer may not be extended unless its linked Requisition is in status Approved.",
+      "relatedEntities": [
+        "Offer (Offer)",
+        "Requisition (Requisition)"
+      ],
+      "businessBackgroundReason": "Salary-band, budget, and approval-chain controls governing what an Offer or Requisition may contain and who must sign off.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Offer requires approved requisition",
       "titleZh": "录用须需求已审批通过",
       "statement": {
@@ -1294,6 +1309,22 @@
     {
       "id": "rule:above-band-vp-approval",
       "uuid": "a7a8139615e993654048d180094b89d1",
+      "specificScenarioStage": "When drafting/extending an above-band Offer.",
+      "businessLogicRuleName": "Above-band offer needs VP approval",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "When drafting/extending an above-band Offer.",
+      "standardizedLogicRule": "An Offer whose proposed base salary falls above the role's published SalaryBand maximum is required to obtain VP approval recorded against the Requisition before it may be extended.",
+      "relatedEntities": [
+        "Offer (Offer)",
+        "SalaryBand (Salary_Band)",
+        "Approval (Approval)"
+      ],
+      "businessBackgroundReason": "Salary-band, budget, and approval-chain controls governing what an Offer or Requisition may contain and who must sign off.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Above-band offer needs VP approval",
       "titleZh": "超范围录用须VP审批",
       "statement": {
@@ -1349,6 +1380,21 @@
     {
       "id": "rule:in-band-hm-hrbp-approval",
       "uuid": "f61350a3a42d5c4ac05cb25d910fdb2c",
+      "specificScenarioStage": "On routing an in-band Offer for approval.",
+      "businessLogicRuleName": "In-band offer needs HM and HRBP approval",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On routing an in-band Offer for approval.",
+      "standardizedLogicRule": "An in-band Offer shall be approved by both the Hiring Manager and the HR Business Partner before extension.",
+      "relatedEntities": [
+        "Offer (Offer)",
+        "Approval (Approval)"
+      ],
+      "businessBackgroundReason": "Salary-band, budget, and approval-chain controls governing what an Offer or Requisition may contain and who must sign off.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "In-band offer needs HM and HRBP approval",
       "titleZh": "范围内录用须HM与HRBP审批",
       "statement": {
@@ -1389,6 +1435,22 @@
     {
       "id": "rule:over-budget-vp-escalation",
       "uuid": "225929f5bf81579282c30da03e8e1775",
+      "specificScenarioStage": "During Requisition approval, before publish.",
+      "businessLogicRuleName": "Over-budget requisition escalates to VP",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "During Requisition approval, before publish.",
+      "standardizedLogicRule": "A Requisition whose proposed annualized cost exceeds the funded Position budget by more than 10% must be escalated to VP approval before it may be published.",
+      "relatedEntities": [
+        "Requisition (Requisition)",
+        "Position (Position)",
+        "Approval (Approval)"
+      ],
+      "businessBackgroundReason": "Salary-band, budget, and approval-chain controls governing what an Offer or Requisition may contain and who must sign off.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Over-budget requisition escalates to VP",
       "titleZh": "超预算需求升级至VP",
       "statement": {
@@ -1430,6 +1492,21 @@
     {
       "id": "rule:below-band-needs-exception",
       "uuid": "9a52ca08e242480f73751f324185b338",
+      "specificScenarioStage": "When entering base salary on a Draft Offer.",
+      "businessLogicRuleName": "Below-band salary needs comp exception",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "When entering base salary on a Draft Offer.",
+      "standardizedLogicRule": "A proposed base salary that is below the role's SalaryBand minimum may not be entered on an Offer without a documented Compensation Analyst exception.",
+      "relatedEntities": [
+        "Offer (Offer)",
+        "SalaryBand (Salary_Band)"
+      ],
+      "businessBackgroundReason": "Salary-band, budget, and approval-chain controls governing what an Offer or Requisition may contain and who must sign off.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Below-band salary needs comp exception",
       "titleZh": "低于范围薪资须薪酬例外",
       "statement": {
@@ -1469,6 +1546,21 @@
     {
       "id": "rule:signon-bonus-cap",
       "uuid": "e44c4ffd440a20b65d0ced79dfdf6a16",
+      "specificScenarioStage": "Constraint",
+      "businessLogicRuleName": "Sign-on bonus capped at 20% without VP",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "offer.signon_bonus <= 0.20 * offer.base_salary || hasVpApproval",
+      "standardizedLogicRule": "A sign-on bonus on an Offer may not exceed 20% of the proposed annual base salary without VP approval.",
+      "relatedEntities": [
+        "Offer (Offer)",
+        "Approval (Approval)"
+      ],
+      "businessBackgroundReason": "Salary-band, budget, and approval-chain controls governing what an Offer or Requisition may contain and who must sign off.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Sign-on bonus capped at 20% without VP",
       "titleZh": "签约奖金无VP不超20%",
       "statement": {
@@ -1516,6 +1608,21 @@
     {
       "id": "rule:min-panel-three",
       "uuid": "8e90a0a9b06159ad0d6824763b30b951",
+      "specificScenarioStage": "Before an Application reaches the Offer stage.",
+      "businessLogicRuleName": "Minimum panel of three interviewers",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "Before an Application reaches the Offer stage.",
+      "standardizedLogicRule": "Every Application must clear a structured InterviewPanel of at least three Interviewers before it may reach the Offer stage.",
+      "relatedEntities": [
+        "Application (Application)",
+        "InterviewStage (Interview_Stage)"
+      ],
+      "businessBackgroundReason": "Structured-interview integrity: panel composition, scorecard completeness, assessment thresholds, and conflict-of-interest recusal.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Minimum panel of three interviewers",
       "titleZh": "面试小组至少三人",
       "statement": {
@@ -1569,6 +1676,22 @@
     {
       "id": "rule:all-scorecards-before-advance",
       "uuid": "6961c536edf0edf203fcf2721e726a3e",
+      "specificScenarioStage": "On recording the hiring decision.",
+      "businessLogicRuleName": "All scorecards before advance decision",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On recording the hiring decision.",
+      "standardizedLogicRule": "A hiring decision of Advance to Offer shall not be recorded until every assigned Interviewer has submitted a Scorecard for the Application.",
+      "relatedEntities": [
+        "Application (Application)",
+        "Scorecard (Scorecard)",
+        "InterviewStage (Interview_Stage)"
+      ],
+      "businessBackgroundReason": "Structured-interview integrity: panel composition, scorecard completeness, assessment thresholds, and conflict-of-interest recusal.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "All scorecards before advance decision",
       "titleZh": "全部评分齐备方可推进",
       "statement": {
@@ -1607,6 +1730,21 @@
     {
       "id": "rule:engineering-assessment-threshold",
       "uuid": "6a5132a4278b6eee184960ecff9850c3",
+      "specificScenarioStage": "After Assessment completion for engineering roles.",
+      "businessLogicRuleName": "Engineering assessment 70% threshold",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "After Assessment completion for engineering roles.",
+      "standardizedLogicRule": "For engineering roles, a Candidate whose Assessment score is below 70% may not advance past the Recruiter Screen stage.",
+      "relatedEntities": [
+        "Assessment (Assessment)",
+        "Application (Application)"
+      ],
+      "businessBackgroundReason": "Structured-interview integrity: panel composition, scorecard completeness, assessment thresholds, and conflict-of-interest recusal.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Engineering assessment 70% threshold",
       "titleZh": "工程测评70%门槛",
       "statement": {
@@ -1661,6 +1799,21 @@
     {
       "id": "rule:one-scorecard-per-interviewer",
       "uuid": "b677810994f5ee546e2ebedb62d69953",
+      "specificScenarioStage": "On Scorecard submission.",
+      "businessLogicRuleName": "One scorecard per interviewer per application",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On Scorecard submission.",
+      "standardizedLogicRule": "No single Interviewer may submit more than one Scorecard for the same Application.",
+      "relatedEntities": [
+        "Scorecard (Scorecard)",
+        "Application (Application)"
+      ],
+      "businessBackgroundReason": "Structured-interview integrity: panel composition, scorecard completeness, assessment thresholds, and conflict-of-interest recusal.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "One scorecard per interviewer per application",
       "titleZh": "每名面试官每份申请仅一张评分表",
       "statement": {
@@ -1700,6 +1853,21 @@
     {
       "id": "rule:panel-bar-raiser",
       "uuid": "8418da0f6c2f8b1c3f98560c41952726",
+      "specificScenarioStage": "When forming the InterviewPanel.",
+      "businessLogicRuleName": "Panel must include independent Bar Raiser",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "When forming the InterviewPanel.",
+      "standardizedLogicRule": "At least one member of every InterviewPanel is required to be a trained Bar Raiser independent of the hiring team.",
+      "relatedEntities": [
+        "InterviewStage (Interview_Stage)",
+        "Worker (Worker)"
+      ],
+      "businessBackgroundReason": "Structured-interview integrity: panel composition, scorecard completeness, assessment thresholds, and conflict-of-interest recusal.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Panel must include independent Bar Raiser",
       "titleZh": "小组须含独立Bar Raiser",
       "statement": {
@@ -1740,6 +1908,22 @@
     {
       "id": "rule:interviewer-recusal",
       "uuid": "79029820b84ce3dd7f2c52c94012aad8",
+      "specificScenarioStage": "When assigning Interviewers to a panel.",
+      "businessLogicRuleName": "Interviewer with personal relationship must recuse",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "When assigning Interviewers to a panel.",
+      "standardizedLogicRule": "An Interviewer who has a personal relationship with the Candidate must recuse from the InterviewPanel and may not submit a Scorecard.",
+      "relatedEntities": [
+        "InterviewStage (Interview_Stage)",
+        "Scorecard (Scorecard)",
+        "Candidate (Candidate)"
+      ],
+      "businessBackgroundReason": "Structured-interview integrity: panel composition, scorecard completeness, assessment thresholds, and conflict-of-interest recusal.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Interviewer with personal relationship must recuse",
       "titleZh": "有私人关系面试官须回避",
       "statement": {
@@ -1777,6 +1961,20 @@
     {
       "id": "rule:offer-expiry-window",
       "uuid": "a215cbaeb0b0a70ea6ab55d1a6630b41",
+      "specificScenarioStage": "On Offer extension and at expiry.",
+      "businessLogicRuleName": "Offer expiry within 7 business days",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On Offer extension and at expiry.",
+      "standardizedLogicRule": "An Offer is required to specify an expiry date no more than 7 business days after it is extended, and an Offer not accepted by its expiry date shall transition to status Expired.",
+      "relatedEntities": [
+        "Offer (Offer)"
+      ],
+      "businessBackgroundReason": "Time windows, background-check gates, data-retention, internal-mobility, and regulatory screening obligations.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Offer expiry within 7 business days",
       "titleZh": "录用7个工作日内到期",
       "statement": {
@@ -1817,6 +2015,22 @@
     {
       "id": "rule:clear-background-before-hire",
       "uuid": "a3892ffd9063e7f472830859e9103935",
+      "specificScenarioStage": "Before converting an accepted Candidate to a Worker.",
+      "businessLogicRuleName": "Clear background check before hire",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "Before converting an accepted Candidate to a Worker.",
+      "standardizedLogicRule": "A Candidate may not be converted to a Worker until a BackgroundCheck with result Clear is on file; a result of Consider shall suspend the hire pending individualized adjudication.",
+      "relatedEntities": [
+        "Candidate (Candidate)",
+        "BackgroundCheck (Background_Check)",
+        "Worker (Worker)"
+      ],
+      "businessBackgroundReason": "Time windows, background-check gates, data-retention, internal-mobility, and regulatory screening obligations.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Clear background check before hire",
       "titleZh": "入职前背调须Clear",
       "statement": {
@@ -1868,6 +2082,21 @@
     {
       "id": "rule:minimum-posting-period",
       "uuid": "1d13ad706dda0597376271c978b2d887",
+      "specificScenarioStage": "Before extending an Offer against a Requisition.",
+      "businessLogicRuleName": "Minimum 5 business day posting period",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "Before extending an Offer against a Requisition.",
+      "standardizedLogicRule": "A Requisition must remain open for a minimum posting period of 5 business days before any Offer may be extended against it.",
+      "relatedEntities": [
+        "Requisition (Requisition)",
+        "Offer (Offer)"
+      ],
+      "businessBackgroundReason": "Time windows, background-check gates, data-retention, internal-mobility, and regulatory screening obligations.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Minimum 5 business day posting period",
       "titleZh": "至少5个工作日发布期",
       "statement": {
@@ -1907,6 +2136,21 @@
     {
       "id": "rule:candidate-data-retention",
       "uuid": "fe8b6a472797136ee61c97156306672f",
+      "specificScenarioStage": "After final Application disposition.",
+      "businessLogicRuleName": "Candidate data retained max 24 months",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "After final Application disposition.",
+      "standardizedLogicRule": "A Candidate's personal data must be retained for no longer than 24 months after the final Application disposition unless the Candidate has consented to a longer talent-pool retention.",
+      "relatedEntities": [
+        "Candidate (Candidate)",
+        "Application (Application)"
+      ],
+      "businessBackgroundReason": "Time windows, background-check gates, data-retention, internal-mobility, and regulatory screening obligations.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Candidate data retained max 24 months",
       "titleZh": "候选人数据最多保留24个月",
       "statement": {
@@ -1946,6 +2190,20 @@
     {
       "id": "rule:rejection-disposition-reason",
       "uuid": "5a0e038e7555b1f8de180e036df29249",
+      "specificScenarioStage": "When rejecting/closing an Application.",
+      "businessLogicRuleName": "Rejection requires disposition reason",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "When rejecting/closing an Application.",
+      "standardizedLogicRule": "Every Application that is rejected is required to record a standardized disposition reason code before it may be closed.",
+      "relatedEntities": [
+        "Application (Application)"
+      ],
+      "businessBackgroundReason": "Time windows, background-check gates, data-retention, internal-mobility, and regulatory screening obligations.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Rejection requires disposition reason",
       "titleZh": "拒绝须记录处置原因",
       "statement": {
@@ -1995,6 +2253,22 @@
     {
       "id": "rule:internal-candidate-guaranteed-interview",
       "uuid": "c33e90b0b25a46593a5538a026112ddf",
+      "specificScenarioStage": "On screening an internal Candidate's Application.",
+      "businessLogicRuleName": "Qualified internal candidate gets interview",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On screening an internal Candidate's Application.",
+      "standardizedLogicRule": "An internal Candidate who is a current employee shall be granted an interview for any Requisition for which they meet the minimum qualifications.",
+      "relatedEntities": [
+        "Candidate (Candidate)",
+        "Requisition (Requisition)",
+        "Application (Application)"
+      ],
+      "businessBackgroundReason": "Time windows, background-check gates, data-retention, internal-mobility, and regulatory screening obligations.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Qualified internal candidate gets interview",
       "titleZh": "合格内部候选人保证面试",
       "statement": {
@@ -2035,6 +2309,20 @@
     {
       "id": "rule:no-reopen-after-12-months",
       "uuid": "f2c65f0b9b7319ec16a3fbb6dd8dac0f",
+      "specificScenarioStage": "On a request to reopen a closed Requisition.",
+      "businessLogicRuleName": "No requisition reopen after 12 months",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On a request to reopen a closed Requisition.",
+      "standardizedLogicRule": "A Requisition may not be reopened more than 12 months after it was closed; a new Requisition is required instead.",
+      "relatedEntities": [
+        "Requisition (Requisition)"
+      ],
+      "businessBackgroundReason": "Time windows, background-check gates, data-retention, internal-mobility, and regulatory screening obligations.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "No requisition reopen after 12 months",
       "titleZh": "12个月后不得重开需求",
       "statement": {
@@ -2073,6 +2361,22 @@
     {
       "id": "rule:export-control-screening",
       "uuid": "4ebd91579efc7b59d31440d218474a58",
+      "specificScenarioStage": "Before extending an Offer for a regulated role.",
+      "businessLogicRuleName": "Regulated-role offer needs export-control clearance",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "Before extending an Offer for a regulated role.",
+      "standardizedLogicRule": "An Offer to a Candidate for a regulated role may not be extended until an export-control screening has returned a Cleared result.",
+      "relatedEntities": [
+        "Offer (Offer)",
+        "Candidate (Candidate)",
+        "Requisition (Requisition)"
+      ],
+      "businessBackgroundReason": "Time windows, background-check gates, data-retention, internal-mobility, and regulatory screening obligations.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Regulated-role offer needs export-control clearance",
       "titleZh": "受管制岗位录用须出口管制清关",
       "statement": {

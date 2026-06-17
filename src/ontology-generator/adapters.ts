@@ -483,16 +483,35 @@ function toRule(r: OntRule, objectIdByName: Map<string, string>): Rule {
   const appliesTo = r.objects
     .map((name) => objectIdByName.get(name))
     .filter((id): id is string => Boolean(id));
+  const severity = inferSeverity(r.confidence);
+  const title = r.plain.en.slice(0, 48);
+  const relatedEntities: string[] = [];
+  for (const name of r.objects) {
+    const id = objectIdByName.get(name);
+    if (id) relatedEntities.push(`${name} (${pascalCase(id.replace(PREFIX.object, ''))})`);
+  }
 
   return {
     id: `${PREFIX.rule}${slugify(r.id)}-${slugify(r.plain.en.slice(0, 24))}`,
     uuid: demoUuid('rule:' + r.id),
-    title: r.plain.en.slice(0, 48),
+    specificScenarioStage: '',
+    businessLogicRuleName: title,
+    applicableClient: '通用',
+    applicableDepartment: 'N/A',
+    submissionCriteria: '',
+    standardizedLogicRule: r.plain.en,
+    relatedEntities,
+    businessBackgroundReason: '',
+    ruleSource: r.source?.name ?? '文档',
+    executor: 'Agent',
+    enforcementLevel: severity === 'block' ? 'mandatory' : 'optional',
+    failurePolicy: severity === 'block' ? 'block' : 'warn',
+    title,
     titleZh: r.plain.zh.slice(0, 24),
     statement: { en: r.plain.en, zh: r.plain.zh },
     formal: r.formal,
     kind: inferRuleKind(r.formal),
-    severity: inferSeverity(r.confidence),
+    severity,
     appliesToObjectTypeIds: appliesTo,
     sources: [ruleSource(r)],
     confidence: r.confidence,

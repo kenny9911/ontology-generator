@@ -330,6 +330,32 @@ export interface Rule extends NodeProvenance {
   /** Slug id, e.g. "rule:fulfill-after-payment". Prefix "rule:". */
   id: string;
   uuid: string;
+  // ---- spec-format fields (the published rule shape) ----
+  /** The scenario / lifecycle stage this rule applies in. */
+  specificScenarioStage: string;
+  /** Business rule name (English form; `title`/`titleZh` keep the bilingual pair). */
+  businessLogicRuleName: string;
+  /** Which client this applies to ("通用" = all clients). */
+  applicableClient: string;
+  /** Which department this applies to ("N/A" = all). */
+  applicableDepartment: string;
+  /** Preconditions for the rule to be evaluated. */
+  submissionCriteria: string;
+  /** The standardized natural-language logic (English form of `statement`). */
+  standardizedLogicRule: string;
+  /** Related objects as "Name (Id)" — display form of `appliesToObjectTypeIds`. */
+  relatedEntities: string[];
+  /** Why the rule exists (business rationale). */
+  businessBackgroundReason: string;
+  /** Where the rule came from (document name / interview / policy). */
+  ruleSource: string;
+  /** Who carries the rule out. */
+  executor: 'Human' | 'Agent';
+  /** Mandatory (must hold) vs optional (advisory). */
+  enforcementLevel: 'mandatory' | 'optional';
+  /** On violation: 'block' the gated action vs 'warn' only. */
+  failurePolicy: 'warn' | 'block';
+  // ---- retained engine + bilingual structure (receipts) ----
   /** Short handle/title for lists, bilingual. */
   title: string;
   titleZh?: string;
@@ -342,16 +368,6 @@ export interface Rule extends NodeProvenance {
   kind: RuleKind;
   /** block aborts a gated action; warn surfaces; info documents. */
   severity: Severity;
-  /**
-   * Spec-format execution semantics (all optional; the spec-format projection
-   * derives sensible defaults from `severity` / referencing actions when absent):
-   *  - `executor` — who carries the rule out ('human' | 'agent').
-   *  - `enforcementLevel` — 'mandatory' (must hold) vs 'optional' (advisory).
-   *  - `failurePolicy` — on violation, 'block' the gated action vs 'warn' only.
-   */
-  executor?: 'human' | 'agent';
-  enforcementLevel?: 'mandatory' | 'optional';
-  failurePolicy?: 'warn' | 'block';
   /** ObjectType ids this rule constrains. At least one. */
   appliesToObjectTypeIds: string[];
   /** Specific attributes referenced, "objectTypeId.attr" form. Optional. */

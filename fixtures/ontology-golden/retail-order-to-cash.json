@@ -1012,6 +1012,21 @@
     {
       "id": "rule:order-references-active-customer",
       "uuid": "30000000000000000000000000000001",
+      "specificScenarioStage": "On order placement",
+      "businessLogicRuleName": "Order references one Active Customer",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On order placement",
+      "standardizedLogicRule": "Every order must reference exactly one customer whose credit status is Active at the time of order placement.",
+      "relatedEntities": [
+        "Order (Order)",
+        "Customer (Customer)"
+      ],
+      "businessBackgroundReason": "Rules validating that an order references a valid, credit-enabled customer before confirmation.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Order references one Active Customer",
       "titleZh": "订单引用一个有效客户",
       "statement": {
@@ -1066,6 +1081,21 @@
     {
       "id": "rule:credit-limit-required-before-confirm",
       "uuid": "30000000000000000000000000000002",
+      "specificScenarioStage": "Before Order.status -> Confirmed",
+      "businessLogicRuleName": "Credit limit required before confirm",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "Before Order.status -> Confirmed",
+      "standardizedLogicRule": "A customer is required to have an assigned credit limit before any order may be confirmed.",
+      "relatedEntities": [
+        "Customer (Customer)",
+        "Order (Order)"
+      ],
+      "businessBackgroundReason": "Rules validating that an order references a valid, credit-enabled customer before confirmation.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Credit limit required before confirm",
       "titleZh": "确认前须有信用额度",
       "statement": {
@@ -1119,6 +1149,22 @@
     {
       "id": "rule:no-order-when-invoice-overdue",
       "uuid": "30000000000000000000000000000003",
+      "specificScenarioStage": "On credit screen at order placement",
+      "businessLogicRuleName": "Block order on 60+ day overdue invoice",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On credit screen at order placement",
+      "standardizedLogicRule": "A customer may not place an order if any of their invoice records are overdue by 60 or more days.",
+      "relatedEntities": [
+        "Customer (Customer)",
+        "Order (Order)",
+        "Invoice (Invoice)"
+      ],
+      "businessBackgroundReason": "Credit screening, hold placement/override authority, and dormancy that gate order placement and confirmation.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Block order on 60+ day overdue invoice",
       "titleZh": "逾期60天以上发票阻止下单",
       "statement": {
@@ -1174,6 +1220,22 @@
     {
       "id": "rule:fulfill-after-payment",
       "uuid": "30000000000000000000000000000004",
+      "specificScenarioStage": "On Order.status -> Fulfilled",
+      "businessLogicRuleName": "Fulfill only after payment in full",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On Order.status -> Fulfilled",
+      "standardizedLogicRule": "An order may only be fulfilled after its payment is received in full, unless the customer's tier is Enterprise, in which case the order is fulfilled on net-30 invoice terms.",
+      "relatedEntities": [
+        "Order (Order)",
+        "Payment (Payment)",
+        "Customer (Customer)"
+      ],
+      "businessBackgroundReason": "Rules that gate payment-before-fulfillment, allocation against stock, and dispatch.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Fulfill only after payment in full",
       "titleZh": "全额付款后方可履约",
       "statement": {
@@ -1230,6 +1292,21 @@
     {
       "id": "rule:no-fulfill-under-credit-hold",
       "uuid": "30000000000000000000000000000005",
+      "specificScenarioStage": "On Order.status -> Fulfilled",
+      "businessLogicRuleName": "No fulfillment under active credit hold",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On Order.status -> Fulfilled",
+      "standardizedLogicRule": "An order shall not be marked Fulfilled while an active credit hold exists against it.",
+      "relatedEntities": [
+        "Order (Order)",
+        "CreditHold (Credit_Hold)"
+      ],
+      "businessBackgroundReason": "Rules that gate payment-before-fulfillment, allocation against stock, and dispatch.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "No fulfillment under active credit hold",
       "titleZh": "信用冻结期间不得履约",
       "statement": {
@@ -1284,6 +1361,21 @@
     {
       "id": "rule:return-window-30-days",
       "uuid": "30000000000000000000000000000006",
+      "specificScenarioStage": "On return initiation",
+      "businessLogicRuleName": "30-day full-refund return window",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On return initiation",
+      "standardizedLogicRule": "A return must be initiated within 30 days of the shipment delivery date for a full refund; after 30 days, the customer may receive store credit only.",
+      "relatedEntities": [
+        "Return (Return)",
+        "Shipment (Shipment)"
+      ],
+      "businessBackgroundReason": "Windows, final-sale, delivered-state and store-credit expiry governing returns and refunds.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "30-day full-refund return window",
       "titleZh": "30天全额退款退货窗口",
       "statement": {
@@ -1339,6 +1431,21 @@
     {
       "id": "rule:final-sale-not-returnable",
       "uuid": "30000000000000000000000000000007",
+      "specificScenarioStage": "On return initiation",
+      "businessLogicRuleName": "Final-sale products not returnable",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On return initiation",
+      "standardizedLogicRule": "A product marked final-sale may not be returned under any circumstances.",
+      "relatedEntities": [
+        "Return (Return)",
+        "Product (Product)"
+      ],
+      "businessBackgroundReason": "Windows, final-sale, delivered-state and store-credit expiry governing returns and refunds.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Final-sale products not returnable",
       "titleZh": "最终特卖产品不可退货",
       "statement": {
@@ -1389,6 +1496,21 @@
     {
       "id": "rule:no-confirm-over-credit-limit",
       "uuid": "30000000000000000000000000000008",
+      "specificScenarioStage": "On credit screen at order placement",
+      "businessLogicRuleName": "No confirm over credit limit (non-Enterprise)",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On credit screen at order placement",
+      "standardizedLogicRule": "An order may not be confirmed if its total would cause the customer's open balance to exceed their assigned credit limit, unless the customer's tier is Enterprise.",
+      "relatedEntities": [
+        "Order (Order)",
+        "Customer (Customer)"
+      ],
+      "businessBackgroundReason": "Credit screening, hold placement/override authority, and dormancy that gate order placement and confirmation.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "No confirm over credit limit (non-Enterprise)",
       "titleZh": "超信用额度不得确认（非企业）",
       "statement": {
@@ -1444,6 +1566,22 @@
     {
       "id": "rule:allocate-requires-stock-or-backorder",
       "uuid": "30000000000000000000000000000009",
+      "specificScenarioStage": "On inventory allocation",
+      "businessLogicRuleName": "Allocation requires stock unless backorderable",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On inventory allocation",
+      "standardizedLogicRule": "A line item may not be allocated against inventory unless on-hand quantity covers the ordered quantity, unless the referenced product is flagged backorderable.",
+      "relatedEntities": [
+        "LineItem (Line_Item)",
+        "Inventory (Inventory)",
+        "Product (Product)"
+      ],
+      "businessBackgroundReason": "Rules that gate payment-before-fulfillment, allocation against stock, and dispatch.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Allocation requires stock unless backorderable",
       "titleZh": "分配须有库存或可缺货补单",
       "statement": {
@@ -1504,6 +1642,20 @@
     {
       "id": "rule:large-order-director-approval",
       "uuid": "30000000000000000000000000000010",
+      "specificScenarioStage": "Before release to fulfillment",
+      "businessLogicRuleName": "Director approval for orders >= $50,000",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "Before release to fulfillment",
+      "standardizedLogicRule": "An order total of $50,000 or more is required to receive Operations Director approval before it is released to fulfillment.",
+      "relatedEntities": [
+        "Order (Order)"
+      ],
+      "businessBackgroundReason": "Approval-authority-matrix thresholds requiring Director / Finance Manager / Finance sign-off.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Director approval for orders >= $50,000",
       "titleZh": "5万美元以上订单须总监批准",
       "statement": {
@@ -1552,6 +1704,20 @@
     {
       "id": "rule:international-ship-approved-list",
       "uuid": "30000000000000000000000000000011",
+      "specificScenarioStage": "On shipment dispatch",
+      "businessLogicRuleName": "International shipping to approved countries only",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On shipment dispatch",
+      "standardizedLogicRule": "A shipment may not be dispatched to an international destination unless the destination country is on the approved-ship-to list.",
+      "relatedEntities": [
+        "Shipment (Shipment)"
+      ],
+      "businessBackgroundReason": "Rules that gate payment-before-fulfillment, allocation against stock, and dispatch.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "International shipping to approved countries only",
       "titleZh": "国际发货仅限批准国家",
       "statement": {
@@ -1601,6 +1767,20 @@
     {
       "id": "rule:large-refund-manager-approval",
       "uuid": "30000000000000000000000000000012",
+      "specificScenarioStage": "Before refund issuance",
+      "businessLogicRuleName": "Finance Manager approval for refunds > $2,000",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "Before refund issuance",
+      "standardizedLogicRule": "A refund payment exceeding $2,000 is required to have Finance Manager approval before it is issued.",
+      "relatedEntities": [
+        "Payment (Payment)"
+      ],
+      "businessBackgroundReason": "Approval-authority-matrix thresholds requiring Director / Finance Manager / Finance sign-off.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Finance Manager approval for refunds > $2,000",
       "titleZh": "超2000美元退款须财务经理批准",
       "statement": {
@@ -1651,6 +1831,20 @@
     {
       "id": "rule:credit-hold-override-authority",
       "uuid": "30000000000000000000000000000013",
+      "specificScenarioStage": "On credit hold override",
+      "businessLogicRuleName": "Credit hold override requires Credit Manager + reason",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On credit hold override",
+      "standardizedLogicRule": "An active credit hold may not be overridden except by a Credit Manager or higher, and the override must record a written reason.",
+      "relatedEntities": [
+        "CreditHold (Credit_Hold)"
+      ],
+      "businessBackgroundReason": "Credit screening, hold placement/override authority, and dormancy that gate order placement and confirmation.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Credit hold override requires Credit Manager + reason",
       "titleZh": "信用冻结解除须信用经理及理由",
       "statement": {
@@ -1700,6 +1894,22 @@
     {
       "id": "rule:return-requires-delivered-shipment",
       "uuid": "30000000000000000000000000000014",
+      "specificScenarioStage": "On return authorization",
+      "businessLogicRuleName": "Return approval requires Delivered shipment",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On return authorization",
+      "standardizedLogicRule": "A return may not be approved unless it references a line item on an order whose shipment status is Delivered.",
+      "relatedEntities": [
+        "Return (Return)",
+        "Shipment (Shipment)",
+        "LineItem (Line_Item)"
+      ],
+      "businessBackgroundReason": "Windows, final-sale, delivered-state and store-credit expiry governing returns and refunds.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Return approval requires Delivered shipment",
       "titleZh": "退货批准须发货已送达",
       "statement": {
@@ -1755,6 +1965,20 @@
     {
       "id": "rule:enterprise-tier-requires-agreement",
       "uuid": "30000000000000000000000000000015",
+      "specificScenarioStage": "On tier assignment",
+      "businessLogicRuleName": "Enterprise tier requires signed agreement + Finance approval",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On tier assignment",
+      "standardizedLogicRule": "A customer may be assigned Enterprise tier only after a signed master agreement is on file and Finance approval is recorded.",
+      "relatedEntities": [
+        "Customer (Customer)"
+      ],
+      "businessBackgroundReason": "Approval-authority-matrix thresholds requiring Director / Finance Manager / Finance sign-off.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Enterprise tier requires signed agreement + Finance approval",
       "titleZh": "企业等级须主协议及财务批准",
       "statement": {
@@ -1804,6 +2028,22 @@
     {
       "id": "rule:defective-return-90-days",
       "uuid": "30000000000000000000000000000016",
+      "specificScenarioStage": "On return initiation",
+      "businessLogicRuleName": "Defective product return within 90 days",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On return initiation",
+      "standardizedLogicRule": "A return for a defective product may be initiated within 90 days of the delivery date regardless of the standard 30-day window.",
+      "relatedEntities": [
+        "Return (Return)",
+        "Shipment (Shipment)",
+        "Product (Product)"
+      ],
+      "businessBackgroundReason": "Windows, final-sale, delivered-state and store-credit expiry governing returns and refunds.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Defective product return within 90 days",
       "titleZh": "缺陷产品90天内可退货",
       "statement": {
@@ -1860,6 +2100,20 @@
     {
       "id": "rule:inactive-customer-dormant",
       "uuid": "30000000000000000000000000000017",
+      "specificScenarioStage": "On 24 months inactivity / before order placement",
+      "businessLogicRuleName": "Inactive 24 months sets credit status Dormant",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On 24 months inactivity / before order placement",
+      "standardizedLogicRule": "A customer whose account has been inactive for 24 months shall have their credit status set to Dormant, after which new order placement requires re-verification.",
+      "relatedEntities": [
+        "Customer (Customer)"
+      ],
+      "businessBackgroundReason": "Credit screening, hold placement/override authority, and dormancy that gate order placement and confirmation.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Inactive 24 months sets credit status Dormant",
       "titleZh": "停用24个月转为休眠",
       "statement": {
@@ -1908,6 +2162,20 @@
     {
       "id": "rule:store-credit-expires-12-months",
       "uuid": "30000000000000000000000000000018",
+      "specificScenarioStage": "On store credit issuance",
+      "businessLogicRuleName": "Store credit expires 12 months after issue",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "On store credit issuance",
+      "standardizedLogicRule": "Store credit issued in lieu of a refund shall expire 12 months after the date of issue.",
+      "relatedEntities": [
+        "Customer (Customer)"
+      ],
+      "businessBackgroundReason": "Windows, final-sale, delivered-state and store-credit expiry governing returns and refunds.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Store credit expires 12 months after issue",
       "titleZh": "店内信用发放后12个月过期",
       "statement": {

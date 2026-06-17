@@ -756,6 +756,20 @@ function sectionNormalize(g0: Ontology): void {
     const errors = validateOntology(normalizeOntologyObjects(legacy)).filter((i) => i.level === 'error');
     assert(errors.length === 0, `17.5 ${errors.map((e) => e.kind).join(',')}`);
   });
+
+  check('17.6 legacy rule (no spec fields) → filled by normalization', () => {
+    const r0 = { ...g0.rules[0]! } as Record<string, unknown>;
+    for (const k of ['businessLogicRuleName', 'executor', 'enforcementLevel', 'failurePolicy', 'relatedEntities', 'specificScenarioStage', 'standardizedLogicRule', 'applicableClient', 'applicableDepartment', 'submissionCriteria', 'businessBackgroundReason', 'ruleSource']) {
+      delete r0[k];
+    }
+    const ont = { ...g0, rules: [r0, ...g0.rules.slice(1)] } as unknown as Ontology;
+    const nr = normalizeOntologyObjects(ont).rules[0]!;
+    assert(typeof nr.businessLogicRuleName === 'string' && nr.businessLogicRuleName.length > 0, '17.6 name');
+    assert(nr.executor === 'Human' || nr.executor === 'Agent', '17.6 executor');
+    assert(nr.enforcementLevel === 'mandatory' || nr.enforcementLevel === 'optional', '17.6 enforcement');
+    assert(nr.failurePolicy === 'warn' || nr.failurePolicy === 'block', '17.6 failurePolicy');
+    assert(Array.isArray(nr.relatedEntities), '17.6 relatedEntities');
+  });
 }
 
 // ===========================================================================

@@ -20,6 +20,7 @@ import type {
   Ontology,
   PropertyType,
   Relationship,
+  Rule,
   SourceRef,
 } from '@/ontology/schema/types';
 
@@ -131,15 +132,85 @@ function normalizeObject(
   return { ...(rest as unknown as ObjectType), type, relationship_description, primary_key, properties };
 }
 
-/** Idempotently normalize every object of an ontology to the spec-aligned shape. */
+// ---------------------------------------------------------------------------
+// Rules.
+// ---------------------------------------------------------------------------
+
+function specObjectId(id: string): string {
+  const bare = id.replace(/^objectType:/, '');
+  const w = bare.replace(/([a-z0-9])([A-Z])/g, '$1 $2').split(/[^A-Za-z0-9]+/).filter(Boolean);
+  return w.map((x) => x[0]!.toUpperCase() + x.slice(1)).join('_') || bare;
+}
+function titleizeKind(kind: string | undefined): string {
+  return (kind || 'constraint').split('_').map((w) => (w ? w[0]!.toUpperCase() + w.slice(1) : w)).join(' ');
+}
+
+function ruleNeedsMigration(r: Rule): boolean {
+  return (
+    !r.businessLogicRuleName || !r.executor || !r.enforcementLevel || !r.failurePolicy || !Array.isArray(r.relatedEntities)
+  );
+}
+
+function normalizeRule(r: Rule, nameById: Map<string, string>, ruleActorKinds: Map<string, Set<string>>): Rule {
+  if (!ruleNeedsMigration(r)) return r;
+  const severity = r.severity ?? 'warn';
+  const kinds = ruleActorKinds.get(r.id);
+  const relatedEntities =
+    Array.isArray(r.relatedEntities) && r.relatedEntities.length > 0
+      ? r.relatedEntities
+      : (r.appliesToObjectTypeIds ?? [])
+          .filter((id) => nameById.has(id))
+          .map((id) => `${nameById.get(id)} (${specObjectId(id)})`);
+  return {
+    ...r,
+    specificScenarioStage: r.specificScenarioStage || r.trigger?.description?.trim() || titleizeKind(r.kind),
+    businessLogicRuleName: r.businessLogicRuleName || r.title || r.id.replace(/^rule:/, ''),
+    applicableClient: r.applicableClient || '通用',
+    applicableDepartment: r.applicableDepartment || 'N/A',
+    submissionCriteria: r.submissionCriteria || r.trigger?.description?.trim() || r.expression?.predicate?.trim() || '',
+    standardizedLogicRule: r.standardizedLogicRule || r.statement?.en?.trim() || r.formal?.trim() || r.statement?.zh?.trim() || '',
+    relatedEntities,
+    businessBackgroundReason: r.businessBackgroundReason || '',
+    ruleSource: r.ruleSource || r.sources?.[0]?.documentName?.trim() || '文档',
+    executor: r.executor || (kinds && kinds.has('human') ? 'Human' : 'Agent'),
+    enforcementLevel: r.enforcementLevel || (severity === 'block' ? 'mandatory' : 'optional'),
+    failurePolicy: r.failurePolicy || (severity === 'block' ? 'block' : 'warn'),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Public entry.
+// ---------------------------------------------------------------------------
+
+/** Idempotently normalize an ontology's objects + rules to the spec-aligned shape. */
 export function normalizeOntologyObjects(o: Ontology): Ontology {
-  if (!o || !Array.isArray(o.objects)) return o;
-  const needs = o.objects.some(
+  if (!o) return o;
+  const objs = Array.isArray(o.objects) ? o.objects : [];
+  const needsObjects = objs.some(
     (x) => !Array.isArray(x.properties) || x.type === undefined || !x.primary_key || !x.relationship_description,
   );
-  if (!needs) return o;
+  const needsRules = Array.isArray(o.rules) && o.rules.some(ruleNeedsMigration);
+  if (!needsObjects && !needsRules) return o;
+
   const rels = o.relationships ?? [];
-  const nameById = new Map(o.objects.map((x) => [x.id, x.name] as const));
-  const idSet = new Set(o.objects.map((x) => x.id));
-  return { ...o, objects: o.objects.map((obj) => normalizeObject(obj, rels, nameById, idSet)) };
+  const nameById = new Map(objs.map((x) => [x.id, x.name] as const));
+  const idSet = new Set(objs.map((x) => x.id));
+  const next: Ontology = { ...o };
+  if (needsObjects) next.objects = objs.map((obj) => normalizeObject(obj, rels, nameById, idSet));
+  if (needsRules) {
+    const ruleActorKinds = new Map<string, Set<string>>();
+    for (const a of o.actions ?? []) {
+      for (const pc of a.preconditions ?? []) {
+        if (!pc?.ruleId) continue;
+        let set = ruleActorKinds.get(pc.ruleId);
+        if (!set) {
+          set = new Set<string>();
+          ruleActorKinds.set(pc.ruleId, set);
+        }
+        if (a.actor?.kind) set.add(a.actor.kind);
+      }
+    }
+    next.rules = (o.rules ?? []).map((r) => normalizeRule(r, nameById, ruleActorKinds));
+  }
+  return next;
 }

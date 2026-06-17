@@ -1201,6 +1201,21 @@
     {
       "id": "rule:r01-encounter-single-mrn",
       "uuid": "40000000000000000000000000000001",
+      "specificScenarioStage": "on Encounter registration",
+      "businessLogicRuleName": "Encounter resolves to one MRN",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on Encounter registration",
+      "standardizedLogicRule": "Every Encounter must resolve to exactly one Patient identified by a single active MRN.",
+      "relatedEntities": [
+        "Encounter (Encounter)",
+        "Patient (Patient)"
+      ],
+      "businessBackgroundReason": "§2 rules establishing single-MRN patient identity and active-coverage verification before non-emergency service.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Encounter resolves to one MRN",
       "titleZh": "就诊解析到唯一 MRN",
       "statement": {
@@ -1255,6 +1270,22 @@
     {
       "id": "rule:r02-verify-coverage-before-service",
       "uuid": "40000000000000000000000000000002",
+      "specificScenarioStage": "before non-emergency service delivery",
+      "businessLogicRuleName": "Verify active coverage before non-emergency service",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "before non-emergency service delivery",
+      "standardizedLogicRule": "A Patient's Coverage must be verified as active before any non-emergency Procedure is performed, unless the Encounter is flagged Emergency.",
+      "relatedEntities": [
+        "Coverage (Coverage)",
+        "Encounter (Encounter)",
+        "Procedure (Procedure)"
+      ],
+      "businessBackgroundReason": "§2 rules establishing single-MRN patient identity and active-coverage verification before non-emergency service.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Verify active coverage before non-emergency service",
       "titleZh": "非急诊服务前核验有效保险",
       "statement": {
@@ -1311,6 +1342,21 @@
     {
       "id": "rule:r03-timely-filing",
       "uuid": "40000000000000000000000000000003",
+      "specificScenarioStage": "on claim submission",
+      "businessLogicRuleName": "Claim timely-filing deadline",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on claim submission",
+      "standardizedLogicRule": "A Claim shall be submitted within 90 calendar days of the Encounter discharge date for commercial payers, and within 365 calendar days for Medicare, except where a payer contract sets a shorter timely-filing limit.",
+      "relatedEntities": [
+        "Claim (Claim)",
+        "Encounter (Encounter)"
+      ],
+      "businessBackgroundReason": "§6 rules on timely filing, scrub-clean gating, and no-resubmit-of-accepted-claims.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Claim timely-filing deadline",
       "titleZh": "理赔及时提交时限",
       "statement": {
@@ -1366,6 +1412,22 @@
     {
       "id": "rule:r04-imaging-requires-auth",
       "uuid": "40000000000000000000000000000004",
+      "specificScenarioStage": "before scheduling a designated procedure",
+      "businessLogicRuleName": "High-cost imaging requires approved authorization",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "before scheduling a designated procedure",
+      "standardizedLogicRule": "A high-cost imaging Procedure with a billed amount of $1,500 or more must have an approved PriorAuthorization before scheduling, unless the Encounter is flagged Emergency.",
+      "relatedEntities": [
+        "Procedure (Procedure)",
+        "PriorAuthorization (Prior_Authorization)",
+        "Encounter (Encounter)"
+      ],
+      "businessBackgroundReason": "§3 rules governing when an authorization is required, must be linked, its SLA, and its date-of-service validity.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "High-cost imaging requires approved authorization",
       "titleZh": "高费用影像需已批准授权",
       "statement": {
@@ -1426,6 +1488,23 @@
     {
       "id": "rule:r05-claim-requires-linked-auth",
       "uuid": "40000000000000000000000000000005",
+      "specificScenarioStage": "on claim assembly / submission",
+      "businessLogicRuleName": "Claim requires linked approved authorization",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on claim assembly / submission",
+      "standardizedLogicRule": "A Claim may not be submitted for a Procedure that required PriorAuthorization unless an approved PriorAuthorization is linked to the Encounter.",
+      "relatedEntities": [
+        "Claim (Claim)",
+        "Procedure (Procedure)",
+        "PriorAuthorization (Prior_Authorization)",
+        "Encounter (Encounter)"
+      ],
+      "businessBackgroundReason": "§3 rules governing when an authorization is required, must be linked, its SLA, and its date-of-service validity.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Claim requires linked approved authorization",
       "titleZh": "理赔需关联已批准授权",
       "statement": {
@@ -1483,6 +1562,21 @@
     {
       "id": "rule:r06-urgent-auth-sla-24h",
       "uuid": "40000000000000000000000000000006",
+      "specificScenarioStage": "after an urgent Order is placed",
+      "businessLogicRuleName": "Urgent authorization request within 24 hours",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "after an urgent Order is placed",
+      "standardizedLogicRule": "A UM Coordinator is required to submit an urgent PriorAuthorization request to the payer within 24 hours of the Order being placed.",
+      "relatedEntities": [
+        "PriorAuthorization (Prior_Authorization)",
+        "Order (Order)"
+      ],
+      "businessBackgroundReason": "§3 rules governing when an authorization is required, must be linked, its SLA, and its date-of-service validity.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Urgent authorization request within 24 hours",
       "titleZh": "紧急授权 24 小时内提交",
       "statement": {
@@ -1523,6 +1617,21 @@
     {
       "id": "rule:r07-auth-valid-on-dos",
       "uuid": "40000000000000000000000000000007",
+      "specificScenarioStage": "on service delivery against an authorization",
+      "businessLogicRuleName": "Authorization valid on date of service",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on service delivery against an authorization",
+      "standardizedLogicRule": "A PriorAuthorization is valid only for the approved units within its approval window, and the date of service must fall on or before the PriorAuthorization expiration date.",
+      "relatedEntities": [
+        "PriorAuthorization (Prior_Authorization)",
+        "Procedure (Procedure)"
+      ],
+      "businessBackgroundReason": "§3 rules governing when an authorization is required, must be linked, its SLA, and its date-of-service validity.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Authorization valid on date of service",
       "titleZh": "授权在服务日有效",
       "statement": {
@@ -1577,6 +1686,21 @@
     {
       "id": "rule:r08-sepsis-lactate-3h",
       "uuid": "40000000000000000000000000000008",
+      "specificScenarioStage": "sepsis bundle clock starts at the triage timestamp",
+      "businessLogicRuleName": "Sepsis bundle lactate within 3 hours of triage",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "sepsis bundle clock starts at the triage timestamp",
+      "standardizedLogicRule": "A sepsis bundle must record a lactate result within 3 hours of the triage timestamp.",
+      "relatedEntities": [
+        "Encounter (Encounter)",
+        "Procedure (Procedure)"
+      ],
+      "businessBackgroundReason": "§4 rules on the sepsis bundle clock, diagnosis-procedure linkage, and coding-complete timeliness.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Sepsis bundle lactate within 3 hours of triage",
       "titleZh": "脓毒症集束在分诊后 3 小时内出乳酸结果",
       "statement": {
@@ -1627,6 +1751,21 @@
     {
       "id": "rule:r09-procedure-linked-diagnosis",
       "uuid": "40000000000000000000000000000009",
+      "specificScenarioStage": "on procedure documentation / coding",
+      "businessLogicRuleName": "Billable Procedure links to documented Diagnosis",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on procedure documentation / coding",
+      "standardizedLogicRule": "Every billable Procedure on an Encounter is required to link to at least one documented Diagnosis with a supporting ICD-10-CM code.",
+      "relatedEntities": [
+        "Procedure (Procedure)",
+        "Diagnosis (Diagnosis)"
+      ],
+      "businessBackgroundReason": "§4 rules on the sepsis bundle clock, diagnosis-procedure linkage, and coding-complete timeliness.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Billable Procedure links to documented Diagnosis",
       "titleZh": "可计费操作关联已记录诊断",
       "statement": {
@@ -1682,6 +1821,20 @@
     {
       "id": "rule:r10-coding-complete-4d",
       "uuid": "4000000000000000000000000000000a",
+      "specificScenarioStage": "on discharge, into the coding work queue",
+      "businessLogicRuleName": "Coding complete within 4 days of discharge",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on discharge, into the coding work queue",
+      "standardizedLogicRule": "An Encounter must be coding-complete within 4 calendar days of its discharge date, except for Encounters held for clinical query, which may extend to 10 calendar days.",
+      "relatedEntities": [
+        "Encounter (Encounter)"
+      ],
+      "businessBackgroundReason": "§4 rules on the sepsis bundle clock, diagnosis-procedure linkage, and coding-complete timeliness.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Coding complete within 4 days of discharge",
       "titleZh": "出院后 4 日内完成编码",
       "statement": {
@@ -1722,6 +1875,20 @@
     {
       "id": "rule:r11-charge-active-cdm",
       "uuid": "4000000000000000000000000000000b",
+      "specificScenarioStage": "on charge generation",
+      "businessLogicRuleName": "Charge maps to active CDM line",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on charge generation",
+      "standardizedLogicRule": "Every Charge must map to an active line in the Charge Description Master on the date of service.",
+      "relatedEntities": [
+        "Charge (Charge)"
+      ],
+      "businessBackgroundReason": "§5 rules on CDM mapping, late-charge windows, medical necessity, and NCCI unbundling edits.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Charge maps to active CDM line",
       "titleZh": "费用项映射到有效 CDM 行",
       "statement": {
@@ -1771,6 +1938,21 @@
     {
       "id": "rule:r12-late-charge-window",
       "uuid": "4000000000000000000000000000000c",
+      "specificScenarioStage": "on late-charge posting",
+      "businessLogicRuleName": "Late charge beyond 7 days needs supervisor approval",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on late-charge posting",
+      "standardizedLogicRule": "A late Charge may not be added to an Encounter more than 7 calendar days after the discharge date without supervisor approval.",
+      "relatedEntities": [
+        "Charge (Charge)",
+        "Encounter (Encounter)"
+      ],
+      "businessBackgroundReason": "§5 rules on CDM mapping, late-charge windows, medical necessity, and NCCI unbundling edits.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Late charge beyond 7 days needs supervisor approval",
       "titleZh": "逾 7 日的迟到费用需主管批准",
       "statement": {
@@ -1811,6 +1993,22 @@
     {
       "id": "rule:r13-medical-necessity",
       "uuid": "4000000000000000000000000000000d",
+      "specificScenarioStage": "during coding / code validation",
+      "businessLogicRuleName": "Medical-necessity (LCD/NCD) linkage required",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "during coding / code validation",
+      "standardizedLogicRule": "A Procedure with a Diagnosis pairing that fails the applicable medical-necessity policy (LCD/NCD) may not be billed to the payer and must be flagged for review.",
+      "relatedEntities": [
+        "Procedure (Procedure)",
+        "Diagnosis (Diagnosis)",
+        "Charge (Charge)"
+      ],
+      "businessBackgroundReason": "§5 rules on CDM mapping, late-charge windows, medical necessity, and NCCI unbundling edits.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Medical-necessity (LCD/NCD) linkage required",
       "titleZh": "须满足医疗必要性（LCD/NCD）",
       "statement": {
@@ -1853,6 +2051,21 @@
     {
       "id": "rule:r14-ncci-no-unbundling",
       "uuid": "4000000000000000000000000000000e",
+      "specificScenarioStage": "during coding / claim assembly",
+      "businessLogicRuleName": "NCCI edit prohibits unbundling without modifier",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "during coding / claim assembly",
+      "standardizedLogicRule": "Two Procedures that violate an NCCI Procedure-to-Procedure edit may not be billed on the same Claim unless a valid modifier is documented.",
+      "relatedEntities": [
+        "Procedure (Procedure)",
+        "Claim (Claim)"
+      ],
+      "businessBackgroundReason": "§5 rules on CDM mapping, late-charge windows, medical necessity, and NCCI unbundling edits.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "NCCI edit prohibits unbundling without modifier",
       "titleZh": "NCCI 编辑禁止无修饰符拆分计费",
       "statement": {
@@ -1893,6 +2106,20 @@
     {
       "id": "rule:r15-scrub-clean-before-submit",
       "uuid": "4000000000000000000000000000000f",
+      "specificScenarioStage": "on transition to Submitted",
+      "businessLogicRuleName": "Claim must be scrub-clean (Ready) before submission",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on transition to Submitted",
+      "standardizedLogicRule": "A Claim must pass all scrubber edits and reach status Ready before it may be submitted to a payer.",
+      "relatedEntities": [
+        "Claim (Claim)"
+      ],
+      "businessBackgroundReason": "§6 rules on timely filing, scrub-clean gating, and no-resubmit-of-accepted-claims.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Claim must be scrub-clean (Ready) before submission",
       "titleZh": "提交前理赔必须清洗通过（Ready）",
       "statement": {
@@ -1942,6 +2169,20 @@
     {
       "id": "rule:r16-no-resubmit-accepted",
       "uuid": "40000000000000000000000000000010",
+      "specificScenarioStage": "on resubmission of an accepted claim",
+      "businessLogicRuleName": "No resubmission of an accepted Claim as original",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on resubmission of an accepted claim",
+      "standardizedLogicRule": "A Claim that has already been accepted by the payer may not be resubmitted as an original; corrections shall be submitted only as a replacement Claim with frequency code 7.",
+      "relatedEntities": [
+        "Claim (Claim)"
+      ],
+      "businessBackgroundReason": "§6 rules on timely filing, scrub-clean gating, and no-resubmit-of-accepted-claims.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "No resubmission of an accepted Claim as original",
       "titleZh": "已受理理赔不得作为原始件重提",
       "statement": {
@@ -1992,6 +2233,20 @@
     {
       "id": "rule:r17-denial-routing-sla-2d",
       "uuid": "40000000000000000000000000000011",
+      "specificScenarioStage": "after remittance posting",
+      "businessLogicRuleName": "Denial routed to analyst within 2 business days",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "after remittance posting",
+      "standardizedLogicRule": "A Denial must be routed to a Denials Analyst work queue within 2 business days of the remittance posting date.",
+      "relatedEntities": [
+        "Denial (Denial)"
+      ],
+      "businessBackgroundReason": "§7 rules on denial routing SLA, appeal deadlines, write-off approval authority, and the no-balance-bill protection.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Denial routed to analyst within 2 business days",
       "titleZh": "拒付 2 个工作日内派单至分析师",
       "statement": {
@@ -2031,6 +2286,21 @@
     {
       "id": "rule:r18-appeal-deadline-60d",
       "uuid": "40000000000000000000000000000012",
+      "specificScenarioStage": "on appeal submission",
+      "businessLogicRuleName": "Appeal within payer deadline (≤ 60 days)",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on appeal submission",
+      "standardizedLogicRule": "An appeal for a denied Claim shall be submitted within the payer's appeal deadline, which may not exceed 60 calendar days from the Denial date unless the payer contract grants a longer window.",
+      "relatedEntities": [
+        "Denial (Denial)",
+        "Claim (Claim)"
+      ],
+      "businessBackgroundReason": "§7 rules on denial routing SLA, appeal deadlines, write-off approval authority, and the no-balance-bill protection.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Appeal within payer deadline (≤ 60 days)",
       "titleZh": "申诉在付款方时限内（≤ 60 日）",
       "statement": {
@@ -2071,6 +2341,20 @@
     {
       "id": "rule:r19-writeoff-approval-authority",
       "uuid": "40000000000000000000000000000013",
+      "specificScenarioStage": "on write-off of a denied balance",
+      "businessLogicRuleName": "Write-off approval authority thresholds",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on write-off of a denied balance",
+      "standardizedLogicRule": "A write-off of a denied balance of $5,000 or more is required to have Director-level approval, and a write-off of $25,000 or more is required to have CFO approval.",
+      "relatedEntities": [
+        "Denial (Denial)"
+      ],
+      "businessBackgroundReason": "§7 rules on denial routing SLA, appeal deadlines, write-off approval authority, and the no-balance-bill protection.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Write-off approval authority thresholds",
       "titleZh": "核销审批权限阈值",
       "statement": {
@@ -2119,6 +2403,21 @@
     {
       "id": "rule:r20-no-balance-bill-provider-error",
       "uuid": "40000000000000000000000000000014",
+      "specificScenarioStage": "on patient balance billing after denial",
+      "businessLogicRuleName": "No balance-bill for provider coding/auth error",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "on patient balance billing after denial",
+      "standardizedLogicRule": "A Patient may not be balance-billed for any amount denied as a provider coding or authorization error.",
+      "relatedEntities": [
+        "Denial (Denial)",
+        "Patient (Patient)"
+      ],
+      "businessBackgroundReason": "§7 rules on denial routing SLA, appeal deadlines, write-off approval authority, and the no-balance-bill protection.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "No balance-bill for provider coding/auth error",
       "titleZh": "因院方编码/授权错误不得向患者结余计费",
       "statement": {

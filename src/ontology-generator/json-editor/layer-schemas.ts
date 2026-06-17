@@ -42,6 +42,9 @@ export const DATA_TYPE_ENUM = [
 export const SEVERITY_ENUM = ['info', 'warn', 'block'] as const;
 const PROPERTY_TYPE_ENUM = ['String', 'Integer', 'Float', 'Boolean', 'Date', 'Timestamp', 'List<String>'] as const;
 const OBJECT_CLASS_ENUM = ['data', 'system'] as const;
+const EXECUTOR_ENUM = ['Human', 'Agent'] as const;
+const ENFORCEMENT_ENUM = ['mandatory', 'optional'] as const;
+const FAILURE_POLICY_ENUM = ['warn', 'block'] as const;
 const PROVENANCE_ENUM = ['extracted', 'inferred', 'merged', 'human'] as const;
 const REVIEW_ENUM = ['pending', 'accepted', 'edited', 'merged', 'rejected'] as const;
 const RULE_KIND_ENUM = [
@@ -106,9 +109,26 @@ const objectsSchema = layerArray('^objectType:', {
 });
 
 const rulesSchema = layerArray('^rule:', {
-  required: ['id', 'statement', 'kind', 'severity'],
+  required: [
+    'id', 'businessLogicRuleName', 'standardizedLogicRule',
+    'executor', 'enforcementLevel', 'failurePolicy',
+  ],
   properties: {
     ...sharedProps,
+    // spec-format fields
+    specificScenarioStage: str,
+    businessLogicRuleName: str,
+    applicableClient: str,
+    applicableDepartment: str,
+    submissionCriteria: str,
+    standardizedLogicRule: str,
+    relatedEntities: strArray,
+    businessBackgroundReason: str,
+    ruleSource: str,
+    executor: enumOf(EXECUTOR_ENUM),
+    enforcementLevel: enumOf(ENFORCEMENT_ENUM),
+    failurePolicy: enumOf(FAILURE_POLICY_ENUM),
+    // retained engine + bilingual structure
     title: str,
     statement: bilingual,
     formal: str,

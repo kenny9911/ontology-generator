@@ -388,7 +388,7 @@ async function main(): Promise<void> {
         },
         {
           id: 'rule:soft', uuid: 'r2', title: 'Soft rule', statement: { en: 'should', zh: '应当' }, formal: 'y',
-          kind: 'validation', severity: 'warn', executor: 'human', appliesToObjectTypeIds: ['objectType:order'],
+          kind: 'validation', severity: 'warn', executor: 'Human', appliesToObjectTypeIds: ['objectType:order'],
           sources: [{ documentId: 'd', documentName: 'SOP.md', snippet: 's', sentenceRefs: [2] }],
           confidence: 1, provenance: 'extracted', reviewState: 'accepted',
         },
@@ -501,6 +501,33 @@ async function main(): Promise<void> {
       assert(errors.length === 0, `${file}: ${errors.length} validator error(s): ${errors.slice(0, 3).map((e) => `${e.kind}@${e.from}`).join(', ')}`);
     }
   });
+
+  for (const { file, ontology } of fixtures) {
+    await check(`${file}: every canonical rule carries the spec fields`, () => {
+      const objectIds = new Set(ontology.objects.map((o) => o.id));
+      for (const r of ontology.rules) {
+        for (const k of [
+          'specificScenarioStage', 'businessLogicRuleName', 'applicableClient', 'applicableDepartment',
+          'submissionCriteria', 'standardizedLogicRule', 'businessBackgroundReason', 'ruleSource',
+        ]) {
+          assert(typeof (r as unknown as Record<string, unknown>)[k] === 'string', `${r.id}: rule field "${k}" must be a string`);
+        }
+        assert(Array.isArray(r.relatedEntities), `${r.id}: relatedEntities must be an array`);
+        assert(r.executor === 'Human' || r.executor === 'Agent', `${r.id}: executor must be Human|Agent, got ${JSON.stringify(r.executor)}`);
+        assert(r.enforcementLevel === 'mandatory' || r.enforcementLevel === 'optional', `${r.id}: enforcementLevel invalid`);
+        assert(r.failurePolicy === 'warn' || r.failurePolicy === 'block', `${r.id}: failurePolicy invalid`);
+        // relatedEntities ids resolve to a real object
+        for (const entry of r.relatedEntities) {
+          const m = /\(([^()]+)\)\s*$/.exec(entry);
+          if (m) {
+            const specId = m[1]!;
+            const internal = `objectType:${specId.replace(/_/g, '-').toLowerCase()}`;
+            assert(objectIds.has(internal) || [...objectIds].some((id) => specObjectId(id) === specId), `${r.id}: relatedEntities "${specId}" does not resolve`);
+          }
+        }
+      }
+    });
+  }
 
   // -------------------------------------------------------------------------
   // Summary.
