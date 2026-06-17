@@ -343,16 +343,39 @@ library. UI strings are bilingual (en/zh) via [i18n.ts](src/ontology-generator/i
 
 ## Schema conventions (honor on both copies)
 
-- **ObjectType is spec-shaped.** An object carries `type` ('data' | 'system'),
-  `relationship_description` (prose; the key input for inter-object edges),
-  `primary_key` (default `<id>_id`), and `properties: ObjectProperty[]` —
-  `{ name, type, description, is_foreign_key?, references? }` where `type` is the
-  human-facing `PROPERTY_TYPES` vocabulary (`String`/`Integer`/`Float`/`Boolean`/
-  `Date`/`Timestamp`/`List<String>`; `enum`/`array` → `List<String>`). There is
-  **no** `attributes`/`keyRole`/`enumValues`/`refObjectTypeId` anymore; `references`
-  holds the target ObjectType **id** (ids keep the `objectType:` prefix, so
-  cross-layer refs are unchanged). The other four layers still use the internal
-  shape and reach the sample format only through the spec-format projection below.
+- **All five layers are spec-shaped (hybrid).** Every node carries the
+  uploaded-sample fields as first-class, FOLLOWED by the retained relational
+  structure the engine needs (a "receipt", like `sources`/`uuid`). So the
+  pipeline output, review screens, JSON editor, and `generate spec` export all
+  use the sample field names, while inference / manifest generator / graph keep
+  working off the retained structure. Ids keep their kind-prefix (`objectType:` /
+  `rule:` / …) so cross-layer refs are unchanged; the spec **export** strips/recases
+  them (e.g. `objectType:customer` → `Customer`, dotted event → `UPPER_SNAKE`).
+  - **objects** — `type` ('data'|'system'), `relationship_description`,
+    `primary_key` (default `<id>_id`), `properties: ObjectProperty[]`
+    `{name,type,description,is_foreign_key?,references?}` over `PROPERTY_TYPES`
+    (`String`/`Integer`/`Float`/`Boolean`/`Date`/`Timestamp`/`List<String>`;
+    `enum`/`array`→`List<String>`). This was a clean replace — no `attributes`.
+  - **rules** — `specificScenarioStage`, `businessLogicRuleName`, `applicableClient`,
+    `applicableDepartment`, `submissionCriteria`, `standardizedLogicRule`,
+    `relatedEntities`, `businessBackgroundReason`, `ruleSource`, `executor`
+    ('Human'|'Agent'), `enforcementLevel`, `failurePolicy` + retained
+    `title`/`statement`/`severity`/`kind`/`appliesToObjectTypeIds`/…
+  - **actions** — `submission_criteria`, `object_type:'action'`, `category`,
+    `actor: SpecActor[]`, `trigger`, `target_objects`, `action_steps`,
+    `system_prompt`, `user_prompt`, `tool_use`, `side_effects`, `triggered_event`
+    + retained `inputs`/`outputs` (ActionIO enriched with `source_object`+spec
+    `type`, retaining `objectTypeId`), `steps`/`preconditions`/`emitsEvents`/
+    `triggeredByEventIds`/`agent`, and `actorRef` (the renamed structural actor).
+  - **events** — `name` (UPPER_SNAKE) + `payload` (spec object
+    `{source_action,event_data,state_mutations}`) + retained `payloadFields`
+    (EventField[]) / `producedByActionIds` / `consumedByActionIds`.
+  - **processes** (the "Workflow" layer) — `actor`, `trigger`, `actions`
+    (SpecWorkflowStep[]), `triggered_event` + retained `actors`/`steps`/`triggers`/
+    `orchestration`; `name` stays `Bilingual` (export camelCases `name.en`).
+  - Back-compat: [normalize-objects.ts](src/ontology-generator/normalize-objects.ts)
+    (`normalizeOntologyObjects`, applied at the controller's commit chokepoint)
+    converts legacy-shaped ontologies for ALL five layers, idempotently.
 - Cross-references between nodes are **always by `id`** — a stable, kind-prefixed
   slug minted by `makeId` ([api/_shared/ids.ts](api/_shared/ids.ts)). `uuid` is for
   storage/Neo4j joins only.
