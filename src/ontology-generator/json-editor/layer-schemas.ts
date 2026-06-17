@@ -46,6 +46,7 @@ const EXECUTOR_ENUM = ['Human', 'Agent'] as const;
 const ACTOR_ENUM = ['Human', 'Agent', 'System'] as const;
 const ENFORCEMENT_ENUM = ['mandatory', 'optional'] as const;
 const FAILURE_POLICY_ENUM = ['warn', 'block'] as const;
+const WF_STEP_TYPE_ENUM = ['manual', 'tool', 'logic'] as const;
 const PROVENANCE_ENUM = ['extracted', 'inferred', 'merged', 'human'] as const;
 const REVIEW_ENUM = ['pending', 'accepted', 'edited', 'merged', 'rejected'] as const;
 const RULE_KIND_ENUM = [
@@ -196,11 +197,17 @@ const eventsSchema = layerArray('^event:', {
 });
 
 const processesSchema = layerArray('^process:', {
-  required: ['id'],
+  required: ['id', 'name', 'actor', 'actions'],
   properties: {
     ...sharedProps,
     name: bilingual,
     description: str,
+    // spec-format workflow fields
+    actor: { type: 'array', items: enumOf(ACTOR_ENUM) },
+    trigger: strArray,
+    actions: { type: 'array', items: { type: 'object', properties: { order: str, name: str, description: str, type: enumOf(WF_STEP_TYPE_ENUM), condition: str }, additionalProperties: true } },
+    triggered_event: strArray,
+    // retained engine structure
     actors: { type: 'array' },
     objectTypeIds: strArray,
     steps: { type: 'array' },

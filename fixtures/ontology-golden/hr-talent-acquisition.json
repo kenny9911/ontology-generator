@@ -7293,6 +7293,49 @@
         "zh": "需求受理与审批"
       },
       "description": "From an identified hiring need through headcount validation, approval, and publishing the Job.",
+      "actor": [
+        "Human",
+        "Agent"
+      ],
+      "trigger": [
+        "HIRING_NEED_IDENTIFIED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "createRequisition",
+          "description": "Create a draft Requisition in Greenhouse linked to a Workday Position and SalaryBand.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "validateHeadcount",
+          "description": "Validate Requisition headcount and budget against the funded Position and route an Approval task.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "3",
+          "name": "approveRequisition",
+          "description": "Record an Approval decision and transition the Requisition to Approved or Rejected.",
+          "type": "manual",
+          "condition": "requisition.status == 'Approved'"
+        },
+        {
+          "order": "4",
+          "name": "publishJob",
+          "description": "Publish an approved Requisition as Job Posts and open the application funnel.",
+          "type": "tool",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "REQUISITION_CREATED",
+        "REQUISITION_SUBMITTED_FOR_APPROVAL",
+        "REQUISITION_APPROVED",
+        "JOB_PUBLISHED"
+      ],
       "actors": [
         {
           "role": "Hiring Manager",
@@ -7417,6 +7460,33 @@
         "zh": "寻源与投递"
       },
       "description": "From a published Job through sourcing passive candidates and receiving applications.",
+      "actor": [
+        "Human",
+        "Agent"
+      ],
+      "trigger": [
+        "JOB_PUBLISHED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "sourceCandidate",
+          "description": "Source a passive Candidate against Requisition criteria, deduplicated by email.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "createApplication",
+          "description": "Create an Application linking exactly one Candidate to one Requisition in stage Application Review.",
+          "type": "tool",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "CANDIDATE_SOURCED",
+        "APPLICATION_RECEIVED"
+      ],
       "actors": [
         {
           "role": "Sourcer",
@@ -7506,6 +7576,60 @@
         "zh": "筛选到录用"
       },
       "description": "From a received application through screening, assessment, interviews, and the hiring decision that requests an offer.",
+      "actor": [
+        "Agent",
+        "Human"
+      ],
+      "trigger": [
+        "APPLICATION_RECEIVED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "screenApplication",
+          "description": "Screen an Application against Requisition criteria, advancing or rejecting with a disposition reason.",
+          "type": "tool",
+          "condition": "application.current_stage == 'Recruiter Screen'"
+        },
+        {
+          "order": "2",
+          "name": "requestAssessment",
+          "description": "Send a HackerRank Assessment invitation and write back the score, gating on the 70% threshold.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "3",
+          "name": "scheduleInterview",
+          "description": "Schedule a structured InterviewPanel of at least three Interviewers including a Bar Raiser; advance to Onsite.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "4",
+          "name": "submitScorecard",
+          "description": "Submit one Scorecard per Interviewer with a structured recommendation; emit InterviewCompleted when all are in.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "5",
+          "name": "recordHiringDecision",
+          "description": "Record an Advance to Offer or Reject decision from a complete panel of Scorecards.",
+          "type": "manual",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "APPLICATION_ADVANCED",
+        "APPLICATION_REJECTED",
+        "ASSESSMENT_COMPLETED",
+        "INTERVIEW_SCHEDULED",
+        "SCORECARD_SUBMITTED",
+        "INTERVIEW_COMPLETED",
+        "HIRING_DECISION_RECORDED",
+        "OFFER_REQUESTED"
+      ],
       "actors": [
         {
           "role": "Recruiter",
@@ -7637,6 +7761,41 @@
         "zh": "录用审批"
       },
       "description": "From an offer request through drafting, band validation, and approval of the offer.",
+      "actor": [
+        "Agent",
+        "Human"
+      ],
+      "trigger": [
+        "OFFER_REQUESTED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "draftOffer",
+          "description": "Draft an Offer with base salary, bonus, equity, and start date against the role's SalaryBand.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "validateOfferBand",
+          "description": "Determine inBand/aboveBand for an Offer and block if the Requisition is not Approved.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "3",
+          "name": "approveOffer",
+          "description": "Route the validated Offer for approval; above-band offers additionally require VP approval.",
+          "type": "manual",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "OFFER_DRAFTED",
+        "OFFER_VALIDATED",
+        "OFFER_APPROVED"
+      ],
       "actors": [
         {
           "role": "Recruiter",
@@ -7739,6 +7898,50 @@
         "zh": "录用到入职"
       },
       "description": "From an approved offer through extension, candidate response, background check, and conversion to hire.",
+      "actor": [
+        "Agent",
+        "Human"
+      ],
+      "trigger": [
+        "OFFER_APPROVED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "extendOffer",
+          "description": "Send an approved Offer to the Candidate via a DocuSign envelope with a valid expiry window.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "recordOfferResponse",
+          "description": "Record the Candidate's Accept or Decline from the DocuSign signature event.",
+          "type": "manual",
+          "condition": "offer.status == 'Accepted'"
+        },
+        {
+          "order": "3",
+          "name": "initiateBackgroundCheck",
+          "description": "Order a Checkr BackgroundCheck on candidate consent for an accepted Offer.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "4",
+          "name": "convertToHire",
+          "description": "Create a Workday Worker on a Clear BackgroundCheck, close the Requisition as Filled, and decrement headcount.",
+          "type": "tool",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "OFFER_EXTENDED",
+        "OFFER_ACCEPTED",
+        "BACKGROUND_CHECK_COMPLETED",
+        "CANDIDATE_HIRED",
+        "REQUISITION_CLOSED"
+      ],
       "actors": [
         {
           "role": "Recruiter",

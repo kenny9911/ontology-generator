@@ -694,12 +694,32 @@ export interface OrchestrationSpec {
   onFailure?: 'halt' | 'compensate' | 'escalate';
 }
 
+/** One step of a workflow (spec-format). */
+export interface SpecWorkflowStep {
+  order: string;
+  name: string;
+  description: string;
+  type: 'manual' | 'tool' | 'logic';
+  condition: string;
+}
+
 export interface Process extends NodeProvenance {
   /** Slug id, e.g. "process:order-to-cash". Prefix "process:". */
   id: string;
   uuid: string;
+  /** Bilingual name; the spec export camelCases `name.en` (e.g. "manualEntry"). */
   name: Bilingual;
   description?: string;
+  // ---- spec-format fields (the published workflow shape) ----
+  /** Who runs the workflow (spec form). */
+  actor: SpecActor[];
+  /** Event names that start the workflow (or "SCHEDULED_SYNC"). */
+  trigger: string[];
+  /** Ordered workflow steps (spec form). */
+  actions: SpecWorkflowStep[];
+  /** Event names the workflow emits. */
+  triggered_event: string[];
+  // ---- retained engine structure (receipts) ----
   /** Actors that participate, with their kind. */
   actors: ActorRef[];
   /** ObjectType ids the process touches (denormalized for UI/summary). */

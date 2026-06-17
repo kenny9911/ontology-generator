@@ -583,6 +583,27 @@ async function main(): Promise<void> {
     });
   }
 
+  const WF_TYPES = new Set(['manual', 'tool', 'logic']);
+  for (const { file, ontology } of fixtures) {
+    await check(`${file}: every canonical workflow carries the spec fields`, () => {
+      const eventSpecNames = new Set(ontology.events.map((e) => eventSpecName(e.name || e.id)));
+      for (const w of ontology.processes) {
+        assert(Array.isArray(w.actor) && w.actor.every((x) => ACTORS.has(x)), `${w.id}: actor must be [Human|Agent|System]`);
+        assert(Array.isArray(w.trigger) && w.trigger.every((x) => typeof x === 'string'), `${w.id}: trigger string[]`);
+        assert(Array.isArray(w.triggered_event), `${w.id}: triggered_event array`);
+        assert(Array.isArray(w.actions), `${w.id}: actions array`);
+        for (const s of w.actions) {
+          assert(typeof s.order === 'string' && typeof s.name === 'string' && typeof s.description === 'string' && typeof s.condition === 'string', `${w.id}: workflow step shape`);
+          assert(WF_TYPES.has(s.type), `${w.id}: workflow step type "${s.type}" invalid`);
+        }
+        for (const ev of w.trigger) assert(ev === 'SCHEDULED_SYNC' || eventSpecNames.has(ev), `${w.id}: trigger "${ev}" does not resolve`);
+        for (const ev of w.triggered_event) assert(eventSpecNames.has(ev), `${w.id}: triggered_event "${ev}" does not resolve`);
+        // retained structure present
+        assert(Array.isArray(w.steps) && Array.isArray(w.actors), `${w.id}: retained steps/actors`);
+      }
+    });
+  }
+
   // -------------------------------------------------------------------------
   // Summary.
   // -------------------------------------------------------------------------

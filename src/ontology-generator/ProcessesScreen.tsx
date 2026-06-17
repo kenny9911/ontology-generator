@@ -341,6 +341,18 @@ export default function ProcessesScreen({ t, lang, ctrl }: ProcessesScreenProps)
                     {(sel.confidence * 100).toFixed(0)}%
                   </span>
                 </div>
+                {/* Spec-format workflow strip */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8, alignItems: 'center' }}>
+                  {(sel.actor ?? []).map((a) => (
+                    <span key={`a${a}`} className="tag">{a}</span>
+                  ))}
+                  {(sel.trigger ?? []).map((ev) => (
+                    <span key={`t${ev}`} className="tag" title={t.trigger}>← {ev}</span>
+                  ))}
+                  {(sel.triggered_event ?? []).map((ev) => (
+                    <span key={`e${ev}`} className="tag ok" title={t.emits}>→ {ev}</span>
+                  ))}
+                </div>
               </div>
               {/* Review controls — wired to ctrl */}
               <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>

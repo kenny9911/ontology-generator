@@ -21,6 +21,7 @@ import type {
   ObjectProperty,
   ObjectType,
   Ontology,
+  Process,
   PropertyType,
   Relationship,
   Rule,
@@ -307,6 +308,51 @@ function normalizeEvent(e: EventType, objById: Map<string, ObjectType>, actionBy
 }
 
 // ---------------------------------------------------------------------------
+// Processes (workflows).
+// ---------------------------------------------------------------------------
+
+function processNeedsMigration(p: Process): boolean {
+  return !Array.isArray(p.actor) || !Array.isArray(p.actions) || !Array.isArray(p.trigger);
+}
+
+function normalizeProcess(p: Process, actionById: Map<string, ActionType>): Process {
+  if (!processNeedsMigration(p)) return p;
+  const wfType = (a: ActionType | undefined): 'manual' | 'tool' | 'logic' => {
+    if (!a) return 'logic';
+    if (a.actorRef?.kind === 'human') return 'manual';
+    const ext = !!a.agent?.integration || (a.sideEffects ?? []).some((se) => se.kind === 'external_call');
+    return ext ? 'tool' : 'logic';
+  };
+  const actors = Array.from(new Set((p.actors ?? []).map((a) => capActor(a.kind))));
+  return {
+    ...p,
+    actor: Array.isArray(p.actor) ? p.actor : actors.length ? actors : [p.orchestration?.agentOrchestrated ? 'Agent' : 'Human'],
+    trigger:
+      p.trigger ??
+      Array.from(new Set((p.triggers ?? []).flatMap((t) => (t.kind === 'event' && t.eventTypeId ? [eventSpecName(t.eventTypeId)] : t.kind === 'schedule' ? ['SCHEDULED_SYNC'] : [])))),
+    actions:
+      p.actions ??
+      (p.steps ?? []).map((s) => {
+        const a = actionById.get(s.actionTypeId);
+        const edge = s.next?.[0];
+        return {
+          order: String(s.order),
+          name: a ? camelName(a.name) : s.actionTypeId.replace(/^action:/, ''),
+          description: a?.description?.trim() || '',
+          type: wfType(a),
+          condition: edge?.condition?.trim() || edge?.label?.en?.trim() || '',
+        };
+      }),
+    triggered_event:
+      p.triggered_event ??
+      Array.from(new Set((p.steps ?? []).flatMap((s) => {
+        const a = actionById.get(s.actionTypeId);
+        return a ? (a.emitsEvents ?? []).map((e) => eventSpecName(e.eventTypeId)) : [];
+      }))),
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Public entry.
 // ---------------------------------------------------------------------------
 
@@ -320,7 +366,8 @@ export function normalizeOntologyObjects(o: Ontology): Ontology {
   const needsRules = Array.isArray(o.rules) && o.rules.some(ruleNeedsMigration);
   const needsActions = Array.isArray(o.actions) && o.actions.some(actionNeedsMigration);
   const needsEvents = Array.isArray(o.events) && o.events.some(eventNeedsMigration);
-  if (!needsObjects && !needsRules && !needsActions && !needsEvents) return o;
+  const needsProcesses = Array.isArray(o.processes) && o.processes.some(processNeedsMigration);
+  if (!needsObjects && !needsRules && !needsActions && !needsEvents && !needsProcesses) return o;
 
   const rels = o.relationships ?? [];
   const nameById = new Map(objs.map((x) => [x.id, x.name] as const));
@@ -346,5 +393,6 @@ export function normalizeOntologyObjects(o: Ontology): Ontology {
     }
     next.rules = (o.rules ?? []).map((r) => normalizeRule(r, nameById, ruleActorKinds));
   }
+  if (needsProcesses) next.processes = (o.processes ?? []).map((p) => normalizeProcess(p, actionById));
   return next;
 }

@@ -6717,6 +6717,68 @@
         "zh": "投保到承保"
       },
       "description": "Underwriting workflow from broker submission through risk evaluation, quote, and policy binding.",
+      "actor": [
+        "Human",
+        "Agent",
+        "System"
+      ],
+      "trigger": [
+        "SUBMISSION_RECEIVED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "recordSubmission",
+          "description": "Record a broker application package as a new Submission linked to an Applicant.",
+          "type": "manual",
+          "condition": "cleared"
+        },
+        {
+          "order": "2",
+          "name": "assessRisk",
+          "description": "Evaluate a cleared submission and produce a risk assessment with proposed coverages, flagging referrals.",
+          "type": "tool",
+          "condition": "submission.cat_zone_tier == 'Tier1' || submission.proposed_limit > 10000000"
+        },
+        {
+          "order": "3",
+          "name": "approveReferral",
+          "description": "Underwriting Manager decision on a referred submission, producing an Approval.",
+          "type": "manual",
+          "condition": "approved"
+        },
+        {
+          "order": "4",
+          "name": "generateQuote",
+          "description": "Compute premium via RatingEngine and produce a Quote with line-item premiums, deductibles, and limits.",
+          "type": "tool",
+          "condition": "quote accepted"
+        },
+        {
+          "order": "5",
+          "name": "bindPolicy",
+          "description": "Bind an accepted Quote into a Policy in Bound status, materializing coverages and premium.",
+          "type": "tool",
+          "condition": "bound"
+        },
+        {
+          "order": "6",
+          "name": "issuePolicyDocuments",
+          "description": "Generate declarations page and policy wording as a PolicyDocument stored in DocVault.",
+          "type": "tool",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "SUBMISSION_CLEARED",
+        "UNDERWRITING_REFERRAL_RAISED",
+        "UNDERWRITING_RISK_ASSESSED",
+        "UNDERWRITING_REFERRAL_APPROVED",
+        "UNDERWRITING_SUBMISSION_DECLINED",
+        "QUOTE_ISSUED",
+        "POLICY_BOUND",
+        "POLICY_ISSUED"
+      ],
       "actors": [
         {
           "role": "Broker",
@@ -6886,6 +6948,80 @@
         "zh": "报案到结案"
       },
       "description": "Claims workflow from First Notice of Loss through coverage verification, reserving, adjudication, and payment.",
+      "actor": [
+        "Human",
+        "System",
+        "Agent"
+      ],
+      "trigger": [
+        "LOSS_REPORTED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "recordFNOL",
+          "description": "Record First Notice of Loss, creating a Claim linked to the matched Policy and opening exposures.",
+          "type": "manual",
+          "condition": "FNOL recorded"
+        },
+        {
+          "order": "2",
+          "name": "verifyCoverage",
+          "description": "Determine whether coverage was in force at the date of loss against the linked policy.",
+          "type": "tool",
+          "condition": "decision == 'InForce'"
+        },
+        {
+          "order": "3",
+          "name": "assignAdjuster",
+          "description": "Assign an adjuster to a claim and its open exposures, routing severe losses to senior adjusters.",
+          "type": "tool",
+          "condition": "reserve exposures"
+        },
+        {
+          "order": "4",
+          "name": "setReserve",
+          "description": "Set an initial reserve amount on each open exposure, escalating large-loss reserves for approval.",
+          "type": "tool",
+          "condition": "begin adjusting"
+        },
+        {
+          "order": "5",
+          "name": "adjustClaim",
+          "description": "Investigate and adjust an exposure, producing updated reserves and a recommended settlement amount.",
+          "type": "tool",
+          "condition": "settlement recommended"
+        },
+        {
+          "order": "6",
+          "name": "issueClaimPayment",
+          "description": "Authorize and issue a claim payment, decrementing the reserve, subject to authority limits.",
+          "type": "tool",
+          "condition": "payment issued"
+        },
+        {
+          "order": "7",
+          "name": "closeExposure",
+          "description": "Close a fully-paid exposure (reserve zeroed); close the claim when all exposures are closed.",
+          "type": "tool",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "FNOL_RECORDED",
+        "EXPOSURE_OPENED",
+        "COVERAGE_CONFIRMED",
+        "COVERAGE_DENIED",
+        "CLAIM_ASSIGNED",
+        "RESERVE_SET",
+        "RESERVE_APPROVAL_REQUESTED",
+        "RESERVE_ADJUSTED",
+        "SETTLEMENT_RECOMMENDED",
+        "PAYMENT_AUTHORIZATION_REQUESTED",
+        "PAYMENT_ISSUED",
+        "EXPOSURE_CLOSED",
+        "CLAIM_CLOSED"
+      ],
       "actors": [
         {
           "role": "Claims Intake Agent",
@@ -7063,6 +7199,27 @@
         "zh": "准备金复核"
       },
       "description": "Periodic re-evaluation of reserve adequacy on every open exposure, at least every 90 days.",
+      "actor": [
+        "System",
+        "Agent"
+      ],
+      "trigger": [
+        "RESERVE_REVIEW_DUE",
+        "SCHEDULED_SYNC"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "reviewReserve",
+          "description": "Periodically review reserve adequacy on an open exposure, confirming or revising the reserve.",
+          "type": "tool",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "RESERVE_ADJUSTED",
+        "RESERVE_CONFIRMED"
+      ],
       "actors": [
         {
           "role": "ClaimCenter",
@@ -7134,6 +7291,33 @@
         "zh": "代位求偿与追偿"
       },
       "description": "Pursuit of third-party recovery after settlement on a closed claim with identified liability.",
+      "actor": [
+        "Human",
+        "System"
+      ],
+      "trigger": [
+        "CLAIM_CLOSED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "openSubrogation",
+          "description": "Open a recovery against an identified liable third party on a settled, closed claim.",
+          "type": "manual",
+          "condition": "funds received"
+        },
+        {
+          "order": "2",
+          "name": "recordRecovery",
+          "description": "Record funds received from the liable party and offset net incurred loss on the claim.",
+          "type": "manual",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "SUBROGATION_OPENED",
+        "RECOVERY_RECORDED"
+      ],
       "actors": [
         {
           "role": "Subrogation Specialist",

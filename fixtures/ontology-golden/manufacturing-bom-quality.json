@@ -6673,6 +6673,59 @@
         "zh": "工程变更到生效"
       },
       "description": "How a proposed change to product structure moves from request through review, approval, and revision effectivity so the shop floor builds only to the currently effective specification.",
+      "actor": [
+        "Human",
+        "Agent"
+      ],
+      "trigger": [
+        "CHANGE_NEED_IDENTIFIED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "raiseEngineeringChange",
+          "description": "Create a new EngineeringChange record in status Draft from the proposed change description and affected Part numbers.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "classifyEngineeringChange",
+          "description": "Classify the change category (Minor/Major/Safety) and set requires_second_approval when any affected Part is safety-critical per R-03.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "3",
+          "name": "approveEngineeringChange",
+          "description": "Review the EngineeringChange at the CCB and produce an approval decision; enforces CCB quorum (R-05) and second-engineer approval for safety changes (R-03).",
+          "type": "manual",
+          "condition": "Approved"
+        },
+        {
+          "order": "4",
+          "name": "setRevisionEffectivity",
+          "description": "Produce a new effective BillOfMaterials revision and bump each affected Part.revision; enforces the effective_from lead time per R-06.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "5",
+          "name": "revalidateOpenWorkOrders",
+          "description": "Evaluate all open WorkOrders referencing an affected Part and produce a hold flag on any still pointing at a superseded revision per R-01.",
+          "type": "tool",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "ENGINEERING_CHANGE_RAISED",
+        "ENGINEERING_CHANGE_CLASSIFIED",
+        "ENGINEERING_CHANGE_APPROVED",
+        "ENGINEERING_CHANGE_REJECTED",
+        "REVISION_BECAME_EFFECTIVE",
+        "BOM_REVISION_PUBLISHED",
+        "WORK_ORDER_REVALIDATION_REQUIRED"
+      ],
       "actors": [
         {
           "role": "Requestor",
@@ -6805,6 +6858,79 @@
         "zh": "生产到检验"
       },
       "description": "How a WorkOrder is released against an effective BillOfMaterials, built, inspected via an InspectionLot, and either released to stock/ship or routed into a NonConformance.",
+      "actor": [
+        "Agent",
+        "Human",
+        "System"
+      ],
+      "trigger": [
+        "PRODUCTION_DEMAND_CONFIRMED",
+        "REVISION_BECAME_EFFECTIVE"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "releaseWorkOrder",
+          "description": "Release a WorkOrder with reserved components against the currently effective BillOfMaterials; blocked unless all components are at effective revision (R-01) and none carry a Quarantine NonConformance (R-02).",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "confirmProductionOperation",
+          "description": "Confirm operation yield from issued components and, at the final operation, produce a finished Part lot pending inspection; backflushes against the released WorkOrder BOM revision per R-09.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "3",
+          "name": "openInspectionLot",
+          "description": "Create a new InspectionLot in status Open with a sampling plan; mandatory for any finished lot of a Part whose inspection_required is true per R-07.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "4",
+          "name": "recordInspection",
+          "description": "Produce an Inspection record with pass/fail per characteristic and an aggregate result; the lot is Accepted only if defects are at or below the AQL acceptance number per R-08. Used for both finished-lot and incoming inspection.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "5",
+          "name": "postUsageDecision",
+          "description": "On Accepted, post the lot to unrestricted stock and clear it to ship per R-04; on Rejected, automatically open a NonConformance per R-04 and post to blocked stock.",
+          "type": "tool",
+          "condition": "Accepted"
+        },
+        {
+          "order": "6",
+          "name": "releaseLotToShip",
+          "description": "Produce a delivery-eligible lot from an accepted finished lot; a finished lot may not ship until its InspectionLot is Accepted per R-04.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "7",
+          "name": "triageNonConformance",
+          "description": "Produce an owner assignment and severity for an auto-opened NonConformance; an owner must be assigned within 24h (R-12) and a safety-critical Part NCR escalated to the Quality Manager within 4h (R-15).",
+          "type": "tool",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "WORK_ORDER_RELEASED",
+        "WORK_ORDER_RELEASE_BLOCKED",
+        "PRODUCTION_OPERATION_CONFIRMED",
+        "FINISHED_LOT_PRODUCED",
+        "INSPECTION_LOT_OPENED",
+        "INSPECTION_RECORDED",
+        "INSPECTION_LOT_ACCEPTED",
+        "INSPECTION_LOT_REJECTED",
+        "NON_CONFORMANCE_OPENED",
+        "FINISHED_LOT_SHIPPABLE",
+        "NON_CONFORMANCE_ASSIGNED"
+      ],
       "actors": [
         {
           "role": "Production Supervisor",
@@ -6971,6 +7097,43 @@
         "zh": "供应商资格与来料检验"
       },
       "description": "How a Supplier-provided Part lot is received and inspected before consumption.",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "SUPPLIER_DELIVERY_ARRIVED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "postGoodsReceipt",
+          "description": "Produce a received Part lot in quality-inspection stock and, for inspection-required parts, an incoming InspectionLot; goods may be received only from an Approved Supplier per R-10.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "recordInspection",
+          "description": "Produce an Inspection record with pass/fail per characteristic and an aggregate result; the lot is Accepted only if defects are at or below the AQL acceptance number per R-08. Used for both finished-lot and incoming inspection.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "3",
+          "name": "postUsageDecision",
+          "description": "On Accepted, post the lot to unrestricted stock and clear it to ship per R-04; on Rejected, automatically open a NonConformance per R-04 and post to blocked stock.",
+          "type": "tool",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "GOODS_RECEIPT_POSTED",
+        "INSPECTION_LOT_OPENED",
+        "INSPECTION_RECORDED",
+        "INSPECTION_LOT_ACCEPTED",
+        "INSPECTION_LOT_REJECTED",
+        "NON_CONFORMANCE_OPENED"
+      ],
       "actors": [
         {
           "role": "Receiving Clerk",
@@ -7057,6 +7220,43 @@
         "zh": "不合格品处置与纠正措施"
       },
       "description": "How a NonConformance is investigated, dispositioned, and closed.",
+      "actor": [
+        "Agent",
+        "Human"
+      ],
+      "trigger": [
+        "NON_CONFORMANCE_OPENED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "triageNonConformance",
+          "description": "Produce an owner assignment and severity for an auto-opened NonConformance; an owner must be assigned within 24h (R-12) and a safety-critical Part NCR escalated to the Quality Manager within 4h (R-15).",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "dispositionNonConformance",
+          "description": "Produce a Disposition of UseAsIs, Rework, ReturnToSupplier, Quarantine, or Scrap; UseAsIs/Rework on a safety-critical Part requires QM sign-off (R-13) and a Quarantine blocks new WorkOrder release (R-02); only a Quality Engineer or higher may post it (R-19).",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "3",
+          "name": "openCorrectiveAction",
+          "description": "Produce a CorrectiveAction with a due date from the Disposition and root-cause analysis; a NonConformance recurring three or more times in 90 days for the same Part requires a formal CAPA (R-14), and a CAPA must be verified effective before its NonConformance may close (R-18).",
+          "type": "tool",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "NON_CONFORMANCE_ASSIGNED",
+        "NON_CONFORMANCE_DISPOSITIONED",
+        "CORRECTIVE_ACTION_OPENED",
+        "CORRECTIVE_ACTION_CLOSED",
+        "NON_CONFORMANCE_CLOSED"
+      ],
       "actors": [
         {
           "role": "Quality Engineer",

@@ -25,6 +25,7 @@
 // ============================================================================
 
 import type {
+  ActionType,
   ActorRef,
   Bilingual,
   OrchestrationSpec,
@@ -32,8 +33,10 @@ import type {
   ProcessEdge,
   ProcessTrigger,
   SourceRef,
+  SpecActor,
   WorkflowStep,
 } from '../../../_shared/ontology-schema.js';
+import { eventSpecName } from '../../spec-format/project.js';
 import { makeId } from '../../../_shared/ids.js';
 import { buildProcessesPrompt } from '../../prompts.js';
 import { executeLLMWithTracking, type ChatMessage } from '../../llm.js';
@@ -248,7 +251,7 @@ function normalizeProcess(
   // --- provenance: synthesized => inferred, derivedFrom the contributing actions
   const derivedFrom = uniq(steps.map((s) => s.actionTypeId));
 
-  const proc: Process = {
+  const proc = {
     id,
     uuid,
     name,
@@ -259,13 +262,64 @@ function normalizeProcess(
     orchestration,
     sources: asSources(rp.sources),
     confidence: clampConfidence(rp.confidence, 0.6),
-    provenance: 'inferred',
+    provenance: 'inferred' as const,
     derivedFrom,
-    reviewState: 'pending',
-  };
+    reviewState: 'pending' as const,
+  } as Process;
   const description = optString(rp.description);
   if (description) proc.description = description;
+  attachWorkflowSpecFields(proc, ctx);
   return proc;
+}
+
+/** camelCase function-style name (matches the spec workflow naming). */
+function camelName(s: string): string {
+  const w = (s || '').replace(/([a-z0-9])([A-Z])/g, '$1 $2').split(/[^A-Za-z0-9]+/).filter(Boolean);
+  return w.length ? w[0]!.toLowerCase() + w.slice(1).map((x) => x[0]!.toUpperCase() + x.slice(1)).join('') : s;
+}
+function capActorKind(kind: string | undefined): SpecActor {
+  if (kind === 'human') return 'Human';
+  if (kind === 'system') return 'System';
+  return 'Agent';
+}
+function workflowStepType(a: ActionType | undefined): 'manual' | 'tool' | 'logic' {
+  if (!a) return 'logic';
+  if (a.actorRef?.kind === 'human') return 'manual';
+  const external = !!a.agent?.integration || (a.sideEffects ?? []).some((se) => se.kind === 'external_call');
+  return external ? 'tool' : 'logic';
+}
+
+/** Derive + assign the spec-format workflow fields on a process (mutates). */
+function attachWorkflowSpecFields(p: Process, ctx: StageContext): void {
+  const actionById = new Map(ctx.actions.map((a) => [a.id, a]));
+  const uniqStr = (arr: string[]): string[] => Array.from(new Set(arr));
+
+  const actors = uniqStr((p.actors ?? []).map((a) => capActorKind(a.kind)));
+  p.actor = actors.length > 0 ? (actors as SpecActor[]) : [p.orchestration?.agentOrchestrated ? 'Agent' : 'Human'];
+  p.trigger = uniqStr(
+    (p.triggers ?? []).flatMap((t): string[] => {
+      if (t.kind === 'event' && t.eventTypeId) return [eventSpecName(t.eventTypeId)];
+      if (t.kind === 'schedule') return ['SCHEDULED_SYNC'];
+      return [];
+    }),
+  );
+  p.actions = (p.steps ?? []).map((s) => {
+    const a = actionById.get(s.actionTypeId);
+    const edge = s.next?.[0];
+    return {
+      order: String(s.order),
+      name: a ? camelName(a.name) : s.actionTypeId.replace(/^action:/, ''),
+      description: a?.description?.trim() || '',
+      type: workflowStepType(a),
+      condition: edge?.condition?.trim() || edge?.label?.en?.trim() || '',
+    };
+  });
+  p.triggered_event = uniqStr(
+    (p.steps ?? []).flatMap((s) => {
+      const a = actionById.get(s.actionTypeId);
+      return a ? (a.emitsEvents ?? []).map((e) => eventSpecName(e.eventTypeId)) : [];
+    }),
+  );
 }
 
 /** Build the actor list; fall back to a single System agent if none given. */

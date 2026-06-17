@@ -7121,6 +7121,77 @@
         "zh": "检测到复电"
       },
       "description": "From outage detection to verified restoration and closure (SOP Process P1).",
+      "actor": [
+        "System",
+        "Human"
+      ],
+      "trigger": [
+        "METER_LAST_GASP_RECEIVED",
+        "BREAKER_TRIPPED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "detectOutage",
+          "description": "Consume last-gasp meter signals and SCADA breaker-open telemetry; produce a candidate OutageEvent record in OMS with state Detected and a detectionTimestamp.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "scopeOutage",
+          "description": "Consume the network topology from GIS and the set of dark meters; produce the predicted upstream device and the affected ServicePoint count, then advance the OutageEvent to state Confirmed.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "3",
+          "name": "evaluateReportability",
+          "description": "Consume affectedServicePointCount and detectionTimestamp; apply the regulatory threshold (Rule R-07); produce a reportable flag and a reporting clock start time when the threshold is met.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "4",
+          "name": "dispatchCrew",
+          "description": "Consume the confirmed outage scope and crew availability; produce a Crew assignment and, where field repair is needed, an emergency MaintenanceWorkOrder linked to the OutageEvent and the suspected Asset.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "5",
+          "name": "logFieldFinding",
+          "description": "Consume the crew's on-site assessment; produce an updated MaintenanceWorkOrder with diagnosed cause and the confirmed faulted Asset, and advance the OutageEvent to state RepairInProgress.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "6",
+          "name": "restoreSupply",
+          "description": "Consume the completed switching/repair; produce re-energization, an OutageEvent state of Restored, a restorationTimestamp, and a computed outage duration.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "7",
+          "name": "closeOutage",
+          "description": "Consume AMI 'power restored' confirmations for all affected ServicePoints; produce a closed OutageEvent (state Closed) and trigger finalization of the linked MaintenanceWorkOrder.",
+          "type": "tool",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "OUTAGE_DETECTED",
+        "OUTAGE_CONFIRMED",
+        "REPORTABILITY_DETERMINED",
+        "REGULATORY_CLOCK_STARTED",
+        "CREW_DISPATCHED",
+        "FIELD_FINDING_LOGGED",
+        "ASSET_DEFECT_IDENTIFIED",
+        "SUPPLY_RESTORED",
+        "OUTAGE_RESTORED",
+        "OUTAGE_CLOSED"
+      ],
       "actors": [
         {
           "role": "AMI Head-End / SCADA",
@@ -7285,6 +7356,43 @@
         "zh": "停电监管报告"
       },
       "description": "From reportability determination to accepted PUC filing (SOP Process P2). Runs in parallel with P1 restoration.",
+      "actor": [
+        "System",
+        "Human"
+      ],
+      "trigger": [
+        "REGULATORY_CLOCK_STARTED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "openRegulatoryReport",
+          "description": "Consume the reportable OutageEvent and its scope; produce a draft RegulatoryReport with the filing deadline computed from RegulatoryClockStarted (Rule R-07).",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "compileRegulatoryReport",
+          "description": "Consume affected-customer counts (ServicePoint → Customer), cause code, and estimated restoration time; produce a validated RegulatoryReport ready for submission.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "3",
+          "name": "submitRegulatoryReport",
+          "description": "Consume the validated report; produce a submitted RegulatoryReport with a portal confirmation ID, stopping the reporting clock. Major events require Director of Compliance approval (Rule R-09).",
+          "type": "manual",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "REGULATORY_REPORT_OPENED",
+        "REGULATORY_REPORT_COMPILED",
+        "REGULATORY_REPORT_SUBMITTED",
+        "REGULATORY_REPORT_ACCEPTED",
+        "REGULATORY_DEADLINE_BREACHED"
+      ],
       "actors": [
         {
           "role": "OMS Compliance module",
@@ -7380,6 +7488,58 @@
         "zh": "巡检到维护"
       },
       "description": "From scheduled Inspection to closed MaintenanceWorkOrder (SOP Process P3).",
+      "actor": [
+        "System",
+        "Human"
+      ],
+      "trigger": [
+        "INSPECTION_INTERVAL_ELAPSED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "scheduleInspection",
+          "description": "Consume each Asset's rated inspection interval and last completed date; produce a scheduled Inspection record with a due date.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "recordInspectionResult",
+          "description": "Consume the inspector's condition assessment; produce a completed Inspection with a pass/fail result and a recorded completion date against the Asset.",
+          "type": "manual",
+          "condition": "inspection.result == 'fail'"
+        },
+        {
+          "order": "3",
+          "name": "raiseMaintenanceWorkOrder",
+          "description": "Consume a failed Inspection or a missed inspection interval; produce a MaintenanceWorkOrder with a priority derived from asset class (transmission assets auto-raise priority per Rule R-01).",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "4",
+          "name": "approveMaintenanceWorkOrder",
+          "description": "Consume the raised work order; produce an approved, scheduled, and crew-assigned MaintenanceWorkOrder. Asset Manager approves high-cost or safety-classified work (Rule R-05, R-06).",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "5",
+          "name": "completeMaintenanceWorkOrder",
+          "description": "Consume the completed field repair; produce a closed MaintenanceWorkOrder, update the Asset condition record, and reset the inspection clock if the work cleared the defect.",
+          "type": "manual",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "INSPECTION_SCHEDULED",
+        "INSPECTION_COMPLETED",
+        "ASSET_DEFECT_IDENTIFIED",
+        "MAINTENANCE_WORK_ORDER_RAISED",
+        "MAINTENANCE_WORK_ORDER_APPROVED",
+        "MAINTENANCE_WORK_ORDER_CLOSED"
+      ],
       "actors": [
         {
           "role": "Maximo PM Scheduler",
@@ -7514,6 +7674,42 @@
         "zh": "植被周期管理"
       },
       "description": "Scheduled clearance on high-voltage feeders, raising and completing vegetation work orders (SOP Process P4).",
+      "actor": [
+        "System",
+        "Human"
+      ],
+      "trigger": [
+        "SCHEDULED_SYNC",
+        "VEGETATION_CYCLE_LAPSED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "scheduleVegetationClearance",
+          "description": "Consume the feeder's clearance cycle and last-completed date and produce a vegetation MaintenanceWorkOrder.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "approveMaintenanceWorkOrder",
+          "description": "Consume the raised work order; produce an approved, scheduled, and crew-assigned MaintenanceWorkOrder. Asset Manager approves high-cost or safety-classified work (Rule R-05, R-06).",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "3",
+          "name": "completeMaintenanceWorkOrder",
+          "description": "Consume the completed field repair; produce a closed MaintenanceWorkOrder, update the Asset condition record, and reset the inspection clock if the work cleared the defect.",
+          "type": "manual",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "MAINTENANCE_WORK_ORDER_RAISED",
+        "MAINTENANCE_WORK_ORDER_APPROVED",
+        "MAINTENANCE_WORK_ORDER_CLOSED"
+      ],
       "actors": [
         {
           "role": "Vegetation Program",

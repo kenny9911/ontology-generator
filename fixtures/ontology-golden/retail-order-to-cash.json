@@ -6718,6 +6718,32 @@
         "zh": "客户开户"
       },
       "description": "Create a customer account and assign a credit limit and tier.",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "CUSTOMER_SIGNUP_SUBMITTED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "registerCustomer",
+          "description": "Create a new Customer record from a submitted profile with default Standard tier and Active credit status.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "assignCreditLimit",
+          "description": "Set a customer's credit limit and confirm tier from a credit assessment.",
+          "type": "manual",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "CUSTOMER_CREATED",
+        "CREDIT_LIMIT_ASSIGNED"
+      ],
       "actors": [
         {
           "role": "Customer Service Representative",
@@ -6793,6 +6819,93 @@
         "zh": "订单到回款"
       },
       "description": "End-to-end flow from order capture through credit screening, allocation, fulfillment, invoicing and close.",
+      "actor": [
+        "Human",
+        "System"
+      ],
+      "trigger": [
+        "CHECKOUT_SUBMITTED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "placeOrder",
+          "description": "Capture a cart of products for an authenticated customer into a Pending order with line items and a calculated total.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "screenOrderForCredit",
+          "description": "Check invoice aging and available credit; either authorize payment and draft an invoice, or place a credit hold.",
+          "type": "tool",
+          "condition": "Credit passed"
+        },
+        {
+          "order": "3",
+          "name": "allocateInventory",
+          "description": "Reserve inventory against the order's line items and set the order to Confirmed.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "4",
+          "name": "createShipment",
+          "description": "Create a Shipment in Picking status with a packing list and carrier assignment for a confirmed order.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "5",
+          "name": "dispatchShipment",
+          "description": "Produce a tracking number and set shipment In Transit and order Fulfilled.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "6",
+          "name": "confirmDelivery",
+          "description": "Set shipment Delivered and record a deliveredAt timestamp from the carrier webhook.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "7",
+          "name": "settleInvoice",
+          "description": "Finalize the draft invoice and record the matched payment (up-front for Standard, net-30 for Enterprise).",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "8",
+          "name": "closeOrder",
+          "description": "Reconcile settled payment and delivery to set the order Closed.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "9",
+          "name": "placeCreditHold",
+          "description": "Create a CreditHold citing the violated rule and freeze the order following a failed credit screen.",
+          "type": "tool",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "ORDER_PLACED",
+        "PAYMENT_AUTHORIZED",
+        "CREDIT_HOLD_PLACED",
+        "INVENTORY_RESERVED",
+        "BACKORDER_RAISED",
+        "SHIPMENT_CREATED",
+        "ORDER_FULFILLED",
+        "SHIPMENT_DISPATCHED",
+        "ORDER_DELIVERED",
+        "INVOICE_ISSUED",
+        "PAYMENT_SETTLED",
+        "ORDER_CLOSED",
+        "CREDIT_HOLD_OPENED"
+      ],
       "actors": [
         {
           "role": "Customer",
@@ -7000,6 +7113,48 @@
         "zh": "退货与退款"
       },
       "description": "From return initiation through authorization, receipt/restock, and refund or store-credit issuance.",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "RETURN_REQUESTED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "initiateReturn",
+          "description": "Create a Requested return against a delivered order's line items, checking eligibility windows and final-sale.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "authorizeReturn",
+          "description": "Validate eligibility and issue an RMA number on an approved return.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "3",
+          "name": "receiveReturn",
+          "description": "Inspect inbound returned goods against the RMA and restock sellable inventory.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "4",
+          "name": "issueRefund",
+          "description": "Issue a refund payment within window or a store-credit adjustment outside window, plus a credit memo, closing the return.",
+          "type": "manual",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "RETURN_INITIATED",
+        "RETURN_AUTHORIZED",
+        "RETURN_RECEIVED",
+        "REFUND_ISSUED"
+      ],
       "actors": [
         {
           "role": "Customer",
@@ -7117,6 +7272,43 @@
         "zh": "信用冻结审查"
       },
       "description": "Detect and place a credit hold, then review and resolve by releasing the order back to allocation or cancelling it.",
+      "actor": [
+        "System",
+        "Human"
+      ],
+      "trigger": [
+        "CREDIT_HOLD_PLACED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "placeCreditHold",
+          "description": "Create a CreditHold citing the violated rule and freeze the order following a failed credit screen.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "resolveCreditHold",
+          "description": "Credit Manager records overdue payment and releases the order, or cancels it, overriding the hold with a recorded reason.",
+          "type": "manual",
+          "condition": "Released to allocation"
+        },
+        {
+          "order": "3",
+          "name": "allocateInventory",
+          "description": "Reserve inventory against the order's line items and set the order to Confirmed.",
+          "type": "tool",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "CREDIT_HOLD_OPENED",
+        "CREDIT_HOLD_RELEASED",
+        "ORDER_CANCELLED",
+        "INVENTORY_RESERVED",
+        "BACKORDER_RAISED"
+      ],
       "actors": [
         {
           "role": "OMS Credit Gate",

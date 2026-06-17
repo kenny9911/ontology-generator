@@ -6788,6 +6788,83 @@
         "zh": "受理到放款"
       },
       "description": "P1: From application capture through spreading, rating, collateral valuation, credit memo, decision, booking, and security perfection that together enable funding.",
+      "actor": [
+        "Human",
+        "Agent",
+        "System"
+      ],
+      "trigger": [
+        "APPLICATION_SUBMITTED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "captureApplication",
+          "description": "Consumes the borrower's signed application package and produces a new LoanFacility linked to the Borrower.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "spreadFinancials",
+          "description": "Consumes the borrower's last three fiscal years of statements and produces computed ratios and an initial RiskRating candidate.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "3",
+          "name": "assignRiskRating",
+          "description": "Consumes the spread ratios and qualitative factors and produces a RiskRating with a next_review_date.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "4",
+          "name": "valueCollateral",
+          "description": "Consumes the appraisal report and produces Collateral fair_value and the facility LTV.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "5",
+          "name": "draftCreditMemo",
+          "description": "Consumes the RiskRating, Collateral, and proposed structure and produces a CreditMemo with attached Covenant definitions and recommended terms.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "6",
+          "name": "renderCreditDecision",
+          "description": "Consumes the CreditMemo and produces an approval record at the correct authority level.",
+          "type": "manual",
+          "condition": "Approved"
+        },
+        {
+          "order": "7",
+          "name": "bookFacility",
+          "description": "Consumes the approved terms from the CreditMemo and produces a booked LoanFacility (status Active) and an amortizing RepaymentSchedule.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "8",
+          "name": "perfectSecurity",
+          "description": "Consumes the executed security agreements and produces perfected Collateral and a satisfied conditions-precedent checklist.",
+          "type": "manual",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "FACILITY_CREATED",
+        "FINANCIALS_SPREAD",
+        "RISK_RATING_ASSIGNED",
+        "COLLATERAL_VALUED",
+        "CREDIT_MEMO_SUBMITTED",
+        "FACILITY_APPROVED",
+        "FACILITY_DECLINED",
+        "FACILITY_BOOKED",
+        "SECURITY_PERFECTED"
+      ],
       "actors": [
         {
           "role": "Relationship Manager",
@@ -6960,6 +7037,42 @@
         "zh": "放款支用"
       },
       "description": "P2: From a borrower drawdown request through the pre-disbursement covenant and limit check to fund disbursement on a cleared drawdown.",
+      "actor": [
+        "Human",
+        "System"
+      ],
+      "trigger": [
+        "DRAWDOWN_REQUESTED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "requestDrawdown",
+          "description": "Consumes the borrower drawdown notice and produces a Drawdown record against an Active LoanFacility.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "checkDrawdownEligibility",
+          "description": "Consumes the Drawdown request, live Covenant states, available undrawn commitment, and any WaiverRequest, and produces an eligibility verdict.",
+          "type": "tool",
+          "condition": "Cleared"
+        },
+        {
+          "order": "3",
+          "name": "disburseFunds",
+          "description": "Consumes the cleared Drawdown and produces a funds transfer and an updated outstanding balance.",
+          "type": "tool",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "DRAWDOWN_REQUESTED",
+        "DRAWDOWN_CLEARED",
+        "DRAWDOWN_BLOCKED",
+        "FUNDS_DISBURSED"
+      ],
       "actors": [
         {
           "role": "Relationship Manager",
@@ -7055,6 +7168,60 @@
         "zh": "季度契约监测"
       },
       "description": "P3: Quarterly scheduling and evaluation of covenants, with branches to breach escalation/waiver decisions and LTV margin calls.",
+      "actor": [
+        "Agent",
+        "Human",
+        "System"
+      ],
+      "trigger": [
+        "SCHEDULED_SYNC"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "scheduleCovenantTest",
+          "description": "Consumes the covenant calendar and produces a pending covenant test per facility per quarter.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "evaluateCovenant",
+          "description": "Consumes the latest financials and the Covenant thresholds and produces a Covenant test_result.",
+          "type": "tool",
+          "condition": "covenant.covenant_type != 'LTV'"
+        },
+        {
+          "order": "3",
+          "name": "escalateBreach",
+          "description": "Consumes the CovenantBreached event and produces a committee notification citing the exact covenant clause and loan-agreement section.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "4",
+          "name": "decideWaiver",
+          "description": "Consumes the WaiverRequest and produces a Granted or Denied decision recorded against the facility.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "5",
+          "name": "issueMarginCall",
+          "description": "Consumes the LTV breach result and produces a MarginCallNotice with a cure deadline.",
+          "type": "tool",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "COVENANT_TEST_DUE",
+        "COVENANT_TESTED",
+        "COVENANT_BREACHED",
+        "BREACH_ESCALATED",
+        "WAIVER_GRANTED",
+        "WAIVER_DENIED",
+        "MARGIN_CALL_ISSUED"
+      ],
       "actors": [
         {
           "role": "Covenant Monitoring Analyst",
@@ -7184,6 +7351,34 @@
         "zh": "风险评级复核"
       },
       "description": "P4: Calendar- or breach-triggered review and re-assignment of a borrower's risk rating.",
+      "actor": [
+        "Agent",
+        "Human"
+      ],
+      "trigger": [
+        "SCHEDULED_SYNC",
+        "COVENANT_BREACHED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "triggerRatingReview",
+          "description": "Consumes the rating calendar and breach events and produces a pending review task for the Credit Analyst.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "refreshRiskRating",
+          "description": "Consumes the latest financials and breach history and produces an updated RiskRating (new version).",
+          "type": "manual",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "RATING_REVIEW_DUE",
+        "RISK_RATING_ASSIGNED"
+      ],
       "actors": [
         {
           "role": "Credit Analyst",

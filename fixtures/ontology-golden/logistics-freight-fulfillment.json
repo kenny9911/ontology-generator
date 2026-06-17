@@ -6693,6 +6693,86 @@
         "zh": "下单到送达"
       },
       "description": "End-to-end flow from receiving a validated client Order through planning, tender, customs, warehouse outbound, transit tracking, and delivery closed on captured POD.",
+      "actor": [
+        "Agent",
+        "Human",
+        "System"
+      ],
+      "trigger": [
+        "ORDER_RECEIVED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "validateOrder",
+          "description": "Validate an inbound Order from EDI 940 and decompose it into per-ship-to Consignments.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "planShipment",
+          "description": "Group accepted Consignments into a Shipment along an eligible Lane and resolve the applicable SLA and delivery window.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "3",
+          "name": "tenderShipment",
+          "description": "Select a Lane-qualified Carrier and transmit an EDI 204 load tender, booking the Carrier on EDI 990 acceptance.",
+          "type": "tool",
+          "condition": "consignment.is_international == true"
+        },
+        {
+          "order": "4",
+          "name": "fileCustomsDeclaration",
+          "description": "File a CustomsDeclaration for an international Consignment via CBP-Link and assign duties on broker acceptance.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "5",
+          "name": "pickAndPack",
+          "description": "Pick and pack Consignment line items in WMS, produce a packing manifest, and write dims/weights back to the Shipment.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "6",
+          "name": "confirmDeparture",
+          "description": "Confirm Carrier check-in and loading at the pickup Stop, set the Shipment In Transit, and record the first TrackingEvent.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "7",
+          "name": "ingestTrackingEvent",
+          "description": "Ingest inbound EDI 214 status messages, append canonicalized TrackingEvents, and re-evaluate the SLA against the committed window.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "8",
+          "name": "captureProofOfDelivery",
+          "description": "Capture the ProofOfDelivery at the delivery Stop and set the Shipment to Delivered.",
+          "type": "tool",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "ORDER_ACCEPTED",
+        "ORDER_REJECTED",
+        "SHIPMENT_PLANNED",
+        "SHIPMENT_TENDERED",
+        "TENDER_REJECTED",
+        "CUSTOMS_DECLARATION_FILED",
+        "CUSTOMS_CLEARED",
+        "CUSTOMS_HELD",
+        "CONSIGNMENT_STAGED",
+        "SHIPMENT_DEPARTED",
+        "SLA_BREACHED",
+        "SHIPMENT_DELIVERED"
+      ],
       "actors": [
         {
           "role": "Order Management Specialist",
@@ -6893,6 +6973,27 @@
         "zh": "报关清关"
       },
       "description": "Sub-process invoked when a Shipment contains an international Consignment: file the CustomsDeclaration, assess duties, and clear before warehouse outbound; runs to completion before pick-and-pack.",
+      "actor": [
+        "Human",
+        "System"
+      ],
+      "trigger": [
+        "SHIPMENT_TENDERED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "fileCustomsDeclaration",
+          "description": "File a CustomsDeclaration for an international Consignment via CBP-Link and assign duties on broker acceptance.",
+          "type": "manual",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "CUSTOMS_DECLARATION_FILED",
+        "CUSTOMS_CLEARED",
+        "CUSTOMS_HELD"
+      ],
       "actors": [
         {
           "role": "Customs Compliance Analyst",
@@ -6964,6 +7065,50 @@
         "zh": "异常到结案"
       },
       "description": "Triggered when a Shipment breaches its SLA or is held in customs: open the Exception, classify liability, raise a service-failure claim when eligible, and resolve/close on the Carrier's disposition.",
+      "actor": [
+        "Agent",
+        "System"
+      ],
+      "trigger": [
+        "SLA_BREACHED",
+        "CUSTOMS_HELD"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "openException",
+          "description": "Open an Exception within 15 minutes of an SLA breach or customs hold, classified by type with an assigned owner.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "classifyException",
+          "description": "Classify an Exception against the SLA and Lane commitment tier, setting liability and the creditEligible flag.",
+          "type": "tool",
+          "condition": "exception.credit_eligible == true"
+        },
+        {
+          "order": "3",
+          "name": "raiseServiceFailureClaim",
+          "description": "Raise a ServiceFailureClaim for a credit-eligible Exception on a guaranteed Lane, with the calculated credit and cited CSA clause, and submit it to the Carrier.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "4",
+          "name": "resolveException",
+          "description": "Resolve and close the Exception on the Carrier's claim disposition, settling or writing off the linked ServiceFailureClaim.",
+          "type": "tool",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "EXCEPTION_OPENED",
+        "EXCEPTION_CLASSIFIED",
+        "CLAIM_SUBMITTED",
+        "EXCEPTION_RESOLVED"
+      ],
       "actors": [
         {
           "role": "Exception Coordinator",

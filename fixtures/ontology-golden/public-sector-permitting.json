@@ -6477,6 +6477,68 @@
         "zh": "受理到裁定"
       },
       "description": "From portal submission through completeness screening, document verification, eligibility evaluation, recording (or escalating) the Determination, to notifying the Applicant.",
+      "actor": [
+        "Human",
+        "Agent",
+        "System"
+      ],
+      "trigger": [
+        "APPLICATION_SUBMITTED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "submitApplication",
+          "description": "Applicant submits a draft Application and Document set via the portal, producing a Submitted Application and opening a Case.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "screenCompleteness",
+          "description": "Intake Clerk checks the submitted Document set against the required-Document list, accepting or returning the Application.",
+          "type": "manual",
+          "condition": "complete"
+        },
+        {
+          "order": "3",
+          "name": "verifyDocument",
+          "description": "Caseworker verifies each Document content from DMS, marking it Verified or Rejected with a reason code.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "4",
+          "name": "evaluateEligibility",
+          "description": "Caseworker (via the eligibility engine) tests verified Application and Household data against the active EligibilityCriterion set, producing a draft Determination.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "5",
+          "name": "recordDetermination",
+          "description": "Caseworker finalizes the draft Determination as Approved or Denied, snapshotting the ruleset version and citation.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "6",
+          "name": "notifyDetermination",
+          "description": "Renders the recorded Determination into a decision notice with appeal rights and deadline, and sends it to the Applicant.",
+          "type": "tool",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "APPLICATION_SUBMITTED",
+        "APPLICATION_ACCEPTED",
+        "APPLICATION_RETURNED",
+        "DOCUMENT_VERIFIED",
+        "DOCUMENT_REJECTED",
+        "ELIGIBILITY_EVALUATED",
+        "DETERMINATION_RECORDED",
+        "DETERMINATION_NOTIFIED"
+      ],
       "actors": [
         {
           "role": "Applicant",
@@ -6625,6 +6687,51 @@
         "zh": "核发到验收"
       },
       "description": "For approved permit Determinations: collect the fee, issue the Permit, and (for inspectable classes) schedule and record the physical Inspection.",
+      "actor": [
+        "Human",
+        "System"
+      ],
+      "trigger": [
+        "DETERMINATION_RECORDED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "collectPayment",
+          "description": "Collects the permit fee through the payment gateway, producing a Cleared (or Failed) Payment.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "issuePermit",
+          "description": "Issues an Active Permit from an approved Determination and a cleared Payment, with issue and expiry dates.",
+          "type": "tool",
+          "condition": "permit.inspectable"
+        },
+        {
+          "order": "3",
+          "name": "scheduleInspection",
+          "description": "Creates a Scheduled Inspection for permit classes requiring a physical check.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "4",
+          "name": "recordInspectionResult",
+          "description": "Records an Inspection as Passed or Failed; a Failed result moves the Permit to ConditionalHold and sets a re-inspection window.",
+          "type": "manual",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "PAYMENT_CLEARED",
+        "PAYMENT_FAILED",
+        "PERMIT_ISSUED",
+        "INSPECTION_SCHEDULED",
+        "INSPECTION_PASSED",
+        "INSPECTION_FAILED"
+      ],
       "actors": [
         {
           "role": "Applicant",
@@ -6731,6 +6838,41 @@
         "zh": "裁定到申诉"
       },
       "description": "An Applicant files an Appeal against a Determination within 30 days; the Appeals Officer reviews and decides within 45 days, then the revised decision is notified.",
+      "actor": [
+        "Human",
+        "System"
+      ],
+      "trigger": [
+        "DETERMINATION_NOTIFIED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "fileAppeal",
+          "description": "Applicant files an Appeal against a contested Determination within 30 calendar days, pausing any benefit reduction.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "decideAppeal",
+          "description": "Appeals Officer records the Appeal outcome as Upheld or Overturned within 45 calendar days; an overturn revises the Determination.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "3",
+          "name": "notifyDetermination",
+          "description": "Renders the recorded Determination into a decision notice with appeal rights and deadline, and sends it to the Applicant.",
+          "type": "tool",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "APPEAL_FILED",
+        "APPEAL_DECIDED",
+        "DETERMINATION_NOTIFIED"
+      ],
       "actors": [
         {
           "role": "Applicant",
@@ -6826,6 +6968,52 @@
         "zh": "续期复核"
       },
       "description": "At the recertification interval the system triggers recertification; the Applicant and Caseworker re-run document verification, eligibility evaluation, and determination on refreshed data, else the Case is suspended.",
+      "actor": [
+        "System",
+        "Human",
+        "Agent"
+      ],
+      "trigger": [
+        "SCHEDULED_SYNC"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "triggerRecertification",
+          "description": "At the recertification interval the system generates a recertification task and notifies the Applicant; lapses suspend the Case.",
+          "type": "tool",
+          "condition": "recertify on time"
+        },
+        {
+          "order": "2",
+          "name": "verifyDocument",
+          "description": "Caseworker verifies each Document content from DMS, marking it Verified or Rejected with a reason code.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "3",
+          "name": "evaluateEligibility",
+          "description": "Caseworker (via the eligibility engine) tests verified Application and Household data against the active EligibilityCriterion set, producing a draft Determination.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "4",
+          "name": "recordDetermination",
+          "description": "Caseworker finalizes the draft Determination as Approved or Denied, snapshotting the ruleset version and citation.",
+          "type": "manual",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "RECERTIFICATION_DUE",
+        "CASE_SUSPENDED",
+        "DOCUMENT_VERIFIED",
+        "DOCUMENT_REJECTED",
+        "ELIGIBILITY_EVALUATED",
+        "DETERMINATION_RECORDED"
+      ],
       "actors": [
         {
           "role": "PBE-CMS",

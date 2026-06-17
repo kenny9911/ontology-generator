@@ -7163,6 +7163,67 @@
         "zh": "入院到出院"
       },
       "description": "Process A: the clinical pathway from registration through eligibility verification, triage, order placement, procedure documentation, and discharge.",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "PATIENT_ARRIVED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "registerEncounter",
+          "description": "Consumes patient demographics and scheduling data and produces a new Encounter record linked to the Patient via MRN.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "verifyEligibility",
+          "description": "Consumes the Coverage on file, sends an EDI 270 eligibility inquiry, and stamps Coverage.status from the 271 response.",
+          "type": "tool",
+          "condition": "Eligibility verified"
+        },
+        {
+          "order": "3",
+          "name": "recordTriage",
+          "description": "Consumes vitals and chief complaint and produces a triage timestamp, an acuity level, and (when criteria met) sets Encounter.emergencyFlag.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "4",
+          "name": "placeOrder",
+          "description": "Consumes the clinician's selection and produces one or more Order records, each referencing a catalog Procedure; routes designated high-cost imaging to Prior Authorization.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "5",
+          "name": "documentProcedure",
+          "description": "Consumes the completed clinical work and produces a documented Procedure with start/stop times, links it to at least one supporting Diagnosis, and signs the clinical note.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "6",
+          "name": "dischargeEncounter",
+          "description": "Consumes the discharge order and final documentation and produces a closed Encounter (status Discharged) with a discharge timestamp; this opens Process B.",
+          "type": "manual",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "ENCOUNTER_CREATED",
+        "ELIGIBILITY_VERIFIED",
+        "ELIGIBILITY_FAILED",
+        "TRIAGE_COMPLETED",
+        "SEPSIS_SUSPECTED",
+        "ORDER_PLACED",
+        "AUTHORIZATION_REQUIRED",
+        "PROCEDURE_DOCUMENTED",
+        "ENCOUNTER_DISCHARGED"
+      ],
       "actors": [
         {
           "role": "Patient Access Representative",
@@ -7307,6 +7368,34 @@
         "zh": "事前授权"
       },
       "description": "Process C: obtaining payer approval for designated services via EDI 278, from request assembly through adjudication and posting.",
+      "actor": [
+        "Agent",
+        "System"
+      ],
+      "trigger": [
+        "AUTHORIZATION_REQUIRED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "requestAuthorization",
+          "description": "Consumes the ordered Procedure, the Coverage, and supporting documentation and produces a PriorAuthorization in Requested state, transmitting an EDI 278 to the payer.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "postAuthorizationResponse",
+          "description": "Consumes the payer's 278 response and updates the PriorAuthorization to Approved, Denied, or Pended, recording approval number, approved units, and validity window.",
+          "type": "tool",
+          "condition": "auth.status == 'Pended'"
+        }
+      ],
+      "triggered_event": [
+        "AUTHORIZATION_REQUESTED",
+        "AUTHORIZATION_APPROVED",
+        "AUTHORIZATION_DENIED"
+      ],
       "actors": [
         {
           "role": "UM Coordinator",
@@ -7402,6 +7491,64 @@
         "zh": "计费到理赔提交"
       },
       "description": "Process B: the financial pathway from charge generation through coding, claim assembly, scrubbing, submission, and remittance posting.",
+      "actor": [
+        "System",
+        "Agent"
+      ],
+      "trigger": [
+        "PROCEDURE_DOCUMENTED",
+        "ENCOUNTER_DISCHARGED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "generateCharge",
+          "description": "Consumes each ProcedureDocumented event, looks up the matching CDM line, and produces one Charge per billable Procedure with price, revenue code, and units.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "assignCodes",
+          "description": "Consumes the clinical documentation and produces final ICD-10-CM and CPT/HCPCS codes, running the NCCI edit set and medical-necessity (LCD/NCD) checks against the Diagnosis–Procedure pairing.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "3",
+          "name": "assembleClaim",
+          "description": "Consumes all captured Charges and completed coding for the Encounter, produces a draft Claim, runs the scrubber (eligibility re-check, auth presence, field completeness), and sets Claim.status Ready or Held.",
+          "type": "tool",
+          "condition": "claim.status == 'Ready'"
+        },
+        {
+          "order": "4",
+          "name": "submitClaim",
+          "description": "Consumes a Ready Claim and produces an EDI 837 transaction, transitioning Claim.status to Submitted.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "5",
+          "name": "postRemittance",
+          "description": "Consumes the payer's EDI 835 remittance and produces posted payments and adjustments at the Charge level; for any denied line, creates a Denial with its CARC/RARC code.",
+          "type": "tool",
+          "condition": "denied_lines == 0"
+        }
+      ],
+      "triggered_event": [
+        "CHARGE_CAPTURED",
+        "CHARGE_ROUTER_ERROR",
+        "CODING_COMPLETED",
+        "CODING_EDIT_FAILED",
+        "CLAIM_ASSEMBLED",
+        "CLAIM_SCRUB_FAILED",
+        "CLAIM_SUBMITTED",
+        "CLAIM_ACCEPTED",
+        "CLAIM_REJECTED",
+        "PAYMENT_POSTED",
+        "CLAIM_DENIED"
+      ],
       "actors": [
         {
           "role": "RCS Charge Router",
@@ -7565,6 +7712,33 @@
         "zh": "拒付管理与申诉"
       },
       "description": "Process D: reworking and appealing rejected claims, from denial triage through appeal submission back into the remittance loop.",
+      "actor": [
+        "Agent",
+        "System"
+      ],
+      "trigger": [
+        "CLAIM_DENIED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "triageDenial",
+          "description": "Consumes a new Denial, classifies it (clinical, coding, authorization, eligibility, technical), and routes it to rework or write-off.",
+          "type": "tool",
+          "condition": "disposition == 'appeal'"
+        },
+        {
+          "order": "2",
+          "name": "submitAppeal",
+          "description": "Consumes the corrected documentation/codes and produces a corrected Claim (frequency code 7) or a formal appeal packet, resubmitting via the Clearinghouse and re-entering the remittance loop.",
+          "type": "tool",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "DENIAL_ASSIGNED",
+        "APPEAL_SUBMITTED"
+      ],
       "actors": [
         {
           "role": "Denials Analyst",
@@ -7654,6 +7828,96 @@
         "zh": "诊疗路径与收入周期（端到端）"
       },
       "description": "Inferred end-to-end orchestration chaining Processes A→C→B→D: from patient arrival and care delivery through prior authorization, charge-to-claim, and denial management to final payment.",
+      "actor": [
+        "Human",
+        "Agent",
+        "System"
+      ],
+      "trigger": [
+        "PATIENT_ARRIVED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "registerEncounter",
+          "description": "Consumes patient demographics and scheduling data and produces a new Encounter record linked to the Patient via MRN.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "placeOrder",
+          "description": "Consumes the clinician's selection and produces one or more Order records, each referencing a catalog Procedure; routes designated high-cost imaging to Prior Authorization.",
+          "type": "manual",
+          "condition": "procedure.requires_auth == true"
+        },
+        {
+          "order": "3",
+          "name": "requestAuthorization",
+          "description": "Consumes the ordered Procedure, the Coverage, and supporting documentation and produces a PriorAuthorization in Requested state, transmitting an EDI 278 to the payer.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "4",
+          "name": "documentProcedure",
+          "description": "Consumes the completed clinical work and produces a documented Procedure with start/stop times, links it to at least one supporting Diagnosis, and signs the clinical note.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "5",
+          "name": "generateCharge",
+          "description": "Consumes each ProcedureDocumented event, looks up the matching CDM line, and produces one Charge per billable Procedure with price, revenue code, and units.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "6",
+          "name": "assembleClaim",
+          "description": "Consumes all captured Charges and completed coding for the Encounter, produces a draft Claim, runs the scrubber (eligibility re-check, auth presence, field completeness), and sets Claim.status Ready or Held.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "7",
+          "name": "submitClaim",
+          "description": "Consumes a Ready Claim and produces an EDI 837 transaction, transitioning Claim.status to Submitted.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "8",
+          "name": "postRemittance",
+          "description": "Consumes the payer's EDI 835 remittance and produces posted payments and adjustments at the Charge level; for any denied line, creates a Denial with its CARC/RARC code.",
+          "type": "tool",
+          "condition": "denied_lines > 0"
+        },
+        {
+          "order": "9",
+          "name": "triageDenial",
+          "description": "Consumes a new Denial, classifies it (clinical, coding, authorization, eligibility, technical), and routes it to rework or write-off.",
+          "type": "tool",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "ENCOUNTER_CREATED",
+        "ORDER_PLACED",
+        "AUTHORIZATION_REQUIRED",
+        "AUTHORIZATION_REQUESTED",
+        "PROCEDURE_DOCUMENTED",
+        "CHARGE_CAPTURED",
+        "CHARGE_ROUTER_ERROR",
+        "CLAIM_ASSEMBLED",
+        "CLAIM_SCRUB_FAILED",
+        "CLAIM_SUBMITTED",
+        "CLAIM_ACCEPTED",
+        "CLAIM_REJECTED",
+        "PAYMENT_POSTED",
+        "CLAIM_DENIED",
+        "DENIAL_ASSIGNED"
+      ],
       "actors": [
         {
           "role": "Patient Access Representative",

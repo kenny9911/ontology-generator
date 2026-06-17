@@ -7584,6 +7584,69 @@
         "zh": "报价到开通"
       },
       "description": "From an approved Opportunity through a signed Order Form to a live, fully entitled Subscription.",
+      "actor": [
+        "Human",
+        "System",
+        "Agent"
+      ],
+      "trigger": [
+        "OPPORTUNITY_CLOSED_WON"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "createOrderForm",
+          "description": "Consumes a Closed-Won Opportunity and selected Plan; produces a draft Order Form linked to the Account.",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "validateQuote",
+          "description": "Consumes the draft Order Form, list price, and discount; produces an approved or rejected quote. Above-threshold discounts require escalation.",
+          "type": "manual",
+          "condition": "Approved"
+        },
+        {
+          "order": "3",
+          "name": "signContract",
+          "description": "Consumes the approved Order Form; produces an executed Contract with term start, term end, and committed quantities.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "4",
+          "name": "createSubscription",
+          "description": "Consumes the executed Contract and Plan; produces an active Subscription and the first Invoice (initial term charge).",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "5",
+          "name": "provisionEntitlements",
+          "description": "Consumes the Subscription's Plan mapping; produces Entitlement records (feature flags, quota limits, seat counts) and closes the ProvisioningTask.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "6",
+          "name": "reconcileEntitlements",
+          "description": "Consumes the live Entitlement set and the Plan spec; produces a drift report and, if mismatched, a remediation ProvisioningTask.",
+          "type": "tool",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "ORDER_FORM_DRAFTED",
+        "QUOTE_APPROVED",
+        "QUOTE_REJECTED",
+        "CONTRACT_SIGNED",
+        "SUBSCRIPTION_CREATED",
+        "INVOICE_ISSUED",
+        "ENTITLEMENT_GRANTED",
+        "PROVISIONING_COMPLETED",
+        "ENTITLEMENT_DRIFT_DETECTED"
+      ],
       "actors": [
         {
           "role": "Account Executive",
@@ -7736,6 +7799,61 @@
         "zh": "用量到开票"
       },
       "description": "Continuous metering of consumption against included quota, overage calculation, invoicing, collection, and revenue recognition.",
+      "actor": [
+        "System",
+        "Agent",
+        "Human"
+      ],
+      "trigger": [
+        "USAGE_RECORDED",
+        "SCHEDULED_SYNC"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "recordUsage",
+          "description": "Consumes metered product events (API calls, seats, GB); produces timestamped UsageRecord rows keyed to the Subscription.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "calculateOverage",
+          "description": "Consumes cumulative UsageRecord totals and the Entitlement included quota; produces an overage quantity when usage exceeds quota.",
+          "type": "tool",
+          "condition": "Overage"
+        },
+        {
+          "order": "3",
+          "name": "issueInvoice",
+          "description": "Consumes the recurring plan charge plus any overage line items; produces the period Invoice.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "4",
+          "name": "collectPayment",
+          "description": "Consumes a payment instrument charge against the open Invoice; produces a Payment and marks the Invoice Paid or Failed.",
+          "type": "tool",
+          "condition": "Paid"
+        },
+        {
+          "order": "5",
+          "name": "recognizeRevenue",
+          "description": "Consumes the Subscription term and Invoice; produces recognized revenue schedules.",
+          "type": "manual",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "USAGE_RECORDED",
+        "OVERAGE_DETECTED",
+        "USAGE_WITHIN_QUOTA",
+        "INVOICE_ISSUED",
+        "PAYMENT_SUCCEEDED",
+        "PAYMENT_FAILED",
+        "REVENUE_RECOGNIZED"
+      ],
       "actors": [
         {
           "role": "Product Runtime",
@@ -7883,6 +8001,53 @@
         "zh": "续约到扩展"
       },
       "description": "Term-end renewal, upgrade/downgrade entitlement adjustment, and grace handling.",
+      "actor": [
+        "Agent",
+        "Human",
+        "System"
+      ],
+      "trigger": [
+        "RENEWAL_WINDOW_OPENED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "openRenewal",
+          "description": "Consumes a Subscription approaching term end; produces a RenewalOpportunity 90 days before term-end.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "processRenewal",
+          "description": "Consumes the customer's renewal decision; produces a renewed Subscription, an upgrade, or a downgrade.",
+          "type": "manual",
+          "condition": "Upgrade"
+        },
+        {
+          "order": "3",
+          "name": "adjustEntitlements",
+          "description": "Consumes the new Plan mapping; on upgrade grants new Entitlements immediately, on downgrade schedules revocation of removed features at period end.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "4",
+          "name": "enterGracePeriod",
+          "description": "Consumes a Subscription not renewed by its term-end date; produces a 14-day grace state.",
+          "type": "tool",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "RENEWAL_OPPORTUNITY_CREATED",
+        "SUBSCRIPTION_RENEWED",
+        "PLAN_UPGRADED",
+        "PLAN_DOWNGRADED",
+        "ENTITLEMENT_GRANTED",
+        "ENTITLEMENT_REVOKED",
+        "GRACE_PERIOD_STARTED"
+      ],
       "actors": [
         {
           "role": "RevOps Automation",
@@ -8006,6 +8171,53 @@
         "zh": "暂停到恢复"
       },
       "description": "Dunning, suspension, reinstatement, and churn on terminal non-payment.",
+      "actor": [
+        "Agent",
+        "System"
+      ],
+      "trigger": [
+        "PAYMENT_FAILED",
+        "GRACE_PERIOD_STARTED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "runDunning",
+          "description": "Consumes a PaymentFailed Invoice; produces a dunning schedule of up to 3 retries over 10 days.",
+          "type": "tool",
+          "condition": "Retries exhausted"
+        },
+        {
+          "order": "2",
+          "name": "suspendSubscription",
+          "description": "Consumes a Subscription whose grace period or dunning is exhausted; produces a Suspended Subscription and revokes all Entitlement access.",
+          "type": "tool",
+          "condition": "Catch-up paid"
+        },
+        {
+          "order": "3",
+          "name": "reinstateSubscription",
+          "description": "Consumes a successful catch-up Payment on a Suspended Subscription; produces a reactivated Subscription and re-grants Entitlement access.",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "4",
+          "name": "churnSubscription",
+          "description": "Consumes a Subscription suspended beyond 30 days; produces a Cancelled Subscription and a closed-lost RenewalOpportunity.",
+          "type": "tool",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "DUNNING_STARTED",
+        "DUNNING_EXHAUSTED",
+        "SUBSCRIPTION_SUSPENDED",
+        "ENTITLEMENT_REVOKED",
+        "SUBSCRIPTION_REINSTATED",
+        "ENTITLEMENT_GRANTED",
+        "SUBSCRIPTION_CANCELLED"
+      ],
       "actors": [
         {
           "role": "RevOps Automation",
