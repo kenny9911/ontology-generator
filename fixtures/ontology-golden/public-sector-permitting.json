@@ -5300,11 +5300,33 @@
     {
       "id": "event:application.submitted",
       "uuid": "66666666666666666666666666660001",
-      "name": "application.submitted",
+      "name": "APPLICATION_SUBMITTED",
       "nameZh": "申请已提交",
       "description": "An Application was submitted via the portal; starts the statutory processing clock.",
       "descriptionZh": "申请已通过门户提交；启动法定处理时钟。",
-      "payload": [
+      "payload": {
+        "source_action": "submitApplication",
+        "event_data": [
+          {
+            "name": "application_id",
+            "type": "String",
+            "target_object": "Application"
+          },
+          {
+            "name": "submitted_at",
+            "type": "Timestamp",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Application",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "application_id",
           "type": "reference",
@@ -5341,11 +5363,28 @@
     {
       "id": "event:application.accepted",
       "uuid": "66666666666666666666666666660002",
-      "name": "application.accepted",
+      "name": "APPLICATION_ACCEPTED",
       "nameZh": "申请已受理",
       "description": "An Application passed completeness screening and was Accepted.",
       "descriptionZh": "申请通过完整性审查并被受理。",
-      "payload": [
+      "payload": {
+        "source_action": "screenCompleteness",
+        "event_data": [
+          {
+            "name": "application_id",
+            "type": "String",
+            "target_object": "Application"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Application",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "application_id",
           "type": "reference",
@@ -5375,11 +5414,33 @@
     {
       "id": "event:application.returned",
       "uuid": "66666666666666666666666666660003",
-      "name": "application.returned",
+      "name": "APPLICATION_RETURNED",
       "nameZh": "申请被退回",
       "description": "An Application was returned as incomplete, suspending the processing clock.",
       "descriptionZh": "申请因不完整被退回，暂停处理时钟。",
-      "payload": [
+      "payload": {
+        "source_action": "screenCompleteness",
+        "event_data": [
+          {
+            "name": "application_id",
+            "type": "String",
+            "target_object": "Application"
+          },
+          {
+            "name": "missing_doc_list",
+            "type": "List<String>",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Application",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "application_id",
           "type": "reference",
@@ -5413,11 +5474,38 @@
     {
       "id": "event:document.verified",
       "uuid": "66666666666666666666666666660004",
-      "name": "document.verified",
+      "name": "DOCUMENT_VERIFIED",
       "nameZh": "文件已核验",
       "description": "A Document was verified by a Caseworker.",
       "descriptionZh": "文件已由个案工作者核验。",
-      "payload": [
+      "payload": {
+        "source_action": "verifyDocument",
+        "event_data": [
+          {
+            "name": "document_id",
+            "type": "String",
+            "target_object": "Document"
+          },
+          {
+            "name": "status",
+            "type": "List<String>",
+            "target_object": null
+          },
+          {
+            "name": "reason",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Document",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "document_id",
           "type": "reference",
@@ -5457,11 +5545,33 @@
     {
       "id": "event:document.rejected",
       "uuid": "66666666666666666666666666660005",
-      "name": "document.rejected",
+      "name": "DOCUMENT_REJECTED",
       "nameZh": "文件被拒绝",
       "description": "A Document failed verification and was rejected, looping back to a Document request.",
       "descriptionZh": "文件核验未通过被拒绝，回退至补件请求。",
-      "payload": [
+      "payload": {
+        "source_action": "verifyDocument",
+        "event_data": [
+          {
+            "name": "document_id",
+            "type": "String",
+            "target_object": "Document"
+          },
+          {
+            "name": "reason",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Document",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "document_id",
           "type": "reference",
@@ -5494,11 +5604,33 @@
     {
       "id": "event:eligibility.evaluated",
       "uuid": "66666666666666666666666666660006",
-      "name": "eligibility.evaluated",
+      "name": "ELIGIBILITY_EVALUATED",
       "nameZh": "资格已评估",
       "description": "Eligibility was evaluated and a draft Determination produced with the decisive criterion.",
       "descriptionZh": "资格已评估并生成带决定性条件的裁定草稿。",
-      "payload": [
+      "payload": {
+        "source_action": "evaluateEligibility",
+        "event_data": [
+          {
+            "name": "case_id",
+            "type": "String",
+            "target_object": "Case"
+          },
+          {
+            "name": "decisive_criterion_id",
+            "type": "String",
+            "target_object": "Eligibility_Criterion"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Determination",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "case_id",
           "type": "reference",
@@ -5534,11 +5666,33 @@
     {
       "id": "event:approval.requested",
       "uuid": "66666666666666666666666666660007",
-      "name": "approval.requested",
+      "name": "APPROVAL_REQUESTED",
       "nameZh": "已请求审批",
       "description": "A Determination exceeding caseworker authority was routed to the Supervisor queue.",
       "descriptionZh": "超过个案工作者权限的裁定被路由至主管队列。",
-      "payload": [
+      "payload": {
+        "source_action": "escalateForApproval",
+        "event_data": [
+          {
+            "name": "determination_id",
+            "type": "String",
+            "target_object": "Determination"
+          },
+          {
+            "name": "benefit_value",
+            "type": "Float",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Determination",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "determination_id",
           "type": "reference",
@@ -5573,11 +5727,33 @@
     {
       "id": "event:determination.recorded",
       "uuid": "66666666666666666666666666660008",
-      "name": "determination.recorded",
+      "name": "DETERMINATION_RECORDED",
       "nameZh": "裁定已记录",
       "description": "A Determination was finalized as Approved or Denied.",
       "descriptionZh": "裁定已定案为批准或拒绝。",
-      "payload": [
+      "payload": {
+        "source_action": "recordDetermination",
+        "event_data": [
+          {
+            "name": "determination_id",
+            "type": "String",
+            "target_object": "Determination"
+          },
+          {
+            "name": "outcome",
+            "type": "List<String>",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Determination",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "determination_id",
           "type": "reference",
@@ -5614,11 +5790,33 @@
     {
       "id": "event:determination.notified",
       "uuid": "66666666666666666666666666660009",
-      "name": "determination.notified",
+      "name": "DETERMINATION_NOTIFIED",
       "nameZh": "裁定已送达",
       "description": "A decision notice with appeal rights and deadline was sent to the Applicant.",
       "descriptionZh": "含申诉权利与期限的决定通知已发送给申请人。",
-      "payload": [
+      "payload": {
+        "source_action": "notifyDetermination",
+        "event_data": [
+          {
+            "name": "determination_id",
+            "type": "String",
+            "target_object": "Determination"
+          },
+          {
+            "name": "appeal_deadline",
+            "type": "Date",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Determination",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "determination_id",
           "type": "reference",
@@ -5653,11 +5851,38 @@
     {
       "id": "event:payment.cleared",
       "uuid": "66666666666666666666666666660010",
-      "name": "payment.cleared",
+      "name": "PAYMENT_CLEARED",
       "nameZh": "缴费已结清",
       "description": "A permit fee Payment cleared in full.",
       "descriptionZh": "许可费缴费已全额结清。",
-      "payload": [
+      "payload": {
+        "source_action": "collectPayment",
+        "event_data": [
+          {
+            "name": "payment_id",
+            "type": "String",
+            "target_object": "Payment"
+          },
+          {
+            "name": "amount",
+            "type": "Float",
+            "target_object": null
+          },
+          {
+            "name": "status",
+            "type": "List<String>",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Payment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "payment_id",
           "type": "reference",
@@ -5697,11 +5922,33 @@
     {
       "id": "event:payment.failed",
       "uuid": "66666666666666666666666666660011",
-      "name": "payment.failed",
+      "name": "PAYMENT_FAILED",
       "nameZh": "缴费失败",
       "description": "A permit fee Payment failed to clear.",
       "descriptionZh": "许可费缴费未能结清。",
-      "payload": [
+      "payload": {
+        "source_action": "collectPayment",
+        "event_data": [
+          {
+            "name": "payment_id",
+            "type": "String",
+            "target_object": "Payment"
+          },
+          {
+            "name": "status",
+            "type": "List<String>",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Payment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "payment_id",
           "type": "reference",
@@ -5734,11 +5981,33 @@
     {
       "id": "event:permit.issued",
       "uuid": "66666666666666666666666666660012",
-      "name": "permit.issued",
+      "name": "PERMIT_ISSUED",
       "nameZh": "许可已核发",
       "description": "A Permit was issued in status Active with an expiry date.",
       "descriptionZh": "许可已核发为活动状态并设定到期日。",
-      "payload": [
+      "payload": {
+        "source_action": "issuePermit",
+        "event_data": [
+          {
+            "name": "permit_id",
+            "type": "String",
+            "target_object": "Permit"
+          },
+          {
+            "name": "expires_at",
+            "type": "Date",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Permit",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "permit_id",
           "type": "reference",
@@ -5773,11 +6042,33 @@
     {
       "id": "event:inspection.scheduled",
       "uuid": "66666666666666666666666666660013",
-      "name": "inspection.scheduled",
+      "name": "INSPECTION_SCHEDULED",
       "nameZh": "验收已排期",
       "description": "An Inspection was scheduled for an inspectable Permit.",
       "descriptionZh": "已为须验收的许可安排验收。",
-      "payload": [
+      "payload": {
+        "source_action": "scheduleInspection",
+        "event_data": [
+          {
+            "name": "inspection_id",
+            "type": "String",
+            "target_object": "Inspection"
+          },
+          {
+            "name": "permit_id",
+            "type": "String",
+            "target_object": "Permit"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Inspection",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "inspection_id",
           "type": "reference",
@@ -5813,11 +6104,33 @@
     {
       "id": "event:inspection.passed",
       "uuid": "66666666666666666666666666660014",
-      "name": "inspection.passed",
+      "name": "INSPECTION_PASSED",
       "nameZh": "验收通过",
       "description": "An Inspection was recorded as Passed, allowing the Permit to move to Active-Verified.",
       "descriptionZh": "验收记录为通过，许可可转为 Active-Verified。",
-      "payload": [
+      "payload": {
+        "source_action": "recordInspectionResult",
+        "event_data": [
+          {
+            "name": "inspection_id",
+            "type": "String",
+            "target_object": "Inspection"
+          },
+          {
+            "name": "findings",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Permit",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "inspection_id",
           "type": "reference",
@@ -5850,11 +6163,33 @@
     {
       "id": "event:inspection.failed",
       "uuid": "66666666666666666666666666660015",
-      "name": "inspection.failed",
+      "name": "INSPECTION_FAILED",
       "nameZh": "验收不通过",
       "description": "An Inspection was recorded as Failed, moving the Permit to ConditionalHold with a re-inspection window.",
       "descriptionZh": "验收记录为不通过，许可转为条件保留并设定复检窗口。",
-      "payload": [
+      "payload": {
+        "source_action": "recordInspectionResult",
+        "event_data": [
+          {
+            "name": "inspection_id",
+            "type": "String",
+            "target_object": "Inspection"
+          },
+          {
+            "name": "findings",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Permit",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "inspection_id",
           "type": "reference",
@@ -5887,11 +6222,38 @@
     {
       "id": "event:appeal.filed",
       "uuid": "66666666666666666666666666660016",
-      "name": "appeal.filed",
+      "name": "APPEAL_FILED",
       "nameZh": "申诉已提出",
       "description": "An Appeal was filed against a Determination, pausing benefit reduction.",
       "descriptionZh": "已对裁定提出申诉，暂停福利削减。",
-      "payload": [
+      "payload": {
+        "source_action": "fileAppeal",
+        "event_data": [
+          {
+            "name": "appeal_id",
+            "type": "String",
+            "target_object": "Appeal"
+          },
+          {
+            "name": "determination_id",
+            "type": "String",
+            "target_object": "Determination"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Appeal",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Case",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "appeal_id",
           "type": "reference",
@@ -5927,11 +6289,33 @@
     {
       "id": "event:appeal.decided",
       "uuid": "66666666666666666666666666660017",
-      "name": "appeal.decided",
+      "name": "APPEAL_DECIDED",
       "nameZh": "申诉已裁决",
       "description": "An Appeal was decided as Upheld or Overturned.",
       "descriptionZh": "申诉已裁决为维持或推翻。",
-      "payload": [
+      "payload": {
+        "source_action": "decideAppeal",
+        "event_data": [
+          {
+            "name": "appeal_id",
+            "type": "String",
+            "target_object": "Appeal"
+          },
+          {
+            "name": "outcome",
+            "type": "List<String>",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Appeal",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "appeal_id",
           "type": "reference",
@@ -5966,11 +6350,33 @@
     {
       "id": "event:recertification.due",
       "uuid": "66666666666666666666666666660018",
-      "name": "recertification.due",
+      "name": "RECERTIFICATION_DUE",
       "nameZh": "复核到期",
       "description": "A Case reached its recertification due date and a recertification task was generated.",
       "descriptionZh": "案件已达复核到期日并生成复核任务。",
-      "payload": [
+      "payload": {
+        "source_action": "triggerRecertification",
+        "event_data": [
+          {
+            "name": "case_id",
+            "type": "String",
+            "target_object": "Case"
+          },
+          {
+            "name": "recert_due_date",
+            "type": "Date",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Case",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "case_id",
           "type": "reference",
@@ -6005,11 +6411,33 @@
     {
       "id": "event:case.suspended",
       "uuid": "66666666666666666666666666660019",
-      "name": "case.suspended",
+      "name": "CASE_SUSPENDED",
       "nameZh": "案件已中止",
       "description": "A Case was automatically suspended on recertification lapse past the grace period.",
       "descriptionZh": "案件因复核逾宽限期失效被自动中止。",
-      "payload": [
+      "payload": {
+        "source_action": "triggerRecertification",
+        "event_data": [
+          {
+            "name": "case_id",
+            "type": "String",
+            "target_object": "Case"
+          },
+          {
+            "name": "reason",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Case",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "case_id",
           "type": "reference",

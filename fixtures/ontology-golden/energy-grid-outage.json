@@ -5682,11 +5682,33 @@
     {
       "id": "event:meter.last-gasp-received",
       "uuid": "b0043142536475860112314256470001",
-      "name": "meter.last-gasp-received",
+      "name": "METER_LAST_GASP_RECEIVED",
       "nameZh": "电表末次喘息已接收",
       "description": "AMI last-gasp signal received from a meter, indicating loss of supply at a ServicePoint.",
       "descriptionZh": "从电表接收到AMI末次喘息信号，表明某供电点失去供电。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "service_point_id",
+            "type": "String",
+            "target_object": "Service_Point"
+          },
+          {
+            "name": "timestamp",
+            "type": "Timestamp",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Service_Point",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "service_point_id",
           "type": "reference",
@@ -5720,11 +5742,33 @@
     {
       "id": "event:breaker.tripped",
       "uuid": "b1143142536475860112314256470012",
-      "name": "breaker.tripped",
+      "name": "BREAKER_TRIPPED",
       "nameZh": "断路器已跳闸",
       "description": "SCADA breaker-open telemetry indicating a trip on the grid.",
       "descriptionZh": "SCADA断路器断开遥测，表明电网发生跳闸。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "feeder_id",
+            "type": "String",
+            "target_object": "Feeder"
+          },
+          {
+            "name": "timestamp",
+            "type": "Timestamp",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Feeder",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "feeder_id",
           "type": "reference",
@@ -5757,11 +5801,33 @@
     {
       "id": "event:outage.detected",
       "uuid": "b2243142536475860112314256470023",
-      "name": "outage.detected",
+      "name": "OUTAGE_DETECTED",
       "nameZh": "停电已检测",
       "description": "OMS has opened a candidate OutageEvent in state Detected.",
       "descriptionZh": "OMS已开立状态为Detected的候选停电事件。",
-      "payload": [
+      "payload": {
+        "source_action": "detectOutage",
+        "event_data": [
+          {
+            "name": "outage_event_id",
+            "type": "String",
+            "target_object": "Outage_Event"
+          },
+          {
+            "name": "feeder_id",
+            "type": "String",
+            "target_object": "Feeder"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Outage_Event",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "outage_event_id",
           "type": "reference",
@@ -5797,11 +5863,33 @@
     {
       "id": "event:outage.confirmed",
       "uuid": "b3343142536475860112314256470034",
-      "name": "outage.confirmed",
+      "name": "OUTAGE_CONFIRMED",
       "nameZh": "停电已确认",
       "description": "OMS has confirmed the outage and computed the affected ServicePoint count.",
       "descriptionZh": "OMS已确认停电并计算出受影响供电点数量。",
-      "payload": [
+      "payload": {
+        "source_action": "scopeOutage",
+        "event_data": [
+          {
+            "name": "outage_event_id",
+            "type": "String",
+            "target_object": "Outage_Event"
+          },
+          {
+            "name": "affected_service_point_count",
+            "type": "Integer",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Outage_Event",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "outage_event_id",
           "type": "reference",
@@ -5837,11 +5925,33 @@
     {
       "id": "event:reportability.determined",
       "uuid": "b4443142536475860112314256470045",
-      "name": "reportability.determined",
+      "name": "REPORTABILITY_DETERMINED",
       "nameZh": "可报告性已判定",
       "description": "OMS Compliance has determined whether the outage is reportable to the regulator.",
       "descriptionZh": "OMS合规模块已判定停电是否需向监管机构上报。",
-      "payload": [
+      "payload": {
+        "source_action": "evaluateReportability",
+        "event_data": [
+          {
+            "name": "outage_event_id",
+            "type": "String",
+            "target_object": "Outage_Event"
+          },
+          {
+            "name": "reportable",
+            "type": "Boolean",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Outage_Event",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "outage_event_id",
           "type": "reference",
@@ -5874,11 +5984,33 @@
     {
       "id": "event:regulatory.clock-started",
       "uuid": "b5543142536475860112314256470056",
-      "name": "regulatory.clock-started",
+      "name": "REGULATORY_CLOCK_STARTED",
       "nameZh": "监管时钟已启动",
       "description": "The regulatory reporting clock has started for a reportable outage; initiates Process P2.",
       "descriptionZh": "可报告停电的监管报告时钟已启动；启动流程P2。",
-      "payload": [
+      "payload": {
+        "source_action": "evaluateReportability",
+        "event_data": [
+          {
+            "name": "outage_event_id",
+            "type": "String",
+            "target_object": "Outage_Event"
+          },
+          {
+            "name": "filing_deadline",
+            "type": "Timestamp",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Outage_Event",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "outage_event_id",
           "type": "reference",
@@ -5913,11 +6045,38 @@
     {
       "id": "event:crew.dispatched",
       "uuid": "b6643142536475860112314256470067",
-      "name": "crew.dispatched",
+      "name": "CREW_DISPATCHED",
       "nameZh": "班组已派遣",
       "description": "A Crew has been dispatched to a confirmed outage.",
       "descriptionZh": "已向已确认停电派遣作业班组。",
-      "payload": [
+      "payload": {
+        "source_action": "dispatchCrew",
+        "event_data": [
+          {
+            "name": "crew_id",
+            "type": "String",
+            "target_object": "Crew"
+          },
+          {
+            "name": "outage_event_id",
+            "type": "String",
+            "target_object": "Outage_Event"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Crew",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Maintenance_Work_Order",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "crew_id",
           "type": "reference",
@@ -5953,11 +6112,38 @@
     {
       "id": "event:field-finding.logged",
       "uuid": "b7743142536475860112314256470078",
-      "name": "field-finding.logged",
+      "name": "FIELD_FINDING_LOGGED",
       "nameZh": "现场发现已记录",
       "description": "A crew has logged its field finding with a diagnosed cause and faulted asset.",
       "descriptionZh": "班组已记录现场发现，含诊断原因和故障资产。",
-      "payload": [
+      "payload": {
+        "source_action": "logFieldFinding",
+        "event_data": [
+          {
+            "name": "work_order_id",
+            "type": "String",
+            "target_object": "Maintenance_Work_Order"
+          },
+          {
+            "name": "outage_event_id",
+            "type": "String",
+            "target_object": "Outage_Event"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Outage_Event",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Maintenance_Work_Order",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "work_order_id",
           "type": "reference",
@@ -5993,11 +6179,38 @@
     {
       "id": "event:asset.defect-identified",
       "uuid": "b8843142536475860112314256470089",
-      "name": "asset.defect-identified",
+      "name": "ASSET_DEFECT_IDENTIFIED",
       "nameZh": "资产缺陷已识别",
       "description": "A defective asset has been identified, either during outage field work or a failed inspection.",
       "descriptionZh": "已识别出有缺陷的资产，可能来自停电现场作业或不通过的巡检。",
-      "payload": [
+      "payload": {
+        "source_action": "logFieldFinding",
+        "event_data": [
+          {
+            "name": "asset_tag",
+            "type": "String",
+            "target_object": "Asset"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Outage_Event",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Maintenance_Work_Order",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Inspection",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "asset_tag",
           "type": "reference",
@@ -6028,11 +6241,28 @@
     {
       "id": "event:supply.restored",
       "uuid": "b9943142536475860112314256470090",
-      "name": "supply.restored",
+      "name": "SUPPLY_RESTORED",
       "nameZh": "供电已恢复",
       "description": "Supply has been restored to an affected ServicePoint, confirmed via AMI.",
       "descriptionZh": "已恢复对受影响供电点的供电，经AMI确认。",
-      "payload": [
+      "payload": {
+        "source_action": "restoreSupply",
+        "event_data": [
+          {
+            "name": "service_point_id",
+            "type": "String",
+            "target_object": "Service_Point"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Outage_Event",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "service_point_id",
           "type": "reference",
@@ -6060,11 +6290,33 @@
     {
       "id": "event:outage.restored",
       "uuid": "ba043142536475860112314256470101",
-      "name": "outage.restored",
+      "name": "OUTAGE_RESTORED",
       "nameZh": "停电已复电",
       "description": "The OutageEvent has been advanced to state Restored with a restorationTimestamp.",
       "descriptionZh": "停电事件已推进至Restored状态并带有复电时间戳。",
-      "payload": [
+      "payload": {
+        "source_action": "restoreSupply",
+        "event_data": [
+          {
+            "name": "outage_event_id",
+            "type": "String",
+            "target_object": "Outage_Event"
+          },
+          {
+            "name": "restoration_timestamp",
+            "type": "Timestamp",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Outage_Event",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "outage_event_id",
           "type": "reference",
@@ -6099,11 +6351,33 @@
     {
       "id": "event:outage.closed",
       "uuid": "bb143142536475860112314256470112",
-      "name": "outage.closed",
+      "name": "OUTAGE_CLOSED",
       "nameZh": "停电已关闭",
       "description": "The OutageEvent has been closed after all ServicePoints confirmed live and a cause code recorded.",
       "descriptionZh": "在所有供电点确认带电且已记录原因代码后，停电事件已关闭。",
-      "payload": [
+      "payload": {
+        "source_action": "closeOutage",
+        "event_data": [
+          {
+            "name": "outage_event_id",
+            "type": "String",
+            "target_object": "Outage_Event"
+          },
+          {
+            "name": "duration",
+            "type": "Integer",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Outage_Event",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "outage_event_id",
           "type": "reference",
@@ -6137,11 +6411,28 @@
     {
       "id": "event:regulatory-report.opened",
       "uuid": "bc243142536475860112314256470123",
-      "name": "regulatory-report.opened",
+      "name": "REGULATORY_REPORT_OPENED",
       "nameZh": "监管报告已开立",
       "description": "A draft RegulatoryReport has been opened with a computed filing deadline.",
       "descriptionZh": "已开立带计算备案截止时间的草稿监管报告。",
-      "payload": [
+      "payload": {
+        "source_action": "openRegulatoryReport",
+        "event_data": [
+          {
+            "name": "report_id",
+            "type": "String",
+            "target_object": "Regulatory_Report"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Regulatory_Report",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "report_id",
           "type": "reference",
@@ -6174,11 +6465,28 @@
     {
       "id": "event:regulatory-report.compiled",
       "uuid": "bd343142536475860112314256470134",
-      "name": "regulatory-report.compiled",
+      "name": "REGULATORY_REPORT_COMPILED",
       "nameZh": "监管报告已编制",
       "description": "The RegulatoryReport has been compiled and validated, ready for submission.",
       "descriptionZh": "监管报告已编制并校验，准备好提交。",
-      "payload": [
+      "payload": {
+        "source_action": "compileRegulatoryReport",
+        "event_data": [
+          {
+            "name": "report_id",
+            "type": "String",
+            "target_object": "Regulatory_Report"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Regulatory_Report",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "report_id",
           "type": "reference",
@@ -6211,11 +6519,33 @@
     {
       "id": "event:regulatory-report.submitted",
       "uuid": "be443142536475860112314256470145",
-      "name": "regulatory-report.submitted",
+      "name": "REGULATORY_REPORT_SUBMITTED",
       "nameZh": "监管报告已提交",
       "description": "The RegulatoryReport has been submitted to the PUC portal with a confirmation ID.",
       "descriptionZh": "监管报告已带确认编号提交至PUC门户。",
-      "payload": [
+      "payload": {
+        "source_action": "submitRegulatoryReport",
+        "event_data": [
+          {
+            "name": "report_id",
+            "type": "String",
+            "target_object": "Regulatory_Report"
+          },
+          {
+            "name": "portal_confirmation_id",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Regulatory_Report",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "report_id",
           "type": "reference",
@@ -6248,11 +6578,28 @@
     {
       "id": "event:regulatory-report.accepted",
       "uuid": "bf543142536475860112314256470156",
-      "name": "regulatory-report.accepted",
+      "name": "REGULATORY_REPORT_ACCEPTED",
       "nameZh": "监管报告已受理",
       "description": "The PUC portal has accepted the submitted RegulatoryReport.",
       "descriptionZh": "PUC门户已受理已提交的监管报告。",
-      "payload": [
+      "payload": {
+        "source_action": "submitRegulatoryReport",
+        "event_data": [
+          {
+            "name": "report_id",
+            "type": "String",
+            "target_object": "Regulatory_Report"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Regulatory_Report",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "report_id",
           "type": "reference",
@@ -6283,11 +6630,28 @@
     {
       "id": "event:regulatory.deadline-breached",
       "uuid": "c0643142536475860112314256470167",
-      "name": "regulatory.deadline-breached",
+      "name": "REGULATORY_DEADLINE_BREACHED",
       "nameZh": "监管截止时间已逾期",
       "description": "The filing deadline passed without a submitted RegulatoryReport; escalates to the Director of Compliance.",
       "descriptionZh": "备案截止时间在监管报告提交前逾期；升级至合规总监。",
-      "payload": [
+      "payload": {
+        "source_action": "submitRegulatoryReport",
+        "event_data": [
+          {
+            "name": "outage_event_id",
+            "type": "String",
+            "target_object": "Outage_Event"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Outage_Event",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "outage_event_id",
           "type": "reference",
@@ -6315,11 +6679,28 @@
     {
       "id": "event:inspection.interval-elapsed",
       "uuid": "c1743142536475860112314256470178",
-      "name": "inspection.interval-elapsed",
+      "name": "INSPECTION_INTERVAL_ELAPSED",
       "nameZh": "巡检间隔已到期",
       "description": "An asset's rated inspection interval timer has elapsed (or asset commissioning), triggering scheduling.",
       "descriptionZh": "资产的额定巡检间隔定时器已到期（或资产投运），触发排程。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "asset_tag",
+            "type": "String",
+            "target_object": "Asset"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Asset",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "asset_tag",
           "type": "reference",
@@ -6347,11 +6728,28 @@
     {
       "id": "event:inspection.scheduled",
       "uuid": "c2843142536475860112314256470189",
-      "name": "inspection.scheduled",
+      "name": "INSPECTION_SCHEDULED",
       "nameZh": "巡检已排定",
       "description": "An Inspection has been scheduled with a due date.",
       "descriptionZh": "已排定带到期日的巡检。",
-      "payload": [
+      "payload": {
+        "source_action": "scheduleInspection",
+        "event_data": [
+          {
+            "name": "inspection_id",
+            "type": "String",
+            "target_object": "Inspection"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Inspection",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "inspection_id",
           "type": "reference",
@@ -6384,11 +6782,33 @@
     {
       "id": "event:inspection.completed",
       "uuid": "c3943142536475860112314256470190",
-      "name": "inspection.completed",
+      "name": "INSPECTION_COMPLETED",
       "nameZh": "巡检已完成",
       "description": "An Inspection has been completed with a pass/fail result.",
       "descriptionZh": "巡检已完成并带有通过/不通过结果。",
-      "payload": [
+      "payload": {
+        "source_action": "recordInspectionResult",
+        "event_data": [
+          {
+            "name": "inspection_id",
+            "type": "String",
+            "target_object": "Inspection"
+          },
+          {
+            "name": "result",
+            "type": "List<String>",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Inspection",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "inspection_id",
           "type": "reference",
@@ -6422,11 +6842,28 @@
     {
       "id": "event:inspection.interval-missed",
       "uuid": "c4043142536475860112314256470201",
-      "name": "inspection.interval-missed",
+      "name": "INSPECTION_INTERVAL_MISSED",
       "nameZh": "巡检间隔已错过",
       "description": "A rated inspection interval was missed without a completed inspection, triggering a corrective work order.",
       "descriptionZh": "额定巡检间隔在未完成巡检的情况下被错过，触发纠正性工单。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "asset_tag",
+            "type": "String",
+            "target_object": "Asset"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Asset",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "asset_tag",
           "type": "reference",
@@ -6454,11 +6891,33 @@
     {
       "id": "event:maintenance-work-order.raised",
       "uuid": "c5143142536475860112314256470212",
-      "name": "maintenance-work-order.raised",
+      "name": "MAINTENANCE_WORK_ORDER_RAISED",
       "nameZh": "维护工单已开立",
       "description": "A MaintenanceWorkOrder has been raised with a derived priority.",
       "descriptionZh": "已开立带推导优先级的维护工单。",
-      "payload": [
+      "payload": {
+        "source_action": "raiseMaintenanceWorkOrder",
+        "event_data": [
+          {
+            "name": "work_order_id",
+            "type": "String",
+            "target_object": "Maintenance_Work_Order"
+          },
+          {
+            "name": "priority",
+            "type": "List<String>",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Maintenance_Work_Order",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "work_order_id",
           "type": "reference",
@@ -6495,11 +6954,28 @@
     {
       "id": "event:maintenance-work-order.approved",
       "uuid": "c6243142536475860112314256470223",
-      "name": "maintenance-work-order.approved",
+      "name": "MAINTENANCE_WORK_ORDER_APPROVED",
       "nameZh": "维护工单已批准",
       "description": "A MaintenanceWorkOrder has been approved, scheduled, and crew-assigned.",
       "descriptionZh": "维护工单已批准、排定并派工。",
-      "payload": [
+      "payload": {
+        "source_action": "approveMaintenanceWorkOrder",
+        "event_data": [
+          {
+            "name": "work_order_id",
+            "type": "String",
+            "target_object": "Maintenance_Work_Order"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Maintenance_Work_Order",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "work_order_id",
           "type": "reference",
@@ -6532,11 +7008,33 @@
     {
       "id": "event:maintenance-work-order.closed",
       "uuid": "c7343142536475860112314256470234",
-      "name": "maintenance-work-order.closed",
+      "name": "MAINTENANCE_WORK_ORDER_CLOSED",
       "nameZh": "维护工单已关闭",
       "description": "A MaintenanceWorkOrder has been closed and the asset condition record updated.",
       "descriptionZh": "维护工单已关闭，资产状态记录已更新。",
-      "payload": [
+      "payload": {
+        "source_action": "completeMaintenanceWorkOrder",
+        "event_data": [
+          {
+            "name": "work_order_id",
+            "type": "String",
+            "target_object": "Maintenance_Work_Order"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Maintenance_Work_Order",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Asset",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "work_order_id",
           "type": "reference",
@@ -6567,11 +7065,28 @@
     {
       "id": "event:vegetation.cycle-lapsed",
       "uuid": "c8443142536475860112314256470245",
-      "name": "vegetation.cycle-lapsed",
+      "name": "VEGETATION_CYCLE_LAPSED",
       "nameZh": "植被周期已逾期",
       "description": "A vegetation clearance cycle lapsed without completion or a documented variance on a high-voltage feeder.",
       "descriptionZh": "高压馈线的植被清理周期在未完成或无书面变更的情况下逾期。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "feeder_id",
+            "type": "String",
+            "target_object": "Feeder"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Feeder",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "feeder_id",
           "type": "reference",

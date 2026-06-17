@@ -559,6 +559,30 @@ async function main(): Promise<void> {
     });
   }
 
+  for (const { file, ontology } of fixtures) {
+    await check(`${file}: every canonical event carries the spec payload`, () => {
+      const objSpecIds = new Set(ontology.objects.map((o) => specObjectId(o.id)));
+      const actionNames = new Set(ontology.actions.map((a) => a.name));
+      for (const e of ontology.events) {
+        assert(typeof e.name === 'string' && /^[A-Z0-9_]+$/.test(e.name), `${e.id}: event name must be UPPER_SNAKE, got ${JSON.stringify(e.name)}`);
+        assert(Array.isArray(e.payloadFields), `${e.id}: payloadFields (retained) must be an array`);
+        const p = e.payload;
+        assert(!!p && typeof p === 'object' && !Array.isArray(p), `${e.id}: payload must be a spec object`);
+        assert(typeof p.source_action === 'string', `${e.id}: payload.source_action`);
+        assert(Array.isArray(p.event_data) && Array.isArray(p.state_mutations), `${e.id}: payload arrays`);
+        for (const d of p.event_data) {
+          assert(typeof d.name === 'string' && typeof d.type === 'string', `${e.id}: event_data shape`);
+          assert(d.target_object === null || objSpecIds.has(d.target_object), `${e.id}: event_data target_object "${d.target_object}" must resolve or be null`);
+        }
+        for (const m of p.state_mutations) {
+          assert(objSpecIds.has(m.target_object), `${e.id}: state_mutations target_object "${m.target_object}" must resolve`);
+          assert(Array.isArray(m.impacted_properties), `${e.id}: impacted_properties`);
+        }
+        if (p.source_action) assert(actionNames.has(p.source_action) || [...actionNames].some((n) => n.toLowerCase() === p.source_action.toLowerCase()), `${e.id}: source_action "${p.source_action}" should resolve to an action`);
+      }
+    });
+  }
+
   // -------------------------------------------------------------------------
   // Summary.
   // -------------------------------------------------------------------------

@@ -5171,11 +5171,22 @@
     {
       "id": "event:change.need.identified",
       "uuid": "50000000000000000000000000000001",
-      "name": "change.need.identified",
+      "name": "CHANGE_NEED_IDENTIFIED",
       "nameZh": "已识别变更需求",
       "description": "A defect trend, customer request, or cost reduction surfaces a need to change product structure.",
       "descriptionZh": "缺陷趋势、客户请求或成本降低暴露出更改产品结构的需求。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "trigger_source",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": []
+      },
+      "payloadFields": [
         {
           "name": "trigger_source",
           "type": "string",
@@ -5206,11 +5217,28 @@
     {
       "id": "event:engineering.change.raised",
       "uuid": "50000000000000000000000000000002",
-      "name": "engineering.change.raised",
+      "name": "ENGINEERING_CHANGE_RAISED",
       "nameZh": "工程变更已提出",
       "description": "A new EngineeringChange has been raised in Draft status.",
       "descriptionZh": "已提出状态为草稿的新工程变更。",
-      "payload": [
+      "payload": {
+        "source_action": "raiseEngineeringChange",
+        "event_data": [
+          {
+            "name": "engineering_change",
+            "type": "String",
+            "target_object": "Engineering_Change"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Engineering_Change",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "engineering_change",
           "type": "reference",
@@ -5240,11 +5268,28 @@
     {
       "id": "event:engineering.change.classified",
       "uuid": "50000000000000000000000000000003",
-      "name": "engineering.change.classified",
+      "name": "ENGINEERING_CHANGE_CLASSIFIED",
       "nameZh": "工程变更已分类",
       "description": "An EngineeringChange has been classified with a category and second-approval flag.",
       "descriptionZh": "工程变更已分类，含类别与二次批准标记。",
-      "payload": [
+      "payload": {
+        "source_action": "classifyEngineeringChange",
+        "event_data": [
+          {
+            "name": "engineering_change",
+            "type": "String",
+            "target_object": "Engineering_Change"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Engineering_Change",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "engineering_change",
           "type": "reference",
@@ -5274,11 +5319,33 @@
     {
       "id": "event:engineering.change.approved",
       "uuid": "50000000000000000000000000000004",
-      "name": "engineering.change.approved",
+      "name": "ENGINEERING_CHANGE_APPROVED",
       "nameZh": "工程变更已批准",
       "description": "An EngineeringChange has been approved by the CCB.",
       "descriptionZh": "工程变更已经变更控制委员会批准。",
-      "payload": [
+      "payload": {
+        "source_action": "approveEngineeringChange",
+        "event_data": [
+          {
+            "name": "ecr_id",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "affected_parts",
+            "type": "List<String>",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Engineering_Change",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "ecr_id",
           "type": "string",
@@ -5313,11 +5380,28 @@
     {
       "id": "event:engineering.change.rejected",
       "uuid": "50000000000000000000000000000005",
-      "name": "engineering.change.rejected",
+      "name": "ENGINEERING_CHANGE_REJECTED",
       "nameZh": "工程变更已拒绝",
       "description": "An EngineeringChange has been rejected by the CCB.",
       "descriptionZh": "工程变更已被变更控制委员会拒绝。",
-      "payload": [
+      "payload": {
+        "source_action": "approveEngineeringChange",
+        "event_data": [
+          {
+            "name": "engineering_change",
+            "type": "String",
+            "target_object": "Engineering_Change"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Engineering_Change",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "engineering_change",
           "type": "reference",
@@ -5345,11 +5429,33 @@
     {
       "id": "event:revision.became.effective",
       "uuid": "50000000000000000000000000000006",
-      "name": "revision.became.effective",
+      "name": "REVISION_BECAME_EFFECTIVE",
       "nameZh": "修订已生效",
       "description": "A BOM revision became effective on its effective_from date.",
       "descriptionZh": "物料清单修订在其生效起始日生效。",
-      "payload": [
+      "payload": {
+        "source_action": "setRevisionEffectivity",
+        "event_data": [
+          {
+            "name": "part_number",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "revision",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Bill_Of_Materials",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "part_number",
           "type": "string",
@@ -5384,11 +5490,38 @@
     {
       "id": "event:bom.revision.published",
       "uuid": "50000000000000000000000000000007",
-      "name": "bom.revision.published",
+      "name": "BOM_REVISION_PUBLISHED",
       "nameZh": "物料清单修订已发布",
       "description": "A new BOM revision was published to downstream systems.",
       "descriptionZh": "新物料清单修订已发布至下游系统。",
-      "payload": [
+      "payload": {
+        "source_action": "setRevisionEffectivity",
+        "event_data": [
+          {
+            "name": "bom_id",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "bom_revision",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "effective_from",
+            "type": "Date",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Bill_Of_Materials",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "bom_id",
           "type": "string",
@@ -5425,11 +5558,28 @@
     {
       "id": "event:work.order.revalidation.required",
       "uuid": "50000000000000000000000000000008",
-      "name": "work.order.revalidation.required",
+      "name": "WORK_ORDER_REVALIDATION_REQUIRED",
       "nameZh": "工单需重校",
       "description": "An open WorkOrder still points at a superseded revision and must be revalidated.",
       "descriptionZh": "开放工单仍指向被替代修订，须重校。",
-      "payload": [
+      "payload": {
+        "source_action": "revalidateOpenWorkOrders",
+        "event_data": [
+          {
+            "name": "work_order_id",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Work_Order",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "work_order_id",
           "type": "string",
@@ -5456,11 +5606,22 @@
     {
       "id": "event:production.demand.confirmed",
       "uuid": "50000000000000000000000000000009",
-      "name": "production.demand.confirmed",
+      "name": "PRODUCTION_DEMAND_CONFIRMED",
       "nameZh": "生产需求已确认",
       "description": "A production demand (planned order) has been confirmed, triggering work-order release.",
       "descriptionZh": "生产需求（计划订单）已确认，触发工单下达。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "planned_order",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": []
+      },
+      "payloadFields": [
         {
           "name": "planned_order",
           "type": "json",
@@ -5490,11 +5651,33 @@
     {
       "id": "event:work.order.released",
       "uuid": "5000000000000000000000000000000a",
-      "name": "work.order.released",
+      "name": "WORK_ORDER_RELEASED",
       "nameZh": "工单已下达",
       "description": "A WorkOrder has been released with reserved components.",
       "descriptionZh": "工单已下达并预留组件。",
-      "payload": [
+      "payload": {
+        "source_action": "releaseWorkOrder",
+        "event_data": [
+          {
+            "name": "work_order_id",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "bom_revision",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Work_Order",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "work_order_id",
           "type": "string",
@@ -5528,11 +5711,33 @@
     {
       "id": "event:work.order.release.blocked",
       "uuid": "5000000000000000000000000000000b",
-      "name": "work.order.release.blocked",
+      "name": "WORK_ORDER_RELEASE_BLOCKED",
       "nameZh": "工单下达受阻",
       "description": "WorkOrder release was blocked because a release rule failed.",
       "descriptionZh": "因下达规则未通过，工单下达受阻。",
-      "payload": [
+      "payload": {
+        "source_action": "releaseWorkOrder",
+        "event_data": [
+          {
+            "name": "work_order_id",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "blocking_rule",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Work_Order",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "work_order_id",
           "type": "string",
@@ -5564,11 +5769,28 @@
     {
       "id": "event:production.operation.confirmed",
       "uuid": "5000000000000000000000000000000c",
-      "name": "production.operation.confirmed",
+      "name": "PRODUCTION_OPERATION_CONFIRMED",
       "nameZh": "生产操作已确认",
       "description": "A production operation has been confirmed.",
       "descriptionZh": "生产操作已确认。",
-      "payload": [
+      "payload": {
+        "source_action": "confirmProductionOperation",
+        "event_data": [
+          {
+            "name": "work_order_id",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Work_Order",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "work_order_id",
           "type": "string",
@@ -5595,11 +5817,38 @@
     {
       "id": "event:finished.lot.produced",
       "uuid": "5000000000000000000000000000000d",
-      "name": "finished.lot.produced",
+      "name": "FINISHED_LOT_PRODUCED",
       "nameZh": "成品批已产出",
       "description": "A finished Part lot has been produced at the final operation.",
       "descriptionZh": "在最终操作产出成品零件批。",
-      "payload": [
+      "payload": {
+        "source_action": "confirmProductionOperation",
+        "event_data": [
+          {
+            "name": "work_order_id",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "part_number",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "lot_id",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Work_Order",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "work_order_id",
           "type": "string",
@@ -5638,11 +5887,43 @@
     {
       "id": "event:inspection.lot.opened",
       "uuid": "5000000000000000000000000000000e",
-      "name": "inspection.lot.opened",
+      "name": "INSPECTION_LOT_OPENED",
       "nameZh": "检验批已开立",
       "description": "An InspectionLot has been opened for a finished or incoming lot.",
       "descriptionZh": "已为成品或来料批开立检验批。",
-      "payload": [
+      "payload": {
+        "source_action": "openInspectionLot",
+        "event_data": [
+          {
+            "name": "lot_id",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "part_number",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "lot_type",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Inspection_Lot",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Part",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "lot_id",
           "type": "string",
@@ -5682,11 +5963,38 @@
     {
       "id": "event:inspection.recorded",
       "uuid": "5000000000000000000000000000000f",
-      "name": "inspection.recorded",
+      "name": "INSPECTION_RECORDED",
       "nameZh": "检验已记录",
       "description": "An Inspection result has been recorded for a lot.",
       "descriptionZh": "已为批记录检验结果。",
-      "payload": [
+      "payload": {
+        "source_action": "recordInspection",
+        "event_data": [
+          {
+            "name": "inspection_id",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "lot_id",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "aggregate_result",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Inspection",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "inspection_id",
           "type": "string",
@@ -5725,11 +6033,28 @@
     {
       "id": "event:inspection.lot.accepted",
       "uuid": "50000000000000000000000000000010",
-      "name": "inspection.lot.accepted",
+      "name": "INSPECTION_LOT_ACCEPTED",
       "nameZh": "检验批已接受",
       "description": "An InspectionLot usage decision was posted as Accepted.",
       "descriptionZh": "检验批使用决策过账为接受。",
-      "payload": [
+      "payload": {
+        "source_action": "postUsageDecision",
+        "event_data": [
+          {
+            "name": "lot_id",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Inspection_Lot",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "lot_id",
           "type": "string",
@@ -5758,11 +6083,33 @@
     {
       "id": "event:inspection.lot.rejected",
       "uuid": "50000000000000000000000000000011",
-      "name": "inspection.lot.rejected",
+      "name": "INSPECTION_LOT_REJECTED",
       "nameZh": "检验批已拒收",
       "description": "An InspectionLot usage decision was posted as Rejected.",
       "descriptionZh": "检验批使用决策过账为拒收。",
-      "payload": [
+      "payload": {
+        "source_action": "postUsageDecision",
+        "event_data": [
+          {
+            "name": "lot_id",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "part_number",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Inspection_Lot",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "lot_id",
           "type": "string",
@@ -5794,11 +6141,38 @@
     {
       "id": "event:non.conformance.opened",
       "uuid": "50000000000000000000000000000012",
-      "name": "non.conformance.opened",
+      "name": "NON_CONFORMANCE_OPENED",
       "nameZh": "不合格品已开立",
       "description": "A NonConformance was automatically opened on a rejected lot.",
       "descriptionZh": "在拒收批上自动开立不合格品。",
-      "payload": [
+      "payload": {
+        "source_action": "postUsageDecision",
+        "event_data": [
+          {
+            "name": "ncr_id",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "lot_id",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "part_number",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Inspection_Lot",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "ncr_id",
           "type": "string",
@@ -5837,11 +6211,33 @@
     {
       "id": "event:non.conformance.assigned",
       "uuid": "50000000000000000000000000000013",
-      "name": "non.conformance.assigned",
+      "name": "NON_CONFORMANCE_ASSIGNED",
       "nameZh": "不合格品已分派",
       "description": "A NonConformance has been assigned an owner and severity.",
       "descriptionZh": "不合格品已指派负责人与严重度。",
-      "payload": [
+      "payload": {
+        "source_action": "triageNonConformance",
+        "event_data": [
+          {
+            "name": "ncr_id",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "owner_id",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Non_Conformance",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "ncr_id",
           "type": "string",
@@ -5875,11 +6271,38 @@
     {
       "id": "event:non.conformance.dispositioned",
       "uuid": "50000000000000000000000000000014",
-      "name": "non.conformance.dispositioned",
+      "name": "NON_CONFORMANCE_DISPOSITIONED",
       "nameZh": "不合格品已处置",
       "description": "A NonConformance has been dispositioned with a decision.",
       "descriptionZh": "不合格品已作出处置决定。",
-      "payload": [
+      "payload": {
+        "source_action": "dispositionNonConformance",
+        "event_data": [
+          {
+            "name": "ncr_id",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "disposition_id",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "decision",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Disposition",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "ncr_id",
           "type": "string",
@@ -5918,11 +6341,33 @@
     {
       "id": "event:corrective.action.opened",
       "uuid": "50000000000000000000000000000015",
-      "name": "corrective.action.opened",
+      "name": "CORRECTIVE_ACTION_OPENED",
       "nameZh": "纠正措施已开立",
       "description": "A CorrectiveAction has been opened with a due date.",
       "descriptionZh": "已开立含到期日的纠正措施。",
-      "payload": [
+      "payload": {
+        "source_action": "openCorrectiveAction",
+        "event_data": [
+          {
+            "name": "capa_id",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "ncr_id",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Corrective_Action",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "capa_id",
           "type": "string",
@@ -5954,11 +6399,33 @@
     {
       "id": "event:corrective.action.closed",
       "uuid": "50000000000000000000000000000016",
-      "name": "corrective.action.closed",
+      "name": "CORRECTIVE_ACTION_CLOSED",
       "nameZh": "纠正措施已关闭",
       "description": "A CorrectiveAction was verified effective and closed.",
       "descriptionZh": "纠正措施经验证有效并关闭。",
-      "payload": [
+      "payload": {
+        "source_action": "openCorrectiveAction",
+        "event_data": [
+          {
+            "name": "capa_id",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "ncr_id",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Corrective_Action",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "capa_id",
           "type": "string",
@@ -5990,11 +6457,28 @@
     {
       "id": "event:non.conformance.closed",
       "uuid": "50000000000000000000000000000017",
-      "name": "non.conformance.closed",
+      "name": "NON_CONFORMANCE_CLOSED",
       "nameZh": "不合格品已关闭",
       "description": "A NonConformance was set to Closed after its CorrectiveAction was verified effective.",
       "descriptionZh": "纠正措施验证有效后不合格品被置为已关闭。",
-      "payload": [
+      "payload": {
+        "source_action": "openCorrectiveAction",
+        "event_data": [
+          {
+            "name": "ncr_id",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Corrective_Action",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "ncr_id",
           "type": "string",
@@ -6021,11 +6505,27 @@
     {
       "id": "event:supplier.delivery.arrived",
       "uuid": "50000000000000000000000000000018",
-      "name": "supplier.delivery.arrived",
+      "name": "SUPPLIER_DELIVERY_ARRIVED",
       "nameZh": "供应商交货已到达",
       "description": "A Supplier delivery has arrived against a purchase order.",
       "descriptionZh": "供应商交货已按采购订单到达。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "supplier_id",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "inbound_delivery",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": []
+      },
+      "payloadFields": [
         {
           "name": "supplier_id",
           "type": "string",
@@ -6060,11 +6560,28 @@
     {
       "id": "event:finished.lot.shippable",
       "uuid": "50000000000000000000000000000019",
-      "name": "finished.lot.shippable",
+      "name": "FINISHED_LOT_SHIPPABLE",
       "nameZh": "成品批可发运",
       "description": "A finished lot is delivery-eligible after acceptance.",
       "descriptionZh": "成品批在接受后可交付。",
-      "payload": [
+      "payload": {
+        "source_action": "releaseLotToShip",
+        "event_data": [
+          {
+            "name": "lot_id",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Work_Order",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "lot_id",
           "type": "string",
@@ -6091,11 +6608,33 @@
     {
       "id": "event:goods.receipt.posted",
       "uuid": "5000000000000000000000000000001a",
-      "name": "goods.receipt.posted",
+      "name": "GOODS_RECEIPT_POSTED",
       "nameZh": "收货已过账",
       "description": "A supplier goods receipt was posted to quality-inspection stock.",
       "descriptionZh": "供应商收货已过账至质检库存。",
-      "payload": [
+      "payload": {
+        "source_action": "postGoodsReceipt",
+        "event_data": [
+          {
+            "name": "part_number",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "supplier_id",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Part",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "part_number",
           "type": "string",

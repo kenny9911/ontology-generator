@@ -5252,11 +5252,38 @@
     {
       "id": "event:order.received",
       "uuid": "50000000000000000000000000000001",
-      "name": "order.received",
+      "name": "ORDER_RECEIVED",
       "nameZh": "订单已接收",
       "description": "An inbound EDI 940 Warehouse Shipping Order landed and was normalized into a new Order.",
       "descriptionZh": "入站 EDI 940 仓储发货单到达并被规范化为新订单。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "order",
+            "type": "String",
+            "target_object": "Order"
+          },
+          {
+            "name": "client_id",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "ship_to_party",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Order",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "order",
           "type": "reference",
@@ -5302,11 +5329,38 @@
     {
       "id": "event:order.accepted",
       "uuid": "50000000000000000000000000000002",
-      "name": "order.accepted",
+      "name": "ORDER_ACCEPTED",
       "nameZh": "订单已接受",
       "description": "An Order passed validation and was accepted, producing one or more Consignments.",
       "descriptionZh": "订单通过校验并被接受，生成一个或多个货件。",
-      "payload": [
+      "payload": {
+        "source_action": "validateOrder",
+        "event_data": [
+          {
+            "name": "order",
+            "type": "String",
+            "target_object": "Order"
+          },
+          {
+            "name": "consignment_ids",
+            "type": "List<String>",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Order",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Consignment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "order",
           "type": "reference",
@@ -5349,11 +5403,38 @@
     {
       "id": "event:order.rejected",
       "uuid": "50000000000000000000000000000003",
-      "name": "order.rejected",
+      "name": "ORDER_REJECTED",
       "nameZh": "订单已拒绝",
       "description": "An Order failed validation (missing ship-to or unserviceable destination) and was rejected.",
       "descriptionZh": "订单未通过校验（缺少收货方或目的地不可服务）而被拒绝。",
-      "payload": [
+      "payload": {
+        "source_action": "validateOrder",
+        "event_data": [
+          {
+            "name": "order",
+            "type": "String",
+            "target_object": "Order"
+          },
+          {
+            "name": "reason",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Order",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Consignment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "order",
           "type": "reference",
@@ -5386,11 +5467,38 @@
     {
       "id": "event:shipment.planned",
       "uuid": "50000000000000000000000000000004",
-      "name": "shipment.planned",
+      "name": "SHIPMENT_PLANNED",
       "nameZh": "运单已计划",
       "description": "A Shipment was created from accepted Consignments along an eligible Lane with a resolved SLA.",
       "descriptionZh": "运单由已接受的货件沿合格运线创建，并解析出 SLA。",
-      "payload": [
+      "payload": {
+        "source_action": "planShipment",
+        "event_data": [
+          {
+            "name": "shipment",
+            "type": "String",
+            "target_object": "Shipment"
+          },
+          {
+            "name": "lane_id",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "sla_id",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Shipment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "shipment",
           "type": "reference",
@@ -5437,11 +5545,38 @@
     {
       "id": "event:shipment.tendered",
       "uuid": "50000000000000000000000000000005",
-      "name": "shipment.tendered",
+      "name": "SHIPMENT_TENDERED",
       "nameZh": "运单已招标接受",
       "description": "A Carrier accepted the load tender (EDI 990) and the Shipment booked the Carrier with a PRO number.",
       "descriptionZh": "承运商接受装载招标（EDI 990），运单订妥承运商并取得 PRO 号。",
-      "payload": [
+      "payload": {
+        "source_action": "tenderShipment",
+        "event_data": [
+          {
+            "name": "shipment",
+            "type": "String",
+            "target_object": "Shipment"
+          },
+          {
+            "name": "carrier_id",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "pro_number",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Shipment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "shipment",
           "type": "reference",
@@ -5489,11 +5624,38 @@
     {
       "id": "event:tender.rejected",
       "uuid": "50000000000000000000000000000006",
-      "name": "tender.rejected",
+      "name": "TENDER_REJECTED",
       "nameZh": "招标被拒",
       "description": "A Carrier declined the tender (EDI 990 decline) or the tender timed out; the Planner re-tenders to the next-ranked Carrier.",
       "descriptionZh": "承运商拒绝招标（EDI 990 拒绝）或招标超时；计划员向下一顺位承运商重新招标。",
-      "payload": [
+      "payload": {
+        "source_action": "tenderShipment",
+        "event_data": [
+          {
+            "name": "shipment",
+            "type": "String",
+            "target_object": "Shipment"
+          },
+          {
+            "name": "carrier_id",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "reason",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Shipment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "shipment",
           "type": "reference",
@@ -5538,11 +5700,33 @@
     {
       "id": "event:customs.cleared",
       "uuid": "50000000000000000000000000000007",
-      "name": "customs.cleared",
+      "name": "CUSTOMS_CLEARED",
       "nameZh": "海关已放行",
       "description": "The broker accepted the CustomsDeclaration and the system assigned duties.",
       "descriptionZh": "报关行接受报关单，系统核定关税。",
-      "payload": [
+      "payload": {
+        "source_action": "fileCustomsDeclaration",
+        "event_data": [
+          {
+            "name": "declaration",
+            "type": "String",
+            "target_object": "Customs_Declaration"
+          },
+          {
+            "name": "duties_assigned_usd",
+            "type": "Float",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Customs_Declaration",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "declaration",
           "type": "reference",
@@ -5584,11 +5768,33 @@
     {
       "id": "event:customs.held",
       "uuid": "50000000000000000000000000000008",
-      "name": "customs.held",
+      "name": "CUSTOMS_HELD",
       "nameZh": "海关已扣留",
       "description": "The broker placed a hold or requested documents on a CustomsDeclaration, opening an Exception.",
       "descriptionZh": "报关行对报关单实施扣留或要求补充单据，触发异常。",
-      "payload": [
+      "payload": {
+        "source_action": "fileCustomsDeclaration",
+        "event_data": [
+          {
+            "name": "declaration",
+            "type": "String",
+            "target_object": "Customs_Declaration"
+          },
+          {
+            "name": "hold_reason",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Customs_Declaration",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "declaration",
           "type": "reference",
@@ -5630,11 +5836,43 @@
     {
       "id": "event:consignment.staged",
       "uuid": "50000000000000000000000000000009",
-      "name": "consignment.staged",
+      "name": "CONSIGNMENT_STAGED",
       "nameZh": "货件已备货",
       "description": "A Consignment was picked, packed, and staged in WMS with dims and weights written back to the Shipment.",
       "descriptionZh": "货件在 WMS 完成拣货、装箱与备货，尺寸与重量回写到运单。",
-      "payload": [
+      "payload": {
+        "source_action": "pickAndPack",
+        "event_data": [
+          {
+            "name": "consignment",
+            "type": "String",
+            "target_object": "Consignment"
+          },
+          {
+            "name": "weight_kg",
+            "type": "Float",
+            "target_object": null
+          },
+          {
+            "name": "dims",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Consignment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Shipment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "consignment",
           "type": "reference",
@@ -5681,11 +5919,33 @@
     {
       "id": "event:shipment.departed",
       "uuid": "5000000000000000000000000000000a",
-      "name": "shipment.departed",
+      "name": "SHIPMENT_DEPARTED",
       "nameZh": "运单已发运",
       "description": "A Shipment departed the pickup Stop; status moved to In Transit and the first TrackingEvent was recorded.",
       "descriptionZh": "运单从提货站点发出；状态转为在途并记录首条轨迹事件。",
-      "payload": [
+      "payload": {
+        "source_action": "confirmDeparture",
+        "event_data": [
+          {
+            "name": "shipment",
+            "type": "String",
+            "target_object": "Shipment"
+          },
+          {
+            "name": "departure_timestamp",
+            "type": "Timestamp",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Shipment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "shipment",
           "type": "reference",
@@ -5725,11 +5985,33 @@
     {
       "id": "event:tracking.event.received",
       "uuid": "5000000000000000000000000000000b",
-      "name": "tracking.event.received",
+      "name": "TRACKING_EVENT_RECEIVED",
       "nameZh": "轨迹事件已接收",
       "description": "An inbound EDI 214 status message was received for a Shipment.",
       "descriptionZh": "为某运单接收到入站 EDI 214 状态报文。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "shipment",
+            "type": "String",
+            "target_object": "Shipment"
+          },
+          {
+            "name": "edi_status_code",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Shipment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "shipment",
           "type": "reference",
@@ -5769,11 +6051,38 @@
     {
       "id": "event:sla.breached",
       "uuid": "5000000000000000000000000000000c",
-      "name": "sla.breached",
+      "name": "SLA_BREACHED",
       "nameZh": "SLA 已违约",
       "description": "Projected or actual delivery exceeded the committed delivery window, opening an Exception.",
       "descriptionZh": "预计或实际送达超出承诺送达窗口，触发异常。",
-      "payload": [
+      "payload": {
+        "source_action": "ingestTrackingEvent",
+        "event_data": [
+          {
+            "name": "shipment",
+            "type": "String",
+            "target_object": "Shipment"
+          },
+          {
+            "name": "sla_id",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "delta",
+            "type": "Integer",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Tracking_Event",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "shipment",
           "type": "reference",
@@ -5821,11 +6130,43 @@
     {
       "id": "event:pod.captured",
       "uuid": "5000000000000000000000000000000d",
-      "name": "pod.captured",
+      "name": "POD_CAPTURED",
       "nameZh": "签收凭证已采集",
       "description": "A ProofOfDelivery was captured at delivery (signature/photo + timestamp), surfaced from EDI 214 status D1.",
       "descriptionZh": "送达时采集了签收凭证（签名/照片加时间戳），由 EDI 214 状态 D1 浮现。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "pod",
+            "type": "String",
+            "target_object": "Proof_Of_Delivery"
+          },
+          {
+            "name": "shipment",
+            "type": "String",
+            "target_object": "Shipment"
+          },
+          {
+            "name": "timestamp",
+            "type": "Timestamp",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Proof_Of_Delivery",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Shipment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "pod",
           "type": "reference",
@@ -5871,11 +6212,38 @@
     {
       "id": "event:shipment.delivered",
       "uuid": "5000000000000000000000000000000e",
-      "name": "shipment.delivered",
+      "name": "SHIPMENT_DELIVERED",
       "nameZh": "运单已送达",
       "description": "A Shipment was set to Delivered on captured POD, closing Order to Delivery and triggering freight-invoice reconciliation.",
       "descriptionZh": "运单凭采集的签收凭证置为已送达，关闭下单到送达流程并触发运费对账。",
-      "payload": [
+      "payload": {
+        "source_action": "ingestTrackingEvent",
+        "event_data": [
+          {
+            "name": "shipment",
+            "type": "String",
+            "target_object": "Shipment"
+          },
+          {
+            "name": "pod",
+            "type": "String",
+            "target_object": "Proof_Of_Delivery"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Tracking_Event",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Shipment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "shipment",
           "type": "reference",
@@ -5917,11 +6285,33 @@
     {
       "id": "event:exception.opened",
       "uuid": "5000000000000000000000000000000f",
-      "name": "exception.opened",
+      "name": "EXCEPTION_OPENED",
       "nameZh": "异常已开立",
       "description": "An Exception record was created and classified by type with an assigned owner.",
       "descriptionZh": "异常记录被创建，按类型分类并指派负责人。",
-      "payload": [
+      "payload": {
+        "source_action": "openException",
+        "event_data": [
+          {
+            "name": "exception",
+            "type": "String",
+            "target_object": "Exception"
+          },
+          {
+            "name": "exception_type",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Exception",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "exception",
           "type": "reference",
@@ -5963,11 +6353,38 @@
     {
       "id": "event:exception.classified",
       "uuid": "50000000000000000000000000000010",
-      "name": "exception.classified",
+      "name": "EXCEPTION_CLASSIFIED",
       "nameZh": "异常已分类",
       "description": "An Exception had its liability set and creditEligible flag determined against the SLA and Lane tier.",
       "descriptionZh": "异常依据 SLA 与运线等级确定了责任归属与可减免标志。",
-      "payload": [
+      "payload": {
+        "source_action": "classifyException",
+        "event_data": [
+          {
+            "name": "exception",
+            "type": "String",
+            "target_object": "Exception"
+          },
+          {
+            "name": "liability",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "credit_eligible",
+            "type": "Boolean",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Exception",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "exception",
           "type": "reference",
@@ -6007,11 +6424,38 @@
     {
       "id": "event:claim.submitted",
       "uuid": "50000000000000000000000000000011",
-      "name": "claim.submitted",
+      "name": "CLAIM_SUBMITTED",
       "nameZh": "索赔已提交",
       "description": "A ServiceFailureClaim with calculated credit and cited CSA clause was submitted to the Carrier.",
       "descriptionZh": "载有计算减免与引用 CSA 条款的服务失败索赔已提交给承运商。",
-      "payload": [
+      "payload": {
+        "source_action": "raiseServiceFailureClaim",
+        "event_data": [
+          {
+            "name": "claim",
+            "type": "String",
+            "target_object": "Service_Failure_Claim"
+          },
+          {
+            "name": "credit_amount_usd",
+            "type": "Float",
+            "target_object": null
+          },
+          {
+            "name": "cited_clause",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Service_Failure_Claim",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "claim",
           "type": "reference",
@@ -6056,11 +6500,38 @@
     {
       "id": "event:exception.resolved",
       "uuid": "50000000000000000000000000000012",
-      "name": "exception.resolved",
+      "name": "EXCEPTION_RESOLVED",
       "nameZh": "异常已结案",
       "description": "An Exception was closed with resolution notes and a settled or written-off ServiceFailureClaim.",
       "descriptionZh": "异常以处理说明结案，关联服务失败索赔已结算或核销。",
-      "payload": [
+      "payload": {
+        "source_action": "resolveException",
+        "event_data": [
+          {
+            "name": "exception",
+            "type": "String",
+            "target_object": "Exception"
+          },
+          {
+            "name": "claim",
+            "type": "String",
+            "target_object": "Service_Failure_Claim"
+          },
+          {
+            "name": "disposition",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Exception",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "exception",
           "type": "reference",
@@ -6106,11 +6577,33 @@
     {
       "id": "event:customs.declaration.filed",
       "uuid": "50000000000000000000000000000013",
-      "name": "customs.declaration.filed",
+      "name": "CUSTOMS_DECLARATION_FILED",
       "nameZh": "报关单已申报",
       "description": "A CustomsDeclaration was filed to the broker via CBP-Link, awaiting broker disposition (inferred from FileCustomsDeclaration).",
       "descriptionZh": "报关单经 CBP-Link 向报关行申报，等待报关行裁定（由报关动作推断）。",
-      "payload": [
+      "payload": {
+        "source_action": "fileCustomsDeclaration",
+        "event_data": [
+          {
+            "name": "declaration",
+            "type": "String",
+            "target_object": "Customs_Declaration"
+          },
+          {
+            "name": "entry_type",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Customs_Declaration",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "declaration",
           "type": "reference",
@@ -6138,11 +6631,33 @@
     {
       "id": "event:claim.disposition.received",
       "uuid": "50000000000000000000000000000014",
-      "name": "claim.disposition.received",
+      "name": "CLAIM_DISPOSITION_RECEIVED",
       "nameZh": "索赔裁定已接收",
       "description": "A Carrier returned a claim disposition — accepted/credited or contested — surfaced as ClaimSettled or ClaimContested (inferred trigger for ResolveException).",
       "descriptionZh": "承运商返回索赔裁定——接受/减免或争议——以已结算或已争议浮现（推断的结案触发）。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "claim",
+            "type": "String",
+            "target_object": "Service_Failure_Claim"
+          },
+          {
+            "name": "disposition",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Service_Failure_Claim",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "claim",
           "type": "reference",

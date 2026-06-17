@@ -6148,11 +6148,28 @@
     {
       "id": "event:opportunity.closed_won",
       "uuid": "001122ab3c4d5e6f7081920314253647",
-      "name": "opportunity.closed_won",
+      "name": "OPPORTUNITY_CLOSED_WON",
       "nameZh": "商机赢单",
       "description": "An Opportunity is marked Closed-Won, kicking off the quote-to-provision flow.",
       "descriptionZh": "商机标记为赢单，启动报价到开通流程。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "account",
+            "type": "String",
+            "target_object": "Account"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Account",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "account",
           "type": "reference",
@@ -6175,11 +6192,28 @@
     {
       "id": "event:order_form.drafted",
       "uuid": "1122ab3c4d5e6f708192031425364758",
-      "name": "order_form.drafted",
+      "name": "ORDER_FORM_DRAFTED",
       "nameZh": "订单表已起草",
       "description": "A draft Order Form has been created for the Account.",
       "descriptionZh": "已为账户创建订单表草稿。",
-      "payload": [
+      "payload": {
+        "source_action": "createOrderForm",
+        "event_data": [
+          {
+            "name": "contract",
+            "type": "String",
+            "target_object": "Contract"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Contract",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "contract",
           "type": "reference",
@@ -6209,11 +6243,28 @@
     {
       "id": "event:quote.approved",
       "uuid": "22ab3c4d5e6f70819203142536475869",
-      "name": "quote.approved",
+      "name": "QUOTE_APPROVED",
       "nameZh": "报价已批准",
       "description": "The quote passed Deal Desk and any required VP approval.",
       "descriptionZh": "报价通过 Deal Desk 及必要的副总审批。",
-      "payload": [
+      "payload": {
+        "source_action": "validateQuote",
+        "event_data": [
+          {
+            "name": "contract",
+            "type": "String",
+            "target_object": "Contract"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Contract",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "contract",
           "type": "reference",
@@ -6243,11 +6294,28 @@
     {
       "id": "event:quote.rejected",
       "uuid": "ab3c4d5e6f7081920314253647586970",
-      "name": "quote.rejected",
+      "name": "QUOTE_REJECTED",
       "nameZh": "报价被拒绝",
       "description": "The quote was rejected during validation.",
       "descriptionZh": "报价在校验中被拒绝。",
-      "payload": [
+      "payload": {
+        "source_action": "validateQuote",
+        "event_data": [
+          {
+            "name": "contract",
+            "type": "String",
+            "target_object": "Contract"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Contract",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "contract",
           "type": "reference",
@@ -6275,11 +6343,28 @@
     {
       "id": "event:contract.signed",
       "uuid": "3c4d5e6f708192031425364758697081",
-      "name": "contract.signed",
+      "name": "CONTRACT_SIGNED",
       "nameZh": "合同已签署",
       "description": "An executed Contract with term and committed quantities.",
       "descriptionZh": "含期限与承诺数量的已签署合同。",
-      "payload": [
+      "payload": {
+        "source_action": "signContract",
+        "event_data": [
+          {
+            "name": "contract_id",
+            "type": "String",
+            "target_object": "Contract"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Contract",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "contract_id",
           "type": "uuid",
@@ -6309,11 +6394,33 @@
     {
       "id": "event:subscription.created",
       "uuid": "4d5e6f70819203142536475869708192",
-      "name": "subscription.created",
+      "name": "SUBSCRIPTION_CREATED",
       "nameZh": "订阅已创建",
       "description": "An active Subscription has been created in Stripe.",
       "descriptionZh": "已在 Stripe 中创建活动订阅。",
-      "payload": [
+      "payload": {
+        "source_action": "createSubscription",
+        "event_data": [
+          {
+            "name": "subscription_id",
+            "type": "String",
+            "target_object": "Subscription"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Subscription",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Invoice",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "subscription_id",
           "type": "uuid",
@@ -6343,11 +6450,33 @@
     {
       "id": "event:invoice.issued",
       "uuid": "5e6f708192031425364758697081920a",
-      "name": "invoice.issued",
+      "name": "INVOICE_ISSUED",
       "nameZh": "发票已开具",
       "description": "A period or initial-term Invoice has been issued.",
       "descriptionZh": "已开具周期或初始合同期发票。",
-      "payload": [
+      "payload": {
+        "source_action": "createSubscription",
+        "event_data": [
+          {
+            "name": "invoice_id",
+            "type": "String",
+            "target_object": "Invoice"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Subscription",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Invoice",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "invoice_id",
           "type": "uuid",
@@ -6378,11 +6507,33 @@
     {
       "id": "event:entitlement.granted",
       "uuid": "6f708192031425364758697081920ab1",
-      "name": "entitlement.granted",
+      "name": "ENTITLEMENT_GRANTED",
       "nameZh": "权益已授予",
       "description": "One or more Entitlements were granted and enforced in LaunchDarkly.",
       "descriptionZh": "一个或多个权益被授予并在 LaunchDarkly 中实施。",
-      "payload": [
+      "payload": {
+        "source_action": "provisionEntitlements",
+        "event_data": [
+          {
+            "name": "entitlement_id",
+            "type": "String",
+            "target_object": "Entitlement"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Entitlement",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Subscription",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "entitlement_id",
           "type": "uuid",
@@ -6412,11 +6563,28 @@
     {
       "id": "event:provisioning.completed",
       "uuid": "708192031425364758697081920ab1c2",
-      "name": "provisioning.completed",
+      "name": "PROVISIONING_COMPLETED",
       "nameZh": "开通已完成",
       "description": "The ProvisioningTask has been closed after entitlements were granted.",
       "descriptionZh": "授予权益后开通任务已关闭。",
-      "payload": [
+      "payload": {
+        "source_action": "provisionEntitlements",
+        "event_data": [
+          {
+            "name": "task_id",
+            "type": "String",
+            "target_object": "Provisioning_Task"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Entitlement",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "task_id",
           "type": "uuid",
@@ -6446,11 +6614,28 @@
     {
       "id": "event:entitlement.drift_detected",
       "uuid": "8192031425364758697081920ab1c2d3",
-      "name": "entitlement.drift_detected",
+      "name": "ENTITLEMENT_DRIFT_DETECTED",
       "nameZh": "权益漂移已检测",
       "description": "Reconciliation found a mismatch between granted Entitlements and the Plan spec.",
       "descriptionZh": "对账发现已授予权益与套餐规格不匹配。",
-      "payload": [
+      "payload": {
+        "source_action": "reconcileEntitlements",
+        "event_data": [
+          {
+            "name": "subscription_id",
+            "type": "String",
+            "target_object": "Subscription"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Provisioning_Task",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "subscription_id",
           "type": "uuid",
@@ -6478,11 +6663,28 @@
     {
       "id": "event:usage.recorded",
       "uuid": "192031425364758697081920ab1c2d3e",
-      "name": "usage.recorded",
+      "name": "USAGE_RECORDED",
       "nameZh": "用量已记录",
       "description": "A metered UsageRecord row was appended for a Subscription.",
       "descriptionZh": "为订阅追加了一条计量用量记录。",
-      "payload": [
+      "payload": {
+        "source_action": "recordUsage",
+        "event_data": [
+          {
+            "name": "usage_id",
+            "type": "String",
+            "target_object": "Usage_Record"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Usage_Record",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "usage_id",
           "type": "uuid",
@@ -6512,11 +6714,28 @@
     {
       "id": "event:overage.detected",
       "uuid": "2031425364758697081920ab1c2d3e4f",
-      "name": "overage.detected",
+      "name": "OVERAGE_DETECTED",
       "nameZh": "超量已检测",
       "description": "Cumulative usage exceeded the included quota for a non-unlimited Subscription.",
       "descriptionZh": "非无限层级订阅的累计用量超过包含配额。",
-      "payload": [
+      "payload": {
+        "source_action": "calculateOverage",
+        "event_data": [
+          {
+            "name": "subscription_id",
+            "type": "String",
+            "target_object": "Subscription"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Subscription",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "subscription_id",
           "type": "uuid",
@@ -6546,11 +6765,28 @@
     {
       "id": "event:usage.within_quota",
       "uuid": "031425364758697081920ab1c2d3e4f5",
-      "name": "usage.within_quota",
+      "name": "USAGE_WITHIN_QUOTA",
       "nameZh": "用量在配额内",
       "description": "Usage stayed within quota (or unlimited tier), short-circuiting overage.",
       "descriptionZh": "用量保持在配额内（或为无限层级），短路超量计算。",
-      "payload": [
+      "payload": {
+        "source_action": "calculateOverage",
+        "event_data": [
+          {
+            "name": "subscription_id",
+            "type": "String",
+            "target_object": "Subscription"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Subscription",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "subscription_id",
           "type": "uuid",
@@ -6580,11 +6816,28 @@
     {
       "id": "event:payment.succeeded",
       "uuid": "1425364758697081920ab1c2d3e4f506",
-      "name": "payment.succeeded",
+      "name": "PAYMENT_SUCCEEDED",
       "nameZh": "付款成功",
       "description": "A Payment cleared against an open Invoice.",
       "descriptionZh": "针对未结发票的付款已清算。",
-      "payload": [
+      "payload": {
+        "source_action": "collectPayment",
+        "event_data": [
+          {
+            "name": "payment_id",
+            "type": "String",
+            "target_object": "Payment"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Invoice",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "payment_id",
           "type": "uuid",
@@ -6615,11 +6868,28 @@
     {
       "id": "event:payment.failed",
       "uuid": "425364758697081920ab1c2d3e4f5061",
-      "name": "payment.failed",
+      "name": "PAYMENT_FAILED",
       "nameZh": "付款失败",
       "description": "A Payment attempt against an open Invoice failed.",
       "descriptionZh": "针对未结发票的付款尝试失败。",
-      "payload": [
+      "payload": {
+        "source_action": "collectPayment",
+        "event_data": [
+          {
+            "name": "invoice_id",
+            "type": "String",
+            "target_object": "Invoice"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Invoice",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "invoice_id",
           "type": "uuid",
@@ -6649,11 +6919,28 @@
     {
       "id": "event:revenue.recognized",
       "uuid": "25364758697081920ab1c2d3e4f50617",
-      "name": "revenue.recognized",
+      "name": "REVENUE_RECOGNIZED",
       "nameZh": "收入已确认",
       "description": "Revenue schedules were recognized against a Subscription after payment succeeded.",
       "descriptionZh": "付款成功后已对订阅确认收入计划。",
-      "payload": [
+      "payload": {
+        "source_action": "recognizeRevenue",
+        "event_data": [
+          {
+            "name": "subscription",
+            "type": "String",
+            "target_object": "Subscription"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Subscription",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "subscription",
           "type": "reference",
@@ -6681,11 +6968,28 @@
     {
       "id": "event:renewal.window_opened",
       "uuid": "5364758697081920ab1c2d3e4f506172",
-      "name": "renewal.window_opened",
+      "name": "RENEWAL_WINDOW_OPENED",
       "nameZh": "续约窗口已开启",
       "description": "The T-90 renewal window opened for a Subscription approaching term-end.",
       "descriptionZh": "临近期满订阅的T-90续约窗口已开启。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "subscription_id",
+            "type": "String",
+            "target_object": "Subscription"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Subscription",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "subscription_id",
           "type": "uuid",
@@ -6716,11 +7020,28 @@
     {
       "id": "event:renewal.opportunity_created",
       "uuid": "364758697081920ab1c2d3e4f5061728",
-      "name": "renewal.opportunity_created",
+      "name": "RENEWAL_OPPORTUNITY_CREATED",
       "nameZh": "续约商机已创建",
       "description": "A RenewalOpportunity was created in Salesforce at T-90.",
       "descriptionZh": "在T-90时于 Salesforce 创建了续约商机。",
-      "payload": [
+      "payload": {
+        "source_action": "openRenewal",
+        "event_data": [
+          {
+            "name": "renewal_id",
+            "type": "String",
+            "target_object": "Renewal_Opportunity"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Renewal_Opportunity",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "renewal_id",
           "type": "uuid",
@@ -6750,11 +7071,28 @@
     {
       "id": "event:subscription.renewed",
       "uuid": "4758697081920ab1c2d3e4f506172839",
-      "name": "subscription.renewed",
+      "name": "SUBSCRIPTION_RENEWED",
       "nameZh": "订阅已续约",
       "description": "A Subscription was renewed for a new term.",
       "descriptionZh": "订阅已续约新合同期。",
-      "payload": [
+      "payload": {
+        "source_action": "processRenewal",
+        "event_data": [
+          {
+            "name": "subscription_id",
+            "type": "String",
+            "target_object": "Subscription"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Subscription",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "subscription_id",
           "type": "uuid",
@@ -6782,11 +7120,28 @@
     {
       "id": "event:plan.upgraded",
       "uuid": "58697081920ab1c2d3e4f50617283940",
-      "name": "plan.upgraded",
+      "name": "PLAN_UPGRADED",
       "nameZh": "套餐已升级",
       "description": "A Subscription's Plan was upgraded.",
       "descriptionZh": "订阅的套餐已升级。",
-      "payload": [
+      "payload": {
+        "source_action": "processRenewal",
+        "event_data": [
+          {
+            "name": "subscription_id",
+            "type": "String",
+            "target_object": "Subscription"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Subscription",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "subscription_id",
           "type": "uuid",
@@ -6816,11 +7171,28 @@
     {
       "id": "event:plan.downgraded",
       "uuid": "8697081920ab1c2d3e4f506172839405",
-      "name": "plan.downgraded",
+      "name": "PLAN_DOWNGRADED",
       "nameZh": "套餐已降级",
       "description": "A Subscription's Plan was downgraded; removed features revoke at period end.",
       "descriptionZh": "订阅的套餐已降级，已移除功能在周期结束时撤销。",
-      "payload": [
+      "payload": {
+        "source_action": "processRenewal",
+        "event_data": [
+          {
+            "name": "subscription_id",
+            "type": "String",
+            "target_object": "Subscription"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Subscription",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "subscription_id",
           "type": "uuid",
@@ -6850,11 +7222,33 @@
     {
       "id": "event:entitlement.revoked",
       "uuid": "697081920ab1c2d3e4f506172839405a",
-      "name": "entitlement.revoked",
+      "name": "ENTITLEMENT_REVOKED",
       "nameZh": "权益已撤销",
       "description": "Entitlements were revoked (downgrade at period end or suspension).",
       "descriptionZh": "权益已被撤销（降级周期结束或暂停）。",
-      "payload": [
+      "payload": {
+        "source_action": "adjustEntitlements",
+        "event_data": [
+          {
+            "name": "entitlement_id",
+            "type": "String",
+            "target_object": "Entitlement"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Entitlement",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Subscription",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "entitlement_id",
           "type": "uuid",
@@ -6883,11 +7277,28 @@
     {
       "id": "event:grace_period.started",
       "uuid": "97081920ab1c2d3e4f506172839405a6",
-      "name": "grace_period.started",
+      "name": "GRACE_PERIOD_STARTED",
       "nameZh": "宽限期已开始",
       "description": "An unrenewed Subscription entered a 14-day grace period.",
       "descriptionZh": "未续约订阅进入14天宽限期。",
-      "payload": [
+      "payload": {
+        "source_action": "enterGracePeriod",
+        "event_data": [
+          {
+            "name": "subscription_id",
+            "type": "String",
+            "target_object": "Subscription"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Subscription",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "subscription_id",
           "type": "uuid",
@@ -6917,11 +7328,28 @@
     {
       "id": "event:dunning.started",
       "uuid": "7081920ab1c2d3e4f506172839405a6b",
-      "name": "dunning.started",
+      "name": "DUNNING_STARTED",
       "nameZh": "催款已开始",
       "description": "A dunning retry sequence was started on a failed Invoice.",
       "descriptionZh": "对失败发票启动了催款重试流程。",
-      "payload": [
+      "payload": {
+        "source_action": "runDunning",
+        "event_data": [
+          {
+            "name": "invoice_id",
+            "type": "String",
+            "target_object": "Invoice"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Invoice",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "invoice_id",
           "type": "uuid",
@@ -6949,11 +7377,28 @@
     {
       "id": "event:dunning.exhausted",
       "uuid": "081920ab1c2d3e4f506172839405a6b7",
-      "name": "dunning.exhausted",
+      "name": "DUNNING_EXHAUSTED",
       "nameZh": "催款已耗尽",
       "description": "All dunning retries failed; the account proceeds to suspension.",
       "descriptionZh": "所有催款重试均失败，账户转入暂停。",
-      "payload": [
+      "payload": {
+        "source_action": "runDunning",
+        "event_data": [
+          {
+            "name": "invoice_id",
+            "type": "String",
+            "target_object": "Invoice"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Invoice",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "invoice_id",
           "type": "uuid",
@@ -6983,11 +7428,28 @@
     {
       "id": "event:subscription.suspended",
       "uuid": "81920ab1c2d3e4f506172839405a6b7c",
-      "name": "subscription.suspended",
+      "name": "SUBSCRIPTION_SUSPENDED",
       "nameZh": "订阅已暂停",
       "description": "A Subscription was suspended and its Entitlements revoked.",
       "descriptionZh": "订阅已被暂停且其权益已撤销。",
-      "payload": [
+      "payload": {
+        "source_action": "suspendSubscription",
+        "event_data": [
+          {
+            "name": "subscription_id",
+            "type": "String",
+            "target_object": "Subscription"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Subscription",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "subscription_id",
           "type": "uuid",
@@ -7017,11 +7479,28 @@
     {
       "id": "event:subscription.reinstated",
       "uuid": "1920ab1c2d3e4f506172839405a6b7c8",
-      "name": "subscription.reinstated",
+      "name": "SUBSCRIPTION_REINSTATED",
       "nameZh": "订阅已恢复",
       "description": "A suspended Subscription was reactivated after a catch-up payment.",
       "descriptionZh": "暂停订阅在补缴付款后已重新激活。",
-      "payload": [
+      "payload": {
+        "source_action": "reinstateSubscription",
+        "event_data": [
+          {
+            "name": "subscription_id",
+            "type": "String",
+            "target_object": "Subscription"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Subscription",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "subscription_id",
           "type": "uuid",
@@ -7049,11 +7528,28 @@
     {
       "id": "event:subscription.cancelled",
       "uuid": "920ab1c2d3e4f506172839405a6b7c8d",
-      "name": "subscription.cancelled",
+      "name": "SUBSCRIPTION_CANCELLED",
       "nameZh": "订阅已取消",
       "description": "A Subscription suspended over 30 days was cancelled (churn).",
       "descriptionZh": "暂停超30天的订阅已被取消（流失）。",
-      "payload": [
+      "payload": {
+        "source_action": "churnSubscription",
+        "event_data": [
+          {
+            "name": "subscription_id",
+            "type": "String",
+            "target_object": "Subscription"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Subscription",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "subscription_id",
           "type": "uuid",

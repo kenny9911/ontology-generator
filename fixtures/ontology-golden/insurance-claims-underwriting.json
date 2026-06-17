@@ -5163,11 +5163,28 @@
     {
       "id": "event:submission.received",
       "uuid": "50000000000000000000000000000001",
-      "name": "submission.received",
+      "name": "SUBMISSION_RECEIVED",
       "nameZh": "投保申请已收到",
       "description": "A broker submission has been received in PolicyCenter.",
       "descriptionZh": "PolicyCenter已收到经纪人投保申请。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "submission",
+            "type": "String",
+            "target_object": "Submission"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Submission",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "submission",
           "type": "reference",
@@ -5197,11 +5214,28 @@
     {
       "id": "event:submission.cleared",
       "uuid": "50000000000000000000000000000002",
-      "name": "submission.cleared",
+      "name": "SUBMISSION_CLEARED",
       "nameZh": "投保申请已查重",
       "description": "Duplicate clearance completed for a submission per BR-01.",
       "descriptionZh": "按BR-01完成投保申请查重。",
-      "payload": [
+      "payload": {
+        "source_action": "recordSubmission",
+        "event_data": [
+          {
+            "name": "submission",
+            "type": "String",
+            "target_object": "Submission"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Submission",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "submission",
           "type": "reference",
@@ -5228,11 +5262,33 @@
     {
       "id": "event:underwriting.referral-raised",
       "uuid": "50000000000000000000000000000003",
-      "name": "underwriting.referral-raised",
+      "name": "UNDERWRITING_REFERRAL_RAISED",
       "nameZh": "已触发核保转交",
       "description": "A submission hit a referral threshold and requires UW Manager approval.",
       "descriptionZh": "投保申请命中转交阈值，需核保经理审批。",
-      "payload": [
+      "payload": {
+        "source_action": "assessRisk",
+        "event_data": [
+          {
+            "name": "submission",
+            "type": "String",
+            "target_object": "Submission"
+          },
+          {
+            "name": "risk_assessment",
+            "type": "String",
+            "target_object": "Risk_Assessment"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Risk_Assessment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "submission",
           "type": "reference",
@@ -5266,11 +5322,28 @@
     {
       "id": "event:underwriting.risk-assessed",
       "uuid": "50000000000000000000000000000004",
-      "name": "underwriting.risk-assessed",
+      "name": "UNDERWRITING_RISK_ASSESSED",
       "nameZh": "风险已评估",
       "description": "A submission has been risk-assessed without a referral.",
       "descriptionZh": "投保申请已完成风险评估且无需转交。",
-      "payload": [
+      "payload": {
+        "source_action": "assessRisk",
+        "event_data": [
+          {
+            "name": "risk_assessment",
+            "type": "String",
+            "target_object": "Risk_Assessment"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Risk_Assessment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "risk_assessment",
           "type": "reference",
@@ -5296,11 +5369,28 @@
     {
       "id": "event:underwriting.referral-approved",
       "uuid": "50000000000000000000000000000005",
-      "name": "underwriting.referral-approved",
+      "name": "UNDERWRITING_REFERRAL_APPROVED",
       "nameZh": "转交已批准",
       "description": "A UW Manager approved a referred submission.",
       "descriptionZh": "核保经理已批准转交的投保申请。",
-      "payload": [
+      "payload": {
+        "source_action": "approveReferral",
+        "event_data": [
+          {
+            "name": "submission",
+            "type": "String",
+            "target_object": "Submission"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Submission",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "submission",
           "type": "reference",
@@ -5326,11 +5416,28 @@
     {
       "id": "event:underwriting.submission-declined",
       "uuid": "50000000000000000000000000000006",
-      "name": "underwriting.submission-declined",
+      "name": "UNDERWRITING_SUBMISSION_DECLINED",
       "nameZh": "投保申请已拒绝",
       "description": "A submission was declined at referral.",
       "descriptionZh": "投保申请在转交环节被拒绝。",
-      "payload": [
+      "payload": {
+        "source_action": "approveReferral",
+        "event_data": [
+          {
+            "name": "submission",
+            "type": "String",
+            "target_object": "Submission"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Submission",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "submission",
           "type": "reference",
@@ -5354,11 +5461,33 @@
     {
       "id": "event:quote.issued",
       "uuid": "50000000000000000000000000000007",
-      "name": "quote.issued",
+      "name": "QUOTE_ISSUED",
       "nameZh": "报价已出具",
       "description": "A quote has been issued with line-item premiums.",
       "descriptionZh": "已出具含分项保费的报价。",
-      "payload": [
+      "payload": {
+        "source_action": "generateQuote",
+        "event_data": [
+          {
+            "name": "quote",
+            "type": "String",
+            "target_object": "Quote"
+          },
+          {
+            "name": "premium",
+            "type": "String",
+            "target_object": "Premium"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Quote",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "quote",
           "type": "reference",
@@ -5389,11 +5518,28 @@
     {
       "id": "event:quote.accepted",
       "uuid": "50000000000000000000000000000008",
-      "name": "quote.accepted",
+      "name": "QUOTE_ACCEPTED",
       "nameZh": "报价已接受",
       "description": "The insured accepted a quote, enabling binding.",
       "descriptionZh": "被保险人已接受报价，可进行承保。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "quote",
+            "type": "String",
+            "target_object": "Quote"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Quote",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "quote",
           "type": "reference",
@@ -5417,11 +5563,38 @@
     {
       "id": "event:policy.bound",
       "uuid": "50000000000000000000000000000009",
-      "name": "policy.bound",
+      "name": "POLICY_BOUND",
       "nameZh": "保单已承保",
       "description": "A policy has been bound; consumed by BillingCenter to raise the first invoice.",
       "descriptionZh": "保单已承保；由BillingCenter消费以开具首期发票。",
-      "payload": [
+      "payload": {
+        "source_action": "bindPolicy",
+        "event_data": [
+          {
+            "name": "policy",
+            "type": "String",
+            "target_object": "Policy"
+          },
+          {
+            "name": "premium",
+            "type": "String",
+            "target_object": "Premium"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Policy",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Coverage",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "policy",
           "type": "reference",
@@ -5460,11 +5633,28 @@
     {
       "id": "event:policy.issued",
       "uuid": "5000000000000000000000000000000a",
-      "name": "policy.issued",
+      "name": "POLICY_ISSUED",
       "nameZh": "保单已签发",
       "description": "Policy documents issued and stored in DocVault.",
       "descriptionZh": "保单文件已签发并存入DocVault。",
-      "payload": [
+      "payload": {
+        "source_action": "issuePolicyDocuments",
+        "event_data": [
+          {
+            "name": "policy",
+            "type": "String",
+            "target_object": "Policy"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Policy",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "policy",
           "type": "reference",
@@ -5494,11 +5684,27 @@
     {
       "id": "event:loss.reported",
       "uuid": "5000000000000000000000000000000b",
-      "name": "loss.reported",
+      "name": "LOSS_REPORTED",
       "nameZh": "损失已报告",
       "description": "A loss has been reported, triggering FNOL recording.",
       "descriptionZh": "已报告损失，触发报案登记。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "policy_number",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "date_of_loss",
+            "type": "Date",
+            "target_object": null
+          }
+        ],
+        "state_mutations": []
+      },
+      "payloadFields": [
         {
           "name": "policy_number",
           "type": "string",
@@ -5532,11 +5738,28 @@
     {
       "id": "event:fnol.recorded",
       "uuid": "5000000000000000000000000000000c",
-      "name": "fnol.recorded",
+      "name": "FNOL_RECORDED",
       "nameZh": "报案已登记",
       "description": "FNOL recorded; a claim has been opened.",
       "descriptionZh": "报案已登记；理赔案件已立案。",
-      "payload": [
+      "payload": {
+        "source_action": "recordFNOL",
+        "event_data": [
+          {
+            "name": "claim",
+            "type": "String",
+            "target_object": "Claim"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Claim",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "claim",
           "type": "reference",
@@ -5568,11 +5791,33 @@
     {
       "id": "event:exposure.opened",
       "uuid": "5000000000000000000000000000000d",
-      "name": "exposure.opened",
+      "name": "EXPOSURE_OPENED",
       "nameZh": "赔付项已开立",
       "description": "An exposure has been opened for an affected coverage.",
       "descriptionZh": "已为受影响险别开立赔付项。",
-      "payload": [
+      "payload": {
+        "source_action": "recordFNOL",
+        "event_data": [
+          {
+            "name": "exposure",
+            "type": "String",
+            "target_object": "Exposure"
+          },
+          {
+            "name": "coverage",
+            "type": "String",
+            "target_object": "Coverage"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Claim",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "exposure",
           "type": "reference",
@@ -5611,11 +5856,33 @@
     {
       "id": "event:coverage.confirmed",
       "uuid": "5000000000000000000000000000000e",
-      "name": "coverage.confirmed",
+      "name": "COVERAGE_CONFIRMED",
       "nameZh": "承保已确认",
       "description": "Coverage confirmed in force for a claim.",
       "descriptionZh": "已确认理赔案件承保有效。",
-      "payload": [
+      "payload": {
+        "source_action": "verifyCoverage",
+        "event_data": [
+          {
+            "name": "claim",
+            "type": "String",
+            "target_object": "Claim"
+          },
+          {
+            "name": "decision",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Exposure",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "claim",
           "type": "reference",
@@ -5653,11 +5920,28 @@
     {
       "id": "event:coverage.denied",
       "uuid": "5000000000000000000000000000000f",
-      "name": "coverage.denied",
+      "name": "COVERAGE_DENIED",
       "nameZh": "承保已拒绝",
       "description": "Coverage denied for a claim (loss outside policy period).",
       "descriptionZh": "理赔案件承保被拒（出险在保险期间外）。",
-      "payload": [
+      "payload": {
+        "source_action": "verifyCoverage",
+        "event_data": [
+          {
+            "name": "claim",
+            "type": "String",
+            "target_object": "Claim"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Exposure",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "claim",
           "type": "reference",
@@ -5682,11 +5966,33 @@
     {
       "id": "event:claim.assigned",
       "uuid": "50000000000000000000000000000010",
-      "name": "claim.assigned",
+      "name": "CLAIM_ASSIGNED",
       "nameZh": "案件已指派",
       "description": "An adjuster has been assigned to a claim.",
       "descriptionZh": "已为理赔案件指派理算员。",
-      "payload": [
+      "payload": {
+        "source_action": "assignAdjuster",
+        "event_data": [
+          {
+            "name": "claim",
+            "type": "String",
+            "target_object": "Claim"
+          },
+          {
+            "name": "adjuster",
+            "type": "String",
+            "target_object": "Adjuster"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Claim",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "claim",
           "type": "reference",
@@ -5719,11 +6025,33 @@
     {
       "id": "event:reserve.set",
       "uuid": "50000000000000000000000000000011",
-      "name": "reserve.set",
+      "name": "RESERVE_SET",
       "nameZh": "准备金已设立",
       "description": "A reserve has been set on an exposure.",
       "descriptionZh": "已在赔付项上设立准备金。",
-      "payload": [
+      "payload": {
+        "source_action": "setReserve",
+        "event_data": [
+          {
+            "name": "reserve",
+            "type": "String",
+            "target_object": "Reserve"
+          },
+          {
+            "name": "amount",
+            "type": "Float",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Reserve",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "reserve",
           "type": "reference",
@@ -5758,11 +6086,33 @@
     {
       "id": "event:reserve.approval-requested",
       "uuid": "50000000000000000000000000000012",
-      "name": "reserve.approval-requested",
+      "name": "RESERVE_APPROVAL_REQUESTED",
       "nameZh": "准备金审批已请求",
       "description": "A large-loss reserve (>= $250,000) awaits Claims Manager approval.",
       "descriptionZh": "大额损失准备金（>=25万美元）待理赔经理审批。",
-      "payload": [
+      "payload": {
+        "source_action": "setReserve",
+        "event_data": [
+          {
+            "name": "reserve",
+            "type": "String",
+            "target_object": "Reserve"
+          },
+          {
+            "name": "amount",
+            "type": "Float",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Reserve",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "reserve",
           "type": "reference",
@@ -5792,11 +6142,33 @@
     {
       "id": "event:reserve.adjusted",
       "uuid": "50000000000000000000000000000013",
-      "name": "reserve.adjusted",
+      "name": "RESERVE_ADJUSTED",
       "nameZh": "准备金已调整",
       "description": "A reserve value has changed (adjustment or review revision).",
       "descriptionZh": "准备金金额已变更（理算调整或复核修订）。",
-      "payload": [
+      "payload": {
+        "source_action": "adjustClaim",
+        "event_data": [
+          {
+            "name": "reserve",
+            "type": "String",
+            "target_object": "Reserve"
+          },
+          {
+            "name": "prior_value",
+            "type": "Float",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Reserve",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "reserve",
           "type": "reference",
@@ -5827,11 +6199,28 @@
     {
       "id": "event:reserve.confirmed",
       "uuid": "50000000000000000000000000000014",
-      "name": "reserve.confirmed",
+      "name": "RESERVE_CONFIRMED",
       "nameZh": "准备金已确认",
       "description": "A periodic reserve review confirmed adequacy without change.",
       "descriptionZh": "定期准备金复核确认充足且未变更。",
-      "payload": [
+      "payload": {
+        "source_action": "reviewReserve",
+        "event_data": [
+          {
+            "name": "reserve",
+            "type": "String",
+            "target_object": "Reserve"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Reserve",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "reserve",
           "type": "reference",
@@ -5855,11 +6244,33 @@
     {
       "id": "event:settlement.recommended",
       "uuid": "50000000000000000000000000000015",
-      "name": "settlement.recommended",
+      "name": "SETTLEMENT_RECOMMENDED",
       "nameZh": "结算已建议",
       "description": "A recommended settlement amount has been produced for an exposure.",
       "descriptionZh": "已为赔付项产出建议结算金额。",
-      "payload": [
+      "payload": {
+        "source_action": "adjustClaim",
+        "event_data": [
+          {
+            "name": "exposure",
+            "type": "String",
+            "target_object": "Exposure"
+          },
+          {
+            "name": "recommended_amount",
+            "type": "Float",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Reserve",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "exposure",
           "type": "reference",
@@ -5890,11 +6301,33 @@
     {
       "id": "event:payment.authorization-requested",
       "uuid": "50000000000000000000000000000016",
-      "name": "payment.authorization-requested",
+      "name": "PAYMENT_AUTHORIZATION_REQUESTED",
       "nameZh": "赔付授权已请求",
       "description": "A claim payment above authority awaits supervisor/manager approval.",
       "descriptionZh": "超授权的理赔赔款待主管/经理审批。",
-      "payload": [
+      "payload": {
+        "source_action": "issueClaimPayment",
+        "event_data": [
+          {
+            "name": "payment",
+            "type": "String",
+            "target_object": "Claim_Payment"
+          },
+          {
+            "name": "amount",
+            "type": "Float",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Reserve",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "payment",
           "type": "reference",
@@ -5929,11 +6362,28 @@
     {
       "id": "event:payment.issued",
       "uuid": "50000000000000000000000000000017",
-      "name": "payment.issued",
+      "name": "PAYMENT_ISSUED",
       "nameZh": "赔款已签发",
       "description": "A claim payment has been disbursed.",
       "descriptionZh": "理赔赔款已支付。",
-      "payload": [
+      "payload": {
+        "source_action": "issueClaimPayment",
+        "event_data": [
+          {
+            "name": "payment",
+            "type": "String",
+            "target_object": "Claim_Payment"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Reserve",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "payment",
           "type": "reference",
@@ -5965,11 +6415,28 @@
     {
       "id": "event:exposure.closed",
       "uuid": "50000000000000000000000000000018",
-      "name": "exposure.closed",
+      "name": "EXPOSURE_CLOSED",
       "nameZh": "赔付项已关闭",
       "description": "A fully-paid exposure has been closed with reserve zeroed.",
       "descriptionZh": "已全额赔付的赔付项已关闭且准备金归零。",
-      "payload": [
+      "payload": {
+        "source_action": "closeExposure",
+        "event_data": [
+          {
+            "name": "exposure",
+            "type": "String",
+            "target_object": "Exposure"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Exposure",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "exposure",
           "type": "reference",
@@ -5993,11 +6460,28 @@
     {
       "id": "event:claim.closed",
       "uuid": "50000000000000000000000000000019",
-      "name": "claim.closed",
+      "name": "CLAIM_CLOSED",
       "nameZh": "案件已结案",
       "description": "All exposures on a claim are closed; consumed by subrogation.",
       "descriptionZh": "案件全部赔付项已关闭；由代位求偿消费。",
-      "payload": [
+      "payload": {
+        "source_action": "closeExposure",
+        "event_data": [
+          {
+            "name": "claim",
+            "type": "String",
+            "target_object": "Claim"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Exposure",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "claim",
           "type": "reference",
@@ -6029,11 +6513,28 @@
     {
       "id": "event:reserve.review-due",
       "uuid": "5000000000000000000000000000001a",
-      "name": "reserve.review-due",
+      "name": "RESERVE_REVIEW_DUE",
       "nameZh": "准备金复核到期",
       "description": "A scheduled reserve adequacy review is due (>= 90 days since last review).",
       "descriptionZh": "计划的准备金充足性复核已到期（距上次复核>=90天）。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "exposure",
+            "type": "String",
+            "target_object": "Exposure"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Exposure",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "exposure",
           "type": "reference",
@@ -6058,11 +6559,28 @@
     {
       "id": "event:subrogation.opened",
       "uuid": "5000000000000000000000000000001b",
-      "name": "subrogation.opened",
+      "name": "SUBROGATION_OPENED",
       "nameZh": "代位求偿已开立",
       "description": "A subrogation recovery has been opened against a liable party.",
       "descriptionZh": "已针对责任方开立代位求偿。",
-      "payload": [
+      "payload": {
+        "source_action": "openSubrogation",
+        "event_data": [
+          {
+            "name": "recovery",
+            "type": "String",
+            "target_object": "Recovery"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Recovery",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "recovery",
           "type": "reference",
@@ -6086,11 +6604,33 @@
     {
       "id": "event:recovery.received",
       "uuid": "5000000000000000000000000000001c",
-      "name": "recovery.received",
+      "name": "RECOVERY_RECEIVED",
       "nameZh": "追偿款已收到",
       "description": "Funds have been received from the liable party.",
       "descriptionZh": "已收到责任方款项。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "recovery",
+            "type": "String",
+            "target_object": "Recovery"
+          },
+          {
+            "name": "recovered_amount",
+            "type": "Float",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Recovery",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "recovery",
           "type": "reference",
@@ -6125,11 +6665,28 @@
     {
       "id": "event:recovery.recorded",
       "uuid": "5000000000000000000000000000001d",
-      "name": "recovery.recorded",
+      "name": "RECOVERY_RECORDED",
       "nameZh": "追偿已入账",
       "description": "A recovery receipt has been recorded and offset against the claim.",
       "descriptionZh": "追偿款入账并已冲抵案件损失。",
-      "payload": [
+      "payload": {
+        "source_action": "recordRecovery",
+        "event_data": [
+          {
+            "name": "recovery",
+            "type": "String",
+            "target_object": "Recovery"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Recovery",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "recovery",
           "type": "reference",

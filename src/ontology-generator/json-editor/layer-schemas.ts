@@ -173,12 +173,23 @@ const actionsSchema = layerArray('^action:', {
 });
 
 const eventsSchema = layerArray('^event:', {
-  required: ['id', 'name', 'nameZh'],
+  required: ['id', 'name', 'payload'],
   properties: {
     ...sharedProps,
     name: str,
     nameZh: str,
-    payload: { type: 'array', items: { type: 'object', properties: { name: str, type: enumOf(DATA_TYPE_ENUM), objectTypeId: str }, additionalProperties: true } },
+    // spec-format payload object
+    payload: {
+      type: 'object',
+      properties: {
+        source_action: str,
+        event_data: { type: 'array', items: { type: 'object', properties: { name: str, type: enumOf(PROPERTY_TYPE_ENUM), target_object: { type: ['string', 'null'] } }, additionalProperties: true } },
+        state_mutations: { type: 'array', items: { type: 'object', properties: { target_object: str, mutation_type: str, impacted_properties: strArray }, additionalProperties: true } },
+      },
+      additionalProperties: true,
+    },
+    // retained engine structure
+    payloadFields: { type: 'array', items: { type: 'object', properties: { name: str, type: enumOf(DATA_TYPE_ENUM), objectTypeId: str }, additionalProperties: true } },
     producedByActionIds: strArray,
     consumedByActionIds: strArray,
   },

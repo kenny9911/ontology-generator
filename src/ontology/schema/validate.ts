@@ -307,9 +307,9 @@ function runChecks(o: Ontology, issues: ValidationIssue[]): void {
   for (const evt of events) {
     requireSources(evt.id, evt.provenance, evt.sources, false, issues);
 
-    arr(evt.payload).forEach((f, i) => {
+    arr(evt.payloadFields).forEach((f, i) => {
       if (f.objectTypeId && !objectIds.has(f.objectTypeId)) {
-        dangling(evt.id, `payload[${i}].objectTypeId`, f.objectTypeId,
+        dangling(evt.id, `payloadFields[${i}].objectTypeId`, f.objectTypeId,
           'Event payload field references unknown ObjectType id', issues);
       }
     });
@@ -409,8 +409,8 @@ function runChecks(o: Ontology, issues: ValidationIssue[]): void {
   }
   // events referencing processes is a forward ref (events precede processes).
   for (const evt of events) {
-    arr(evt.payload).forEach((f, i) => {
-      forwardRef(evt.id, `payload[${i}].objectTypeId`, f.objectTypeId,
+    arr(evt.payloadFields).forEach((f, i) => {
+      forwardRef(evt.id, `payloadFields[${i}].objectTypeId`, f.objectTypeId,
         [processIds], issues);
     });
   }

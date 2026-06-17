@@ -659,17 +659,30 @@ function buildActionsAndEvents(
   // Materialize one EventType per drafted event id with EXACT inverse arrays.
   for (const [evtId, draft] of eventDrafts) {
     const objId = objectIdByName.get(draft.step.obj);
-    const payload: EventField[] = objId
+    const payloadFields: EventField[] = objId
       ? [{ name: paramName(draft.step.obj), type: 'reference', objectTypeId: objId, required: true }]
       : [];
+    const targetSpec = objId ? pascalCase(objId.replace(PREFIX.object, '')) : undefined;
+    const evtSpec = evtId.replace(/^event:/, '').replace(/[^A-Za-z0-9]+/g, '_').toUpperCase();
 
     events.push({
       id: evtId,
       uuid: demoUuid(evtId),
-      name: eventName(evtId),
+      name: evtSpec,
       nameZh: `${draft.step.obj}·完成`,
       description: `${draft.step.en} — completed.`,
-      payload,
+      payload: {
+        source_action: camelCaseName(draft.step.en.slice(0, 40)),
+        event_data: payloadFields.map((f) => ({
+          name: f.name,
+          type: dataTypeToPropertyType(f.type),
+          target_object: f.objectTypeId ? pascalCase(f.objectTypeId.replace(PREFIX.object, '')) : null,
+        })),
+        state_mutations: targetSpec
+          ? [{ target_object: targetSpec, mutation_type: 'CREATE_OR_MODIFY', impacted_properties: [] }]
+          : [],
+      },
+      payloadFields,
       producedByActionIds: producedBy.get(evtId) ?? [],
       consumedByActionIds: consumedBy.get(evtId) ?? [],
       sources: [synthSource(primarySource, `Emitted after: ${draft.step.en}`)],
@@ -762,10 +775,6 @@ function primaryActor(proc: OntProcess): string {
 
 function paramName(objectName: string): string {
   return snakeCase(objectName) || 'item';
-}
-
-function eventName(evtId: string): string {
-  return evtId.slice(PREFIX.event.length);
 }
 
 function pascalCase(s: string): string {

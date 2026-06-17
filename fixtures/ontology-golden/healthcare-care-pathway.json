@@ -5453,11 +5453,22 @@
     {
       "id": "event:patient.arrived",
       "uuid": "60000000000000000000000000000001",
-      "name": "patient.arrived",
+      "name": "PATIENT_ARRIVED",
       "nameZh": "患者到达",
       "description": "A patient checks in at a kiosk or a scheduled arrival signal fires, opening Process A.",
       "descriptionZh": "患者在自助机签到或触发预约到达信号，开启流程 A。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "mrn",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": []
+      },
+      "payloadFields": [
         {
           "name": "mrn",
           "type": "string",
@@ -5490,11 +5501,33 @@
     {
       "id": "event:encounter.created",
       "uuid": "60000000000000000000000000000002",
-      "name": "encounter.created",
+      "name": "ENCOUNTER_CREATED",
       "nameZh": "就诊已创建",
       "description": "A new Encounter has been created and broadcast to RCS and Clarity.",
       "descriptionZh": "新就诊已创建并广播至收入周期系统与数据仓库。",
-      "payload": [
+      "payload": {
+        "source_action": "registerEncounter",
+        "event_data": [
+          {
+            "name": "encounter",
+            "type": "String",
+            "target_object": "Encounter"
+          },
+          {
+            "name": "mrn",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Encounter",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "encounter",
           "type": "reference",
@@ -5538,11 +5571,33 @@
     {
       "id": "event:eligibility.verified",
       "uuid": "60000000000000000000000000000003",
-      "name": "eligibility.verified",
+      "name": "ELIGIBILITY_VERIFIED",
       "nameZh": "资格已核验",
       "description": "Eligibility has been verified; Coverage.status was stamped from the 271 response.",
       "descriptionZh": "资格已核验；依据 271 应答更新了 Coverage.status。",
-      "payload": [
+      "payload": {
+        "source_action": "verifyEligibility",
+        "event_data": [
+          {
+            "name": "coverage",
+            "type": "String",
+            "target_object": "Coverage"
+          },
+          {
+            "name": "status",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Coverage",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "coverage",
           "type": "reference",
@@ -5584,11 +5639,28 @@
     {
       "id": "event:eligibility.failed",
       "uuid": "60000000000000000000000000000004",
-      "name": "eligibility.failed",
+      "name": "ELIGIBILITY_FAILED",
       "nameZh": "资格核验失败",
       "description": "Eligibility verification failed; coverage is inactive or termed.",
       "descriptionZh": "资格核验失败；保险覆盖为非有效或已终止。",
-      "payload": [
+      "payload": {
+        "source_action": "verifyEligibility",
+        "event_data": [
+          {
+            "name": "coverage",
+            "type": "String",
+            "target_object": "Coverage"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Coverage",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "coverage",
           "type": "reference",
@@ -5619,11 +5691,28 @@
     {
       "id": "event:triage.completed",
       "uuid": "60000000000000000000000000000005",
-      "name": "triage.completed",
+      "name": "TRIAGE_COMPLETED",
       "nameZh": "分诊已完成",
       "description": "Triage is complete with an acuity level and triage timestamp recorded.",
       "descriptionZh": "分诊已完成，记录了急性度等级与分诊时间戳。",
-      "payload": [
+      "payload": {
+        "source_action": "recordTriage",
+        "event_data": [
+          {
+            "name": "encounter",
+            "type": "String",
+            "target_object": "Encounter"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Encounter",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "encounter",
           "type": "reference",
@@ -5654,11 +5743,33 @@
     {
       "id": "event:sepsis.suspected",
       "uuid": "60000000000000000000000000000006",
-      "name": "sepsis.suspected",
+      "name": "SEPSIS_SUSPECTED",
       "nameZh": "疑似脓毒症",
       "description": "SIRS criteria fired during triage; the sepsis bundle clock starts at the triage timestamp.",
       "descriptionZh": "分诊期间触发 SIRS 标准；脓毒症集束计时自分诊时间戳起算。",
-      "payload": [
+      "payload": {
+        "source_action": "recordTriage",
+        "event_data": [
+          {
+            "name": "encounter",
+            "type": "String",
+            "target_object": "Encounter"
+          },
+          {
+            "name": "triage_timestamp",
+            "type": "Timestamp",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Encounter",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "encounter",
           "type": "reference",
@@ -5702,11 +5813,33 @@
     {
       "id": "event:order.placed",
       "uuid": "60000000000000000000000000000007",
-      "name": "order.placed",
+      "name": "ORDER_PLACED",
       "nameZh": "医嘱已下达",
       "description": "One or more Orders have been placed referencing a catalog Procedure.",
       "descriptionZh": "已下达一条或多条引用目录诊疗操作的医嘱。",
-      "payload": [
+      "payload": {
+        "source_action": "placeOrder",
+        "event_data": [
+          {
+            "name": "order",
+            "type": "String",
+            "target_object": "Order"
+          },
+          {
+            "name": "encounter",
+            "type": "String",
+            "target_object": "Encounter"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Order",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "order",
           "type": "reference",
@@ -5743,11 +5876,33 @@
     {
       "id": "event:authorization.required",
       "uuid": "60000000000000000000000000000008",
-      "name": "authorization.required",
+      "name": "AUTHORIZATION_REQUIRED",
       "nameZh": "需要授权",
       "description": "A designated high-cost Procedure was ordered without an approved authorization, opening Process C.",
       "descriptionZh": "下达了无已批准授权的指定高费用诊疗操作，开启流程 C。",
-      "payload": [
+      "payload": {
+        "source_action": "placeOrder",
+        "event_data": [
+          {
+            "name": "procedure",
+            "type": "String",
+            "target_object": "Procedure"
+          },
+          {
+            "name": "encounter",
+            "type": "String",
+            "target_object": "Encounter"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Order",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "procedure",
           "type": "reference",
@@ -5790,11 +5945,33 @@
     {
       "id": "event:authorization.requested",
       "uuid": "60000000000000000000000000000009",
-      "name": "authorization.requested",
+      "name": "AUTHORIZATION_REQUESTED",
       "nameZh": "授权已申请",
       "description": "A prior-authorization request (EDI 278) has been transmitted to the payer.",
       "descriptionZh": "已向付款方发送事前授权请求（EDI 278）。",
-      "payload": [
+      "payload": {
+        "source_action": "requestAuthorization",
+        "event_data": [
+          {
+            "name": "prior_authorization",
+            "type": "String",
+            "target_object": "Prior_Authorization"
+          },
+          {
+            "name": "procedure",
+            "type": "String",
+            "target_object": "Procedure"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Prior_Authorization",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "prior_authorization",
           "type": "reference",
@@ -5837,11 +6014,38 @@
     {
       "id": "event:authorization.approved",
       "uuid": "6000000000000000000000000000000a",
-      "name": "authorization.approved",
+      "name": "AUTHORIZATION_APPROVED",
       "nameZh": "授权已批准",
       "description": "The payer approved the authorization; the Order is released for scheduling.",
       "descriptionZh": "付款方批准了授权；医嘱获释放以供排程。",
-      "payload": [
+      "payload": {
+        "source_action": "postAuthorizationResponse",
+        "event_data": [
+          {
+            "name": "prior_authorization",
+            "type": "String",
+            "target_object": "Prior_Authorization"
+          },
+          {
+            "name": "approval_number",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "expiration_date",
+            "type": "Date",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Prior_Authorization",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "prior_authorization",
           "type": "reference",
@@ -5886,11 +6090,28 @@
     {
       "id": "event:authorization.denied",
       "uuid": "6000000000000000000000000000000b",
-      "name": "authorization.denied",
+      "name": "AUTHORIZATION_DENIED",
       "nameZh": "授权被拒",
       "description": "The payer denied the authorization; the Order is returned to the clinician.",
       "descriptionZh": "付款方拒绝了授权；医嘱退回临床医师。",
-      "payload": [
+      "payload": {
+        "source_action": "postAuthorizationResponse",
+        "event_data": [
+          {
+            "name": "prior_authorization",
+            "type": "String",
+            "target_object": "Prior_Authorization"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Prior_Authorization",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "prior_authorization",
           "type": "reference",
@@ -5921,11 +6142,33 @@
     {
       "id": "event:procedure.documented",
       "uuid": "6000000000000000000000000000000c",
-      "name": "procedure.documented",
+      "name": "PROCEDURE_DOCUMENTED",
       "nameZh": "操作已记录",
       "description": "A Procedure has been documented with start/stop times and linked to a supporting Diagnosis; opens charge capture.",
       "descriptionZh": "诊疗操作已记录起止时间并关联支持性诊断；开启费用生成。",
-      "payload": [
+      "payload": {
+        "source_action": "documentProcedure",
+        "event_data": [
+          {
+            "name": "procedure",
+            "type": "String",
+            "target_object": "Procedure"
+          },
+          {
+            "name": "encounter",
+            "type": "String",
+            "target_object": "Encounter"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Procedure",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "procedure",
           "type": "reference",
@@ -5969,11 +6212,33 @@
     {
       "id": "event:encounter.discharged",
       "uuid": "6000000000000000000000000000000d",
-      "name": "encounter.discharged",
+      "name": "ENCOUNTER_DISCHARGED",
       "nameZh": "就诊已出院",
       "description": "The Encounter has been discharged; this trigger opens Process B coding.",
       "descriptionZh": "就诊已出院；该触发开启流程 B 的编码工作。",
-      "payload": [
+      "payload": {
+        "source_action": "dischargeEncounter",
+        "event_data": [
+          {
+            "name": "encounter",
+            "type": "String",
+            "target_object": "Encounter"
+          },
+          {
+            "name": "discharge_date",
+            "type": "Date",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Encounter",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "encounter",
           "type": "reference",
@@ -6008,11 +6273,38 @@
     {
       "id": "event:charge.captured",
       "uuid": "6000000000000000000000000000000e",
-      "name": "charge.captured",
+      "name": "CHARGE_CAPTURED",
       "nameZh": "费用已生成",
       "description": "A Charge has been generated from a documented Procedure and mapped to an active CDM line.",
       "descriptionZh": "已由已记录诊疗操作生成费用并映射到有效 CDM 行。",
-      "payload": [
+      "payload": {
+        "source_action": "generateCharge",
+        "event_data": [
+          {
+            "name": "charge",
+            "type": "String",
+            "target_object": "Charge"
+          },
+          {
+            "name": "cdm_code",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "amount",
+            "type": "Float",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Charge",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "charge",
           "type": "reference",
@@ -6057,11 +6349,28 @@
     {
       "id": "event:charge.router_error",
       "uuid": "6000000000000000000000000000000f",
-      "name": "charge.router_error",
+      "name": "CHARGE_ROUTER_ERROR",
       "nameZh": "费用路由错误",
       "description": "Charge generation failed because no active CDM line matched the documented Procedure.",
       "descriptionZh": "费用生成失败，因未找到与已记录诊疗操作匹配的有效 CDM 行。",
-      "payload": [
+      "payload": {
+        "source_action": "generateCharge",
+        "event_data": [
+          {
+            "name": "procedure",
+            "type": "String",
+            "target_object": "Procedure"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Charge",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "procedure",
           "type": "reference",
@@ -6092,11 +6401,33 @@
     {
       "id": "event:coding.completed",
       "uuid": "60000000000000000000000000000010",
-      "name": "coding.completed",
+      "name": "CODING_COMPLETED",
       "nameZh": "编码已完成",
       "description": "Final ICD-10/CPT codes were assigned and edits passed for the Encounter.",
       "descriptionZh": "就诊已分配最终 ICD-10/CPT 编码且编辑检查通过。",
-      "payload": [
+      "payload": {
+        "source_action": "assignCodes",
+        "event_data": [
+          {
+            "name": "encounter",
+            "type": "String",
+            "target_object": "Encounter"
+          },
+          {
+            "name": "code_set",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Encounter",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "encounter",
           "type": "reference",
@@ -6139,11 +6470,28 @@
     {
       "id": "event:coding.edit_failed",
       "uuid": "60000000000000000000000000000011",
-      "name": "coding.edit_failed",
+      "name": "CODING_EDIT_FAILED",
       "nameZh": "编码编辑失败",
       "description": "Coding failed an NCCI or medical-necessity edit and is routed for review.",
       "descriptionZh": "编码未通过 NCCI 或医疗必要性编辑，路由复核。",
-      "payload": [
+      "payload": {
+        "source_action": "assignCodes",
+        "event_data": [
+          {
+            "name": "encounter",
+            "type": "String",
+            "target_object": "Encounter"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Encounter",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "encounter",
           "type": "reference",
@@ -6174,11 +6522,33 @@
     {
       "id": "event:claim.assembled",
       "uuid": "60000000000000000000000000000012",
-      "name": "claim.assembled",
+      "name": "CLAIM_ASSEMBLED",
       "nameZh": "理赔已组装",
       "description": "A draft Claim was assembled and scrubbed; status is Ready or Held.",
       "descriptionZh": "草稿理赔单已组装并清洗；状态为 Ready 或 Held。",
-      "payload": [
+      "payload": {
+        "source_action": "assembleClaim",
+        "event_data": [
+          {
+            "name": "claim",
+            "type": "String",
+            "target_object": "Claim"
+          },
+          {
+            "name": "status",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Claim",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "claim",
           "type": "reference",
@@ -6213,11 +6583,28 @@
     {
       "id": "event:claim.scrub_failed",
       "uuid": "60000000000000000000000000000013",
-      "name": "claim.scrub_failed",
+      "name": "CLAIM_SCRUB_FAILED",
       "nameZh": "理赔清洗失败",
       "description": "The Claim failed one or more scrubber edits and is routed to the billing edit work queue.",
       "descriptionZh": "理赔单未通过一项或多项清洗编辑，路由至计费编辑工作队列。",
-      "payload": [
+      "payload": {
+        "source_action": "assembleClaim",
+        "event_data": [
+          {
+            "name": "claim",
+            "type": "String",
+            "target_object": "Claim"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Claim",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "claim",
           "type": "reference",
@@ -6248,11 +6635,33 @@
     {
       "id": "event:claim.submitted",
       "uuid": "60000000000000000000000000000014",
-      "name": "claim.submitted",
+      "name": "CLAIM_SUBMITTED",
       "nameZh": "理赔已提交",
       "description": "A Ready Claim was submitted to the payer as an EDI 837 transaction.",
       "descriptionZh": "处于 Ready 状态的理赔单已作为 EDI 837 交易提交给付款方。",
-      "payload": [
+      "payload": {
+        "source_action": "submitClaim",
+        "event_data": [
+          {
+            "name": "claim",
+            "type": "String",
+            "target_object": "Claim"
+          },
+          {
+            "name": "transaction",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Claim",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "claim",
           "type": "reference",
@@ -6293,11 +6702,33 @@
     {
       "id": "event:claim.accepted",
       "uuid": "60000000000000000000000000000015",
-      "name": "claim.accepted",
+      "name": "CLAIM_ACCEPTED",
       "nameZh": "理赔已受理",
       "description": "The Clearinghouse returned a 277CA acknowledgment accepting the Claim.",
       "descriptionZh": "清算网关返回 277CA 确认，受理该理赔单。",
-      "payload": [
+      "payload": {
+        "source_action": "submitClaim",
+        "event_data": [
+          {
+            "name": "claim",
+            "type": "String",
+            "target_object": "Claim"
+          },
+          {
+            "name": "ack",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Claim",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "claim",
           "type": "reference",
@@ -6338,11 +6769,28 @@
     {
       "id": "event:claim.rejected",
       "uuid": "60000000000000000000000000000016",
-      "name": "claim.rejected",
+      "name": "CLAIM_REJECTED",
       "nameZh": "理赔被退回",
       "description": "The Clearinghouse 999/277CA acknowledgment rejected the Claim before payer adjudication.",
       "descriptionZh": "清算网关 999/277CA 确认在付款方裁定前退回了理赔单。",
-      "payload": [
+      "payload": {
+        "source_action": "submitClaim",
+        "event_data": [
+          {
+            "name": "claim",
+            "type": "String",
+            "target_object": "Claim"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Claim",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "claim",
           "type": "reference",
@@ -6373,11 +6821,33 @@
     {
       "id": "event:remittance.received",
       "uuid": "60000000000000000000000000000017",
-      "name": "remittance.received",
+      "name": "REMITTANCE_RECEIVED",
       "nameZh": "汇款已收到",
       "description": "A payer EDI 835 remittance file has landed for posting.",
       "descriptionZh": "付款方 EDI 835 汇款文件已到达，待入账。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "claim",
+            "type": "String",
+            "target_object": "Claim"
+          },
+          {
+            "name": "remittance",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Claim",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "claim",
           "type": "reference",
@@ -6421,11 +6891,43 @@
     {
       "id": "event:payment.posted",
       "uuid": "60000000000000000000000000000018",
-      "name": "payment.posted",
+      "name": "PAYMENT_POSTED",
       "nameZh": "付款已入账",
       "description": "Payments and adjustments were posted at the Charge level from the 835.",
       "descriptionZh": "已依据 835 在费用项层面入账付款与调整。",
-      "payload": [
+      "payload": {
+        "source_action": "postRemittance",
+        "event_data": [
+          {
+            "name": "claim",
+            "type": "String",
+            "target_object": "Claim"
+          },
+          {
+            "name": "paid_amount",
+            "type": "Float",
+            "target_object": null
+          },
+          {
+            "name": "remittance",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Charge",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Denial",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "claim",
           "type": "reference",
@@ -6471,11 +6973,38 @@
     {
       "id": "event:claim.denied",
       "uuid": "60000000000000000000000000000019",
-      "name": "claim.denied",
+      "name": "CLAIM_DENIED",
       "nameZh": "理赔被拒",
       "description": "One or more lines were denied; a Denial was created carrying its CARC/RARC code.",
       "descriptionZh": "一行或多行被拒；已创建携带 CARC/RARC 码的拒付记录。",
-      "payload": [
+      "payload": {
+        "source_action": "postRemittance",
+        "event_data": [
+          {
+            "name": "denial",
+            "type": "String",
+            "target_object": "Denial"
+          },
+          {
+            "name": "carc_code",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Charge",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Denial",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "denial",
           "type": "reference",
@@ -6517,11 +7046,33 @@
     {
       "id": "event:denial.assigned",
       "uuid": "6000000000000000000000000000001a",
-      "name": "denial.assigned",
+      "name": "DENIAL_ASSIGNED",
       "nameZh": "拒付已派单",
       "description": "A Denial was classified and routed to a Denials Analyst for rework or write-off.",
       "descriptionZh": "拒付已分类并派单至拒付处理专员进行返工或核销。",
-      "payload": [
+      "payload": {
+        "source_action": "triageDenial",
+        "event_data": [
+          {
+            "name": "denial",
+            "type": "String",
+            "target_object": "Denial"
+          },
+          {
+            "name": "category",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Denial",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "denial",
           "type": "reference",
@@ -6556,11 +7107,28 @@
     {
       "id": "event:appeal.submitted",
       "uuid": "6000000000000000000000000000001b",
-      "name": "appeal.submitted",
+      "name": "APPEAL_SUBMITTED",
       "nameZh": "申诉已提交",
       "description": "A corrected/replacement Claim or appeal packet was resubmitted, re-entering the remittance loop.",
       "descriptionZh": "已重新提交更正/替换理赔单或申诉包，重回汇款循环。",
-      "payload": [
+      "payload": {
+        "source_action": "submitAppeal",
+        "event_data": [
+          {
+            "name": "claim",
+            "type": "String",
+            "target_object": "Claim"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Claim",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "claim",
           "type": "reference",

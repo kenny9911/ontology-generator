@@ -5609,11 +5609,28 @@
     {
       "id": "event:application.submitted",
       "uuid": "60000000000000000000000000000001",
-      "name": "application.submitted",
+      "name": "APPLICATION_SUBMITTED",
       "nameZh": "申请已提交",
       "description": "A borrower has submitted a signed loan application package via the borrower portal to nCino.",
       "descriptionZh": "借款人已通过借款人门户向 nCino 提交已签署的贷款申请材料。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "borrower",
+            "type": "String",
+            "target_object": "Borrower"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Borrower",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "borrower",
           "type": "reference",
@@ -5642,11 +5659,28 @@
     {
       "id": "event:facility.created",
       "uuid": "60000000000000000000000000000002",
-      "name": "facility.created",
+      "name": "FACILITY_CREATED",
       "nameZh": "额度已创建",
       "description": "A new LoanFacility record was created in nCino and is ready for financial spreading.",
       "descriptionZh": "在 nCino 中创建了新的信贷额度记录，准备进行财务报表展开。",
-      "payload": [
+      "payload": {
+        "source_action": "captureApplication",
+        "event_data": [
+          {
+            "name": "loan_facility",
+            "type": "String",
+            "target_object": "Loan_Facility"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Loan_Facility",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "loan_facility",
           "type": "reference",
@@ -5676,11 +5710,28 @@
     {
       "id": "event:financials.spread",
       "uuid": "60000000000000000000000000000003",
-      "name": "financials.spread",
+      "name": "FINANCIALS_SPREAD",
       "nameZh": "财务已展开",
       "description": "Borrower financials were spread by Sageworks and computed ratios returned to nCino.",
       "descriptionZh": "Sageworks 已完成借款人财务报表展开并将计算比率返回 nCino。",
-      "payload": [
+      "payload": {
+        "source_action": "spreadFinancials",
+        "event_data": [
+          {
+            "name": "loan_facility",
+            "type": "String",
+            "target_object": "Loan_Facility"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Loan_Facility",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "loan_facility",
           "type": "reference",
@@ -5711,11 +5762,28 @@
     {
       "id": "event:risk-rating.assigned",
       "uuid": "60000000000000000000000000000004",
-      "name": "risk-rating.assigned",
+      "name": "RISK_RATING_ASSIGNED",
       "nameZh": "风险评级已授予",
       "description": "A RiskRating was assigned (or refreshed to a new version) for a Borrower.",
       "descriptionZh": "已为借款人授予（或刷新为新版本的）风险评级。",
-      "payload": [
+      "payload": {
+        "source_action": "assignRiskRating",
+        "event_data": [
+          {
+            "name": "risk_rating",
+            "type": "String",
+            "target_object": "Risk_Rating"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Risk_Rating",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "risk_rating",
           "type": "reference",
@@ -5746,11 +5814,28 @@
     {
       "id": "event:collateral.valued",
       "uuid": "60000000000000000000000000000005",
-      "name": "collateral.valued",
+      "name": "COLLATERAL_VALUED",
       "nameZh": "抵押物已估值",
       "description": "Collateral fair value and the facility LTV were computed from an appraisal report.",
       "descriptionZh": "已依据评估报告计算抵押物公允价值与额度贷款价值比。",
-      "payload": [
+      "payload": {
+        "source_action": "valueCollateral",
+        "event_data": [
+          {
+            "name": "collateral",
+            "type": "String",
+            "target_object": "Collateral"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Collateral",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "collateral",
           "type": "reference",
@@ -5778,11 +5863,28 @@
     {
       "id": "event:credit-memo.submitted",
       "uuid": "60000000000000000000000000000006",
-      "name": "credit-memo.submitted",
+      "name": "CREDIT_MEMO_SUBMITTED",
       "nameZh": "信贷备忘录已提交",
       "description": "A CreditMemo was submitted into the nCino approval workflow for a credit decision.",
       "descriptionZh": "信贷备忘录已提交至 nCino 审批流程以作出信贷决定。",
-      "payload": [
+      "payload": {
+        "source_action": "draftCreditMemo",
+        "event_data": [
+          {
+            "name": "credit_memo",
+            "type": "String",
+            "target_object": "Credit_Memo"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Credit_Memo",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "credit_memo",
           "type": "reference",
@@ -5812,11 +5914,33 @@
     {
       "id": "event:facility.approved",
       "uuid": "60000000000000000000000000000007",
-      "name": "facility.approved",
+      "name": "FACILITY_APPROVED",
       "nameZh": "额度已批准",
       "description": "A credit decision approved the facility at the correct authority level; mirrored into FLEXCUBE.",
       "descriptionZh": "信贷决定在正确权限层级批准了额度，并镜像至 FLEXCUBE。",
-      "payload": [
+      "payload": {
+        "source_action": "renderCreditDecision",
+        "event_data": [
+          {
+            "name": "loan_facility",
+            "type": "String",
+            "target_object": "Loan_Facility"
+          },
+          {
+            "name": "credit_memo",
+            "type": "String",
+            "target_object": "Credit_Memo"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Loan_Facility",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "loan_facility",
           "type": "reference",
@@ -5852,11 +5976,28 @@
     {
       "id": "event:facility.declined",
       "uuid": "60000000000000000000000000000008",
-      "name": "facility.declined",
+      "name": "FACILITY_DECLINED",
       "nameZh": "额度已否决",
       "description": "A credit decision declined the facility; the pipeline is closed.",
       "descriptionZh": "信贷决定否决了额度，流程关闭。",
-      "payload": [
+      "payload": {
+        "source_action": "renderCreditDecision",
+        "event_data": [
+          {
+            "name": "credit_memo",
+            "type": "String",
+            "target_object": "Credit_Memo"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Loan_Facility",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "credit_memo",
           "type": "reference",
@@ -5884,11 +6025,33 @@
     {
       "id": "event:facility.booked",
       "uuid": "60000000000000000000000000000009",
-      "name": "facility.booked",
+      "name": "FACILITY_BOOKED",
       "nameZh": "额度已入账",
       "description": "The canonical LoanFacility and its RepaymentSchedule were booked in FLEXCUBE.",
       "descriptionZh": "规范的信贷额度及其还款计划已在 FLEXCUBE 入账。",
-      "payload": [
+      "payload": {
+        "source_action": "bookFacility",
+        "event_data": [
+          {
+            "name": "loan_facility",
+            "type": "String",
+            "target_object": "Loan_Facility"
+          },
+          {
+            "name": "repayment_schedule",
+            "type": "String",
+            "target_object": "Repayment_Schedule"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Repayment_Schedule",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "loan_facility",
           "type": "reference",
@@ -5924,11 +6087,33 @@
     {
       "id": "event:security.perfected",
       "uuid": "60000000000000000000000000000010",
-      "name": "security.perfected",
+      "name": "SECURITY_PERFECTED",
       "nameZh": "担保已完善",
       "description": "Security agreements were executed and collateral perfected; together with FacilityBooked this is the precondition for funding (Rule R-04).",
       "descriptionZh": "已签署担保协议并完善抵押物担保权益；与额度入账共同构成放款先决条件（规则 R-04）。",
-      "payload": [
+      "payload": {
+        "source_action": "perfectSecurity",
+        "event_data": [
+          {
+            "name": "collateral",
+            "type": "String",
+            "target_object": "Collateral"
+          },
+          {
+            "name": "loan_facility",
+            "type": "String",
+            "target_object": "Loan_Facility"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Collateral",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "collateral",
           "type": "reference",
@@ -5962,11 +6147,28 @@
     {
       "id": "event:drawdown.requested",
       "uuid": "60000000000000000000000000000011",
-      "name": "drawdown.requested",
+      "name": "DRAWDOWN_REQUESTED",
       "nameZh": "支用已请求",
       "description": "A Drawdown was requested against an Active LoanFacility and routed to CovenantWatch for eligibility checking.",
       "descriptionZh": "针对生效信贷额度发起了支用请求，并路由至 CovenantWatch 进行合规检查。",
-      "payload": [
+      "payload": {
+        "source_action": "requestDrawdown",
+        "event_data": [
+          {
+            "name": "drawdown",
+            "type": "String",
+            "target_object": "Drawdown"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Drawdown",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "drawdown",
           "type": "reference",
@@ -5996,11 +6198,28 @@
     {
       "id": "event:drawdown.cleared",
       "uuid": "60000000000000000000000000000012",
-      "name": "drawdown.cleared",
+      "name": "DRAWDOWN_CLEARED",
       "nameZh": "支用已放行",
       "description": "A Drawdown passed the pre-disbursement covenant and limit check and may be disbursed.",
       "descriptionZh": "支用通过了拨付前契约与限额检查，可予拨付。",
-      "payload": [
+      "payload": {
+        "source_action": "checkDrawdownEligibility",
+        "event_data": [
+          {
+            "name": "drawdown",
+            "type": "String",
+            "target_object": "Drawdown"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Drawdown",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "drawdown",
           "type": "reference",
@@ -6030,11 +6249,28 @@
     {
       "id": "event:drawdown.blocked",
       "uuid": "60000000000000000000000000000013",
-      "name": "drawdown.blocked",
+      "name": "DRAWDOWN_BLOCKED",
       "nameZh": "支用已拦截",
       "description": "A Drawdown was blocked because a financial covenant is in breach with no waiver on file (Rule R-05).",
       "descriptionZh": "因财务契约违约且无豁免在案，支用被拦截（规则 R-05）。",
-      "payload": [
+      "payload": {
+        "source_action": "checkDrawdownEligibility",
+        "event_data": [
+          {
+            "name": "drawdown",
+            "type": "String",
+            "target_object": "Drawdown"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Drawdown",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "drawdown",
           "type": "reference",
@@ -6062,11 +6298,38 @@
     {
       "id": "event:funds.disbursed",
       "uuid": "60000000000000000000000000000014",
-      "name": "funds.disbursed",
+      "name": "FUNDS_DISBURSED",
       "nameZh": "资金已拨付",
       "description": "Funds were disbursed for a cleared Drawdown and the facility outstanding balance updated.",
       "descriptionZh": "已为放行的支用拨付资金并更新额度未偿余额。",
-      "payload": [
+      "payload": {
+        "source_action": "disburseFunds",
+        "event_data": [
+          {
+            "name": "drawdown",
+            "type": "String",
+            "target_object": "Drawdown"
+          },
+          {
+            "name": "loan_facility",
+            "type": "String",
+            "target_object": "Loan_Facility"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Drawdown",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Loan_Facility",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "drawdown",
           "type": "reference",
@@ -6100,11 +6363,28 @@
     {
       "id": "event:covenant.test-due",
       "uuid": "60000000000000000000000000000015",
-      "name": "covenant.test-due",
+      "name": "COVENANT_TEST_DUE",
       "nameZh": "契约测试到期",
       "description": "A covenant test is due at the start of a reporting period and routed to Sageworks and the analyst.",
       "descriptionZh": "在报告期开始时契约测试到期，路由至 Sageworks 与分析师。",
-      "payload": [
+      "payload": {
+        "source_action": "scheduleCovenantTest",
+        "event_data": [
+          {
+            "name": "covenant",
+            "type": "String",
+            "target_object": "Covenant"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Covenant",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "covenant",
           "type": "reference",
@@ -6134,11 +6414,28 @@
     {
       "id": "event:covenant.tested",
       "uuid": "60000000000000000000000000000016",
-      "name": "covenant.tested",
+      "name": "COVENANT_TESTED",
       "nameZh": "契约已测试",
       "description": "A covenant was tested and its test_result recorded (Compliant or Breached).",
       "descriptionZh": "契约已完成测试并记录测试结果（合规或违约）。",
-      "payload": [
+      "payload": {
+        "source_action": "evaluateCovenant",
+        "event_data": [
+          {
+            "name": "covenant",
+            "type": "String",
+            "target_object": "Covenant"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Covenant",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "covenant",
           "type": "reference",
@@ -6166,11 +6463,28 @@
     {
       "id": "event:covenant.breached",
       "uuid": "60000000000000000000000000000017",
-      "name": "covenant.breached",
+      "name": "COVENANT_BREACHED",
       "nameZh": "契约已违约",
       "description": "A covenant test failed; the breach is routed to nCino and the Credit Committee, drives escalation, margin calls, and out-of-cycle rating review.",
       "descriptionZh": "契约测试未通过；违约路由至 nCino 与信贷委员会，驱动上报、追加保证金及周期外评级复核。",
-      "payload": [
+      "payload": {
+        "source_action": "evaluateCovenant",
+        "event_data": [
+          {
+            "name": "covenant",
+            "type": "String",
+            "target_object": "Covenant"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Covenant",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "covenant",
           "type": "reference",
@@ -6202,11 +6516,38 @@
     {
       "id": "event:breach.escalated",
       "uuid": "60000000000000000000000000000018",
-      "name": "breach.escalated",
+      "name": "BREACH_ESCALATED",
       "nameZh": "违约已上报",
       "description": "A breach was escalated to the Credit Committee, optionally with a WaiverRequest, for a waiver decision.",
       "descriptionZh": "违约已上报信贷委员会（可附豁免申请），以作出豁免决定。",
-      "payload": [
+      "payload": {
+        "source_action": "escalateBreach",
+        "event_data": [
+          {
+            "name": "covenant",
+            "type": "String",
+            "target_object": "Covenant"
+          },
+          {
+            "name": "waiver_request",
+            "type": "String",
+            "target_object": "Waiver_Request"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Covenant",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Waiver_Request",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "covenant",
           "type": "reference",
@@ -6242,11 +6583,28 @@
     {
       "id": "event:waiver.granted",
       "uuid": "60000000000000000000000000000019",
-      "name": "waiver.granted",
+      "name": "WAIVER_GRANTED",
       "nameZh": "豁免已批准",
       "description": "A WaiverRequest was granted, re-enabling drawdowns previously blocked under Rule R-05.",
       "descriptionZh": "豁免申请已获批准，重新启用此前因规则 R-05 被拦截的支用。",
-      "payload": [
+      "payload": {
+        "source_action": "decideWaiver",
+        "event_data": [
+          {
+            "name": "waiver_request",
+            "type": "String",
+            "target_object": "Waiver_Request"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Waiver_Request",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "waiver_request",
           "type": "reference",
@@ -6274,11 +6632,28 @@
     {
       "id": "event:waiver.denied",
       "uuid": "60000000000000000000000000000020",
-      "name": "waiver.denied",
+      "name": "WAIVER_DENIED",
       "nameZh": "豁免已拒绝",
       "description": "A WaiverRequest was denied; the breached covenant remains in effect.",
       "descriptionZh": "豁免申请被拒绝；违约契约仍然有效。",
-      "payload": [
+      "payload": {
+        "source_action": "decideWaiver",
+        "event_data": [
+          {
+            "name": "waiver_request",
+            "type": "String",
+            "target_object": "Waiver_Request"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Waiver_Request",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "waiver_request",
           "type": "reference",
@@ -6306,11 +6681,28 @@
     {
       "id": "event:margin-call.issued",
       "uuid": "60000000000000000000000000000021",
-      "name": "margin-call.issued",
+      "name": "MARGIN_CALL_ISSUED",
       "nameZh": "追加保证金已发出",
       "description": "A MarginCallNotice was issued on an LTV breach with a cure deadline, notifying the borrower portal and iManage.",
       "descriptionZh": "因贷款价值比违约发出了带补足期限的追加保证金通知，通知借款人门户与 iManage。",
-      "payload": [
+      "payload": {
+        "source_action": "issueMarginCall",
+        "event_data": [
+          {
+            "name": "margin_call_notice",
+            "type": "String",
+            "target_object": "Margin_Call_Notice"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Margin_Call_Notice",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "margin_call_notice",
           "type": "reference",
@@ -6338,11 +6730,28 @@
     {
       "id": "event:rating.review-due",
       "uuid": "60000000000000000000000000000022",
-      "name": "rating.review-due",
+      "name": "RATING_REVIEW_DUE",
       "nameZh": "评级复核到期",
       "description": "A risk-rating review is due by calendar or by a recent covenant breach, routed to the analyst.",
       "descriptionZh": "按日历或近期契约违约，风险评级复核到期，路由至分析师。",
-      "payload": [
+      "payload": {
+        "source_action": "triggerRatingReview",
+        "event_data": [
+          {
+            "name": "risk_rating",
+            "type": "String",
+            "target_object": "Risk_Rating"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Risk_Rating",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "risk_rating",
           "type": "reference",

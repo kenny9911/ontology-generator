@@ -595,17 +595,43 @@ export interface EventField {
   description?: string;
 }
 
+/** One payload datum of an event (spec-format). */
+export interface SpecEventData {
+  name: string;
+  type: string;
+  /** The spec object id this datum belongs to, or null. */
+  target_object: string | null;
+}
+
+/** A state mutation an event records (spec-format). */
+export interface SpecStateMutation {
+  target_object: string;
+  mutation_type: string;
+  impacted_properties: string[];
+}
+
+/** Event payload (spec-format): the source action + data + state mutations. */
+export interface SpecEventPayload {
+  source_action: string;
+  event_data: SpecEventData[];
+  state_mutations: SpecStateMutation[];
+}
+
 export interface EventType extends NodeProvenance {
   /** Slug id in dotted form, e.g. "event:order.fulfilled". Prefix "event:". */
   id: string;
   uuid: string;
-  /** Dotted canonical name matching the id suffix, e.g. "order.fulfilled". */
+  /** Event name in UPPER_SNAKE form, e.g. "ORDER_FULFILLED". */
   name: string;
   nameZh: string;
   description?: string;
   descriptionZh?: string;
-  /** Payload shape — fields, each optionally referencing an ObjectType. */
-  payload: EventField[];
+  // ---- spec-format fields (the published event shape) ----
+  /** Payload (spec form): source action + event data + state mutations. */
+  payload: SpecEventPayload;
+  // ---- retained engine structure (receipts) ----
+  /** Payload field shapes (retained; `payload.event_data` is the spec view). */
+  payloadFields: EventField[];
   /** Action ids that emit this event (derived from Action.emitsEvents). */
   producedByActionIds: string[];
   /** Action ids triggered by this event (derived from Action.triggeredByEventIds). */

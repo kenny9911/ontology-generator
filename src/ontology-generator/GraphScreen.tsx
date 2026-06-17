@@ -1148,15 +1148,15 @@ function EventDetail({ e, t, lang }: { e: EventType; t: Strings; lang: Lang }) {
         <div style={{ fontSize: 12, color: 'var(--fg-3)', marginBottom: 8 }}>{e.nameZh}</div>
       )}
       <div className="mono-cap" style={{ marginBottom: 6 }}>
-        {t.payload} · {e.payload.length}
+        {t.payload} · {e.payloadFields.length}
       </div>
       <div className="scroll" style={{ maxHeight: 200, display: 'grid', gap: 4 }}>
-        {e.payload.length === 0 ? (
+        {e.payloadFields.length === 0 ? (
           <div style={{ fontSize: 11, color: 'var(--fg-4)', fontFamily: 'var(--font-mono)' }}>
             —
           </div>
         ) : (
-          e.payload.map((f, i) => (
+          e.payloadFields.map((f, i) => (
             <div
               key={i}
               style={{

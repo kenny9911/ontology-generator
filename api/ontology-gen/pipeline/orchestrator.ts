@@ -448,7 +448,7 @@ function scoreEventConfidence(
   actionIds: Set<string>,
 ): Confidence {
   const refs: { id: string; ok: boolean }[] = [];
-  for (const f of e.payload ?? []) {
+  for (const f of e.payloadFields ?? []) {
     if (f.objectTypeId) refs.push({ id: f.objectTypeId, ok: objectIds.has(f.objectTypeId) });
   }
   for (const aid of e.producedByActionIds ?? []) refs.push({ id: aid, ok: actionIds.has(aid) });

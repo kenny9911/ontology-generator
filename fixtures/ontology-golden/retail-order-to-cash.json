@@ -5325,11 +5325,22 @@
     {
       "id": "event:customer.signup.submitted",
       "uuid": "50000000000000000000000000000001",
-      "name": "customer.signup.submitted",
+      "name": "CUSTOMER_SIGNUP_SUBMITTED",
       "nameZh": "客户注册已提交",
       "description": "A prospective customer submitted a signup profile.",
       "descriptionZh": "潜在客户已提交注册资料。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "profile",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": []
+      },
+      "payloadFields": [
         {
           "name": "profile",
           "type": "json",
@@ -5360,11 +5371,28 @@
     {
       "id": "event:customer.created",
       "uuid": "50000000000000000000000000000002",
-      "name": "customer.created",
+      "name": "CUSTOMER_CREATED",
       "nameZh": "客户已创建",
       "description": "A new Customer record was created.",
       "descriptionZh": "新客户记录已创建。",
-      "payload": [
+      "payload": {
+        "source_action": "registerCustomer",
+        "event_data": [
+          {
+            "name": "customer",
+            "type": "String",
+            "target_object": "Customer"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Customer",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "customer",
           "type": "reference",
@@ -5394,11 +5422,28 @@
     {
       "id": "event:credit.limit.assigned",
       "uuid": "50000000000000000000000000000003",
-      "name": "credit.limit.assigned",
+      "name": "CREDIT_LIMIT_ASSIGNED",
       "nameZh": "信用额度已分配",
       "description": "A customer's credit limit and tier were assigned.",
       "descriptionZh": "客户的信用额度与等级已分配。",
-      "payload": [
+      "payload": {
+        "source_action": "assignCreditLimit",
+        "event_data": [
+          {
+            "name": "customer",
+            "type": "String",
+            "target_object": "Customer"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Customer",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "customer",
           "type": "reference",
@@ -5429,11 +5474,33 @@
     {
       "id": "event:checkout.submitted",
       "uuid": "50000000000000000000000000000004",
-      "name": "checkout.submitted",
+      "name": "CHECKOUT_SUBMITTED",
       "nameZh": "结账已提交",
       "description": "A customer submitted checkout for a cart.",
       "descriptionZh": "客户已提交购物车结账。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "customer",
+            "type": "String",
+            "target_object": "Customer"
+          },
+          {
+            "name": "cart",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Customer",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "customer",
           "type": "reference",
@@ -5470,11 +5537,28 @@
     {
       "id": "event:order.placed",
       "uuid": "50000000000000000000000000000005",
-      "name": "order.placed",
+      "name": "ORDER_PLACED",
       "nameZh": "订单已下达",
       "description": "An order was placed in Pending status.",
       "descriptionZh": "订单已以待处理状态下达。",
-      "payload": [
+      "payload": {
+        "source_action": "placeOrder",
+        "event_data": [
+          {
+            "name": "order",
+            "type": "String",
+            "target_object": "Order"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Order",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "order",
           "type": "reference",
@@ -5504,11 +5588,38 @@
     {
       "id": "event:payment.authorized",
       "uuid": "50000000000000000000000000000006",
-      "name": "payment.authorized",
+      "name": "PAYMENT_AUTHORIZED",
       "nameZh": "付款已授权",
       "description": "Payment was authorized/captured following a passed credit screen.",
       "descriptionZh": "信用筛查通过后付款已授权/扣款。",
-      "payload": [
+      "payload": {
+        "source_action": "screenOrderForCredit",
+        "event_data": [
+          {
+            "name": "payment",
+            "type": "String",
+            "target_object": "Payment"
+          },
+          {
+            "name": "order",
+            "type": "String",
+            "target_object": "Order"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Payment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Invoice",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "payment",
           "type": "reference",
@@ -5544,11 +5655,38 @@
     {
       "id": "event:credit.hold.placed",
       "uuid": "50000000000000000000000000000007",
-      "name": "credit.hold.placed",
+      "name": "CREDIT_HOLD_PLACED",
       "nameZh": "信用冻结已触发",
       "description": "The credit screen failed and a hold is being raised.",
       "descriptionZh": "信用筛查失败，正在触发冻结。",
-      "payload": [
+      "payload": {
+        "source_action": "screenOrderForCredit",
+        "event_data": [
+          {
+            "name": "order",
+            "type": "String",
+            "target_object": "Order"
+          },
+          {
+            "name": "reason_rule",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Payment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Invoice",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "order",
           "type": "reference",
@@ -5584,11 +5722,28 @@
     {
       "id": "event:credit.hold.opened",
       "uuid": "50000000000000000000000000000008",
-      "name": "credit.hold.opened",
+      "name": "CREDIT_HOLD_OPENED",
       "nameZh": "信用冻结已开立",
       "description": "A CreditHold record was opened against an order.",
       "descriptionZh": "已针对订单开立信用冻结记录。",
-      "payload": [
+      "payload": {
+        "source_action": "placeCreditHold",
+        "event_data": [
+          {
+            "name": "credit_hold",
+            "type": "String",
+            "target_object": "Credit_Hold"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Credit_Hold",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "credit_hold",
           "type": "reference",
@@ -5621,11 +5776,33 @@
     {
       "id": "event:credit.hold.released",
       "uuid": "50000000000000000000000000000009",
-      "name": "credit.hold.released",
+      "name": "CREDIT_HOLD_RELEASED",
       "nameZh": "信用冻结已解除",
       "description": "A credit hold was overridden and the order released back to allocation.",
       "descriptionZh": "信用冻结被解除，订单放行回到分配阶段。",
-      "payload": [
+      "payload": {
+        "source_action": "resolveCreditHold",
+        "event_data": [
+          {
+            "name": "credit_hold",
+            "type": "String",
+            "target_object": "Credit_Hold"
+          },
+          {
+            "name": "order",
+            "type": "String",
+            "target_object": "Order"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Credit_Hold",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "credit_hold",
           "type": "reference",
@@ -5664,11 +5841,28 @@
     {
       "id": "event:order.cancelled",
       "uuid": "50000000000000000000000000000010",
-      "name": "order.cancelled",
+      "name": "ORDER_CANCELLED",
       "nameZh": "订单已取消",
       "description": "An order was cancelled (e.g. unresolved credit hold).",
       "descriptionZh": "订单已取消（例如信用冻结未解决）。",
-      "payload": [
+      "payload": {
+        "source_action": "resolveCreditHold",
+        "event_data": [
+          {
+            "name": "order",
+            "type": "String",
+            "target_object": "Order"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Credit_Hold",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "order",
           "type": "reference",
@@ -5699,11 +5893,38 @@
     {
       "id": "event:inventory.reserved",
       "uuid": "50000000000000000000000000000011",
-      "name": "inventory.reserved",
+      "name": "INVENTORY_RESERVED",
       "nameZh": "库存已预留",
       "description": "Inventory was reserved and the order set to Confirmed.",
       "descriptionZh": "库存已预留，订单置为已确认。",
-      "payload": [
+      "payload": {
+        "source_action": "allocateInventory",
+        "event_data": [
+          {
+            "name": "order",
+            "type": "String",
+            "target_object": "Order"
+          },
+          {
+            "name": "inventory",
+            "type": "String",
+            "target_object": "Inventory"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Order",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Inventory",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "order",
           "type": "reference",
@@ -5739,11 +5960,38 @@
     {
       "id": "event:backorder.raised",
       "uuid": "50000000000000000000000000000012",
-      "name": "backorder.raised",
+      "name": "BACKORDER_RAISED",
       "nameZh": "缺货补单已触发",
       "description": "Stock was short and a backorder was raised during allocation.",
       "descriptionZh": "分配时库存不足，触发缺货补单。",
-      "payload": [
+      "payload": {
+        "source_action": "allocateInventory",
+        "event_data": [
+          {
+            "name": "order",
+            "type": "String",
+            "target_object": "Order"
+          },
+          {
+            "name": "line_item",
+            "type": "String",
+            "target_object": "Line_Item"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Order",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Inventory",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "order",
           "type": "reference",
@@ -5780,11 +6028,28 @@
     {
       "id": "event:shipment.created",
       "uuid": "50000000000000000000000000000013",
-      "name": "shipment.created",
+      "name": "SHIPMENT_CREATED",
       "nameZh": "发货已创建",
       "description": "A shipment was created in Picking status.",
       "descriptionZh": "已创建拣货状态的发货。",
-      "payload": [
+      "payload": {
+        "source_action": "createShipment",
+        "event_data": [
+          {
+            "name": "shipment",
+            "type": "String",
+            "target_object": "Shipment"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Shipment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "shipment",
           "type": "reference",
@@ -5817,11 +6082,28 @@
     {
       "id": "event:shipment.dispatched",
       "uuid": "50000000000000000000000000000014",
-      "name": "shipment.dispatched",
+      "name": "SHIPMENT_DISPATCHED",
       "nameZh": "发货已发运",
       "description": "A shipment was dispatched with a tracking number.",
       "descriptionZh": "发货已发运并带有追踪号。",
-      "payload": [
+      "payload": {
+        "source_action": "dispatchShipment",
+        "event_data": [
+          {
+            "name": "shipment",
+            "type": "String",
+            "target_object": "Shipment"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Order",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "shipment",
           "type": "reference",
@@ -5851,11 +6133,28 @@
     {
       "id": "event:order.fulfilled",
       "uuid": "50000000000000000000000000000015",
-      "name": "order.fulfilled",
+      "name": "ORDER_FULFILLED",
       "nameZh": "订单已履约",
       "description": "An order was marked Fulfilled on dispatch.",
       "descriptionZh": "发运时订单已标记为已履约。",
-      "payload": [
+      "payload": {
+        "source_action": "dispatchShipment",
+        "event_data": [
+          {
+            "name": "order",
+            "type": "String",
+            "target_object": "Order"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Order",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "order",
           "type": "reference",
@@ -5888,11 +6187,33 @@
     {
       "id": "event:order.delivered",
       "uuid": "50000000000000000000000000000016",
-      "name": "order.delivered",
+      "name": "ORDER_DELIVERED",
       "nameZh": "订单已送达",
       "description": "The shipment was delivered to the customer.",
       "descriptionZh": "发货已送达客户。",
-      "payload": [
+      "payload": {
+        "source_action": "confirmDelivery",
+        "event_data": [
+          {
+            "name": "shipment",
+            "type": "String",
+            "target_object": "Shipment"
+          },
+          {
+            "name": "order",
+            "type": "String",
+            "target_object": "Order"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Shipment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "shipment",
           "type": "reference",
@@ -5928,11 +6249,33 @@
     {
       "id": "event:invoice.issued",
       "uuid": "50000000000000000000000000000017",
-      "name": "invoice.issued",
+      "name": "INVOICE_ISSUED",
       "nameZh": "发票已开具",
       "description": "An invoice was finalized and issued.",
       "descriptionZh": "发票已完结并开具。",
-      "payload": [
+      "payload": {
+        "source_action": "settleInvoice",
+        "event_data": [
+          {
+            "name": "invoice",
+            "type": "String",
+            "target_object": "Invoice"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Payment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Invoice",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "invoice",
           "type": "reference",
@@ -5960,11 +6303,38 @@
     {
       "id": "event:payment.settled",
       "uuid": "50000000000000000000000000000018",
-      "name": "payment.settled",
+      "name": "PAYMENT_SETTLED",
       "nameZh": "付款已结算",
       "description": "Payment was settled against the invoice.",
       "descriptionZh": "付款已对发票结算。",
-      "payload": [
+      "payload": {
+        "source_action": "settleInvoice",
+        "event_data": [
+          {
+            "name": "payment",
+            "type": "String",
+            "target_object": "Payment"
+          },
+          {
+            "name": "invoice",
+            "type": "String",
+            "target_object": "Invoice"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Payment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Invoice",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "payment",
           "type": "reference",
@@ -6000,11 +6370,28 @@
     {
       "id": "event:order.closed",
       "uuid": "50000000000000000000000000000019",
-      "name": "order.closed",
+      "name": "ORDER_CLOSED",
       "nameZh": "订单已关闭",
       "description": "The order was reconciled and closed.",
       "descriptionZh": "订单已对账并关闭。",
-      "payload": [
+      "payload": {
+        "source_action": "closeOrder",
+        "event_data": [
+          {
+            "name": "order",
+            "type": "String",
+            "target_object": "Order"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Order",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "order",
           "type": "reference",
@@ -6035,11 +6422,38 @@
     {
       "id": "event:return.requested",
       "uuid": "50000000000000000000000000000020",
-      "name": "return.requested",
+      "name": "RETURN_REQUESTED",
       "nameZh": "退货已请求",
       "description": "A customer requested a return.",
       "descriptionZh": "客户已请求退货。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "order",
+            "type": "String",
+            "target_object": "Order"
+          },
+          {
+            "name": "line_item",
+            "type": "String",
+            "target_object": "Line_Item"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Order",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Line_Item",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "order",
           "type": "reference",
@@ -6073,11 +6487,28 @@
     {
       "id": "event:return.initiated",
       "uuid": "50000000000000000000000000000021",
-      "name": "return.initiated",
+      "name": "RETURN_INITIATED",
       "nameZh": "退货已发起",
       "description": "A Return record was created in Requested status.",
       "descriptionZh": "已创建请求状态的退货记录。",
-      "payload": [
+      "payload": {
+        "source_action": "initiateReturn",
+        "event_data": [
+          {
+            "name": "return",
+            "type": "String",
+            "target_object": "Return"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Return",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "return",
           "type": "reference",
@@ -6110,11 +6541,28 @@
     {
       "id": "event:return.authorized",
       "uuid": "50000000000000000000000000000022",
-      "name": "return.authorized",
+      "name": "RETURN_AUTHORIZED",
       "nameZh": "退货已授权",
       "description": "A return was approved with an RMA number.",
       "descriptionZh": "退货已批准并带有RMA编号。",
-      "payload": [
+      "payload": {
+        "source_action": "authorizeReturn",
+        "event_data": [
+          {
+            "name": "return",
+            "type": "String",
+            "target_object": "Return"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Return",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "return",
           "type": "reference",
@@ -6147,11 +6595,28 @@
     {
       "id": "event:return.received",
       "uuid": "50000000000000000000000000000023",
-      "name": "return.received",
+      "name": "RETURN_RECEIVED",
       "nameZh": "退货已收货",
       "description": "Returned goods were received and inspected.",
       "descriptionZh": "退货商品已收货并检验。",
-      "payload": [
+      "payload": {
+        "source_action": "receiveReturn",
+        "event_data": [
+          {
+            "name": "return",
+            "type": "String",
+            "target_object": "Return"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Inventory",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "return",
           "type": "reference",
@@ -6181,11 +6646,38 @@
     {
       "id": "event:refund.issued",
       "uuid": "50000000000000000000000000000024",
-      "name": "refund.issued",
+      "name": "REFUND_ISSUED",
       "nameZh": "退款已发放",
       "description": "A refund or store credit was issued and the return closed.",
       "descriptionZh": "退款或店内信用已发放，退货已关闭。",
-      "payload": [
+      "payload": {
+        "source_action": "issueRefund",
+        "event_data": [
+          {
+            "name": "return",
+            "type": "String",
+            "target_object": "Return"
+          },
+          {
+            "name": "payment",
+            "type": "String",
+            "target_object": "Payment"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Payment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Invoice",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "return",
           "type": "reference",

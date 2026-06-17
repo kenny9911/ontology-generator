@@ -224,7 +224,7 @@ export default function EventsScreen({ t, lang, ctrl }: EventsScreenProps) {
                     {e.name}
                   </div>
                   <div className="mono-cap">
-                    {e.payload.length} {t.payload.toLowerCase()} ·{' '}
+                    {e.payloadFields.length} {t.payload.toLowerCase()} ·{' '}
                     {e.producedByActionIds.length}↑ {e.consumedByActionIds.length}↓
                   </div>
                 </div>
@@ -262,7 +262,7 @@ export default function EventsScreen({ t, lang, ctrl }: EventsScreenProps) {
           />
 
           <PayloadSection
-            fields={sel.payload}
+            fields={sel.payloadFields}
             t={t}
             lang={lang}
             objectName={objectName}

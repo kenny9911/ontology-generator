@@ -16,6 +16,8 @@
 import type {
   ActionType,
   DataType,
+  EventField,
+  EventType,
   ObjectProperty,
   ObjectType,
   Ontology,
@@ -253,6 +255,58 @@ function normalizeAction(a: ActionType, objById: Map<string, ObjectType>): Actio
 }
 
 // ---------------------------------------------------------------------------
+// Events.
+// ---------------------------------------------------------------------------
+
+function camelName(s: string): string {
+  const w = (s || '').replace(/([a-z0-9])([A-Z])/g, '$1 $2').split(/[^A-Za-z0-9]+/).filter(Boolean);
+  return w.length ? w[0]!.toLowerCase() + w.slice(1).map((x) => x[0]!.toUpperCase() + x.slice(1)).join('') : s;
+}
+
+function eventNeedsMigration(e: EventType): boolean {
+  return !Array.isArray(e.payloadFields) || Array.isArray((e as unknown as { payload?: unknown }).payload) || !e.payload || typeof e.payload !== 'object';
+}
+
+function normalizeEvent(e: EventType, objById: Map<string, ObjectType>, actionById: Map<string, ActionType>): EventType {
+  if (!eventNeedsMigration(e)) return e;
+  const legacyPayload = (e as unknown as { payload?: unknown }).payload;
+  const payloadFields: EventField[] = Array.isArray(e.payloadFields)
+    ? e.payloadFields
+    : Array.isArray(legacyPayload)
+      ? (legacyPayload as EventField[])
+      : [];
+  const name = /[a-z.]/.test(e.name || '') ? eventSpecName(e.name || e.id) : e.name;
+
+  const sourceId = (e.producedByActionIds ?? []).find((aid: string) => actionById.has(aid));
+  const event_data = payloadFields.map((f) => ({
+    name: f.name,
+    type: specPropType(f.type),
+    target_object: f.objectTypeId && objById.has(f.objectTypeId) ? specObjectId(f.objectTypeId) : null,
+  }));
+  const targets: string[] = [];
+  for (const aid of e.producedByActionIds ?? []) {
+    const a = actionById.get(aid);
+    for (const se of a?.sideEffects ?? []) {
+      if ((se.kind === 'db_write' || se.kind === 'state_change' || se.kind === 'payment') && se.objectTypeId && objById.has(se.objectTypeId)) {
+        targets.push(specObjectId(se.objectTypeId));
+      }
+    }
+  }
+  if (targets.length === 0) for (const f of payloadFields) if (f.objectTypeId && objById.has(f.objectTypeId)) targets.push(specObjectId(f.objectTypeId));
+
+  return {
+    ...e,
+    name,
+    payload: {
+      source_action: sourceId ? camelName(actionById.get(sourceId)!.name) : '',
+      event_data,
+      state_mutations: Array.from(new Set(targets)).map((t) => ({ target_object: t, mutation_type: 'CREATE_OR_MODIFY', impacted_properties: [] })),
+    },
+    payloadFields,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Public entry.
 // ---------------------------------------------------------------------------
 
@@ -265,15 +319,18 @@ export function normalizeOntologyObjects(o: Ontology): Ontology {
   );
   const needsRules = Array.isArray(o.rules) && o.rules.some(ruleNeedsMigration);
   const needsActions = Array.isArray(o.actions) && o.actions.some(actionNeedsMigration);
-  if (!needsObjects && !needsRules && !needsActions) return o;
+  const needsEvents = Array.isArray(o.events) && o.events.some(eventNeedsMigration);
+  if (!needsObjects && !needsRules && !needsActions && !needsEvents) return o;
 
   const rels = o.relationships ?? [];
   const nameById = new Map(objs.map((x) => [x.id, x.name] as const));
   const idSet = new Set(objs.map((x) => x.id));
   const objById = new Map(objs.map((x) => [x.id, x] as const));
+  const actionById = new Map((o.actions ?? []).map((a) => [a.id, a] as const));
   const next: Ontology = { ...o };
   if (needsObjects) next.objects = objs.map((obj) => normalizeObject(obj, rels, nameById, idSet));
   if (needsActions) next.actions = (o.actions ?? []).map((a) => normalizeAction(a, objById));
+  if (needsEvents) next.events = (o.events ?? []).map((e) => normalizeEvent(e, objById, actionById));
   if (needsRules) {
     const ruleActorKinds = new Map<string, Set<string>>();
     for (const a of o.actions ?? []) {

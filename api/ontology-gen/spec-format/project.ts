@@ -552,7 +552,7 @@ function deriveStateMutations(e: EventType, ctx: SpecCtx): SpecStateMutation[] {
     }
   }
   if (targets.length === 0) {
-    for (const f of e.payload ?? []) {
+    for (const f of e.payloadFields ?? []) {
       if (f.objectTypeId && ctx.objSpecId.has(f.objectTypeId)) targets.push(ctx.objSpecId.get(f.objectTypeId)!);
     }
   }
@@ -564,7 +564,7 @@ function deriveStateMutations(e: EventType, ctx: SpecCtx): SpecStateMutation[] {
 }
 
 function projectEvent(e: EventType, ctx: SpecCtx): SpecEvent {
-  const eventData: SpecEventData[] = (e.payload ?? []).map((f) => ({
+  const eventData: SpecEventData[] = (e.payloadFields ?? []).map((f) => ({
     name: f.name,
     type: mapDataType(f.type),
     target_object: f.objectTypeId && ctx.objSpecId.has(f.objectTypeId) ? ctx.objSpecId.get(f.objectTypeId)! : null,
