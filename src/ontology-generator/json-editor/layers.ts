@@ -194,15 +194,19 @@ export function parseLayer(text: string): ParseLayerResult {
       issues.push({ kind: 'item_not_object', index, message: `Item ${index} is not an object.` });
       return;
     }
-    const id = node.id;
-    if (typeof id !== 'string' || id.length === 0) {
-      issues.push({ kind: 'missing_id', index, message: `Item ${index} has no "id".` });
+    // The clean sample shape keys most layers by `id`, but EVENTS have no id and
+    // are keyed by `name` — accept either as the node's stable key.
+    const idVal = typeof node.id === 'string' && node.id.length > 0 ? node.id : '';
+    const nameVal = typeof node.name === 'string' && node.name.length > 0 ? node.name : '';
+    const key = idVal || nameVal;
+    if (!key) {
+      issues.push({ kind: 'missing_id', index, message: `Item ${index} has no "id" or "name".` });
       return;
     }
-    if (seenIds.has(id)) {
-      issues.push({ kind: 'duplicate_id', index, message: `Duplicate id "${id}".` });
+    if (seenIds.has(key)) {
+      issues.push({ kind: 'duplicate_id', index, message: `Duplicate id/name "${key}".` });
     } else {
-      seenIds.add(id);
+      seenIds.add(key);
     }
   });
 

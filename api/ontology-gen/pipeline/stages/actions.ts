@@ -610,6 +610,8 @@ export async function extractActions(ctx: StageContext): Promise<{ actions: Acti
     if (sideEffects) action.sideEffects = sideEffects;
     const permissions = coercePermissions(r.permissions);
     if (permissions) action.permissions = permissions;
+    const tsCode = asOptString(r.typescript_code);
+    if (tsCode) action.typescript_code = tsCode;
 
     attachActionSpecFields(action, ctx);
 

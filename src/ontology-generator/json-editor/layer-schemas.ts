@@ -65,9 +65,12 @@ const bilingual: JsonSchemaDoc = {
   additionalProperties: true,
 };
 
-/** Wrap a node schema as the array-of-nodes a layer's text holds. */
-function layerArray(idPattern: string, node: JsonSchemaDoc): JsonSchemaDoc {
-  const props = { id: { type: 'string', pattern: idPattern }, ...(node.properties ?? {}) };
+/** Wrap a node schema as the array-of-nodes a layer's text holds. The editor
+ *  shows the CLEAN sample shape, whose ids carry NO kind-prefix (objects are an
+ *  English key, rules/actions/workflows a bare slug, events have no id), so no
+ *  id pattern is enforced — `idPattern` is kept for back-compat but ignored. */
+function layerArray(_idPattern: string, node: JsonSchemaDoc): JsonSchemaDoc {
+  const props = { id: { type: 'string' } as JsonSchemaDoc, ...(node.properties ?? {}) };
   return {
     $schema: 'http://json-schema.org/draft-07/schema#',
     type: 'array',
@@ -175,7 +178,7 @@ const actionsSchema = layerArray('^action:', {
 });
 
 const eventsSchema = layerArray('^event:', {
-  required: ['id', 'name', 'payload'],
+  required: ['name', 'payload'],
   properties: {
     ...sharedProps,
     name: str,

@@ -347,6 +347,14 @@ METHOD (follow exactly — the numbered sentences ARE your sections)
    - "enforcementLevel": "mandatory" (must hold) | "optional" (advisory).
    - "failurePolicy": "block" (a violation aborts the gated action) | "warn" (surfaced only).
    Keep them consistent with severity: block => mandatory + block; warn/info => optional + warn.
+9. BUSINESS CONTEXT (extract from the document when stated; these have NO default source —
+   only the document can supply real values, so read carefully and quote-ground them):
+   - "applicableClient": the client / customer / business unit this rule applies to, IN CHINESE
+     (use "通用" only when the document says it applies to ALL clients).
+   - "applicableDepartment": the department / team responsible, IN CHINESE (use "N/A" only when
+     the document gives none).
+   - "businessBackgroundReason": WHY this rule exists — the business rationale / background,
+     IN CHINESE, when the document explains it (else "").
 
 COMMONLY MISSED — hunt for ALL of these explicitly (they hide outside the obvious "must" sentences):
 - NUMERIC THRESHOLDS buried in prose: "orders above $10,000", "no more than 3 attempts",
@@ -388,6 +396,8 @@ OUTPUT CONTRACT — return EXACTLY this shape:
         "bindings": [{ "var": "order", "objectTypeId": "objectType:order" }] },
       "kind": "state_transition", "severity": "block",
       "executor": "agent", "enforcementLevel": "mandatory", "failurePolicy": "block",
+      "applicableClient": "通用", "applicableDepartment": "履约部",
+      "businessBackgroundReason": "确保收款到账后再发货，避免坏账与履约风险。",
       "appliesToObjectTypeIds": ["objectType:order","objectType:payment","objectType:customer"],
       "appliesToAttributes": ["objectType:order.status"],
       "trigger": { "description": "on Order.status transition to Fulfilled" },
@@ -468,6 +478,9 @@ WHAT TO EXTRACT
     "state_change"|"payment"|"other", "description", "objectTypeId"? }.
   - "actor": ActorRef — { "role", "roleZh"?, "kind": "human"|"agent"|"system" }.
   - "permissions"?: capability strings, e.g. "order:fulfill".
+  - "typescript_code"? (optional): when the action is a self-contained logic/tool function whose
+    implementation is fully determined by the document (e.g. an explicit formula or API call),
+    provide a concise TypeScript implementation here; otherwise omit it or use "".
   - "agent": AgentBinding — { "toolName" (snake_case, e.g. "fulfill_order"), "parameterSchema"
     (JSON-Schema object derived from inputs: { "type":"object", "properties":{...}, "required":[...] };
     a property that represents a domain object carries "$objectTypeId"), "toolDescription"

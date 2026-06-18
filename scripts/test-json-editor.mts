@@ -36,6 +36,7 @@ import {
   mergeLayer,
   type EditorLayer,
 } from '../src/ontology-generator/json-editor/layers';
+import { toCleanNodes, fromCleanNodes } from '../src/ontology-generator/json-editor/clean';
 import {
   suggestFixes,
   applySuggestion,
@@ -312,9 +313,11 @@ function sectionParseLayer(g0: Ontology): void {
     const r = parseLayer('[{"id":"objectType:a"},{"id":"objectType:a"}]');
     assert(r.issues.some((i) => i.kind === 'duplicate_id'), '8.6');
   });
-  check('8.7 missing id', () => {
-    const r = parseLayer('[{"name":"x"}]');
-    assert(r.issues.some((i) => i.kind === 'missing_id'), '8.7');
+  check('8.7 missing key (no id AND no name)', () => {
+    // The clean shape keys events by `name` (no id), so a node with a name is OK;
+    // only a node with NEITHER id nor name is flagged.
+    assert(parseLayer('[{"foo":"x"}]').issues.some((i) => i.kind === 'missing_id'), '8.7 neither');
+    assert(!parseLayer('[{"name":"X"}]').issues.some((i) => i.kind === 'missing_id'), '8.7 name ok');
   });
   check('8.8 repaired succeeds, lists fixes', () => {
     const r = parseLayer('[{a:1,}]');
@@ -643,8 +646,13 @@ function sectionSchemaDrift(): void {
       assertEq(s.items?.type, 'object', `15.3 ${l} items`);
     }
   });
-  check('15.4 id pattern present per layer', () => {
-    for (const l of LAYER_KEYS) assert(!!LAYER_SCHEMAS[l].items?.properties?.id?.pattern, `15.4 ${l}`);
+  check('15.4 id has NO kind-prefix pattern (clean shape ids are prefix-free)', () => {
+    // The editor shows the clean sample shape (object id "Candidate", rule/action/
+    // workflow ids a bare slug, events no id), so no `^objectType:`-style pattern.
+    for (const l of LAYER_KEYS) {
+      const idSchema = LAYER_SCHEMAS[l].items?.properties?.id;
+      assert(!!idSchema && idSchema.type === 'string' && !idSchema.pattern, `15.4 ${l}`);
+    }
   });
 }
 
@@ -772,6 +780,54 @@ function sectionNormalize(g0: Ontology): void {
   });
 }
 
+function sectionCleanEditor(goldens: { name: string; o: Ontology }[]): void {
+  section('18. clean editor projection (toCleanNodes / fromCleanNodes)');
+
+  const RECEIPTS = ['confidence', 'provenance', 'reviewState', 'sources'];
+  const SAMPLE: Record<EditorLayer, string[]> = {
+    objects: ['id', 'name', 'description', 'type', 'relationship_description', 'primary_key', 'properties'],
+    rules: ['id', 'specificScenarioStage', 'businessLogicRuleName', 'applicableClient', 'applicableDepartment', 'submissionCriteria', 'standardizedLogicRule', 'relatedEntities', 'businessBackgroundReason', 'ruleSource', 'executor', 'enforcementLevel', 'failurePolicy'],
+    actions: ['id', 'name', 'description', 'submission_criteria', 'object_type', 'category', 'actor', 'trigger', 'target_objects', 'inputs', 'outputs', 'action_steps', 'system_prompt', 'user_prompt', 'typescript_code', 'tool_use', 'side_effects', 'triggered_event'],
+    events: ['name', 'description', 'payload'],
+    processes: ['id', 'name', 'description', 'actor', 'trigger', 'actions', 'triggered_event'],
+  };
+
+  for (const { name, o } of goldens) {
+    check(`18.x ${name}: clean nodes carry ONLY sample fields + receipts`, () => {
+      for (const layer of LAYER_KEYS) {
+        const allowed = new Set([...SAMPLE[layer], ...RECEIPTS]);
+        const clean = toCleanNodes(layer, extractLayer(o, layer), o) as Record<string, unknown>[];
+        for (const node of clean) {
+          for (const k of Object.keys(node)) assert(allowed.has(k), `18 ${layer}: unexpected key "${k}"`);
+          for (const r of RECEIPTS) assert(r in node, `18 ${layer}: missing receipt "${r}"`);
+          for (const bad of ['uuid', 'nameZh', 'descriptionZh', 'appliesToObjectTypeIds', 'emitsEvents', 'payloadFields', 'steps', 'actorRef', 'agent']) {
+            assert(!(bad in node), `18 ${layer}: leaked internal field "${bad}"`);
+          }
+        }
+      }
+    });
+
+    check(`18.y ${name}: object id is English (no prefix), name is Chinese`, () => {
+      for (const obj of toCleanNodes('objects', extractLayer(o, 'objects'), o) as Record<string, string>[]) {
+        assert(!obj.id.includes(':') && /^[A-Za-z]/.test(obj.id), `18 object id "${obj.id}"`);
+        assert(/[一-鿿]/.test(obj.name) || obj.name === obj.id, `18 object name "${obj.name}" should be Chinese`);
+      }
+    });
+
+    check(`18.z ${name}: fromCleanNodes preserves internal structure + count`, () => {
+      for (const layer of LAYER_KEYS) {
+        const internal = extractLayer(o, layer);
+        const back = fromCleanNodes(layer, toCleanNodes(layer, internal, o), o) as Record<string, unknown>[];
+        assert(back.length === internal.length, `18 ${layer}: count preserved`);
+      }
+      const actBack = fromCleanNodes('actions', toCleanNodes('actions', extractLayer(o, 'actions'), o), o) as Record<string, unknown>[];
+      if (actBack[0]) assert('emitsEvents' in actBack[0] && 'uuid' in actBack[0], '18 action keeps structure');
+      const evBack = fromCleanNodes('events', toCleanNodes('events', extractLayer(o, 'events'), o), o) as Record<string, unknown>[];
+      if (evBack[0]) assert('payloadFields' in evBack[0] && 'id' in evBack[0], '18 event keeps structure + id');
+    });
+  }
+}
+
 // ===========================================================================
 async function main(): Promise<void> {
   console.log('test-json-editor — deterministic verification suite (JSON Editor feature)');
@@ -796,6 +852,7 @@ async function main(): Promise<void> {
   sectionSchemaDrift();
   sectionMetadataWrapper(g0);
   sectionNormalize(g0);
+  sectionCleanEditor(goldens);
 
   console.log('\n== Summary ==');
   let pass = 0;
