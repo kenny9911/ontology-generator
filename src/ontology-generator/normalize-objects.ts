@@ -91,50 +91,52 @@ function legacyAttrToProperty(a: LegacyAttr, idSet: Set<string>): ObjectProperty
   return prop;
 }
 
+const hasCJK = (s: unknown): boolean => typeof s === 'string' && /[一-鿿]/.test(s);
+const cjkOr = (s: unknown, fallback: string): string => (hasCJK(s) ? (s as string).trim() : fallback);
+
+/** Chinese relationship prose synthesized from the object's relationships. */
 function synthRelationshipDesc(
   o: ObjectType,
   rels: Relationship[],
-  nameById: Map<string, string>,
-  props: ObjectProperty[],
+  nameZhById: Map<string, string>,
 ): string {
+  const self = o.nameZh?.trim() || o.name;
   const parts: string[] = [];
   for (const r of rels) {
-    const verb = (r.name || '').replace(/_/g, ' ');
-    if (r.sourceObjectTypeId === o.id && nameById.has(r.targetObjectTypeId)) {
-      parts.push(`${o.name} ${verb} ${nameById.get(r.targetObjectTypeId)}.`);
-    } else if (r.targetObjectTypeId === o.id && nameById.has(r.sourceObjectTypeId)) {
-      parts.push(`${nameById.get(r.sourceObjectTypeId)} ${verb} ${o.name}.`);
-    }
-  }
-  for (const p of props) {
-    if (p.is_foreign_key && p.references && nameById.has(p.references)) {
-      parts.push(`${o.name}.${p.name} references ${nameById.get(p.references)}.`);
+    const verb = r.nameZh?.trim() || r.description?.trim() || (r.name || '').replace(/_/g, ' ') || '关联';
+    if (r.sourceObjectTypeId === o.id && nameZhById.has(r.targetObjectTypeId)) {
+      parts.push(`【${self}】${verb}【${nameZhById.get(r.targetObjectTypeId)}】。`);
+    } else if (r.targetObjectTypeId === o.id && nameZhById.has(r.sourceObjectTypeId)) {
+      parts.push(`【${nameZhById.get(r.sourceObjectTypeId)}】${verb}【${self}】。`);
     }
   }
   const uniq = [...new Set(parts)];
-  return uniq.length ? uniq.join(' ') : `${o.name} has no documented relationships to other objects.`;
+  return uniq.length ? uniq.join('') : `【${self}】暂无与其他对象的关联关系。`;
 }
 
 function normalizeObject(
   o: ObjectType,
   rels: Relationship[],
-  nameById: Map<string, string>,
+  nameZhById: Map<string, string>,
   idSet: Set<string>,
 ): ObjectType {
   const hasProps = Array.isArray(o.properties);
-  if (hasProps && o.type && o.primary_key && o.relationship_description) return o; // fully migrated
+  const description = o.descriptionZh?.trim() || o.description || '';
+  const fullyMigrated = hasProps && o.type && o.primary_key && hasCJK(o.relationship_description) && description === o.description;
+  if (fullyMigrated) return o;
 
   const legacy = (o as unknown as { attributes?: LegacyAttr[] }).attributes ?? [];
-  const properties: ObjectProperty[] =
+  let properties: ObjectProperty[] =
     hasProps && o.properties.length > 0 ? o.properties : legacy.map((a) => legacyAttrToProperty(a, idSet));
+  properties = properties.map((p) => ({ ...p, description: p.descriptionZh?.trim() || cjkOr(p.description, p.nameZh?.trim() || (p.name || '').replace(/_/g, ' ')) }));
   const pkAttr = legacy.find((a) => a.keyRole === 'pk');
   const primary_key = o.primary_key || (pkAttr ? pkAttr.name : `${idSlug(o.id)}_id`);
   const type = o.type ?? (SYSTEM_RE.test(`${o.id} ${o.name} ${o.nameZh ?? ''}`) ? 'system' : 'data');
-  const relationship_description = o.relationship_description || synthRelationshipDesc(o, rels, nameById, properties);
+  const relationship_description = hasCJK(o.relationship_description) ? o.relationship_description : synthRelationshipDesc(o, rels, nameZhById);
 
   const rest = { ...(o as unknown as Record<string, unknown>) };
   delete rest.attributes;
-  return { ...(rest as unknown as ObjectType), type, relationship_description, primary_key, properties };
+  return { ...(rest as unknown as ObjectType), description, type, relationship_description, primary_key, properties };
 }
 
 // ---------------------------------------------------------------------------
@@ -146,9 +148,6 @@ function specObjectId(id: string): string {
   const w = bare.replace(/([a-z0-9])([A-Z])/g, '$1 $2').split(/[^A-Za-z0-9]+/).filter(Boolean);
   return w.map((x) => x[0]!.toUpperCase() + x.slice(1)).join('_') || bare;
 }
-function titleizeKind(kind: string | undefined): string {
-  return (kind || 'constraint').split('_').map((w) => (w ? w[0]!.toUpperCase() + w.slice(1) : w)).join(' ');
-}
 
 function ruleNeedsMigration(r: Rule): boolean {
   return (
@@ -156,7 +155,12 @@ function ruleNeedsMigration(r: Rule): boolean {
   );
 }
 
-function normalizeRule(r: Rule, nameById: Map<string, string>, ruleActorKinds: Map<string, Set<string>>): Rule {
+const KIND_ZH: Record<string, string> = {
+  validation: '数据校验', constraint: '业务约束', derivation: '指标推导',
+  state_transition: '状态流转', authorization: '权限授权', temporal: '时限控制',
+};
+
+function normalizeRule(r: Rule, nameZhById: Map<string, string>, ruleActorKinds: Map<string, Set<string>>): Rule {
   if (!ruleNeedsMigration(r)) return r;
   const severity = r.severity ?? 'warn';
   const kinds = ruleActorKinds.get(r.id);
@@ -164,16 +168,16 @@ function normalizeRule(r: Rule, nameById: Map<string, string>, ruleActorKinds: M
     Array.isArray(r.relatedEntities) && r.relatedEntities.length > 0
       ? r.relatedEntities
       : (r.appliesToObjectTypeIds ?? [])
-          .filter((id) => nameById.has(id))
-          .map((id) => `${nameById.get(id)} (${specObjectId(id)})`);
+          .filter((id) => nameZhById.has(id))
+          .map((id) => `${nameZhById.get(id)} (${specObjectId(id)})`);
   return {
     ...r,
-    specificScenarioStage: r.specificScenarioStage || r.trigger?.description?.trim() || titleizeKind(r.kind),
-    businessLogicRuleName: r.businessLogicRuleName || r.title || r.id.replace(/^rule:/, ''),
+    specificScenarioStage: cjkOr(r.specificScenarioStage || r.trigger?.description, KIND_ZH[r.kind] || '业务约束'),
+    businessLogicRuleName: r.businessLogicRuleName || r.titleZh || r.title || r.id.replace(/^rule:/, ''),
     applicableClient: r.applicableClient || '通用',
     applicableDepartment: r.applicableDepartment || 'N/A',
-    submissionCriteria: r.submissionCriteria || r.trigger?.description?.trim() || r.expression?.predicate?.trim() || '',
-    standardizedLogicRule: r.standardizedLogicRule || r.statement?.en?.trim() || r.formal?.trim() || r.statement?.zh?.trim() || '',
+    submissionCriteria: cjkOr(r.submissionCriteria || r.trigger?.description, cjkOr(r.expression?.predicate, '')),
+    standardizedLogicRule: r.standardizedLogicRule || r.statement?.zh?.trim() || r.statement?.en?.trim() || r.formal?.trim() || '',
     relatedEntities,
     businessBackgroundReason: r.businessBackgroundReason || '',
     ruleSource: r.ruleSource || r.sources?.[0]?.documentName?.trim() || '文档',
@@ -227,12 +231,17 @@ function normalizeAction(a: ActionType, objById: Map<string, ObjectType>): Actio
 
   const next = { ...a } as unknown as Record<string, unknown>;
   delete next.actor;
+  const actorZh = actorRef.kind === 'human' ? '人工操作员' : actorRef.kind === 'system' ? '系统' : '智能体';
+  const description = a.descriptionZh?.trim() || a.description || '';
   return {
     ...(next as unknown as ActionType),
     inputs,
     outputs,
     actorRef,
-    submission_criteria: a.submission_criteria ?? '',
+    description,
+    submission_criteria:
+      a.submission_criteria ??
+      (a.triggeredByEventIds ?? []).map((eid, i) => `${i + 1}. 事件 ${eventSpecName(eid)} 已送达`).join('\n'),
     object_type: 'action',
     category: a.category ?? a.nameZh ?? a.name,
     actor: Array.isArray(a.actor) ? a.actor : [capActor(actorRef.kind)],
@@ -243,12 +252,12 @@ function normalizeAction(a: ActionType, objById: Map<string, ObjectType>): Actio
       (a.steps ?? []).map((s) => ({
         order: String(s.order),
         name: `step${s.order}`,
-        description: s.text?.en?.trim() || s.text?.zh?.trim() || '',
+        description: s.text?.zh?.trim() || s.text?.en?.trim() || '',
         object_type: 'logic',
         submission_criteria: '',
       })),
-    system_prompt: a.system_prompt ?? '',
-    user_prompt: a.user_prompt ?? '',
+    system_prompt: a.system_prompt ?? `作为负责「${a.name}」动作的自动化${actorZh}，${description} 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。`,
+    user_prompt: a.user_prompt ?? `执行「${a.name}」。${description} 产出相应记录并发出相应事件。`,
     tool_use: a.tool_use ?? (a.agent?.integration ? [a.agent.integration] : []),
     side_effects: a.side_effects ?? { data_changes: [], notifications: [] },
     triggered_event: a.triggered_event ?? Array.from(new Set((a.emitsEvents ?? []).map((e) => eventSpecName(e.eventTypeId)))),
@@ -326,6 +335,7 @@ function normalizeProcess(p: Process, actionById: Map<string, ActionType>): Proc
   const actors = Array.from(new Set((p.actors ?? []).map((a) => capActor(a.kind))));
   return {
     ...p,
+    description: cjkOr(p.description, p.name?.zh?.trim() || p.description || ''),
     actor: Array.isArray(p.actor) ? p.actor : actors.length ? actors : [p.orchestration?.agentOrchestrated ? 'Agent' : 'Human'],
     trigger:
       p.trigger ??
@@ -338,7 +348,7 @@ function normalizeProcess(p: Process, actionById: Map<string, ActionType>): Proc
         return {
           order: String(s.order),
           name: a ? camelName(a.name) : s.actionTypeId.replace(/^action:/, ''),
-          description: a?.description?.trim() || '',
+          description: a?.descriptionZh?.trim() || a?.description?.trim() || '',
           type: wfType(a),
           condition: edge?.condition?.trim() || edge?.label?.en?.trim() || '',
         };
@@ -361,7 +371,12 @@ export function normalizeOntologyObjects(o: Ontology): Ontology {
   if (!o) return o;
   const objs = Array.isArray(o.objects) ? o.objects : [];
   const needsObjects = objs.some(
-    (x) => !Array.isArray(x.properties) || x.type === undefined || !x.primary_key || !x.relationship_description,
+    (x) =>
+      !Array.isArray(x.properties) ||
+      x.type === undefined ||
+      !x.primary_key ||
+      !hasCJK(x.relationship_description) ||
+      (!!x.descriptionZh?.trim() && x.description !== x.descriptionZh.trim()),
   );
   const needsRules = Array.isArray(o.rules) && o.rules.some(ruleNeedsMigration);
   const needsActions = Array.isArray(o.actions) && o.actions.some(actionNeedsMigration);
@@ -370,12 +385,12 @@ export function normalizeOntologyObjects(o: Ontology): Ontology {
   if (!needsObjects && !needsRules && !needsActions && !needsEvents && !needsProcesses) return o;
 
   const rels = o.relationships ?? [];
-  const nameById = new Map(objs.map((x) => [x.id, x.name] as const));
+  const nameZhById = new Map(objs.map((x) => [x.id, x.nameZh?.trim() || x.name] as const));
   const idSet = new Set(objs.map((x) => x.id));
   const objById = new Map(objs.map((x) => [x.id, x] as const));
   const actionById = new Map((o.actions ?? []).map((a) => [a.id, a] as const));
   const next: Ontology = { ...o };
-  if (needsObjects) next.objects = objs.map((obj) => normalizeObject(obj, rels, nameById, idSet));
+  if (needsObjects) next.objects = objs.map((obj) => normalizeObject(obj, rels, nameZhById, idSet));
   if (needsActions) next.actions = (o.actions ?? []).map((a) => normalizeAction(a, objById));
   if (needsEvents) next.events = (o.events ?? []).map((e) => normalizeEvent(e, objById, actionById));
   if (needsRules) {
@@ -391,7 +406,7 @@ export function normalizeOntologyObjects(o: Ontology): Ontology {
         if (a.actorRef?.kind) set.add(a.actorRef.kind);
       }
     }
-    next.rules = (o.rules ?? []).map((r) => normalizeRule(r, nameById, ruleActorKinds));
+    next.rules = (o.rules ?? []).map((r) => normalizeRule(r, nameZhById, ruleActorKinds));
   }
   if (needsProcesses) next.processes = (o.processes ?? []).map((p) => normalizeProcess(p, actionById));
   return next;

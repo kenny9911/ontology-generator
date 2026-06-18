@@ -554,6 +554,8 @@ export interface ActionType extends NodeProvenance {
   system_prompt: string;
   /** Agent user prompt. */
   user_prompt: string;
+  /** Optional generated TypeScript implementation (spec-format, default ""). */
+  typescript_code?: string;
   /** External tools/integrations the action calls. */
   tool_use: string[];
   /** Data changes + notifications (spec form). */

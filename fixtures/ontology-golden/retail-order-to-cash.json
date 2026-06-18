@@ -42,52 +42,52 @@
       "uuid": "10000000000000000000000000000001",
       "name": "Customer",
       "nameZh": "客户",
-      "description": "A buyer account that places orders, holds a credit limit and tier, and is the master record in Salesforce CRM.",
+      "description": "下单的买方账户，持有信用额度与等级，是 Salesforce CRM 中的主数据记录。",
       "descriptionZh": "下单的买方账户，持有信用额度与等级，是 Salesforce CRM 中的主数据记录。",
       "type": "data",
-      "relationship_description": "Customer places Order. Customer subject to CreditHold. Customer owes Invoice.",
+      "relationship_description": "【客户】下单【订单】。【客户】受制于【信用冻结】。【客户】欠款【发票】。",
       "primary_key": "customer_id",
       "properties": [
         {
           "name": "customer_id",
           "type": "String",
-          "description": "Primary identifier.",
+          "description": "客户编号",
           "nameZh": "客户编号"
         },
         {
           "name": "legal_name",
           "type": "String",
-          "description": "",
+          "description": "法定名称",
           "nameZh": "法定名称"
         },
         {
           "name": "tier",
           "type": "List<String>",
-          "description": "Customer.tier governs credit and fulfillment terms (R-04, R-08, R-15).",
+          "description": "等级",
           "nameZh": "等级"
         },
         {
           "name": "credit_status",
           "type": "List<String>",
-          "description": "",
+          "description": "信用状态",
           "nameZh": "信用状态"
         },
         {
           "name": "credit_limit",
           "type": "Float",
-          "description": "Default $10,000 Standard; up to $250,000 Enterprise (R-02, R-08).",
+          "description": "信用额度",
           "nameZh": "信用额度"
         },
         {
           "name": "store_credit",
           "type": "Float",
-          "description": "Expires 12 months after issue (R-18).",
+          "description": "店内信用",
           "nameZh": "店内信用"
         },
         {
           "name": "channel",
           "type": "List<String>",
-          "description": "",
+          "description": "渠道",
           "nameZh": "渠道"
         }
       ],
@@ -117,22 +117,22 @@
       "uuid": "10000000000000000000000000000002",
       "name": "Order",
       "nameZh": "订单",
-      "description": "A customer purchase captured by the OMS, progressing through Pending, Confirmed, Fulfilled, Closed or Cancelled.",
+      "description": "由 OMS 捕获的客户购买，状态依次为待处理、已确认、已履约、已关闭或已取消。",
       "descriptionZh": "由 OMS 捕获的客户购买，状态依次为待处理、已确认、已履约、已关闭或已取消。",
       "type": "data",
-      "relationship_description": "Customer places Order. Order contains LineItem. Order billed by Invoice. Order shipped by Shipment. CreditHold freezes Order. Order.customer_id references Customer.",
+      "relationship_description": "【客户】下单【订单】。【订单】包含【订单行项】。【订单】开票【发票】。【订单】发货【发货】。【信用冻结】冻结【订单】。",
       "primary_key": "order_id",
       "properties": [
         {
           "name": "order_id",
           "type": "String",
-          "description": "",
+          "description": "订单编号",
           "nameZh": "订单编号"
         },
         {
           "name": "customer_id",
           "type": "String",
-          "description": "",
+          "description": "客户编号",
           "nameZh": "客户编号",
           "is_foreign_key": true,
           "references": "objectType:customer"
@@ -140,19 +140,19 @@
         {
           "name": "status",
           "type": "List<String>",
-          "description": "",
+          "description": "状态",
           "nameZh": "状态"
         },
         {
           "name": "order_total",
           "type": "Float",
-          "description": "Sum of LineItem totals.",
+          "description": "订单总额",
           "nameZh": "订单总额"
         },
         {
           "name": "placed_at",
           "type": "Timestamp",
-          "description": "",
+          "description": "下单时间",
           "nameZh": "下单时间"
         }
       ],
@@ -183,22 +183,22 @@
       "uuid": "10000000000000000000000000000003",
       "name": "LineItem",
       "nameZh": "订单行项",
-      "description": "A single product line on an order, with quantity and unit price; one per ordered item.",
+      "description": "订单上的单个产品行项，含数量与单价；每个订购商品一条。",
       "descriptionZh": "订单上的单个产品行项，含数量与单价；每个订购商品一条。",
       "type": "data",
-      "relationship_description": "Order contains LineItem. LineItem references Product. Return against LineItem. LineItem.order_id references Order. LineItem.product_id references Product.",
+      "relationship_description": "【订单】包含【订单行项】。【订单行项】引用【产品】。【退货】针对【订单行项】。",
       "primary_key": "line_item_id",
       "properties": [
         {
           "name": "line_item_id",
           "type": "String",
-          "description": "",
+          "description": "行项编号",
           "nameZh": "行项编号"
         },
         {
           "name": "order_id",
           "type": "String",
-          "description": "",
+          "description": "订单编号",
           "nameZh": "订单编号",
           "is_foreign_key": true,
           "references": "objectType:order"
@@ -206,7 +206,7 @@
         {
           "name": "product_id",
           "type": "String",
-          "description": "",
+          "description": "产品编号",
           "nameZh": "产品编号",
           "is_foreign_key": true,
           "references": "objectType:product"
@@ -214,13 +214,13 @@
         {
           "name": "quantity",
           "type": "Integer",
-          "description": "",
+          "description": "数量",
           "nameZh": "数量"
         },
         {
           "name": "unit_price",
           "type": "Float",
-          "description": "",
+          "description": "单价",
           "nameZh": "单价"
         }
       ],
@@ -249,40 +249,40 @@
       "uuid": "10000000000000000000000000000004",
       "name": "Product",
       "nameZh": "产品",
-      "description": "A catalog item identified by SKU, with backorderable and final-sale flags that govern allocation and returns.",
+      "description": "以 SKU 标识的目录商品，含可缺货补单与最终特卖标志，影响分配与退货。",
       "descriptionZh": "以 SKU 标识的目录商品，含可缺货补单与最终特卖标志，影响分配与退货。",
       "type": "data",
-      "relationship_description": "LineItem references Product. Inventory tracks Product.",
+      "relationship_description": "【订单行项】引用【产品】。【库存】跟踪【产品】。",
       "primary_key": "product_id",
       "properties": [
         {
           "name": "product_id",
           "type": "String",
-          "description": "",
+          "description": "产品编号",
           "nameZh": "产品编号"
         },
         {
           "name": "sku",
           "type": "String",
-          "description": "Stock-keeping unit (unique).",
+          "description": "库存单位",
           "nameZh": "库存单位"
         },
         {
           "name": "name",
           "type": "String",
-          "description": "",
+          "description": "名称",
           "nameZh": "名称"
         },
         {
           "name": "backorderable",
           "type": "Boolean",
-          "description": "Governs R-09.",
+          "description": "可缺货补单",
           "nameZh": "可缺货补单"
         },
         {
           "name": "final_sale",
           "type": "Boolean",
-          "description": "Governs R-07.",
+          "description": "最终特卖",
           "nameZh": "最终特卖"
         }
       ],
@@ -309,22 +309,22 @@
       "uuid": "10000000000000000000000000000005",
       "name": "Inventory",
       "nameZh": "库存",
-      "description": "On-hand and reserved stock for a product at a warehouse, held in ERP (NetSuite).",
+      "description": "产品在某仓库的现有与已预留库存，存于 ERP（NetSuite）。",
       "descriptionZh": "产品在某仓库的现有与已预留库存，存于 ERP（NetSuite）。",
       "type": "data",
-      "relationship_description": "Inventory tracks Product. Inventory.product_id references Product.",
+      "relationship_description": "【库存】跟踪【产品】。",
       "primary_key": "inventory_id",
       "properties": [
         {
           "name": "inventory_id",
           "type": "String",
-          "description": "",
+          "description": "库存编号",
           "nameZh": "库存编号"
         },
         {
           "name": "product_id",
           "type": "String",
-          "description": "",
+          "description": "产品编号",
           "nameZh": "产品编号",
           "is_foreign_key": true,
           "references": "objectType:product"
@@ -332,19 +332,19 @@
         {
           "name": "on_hand_qty",
           "type": "Integer",
-          "description": "Decremented on pick (Step 3.5).",
+          "description": "现有数量",
           "nameZh": "现有数量"
         },
         {
           "name": "reserved_qty",
           "type": "Integer",
-          "description": "Increased on allocation.",
+          "description": "预留数量",
           "nameZh": "预留数量"
         },
         {
           "name": "warehouse",
           "type": "String",
-          "description": "",
+          "description": "仓库",
           "nameZh": "仓库"
         }
       ],
@@ -373,22 +373,22 @@
       "uuid": "10000000000000000000000000000006",
       "name": "Invoice",
       "nameZh": "发票",
-      "description": "A billing document for an order, issued in ERP (NetSuite), tracking amount due, due date and aging.",
+      "description": "针对订单的开票文档，在 ERP（NetSuite）签发，记录应付金额、到期日与账龄。",
       "descriptionZh": "针对订单的开票文档，在 ERP（NetSuite）签发，记录应付金额、到期日与账龄。",
       "type": "data",
-      "relationship_description": "Order billed by Invoice. Invoice settled by Payment. Customer owes Invoice. Invoice.order_id references Order.",
+      "relationship_description": "【订单】开票【发票】。【发票】结清【付款】。【客户】欠款【发票】。",
       "primary_key": "invoice_id",
       "properties": [
         {
           "name": "invoice_id",
           "type": "String",
-          "description": "",
+          "description": "发票编号",
           "nameZh": "发票编号"
         },
         {
           "name": "order_id",
           "type": "String",
-          "description": "",
+          "description": "订单编号",
           "nameZh": "订单编号",
           "is_foreign_key": true,
           "references": "objectType:order"
@@ -396,25 +396,25 @@
         {
           "name": "status",
           "type": "List<String>",
-          "description": "",
+          "description": "状态",
           "nameZh": "状态"
         },
         {
           "name": "amount_due",
           "type": "Float",
-          "description": "",
+          "description": "应付金额",
           "nameZh": "应付金额"
         },
         {
           "name": "due_date",
           "type": "Date",
-          "description": "Net-30 for Enterprise (R-04).",
+          "description": "到期日",
           "nameZh": "到期日"
         },
         {
           "name": "days_overdue",
           "type": "Integer",
-          "description": "Drives R-03 (60+ days).",
+          "description": "逾期天数",
           "nameZh": "逾期天数"
         }
       ],
@@ -443,22 +443,22 @@
       "uuid": "10000000000000000000000000000007",
       "name": "Payment",
       "nameZh": "付款",
-      "description": "A Stripe capture or refund settling an invoice, with authorized/settled/refunded status.",
+      "description": "通过 Stripe 进行的扣款或退款，用于结清发票，含已授权/已结算/已退款状态。",
       "descriptionZh": "通过 Stripe 进行的扣款或退款，用于结清发票，含已授权/已结算/已退款状态。",
       "type": "data",
-      "relationship_description": "Invoice settled by Payment. Payment.invoice_id references Invoice.",
+      "relationship_description": "【发票】结清【付款】。",
       "primary_key": "payment_id",
       "properties": [
         {
           "name": "payment_id",
           "type": "String",
-          "description": "Stripe charge / PaymentIntent id.",
+          "description": "付款编号",
           "nameZh": "付款编号"
         },
         {
           "name": "invoice_id",
           "type": "String",
-          "description": "",
+          "description": "发票编号",
           "nameZh": "发票编号",
           "is_foreign_key": true,
           "references": "objectType:invoice"
@@ -466,19 +466,19 @@
         {
           "name": "amount",
           "type": "Float",
-          "description": "",
+          "description": "金额",
           "nameZh": "金额"
         },
         {
           "name": "type",
           "type": "List<String>",
-          "description": "",
+          "description": "类型",
           "nameZh": "类型"
         },
         {
           "name": "status",
           "type": "List<String>",
-          "description": "",
+          "description": "状态",
           "nameZh": "状态"
         }
       ],
@@ -505,22 +505,22 @@
       "uuid": "10000000000000000000000000000008",
       "name": "Shipment",
       "nameZh": "发货",
-      "description": "A carrier shipment for an order handled by ShipStation/3PL, tracking pick, transit and delivery.",
+      "description": "由 ShipStation/3PL 处理的订单承运发货，记录拣货、在途与送达。",
       "descriptionZh": "由 ShipStation/3PL 处理的订单承运发货，记录拣货、在途与送达。",
       "type": "data",
-      "relationship_description": "Order shipped by Shipment. Shipment.order_id references Order.",
+      "relationship_description": "【订单】发货【发货】。",
       "primary_key": "shipment_id",
       "properties": [
         {
           "name": "shipment_id",
           "type": "String",
-          "description": "",
+          "description": "发货编号",
           "nameZh": "发货编号"
         },
         {
           "name": "order_id",
           "type": "String",
-          "description": "",
+          "description": "订单编号",
           "nameZh": "订单编号",
           "is_foreign_key": true,
           "references": "objectType:order"
@@ -528,25 +528,25 @@
         {
           "name": "status",
           "type": "List<String>",
-          "description": "",
+          "description": "状态",
           "nameZh": "状态"
         },
         {
           "name": "tracking_number",
           "type": "String",
-          "description": "",
+          "description": "追踪号",
           "nameZh": "追踪号"
         },
         {
           "name": "delivered_at",
           "type": "Timestamp",
-          "description": "Starts 30-day return clock (R-06).",
+          "description": "送达时间",
           "nameZh": "送达时间"
         },
         {
           "name": "dest_country",
           "type": "String",
-          "description": "Checked against ship-to list (R-11).",
+          "description": "目的国",
           "nameZh": "目的国"
         }
       ],
@@ -573,22 +573,22 @@
       "uuid": "10000000000000000000000000000009",
       "name": "Return",
       "nameZh": "退货",
-      "description": "A customer return against a delivered line item, progressing Requested, Approved, Received, Closed with an RMA.",
+      "description": "针对已送达行项的客户退货，状态依次为请求、批准、收货、关闭，并带有 RMA。",
       "descriptionZh": "针对已送达行项的客户退货，状态依次为请求、批准、收货、关闭，并带有 RMA。",
       "type": "data",
-      "relationship_description": "Return against LineItem. Return.line_item_id references LineItem.",
+      "relationship_description": "【退货】针对【订单行项】。",
       "primary_key": "return_id",
       "properties": [
         {
           "name": "return_id",
           "type": "String",
-          "description": "",
+          "description": "退货编号",
           "nameZh": "退货编号"
         },
         {
           "name": "line_item_id",
           "type": "String",
-          "description": "",
+          "description": "行项编号",
           "nameZh": "行项编号",
           "is_foreign_key": true,
           "references": "objectType:lineItem"
@@ -596,25 +596,25 @@
         {
           "name": "rma_number",
           "type": "String",
-          "description": "Issued on authorization (Step 4.2).",
+          "description": "退货授权号",
           "nameZh": "退货授权号"
         },
         {
           "name": "status",
           "type": "List<String>",
-          "description": "",
+          "description": "状态",
           "nameZh": "状态"
         },
         {
           "name": "reason",
           "type": "List<String>",
-          "description": "",
+          "description": "原因",
           "nameZh": "原因"
         },
         {
           "name": "requested_at",
           "type": "Timestamp",
-          "description": "Checked vs delivered_at (R-06, R-16).",
+          "description": "请求时间",
           "nameZh": "请求时间"
         }
       ],
@@ -643,22 +643,22 @@
       "uuid": "10000000000000000000000000000010",
       "name": "CreditHold",
       "nameZh": "信用冻结",
-      "description": "An OMS hold that freezes an order when a credit rule (R-03 or R-08) is violated, until reviewed.",
+      "description": "当违反信用规则（R-03 或 R-08）时由 OMS 冻结订单的记录，待审查解除。",
       "descriptionZh": "当违反信用规则（R-03 或 R-08）时由 OMS 冻结订单的记录，待审查解除。",
       "type": "data",
-      "relationship_description": "CreditHold freezes Order. Customer subject to CreditHold. CreditHold.order_id references Order. CreditHold.customer_id references Customer.",
+      "relationship_description": "【信用冻结】冻结【订单】。【客户】受制于【信用冻结】。",
       "primary_key": "credit_hold_id",
       "properties": [
         {
           "name": "credit_hold_id",
           "type": "String",
-          "description": "",
+          "description": "信用冻结编号",
           "nameZh": "信用冻结编号"
         },
         {
           "name": "order_id",
           "type": "String",
-          "description": "",
+          "description": "订单编号",
           "nameZh": "订单编号",
           "is_foreign_key": true,
           "references": "objectType:order"
@@ -666,7 +666,7 @@
         {
           "name": "customer_id",
           "type": "String",
-          "description": "",
+          "description": "客户编号",
           "nameZh": "客户编号",
           "is_foreign_key": true,
           "references": "objectType:customer"
@@ -674,13 +674,13 @@
         {
           "name": "reason_rule",
           "type": "String",
-          "description": "Cites R-03 or R-08.",
+          "description": "原因规则",
           "nameZh": "原因规则"
         },
         {
           "name": "status",
           "type": "List<String>",
-          "description": "",
+          "description": "状态",
           "nameZh": "状态"
         }
       ],
@@ -1012,15 +1012,15 @@
     {
       "id": "rule:order-references-active-customer",
       "uuid": "30000000000000000000000000000001",
-      "specificScenarioStage": "On order placement",
-      "businessLogicRuleName": "Order references one Active Customer",
+      "specificScenarioStage": "数据校验",
+      "businessLogicRuleName": "订单引用一个有效客户",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On order placement",
-      "standardizedLogicRule": "Every order must reference exactly one customer whose credit status is Active at the time of order placement.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "每个订单在下单时必须引用且仅引用一个信用状态为有效的客户。",
       "relatedEntities": [
-        "Order (Order)",
-        "Customer (Customer)"
+        "订单 (Order)",
+        "客户 (Customer)"
       ],
       "businessBackgroundReason": "Rules validating that an order references a valid, credit-enabled customer before confirmation.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1081,15 +1081,15 @@
     {
       "id": "rule:credit-limit-required-before-confirm",
       "uuid": "30000000000000000000000000000002",
-      "specificScenarioStage": "Before Order.status -> Confirmed",
-      "businessLogicRuleName": "Credit limit required before confirm",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "确认前须有信用额度",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "Before Order.status -> Confirmed",
-      "standardizedLogicRule": "A customer is required to have an assigned credit limit before any order may be confirmed.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "在任何订单可被确认之前，客户必须已分配信用额度。",
       "relatedEntities": [
-        "Customer (Customer)",
-        "Order (Order)"
+        "客户 (Customer)",
+        "订单 (Order)"
       ],
       "businessBackgroundReason": "Rules validating that an order references a valid, credit-enabled customer before confirmation.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1149,16 +1149,16 @@
     {
       "id": "rule:no-order-when-invoice-overdue",
       "uuid": "30000000000000000000000000000003",
-      "specificScenarioStage": "On credit screen at order placement",
-      "businessLogicRuleName": "Block order on 60+ day overdue invoice",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "逾期60天以上发票阻止下单",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On credit screen at order placement",
-      "standardizedLogicRule": "A customer may not place an order if any of their invoice records are overdue by 60 or more days.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "若客户有任何发票逾期达 60 天或以上，则该客户不得下单。",
       "relatedEntities": [
-        "Customer (Customer)",
-        "Order (Order)",
-        "Invoice (Invoice)"
+        "客户 (Customer)",
+        "订单 (Order)",
+        "发票 (Invoice)"
       ],
       "businessBackgroundReason": "Credit screening, hold placement/override authority, and dormancy that gate order placement and confirmation.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1220,16 +1220,16 @@
     {
       "id": "rule:fulfill-after-payment",
       "uuid": "30000000000000000000000000000004",
-      "specificScenarioStage": "On Order.status -> Fulfilled",
-      "businessLogicRuleName": "Fulfill only after payment in full",
+      "specificScenarioStage": "状态流转",
+      "businessLogicRuleName": "全额付款后方可履约",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On Order.status -> Fulfilled",
-      "standardizedLogicRule": "An order may only be fulfilled after its payment is received in full, unless the customer's tier is Enterprise, in which case the order is fulfilled on net-30 invoice terms.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "订单仅在其付款全额收讫后方可履约；企业等级客户除外，此时按净30天发票账期履约。",
       "relatedEntities": [
-        "Order (Order)",
-        "Payment (Payment)",
-        "Customer (Customer)"
+        "订单 (Order)",
+        "付款 (Payment)",
+        "客户 (Customer)"
       ],
       "businessBackgroundReason": "Rules that gate payment-before-fulfillment, allocation against stock, and dispatch.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1292,15 +1292,15 @@
     {
       "id": "rule:no-fulfill-under-credit-hold",
       "uuid": "30000000000000000000000000000005",
-      "specificScenarioStage": "On Order.status -> Fulfilled",
-      "businessLogicRuleName": "No fulfillment under active credit hold",
+      "specificScenarioStage": "状态流转",
+      "businessLogicRuleName": "信用冻结期间不得履约",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On Order.status -> Fulfilled",
-      "standardizedLogicRule": "An order shall not be marked Fulfilled while an active credit hold exists against it.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "当订单存在有效信用冻结时，不得将其标记为已履约。",
       "relatedEntities": [
-        "Order (Order)",
-        "CreditHold (Credit_Hold)"
+        "订单 (Order)",
+        "信用冻结 (Credit_Hold)"
       ],
       "businessBackgroundReason": "Rules that gate payment-before-fulfillment, allocation against stock, and dispatch.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1361,15 +1361,15 @@
     {
       "id": "rule:return-window-30-days",
       "uuid": "30000000000000000000000000000006",
-      "specificScenarioStage": "On return initiation",
-      "businessLogicRuleName": "30-day full-refund return window",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "30天全额退款退货窗口",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On return initiation",
-      "standardizedLogicRule": "A return must be initiated within 30 days of the shipment delivery date for a full refund; after 30 days, the customer may receive store credit only.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "退货必须在发货送达日期起 30 天内发起方可全额退款；超过 30 天，客户仅可获得店内信用。",
       "relatedEntities": [
-        "Return (Return)",
-        "Shipment (Shipment)"
+        "退货 (Return)",
+        "发货 (Shipment)"
       ],
       "businessBackgroundReason": "Windows, final-sale, delivered-state and store-credit expiry governing returns and refunds.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1431,15 +1431,15 @@
     {
       "id": "rule:final-sale-not-returnable",
       "uuid": "30000000000000000000000000000007",
-      "specificScenarioStage": "On return initiation",
-      "businessLogicRuleName": "Final-sale products not returnable",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "最终特卖产品不可退货",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On return initiation",
-      "standardizedLogicRule": "A product marked final-sale may not be returned under any circumstances.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "标记为最终特卖的产品在任何情况下均不可退货。",
       "relatedEntities": [
-        "Return (Return)",
-        "Product (Product)"
+        "退货 (Return)",
+        "产品 (Product)"
       ],
       "businessBackgroundReason": "Windows, final-sale, delivered-state and store-credit expiry governing returns and refunds.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1496,15 +1496,15 @@
     {
       "id": "rule:no-confirm-over-credit-limit",
       "uuid": "30000000000000000000000000000008",
-      "specificScenarioStage": "On credit screen at order placement",
-      "businessLogicRuleName": "No confirm over credit limit (non-Enterprise)",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "超信用额度不得确认（非企业）",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On credit screen at order placement",
-      "standardizedLogicRule": "An order may not be confirmed if its total would cause the customer's open balance to exceed their assigned credit limit, unless the customer's tier is Enterprise.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "若订单总额将导致客户未结余额超过其分配的信用额度，则不得确认该订单；企业等级客户除外。",
       "relatedEntities": [
-        "Order (Order)",
-        "Customer (Customer)"
+        "订单 (Order)",
+        "客户 (Customer)"
       ],
       "businessBackgroundReason": "Credit screening, hold placement/override authority, and dormancy that gate order placement and confirmation.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1566,16 +1566,16 @@
     {
       "id": "rule:allocate-requires-stock-or-backorder",
       "uuid": "30000000000000000000000000000009",
-      "specificScenarioStage": "On inventory allocation",
-      "businessLogicRuleName": "Allocation requires stock unless backorderable",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "分配须有库存或可缺货补单",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On inventory allocation",
-      "standardizedLogicRule": "A line item may not be allocated against inventory unless on-hand quantity covers the ordered quantity, unless the referenced product is flagged backorderable.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "除非现有数量足以覆盖订购数量，否则行项不得对库存进行分配；所引用产品被标记为可缺货补单的除外。",
       "relatedEntities": [
-        "LineItem (Line_Item)",
-        "Inventory (Inventory)",
-        "Product (Product)"
+        "订单行项 (Line_Item)",
+        "库存 (Inventory)",
+        "产品 (Product)"
       ],
       "businessBackgroundReason": "Rules that gate payment-before-fulfillment, allocation against stock, and dispatch.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1642,14 +1642,14 @@
     {
       "id": "rule:large-order-director-approval",
       "uuid": "30000000000000000000000000000010",
-      "specificScenarioStage": "Before release to fulfillment",
-      "businessLogicRuleName": "Director approval for orders >= $50,000",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "5万美元以上订单须总监批准",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "Before release to fulfillment",
-      "standardizedLogicRule": "An order total of $50,000 or more is required to receive Operations Director approval before it is released to fulfillment.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "订单总额达到 5 万美元或以上的，须在放行至履约前获得运营总监批准。",
       "relatedEntities": [
-        "Order (Order)"
+        "订单 (Order)"
       ],
       "businessBackgroundReason": "Approval-authority-matrix thresholds requiring Director / Finance Manager / Finance sign-off.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1704,14 +1704,14 @@
     {
       "id": "rule:international-ship-approved-list",
       "uuid": "30000000000000000000000000000011",
-      "specificScenarioStage": "On shipment dispatch",
-      "businessLogicRuleName": "International shipping to approved countries only",
+      "specificScenarioStage": "数据校验",
+      "businessLogicRuleName": "国际发货仅限批准国家",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On shipment dispatch",
-      "standardizedLogicRule": "A shipment may not be dispatched to an international destination unless the destination country is on the approved-ship-to list.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "除非目的国位于批准的可发货国家清单上，否则发货不得发往国际目的地。",
       "relatedEntities": [
-        "Shipment (Shipment)"
+        "发货 (Shipment)"
       ],
       "businessBackgroundReason": "Rules that gate payment-before-fulfillment, allocation against stock, and dispatch.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1767,14 +1767,14 @@
     {
       "id": "rule:large-refund-manager-approval",
       "uuid": "30000000000000000000000000000012",
-      "specificScenarioStage": "Before refund issuance",
-      "businessLogicRuleName": "Finance Manager approval for refunds > $2,000",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "超2000美元退款须财务经理批准",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "Before refund issuance",
-      "standardizedLogicRule": "A refund payment exceeding $2,000 is required to have Finance Manager approval before it is issued.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "退款金额超过 2,000 美元的，须在发放前获得财务经理批准。",
       "relatedEntities": [
-        "Payment (Payment)"
+        "付款 (Payment)"
       ],
       "businessBackgroundReason": "Approval-authority-matrix thresholds requiring Director / Finance Manager / Finance sign-off.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1831,14 +1831,14 @@
     {
       "id": "rule:credit-hold-override-authority",
       "uuid": "30000000000000000000000000000013",
-      "specificScenarioStage": "On credit hold override",
-      "businessLogicRuleName": "Credit hold override requires Credit Manager + reason",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "信用冻结解除须信用经理及理由",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On credit hold override",
-      "standardizedLogicRule": "An active credit hold may not be overridden except by a Credit Manager or higher, and the override must record a written reason.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "有效的信用冻结只能由信用经理或更高级别人员解除，且解除必须记录书面理由。",
       "relatedEntities": [
-        "CreditHold (Credit_Hold)"
+        "信用冻结 (Credit_Hold)"
       ],
       "businessBackgroundReason": "Credit screening, hold placement/override authority, and dormancy that gate order placement and confirmation.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1894,16 +1894,16 @@
     {
       "id": "rule:return-requires-delivered-shipment",
       "uuid": "30000000000000000000000000000014",
-      "specificScenarioStage": "On return authorization",
-      "businessLogicRuleName": "Return approval requires Delivered shipment",
+      "specificScenarioStage": "数据校验",
+      "businessLogicRuleName": "退货批准须发货已送达",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On return authorization",
-      "standardizedLogicRule": "A return may not be approved unless it references a line item on an order whose shipment status is Delivered.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "除非退货引用的行项所属订单的发货状态为已送达，否则不得批准该退货。",
       "relatedEntities": [
-        "Return (Return)",
-        "Shipment (Shipment)",
-        "LineItem (Line_Item)"
+        "退货 (Return)",
+        "发货 (Shipment)",
+        "订单行项 (Line_Item)"
       ],
       "businessBackgroundReason": "Windows, final-sale, delivered-state and store-credit expiry governing returns and refunds.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1965,14 +1965,14 @@
     {
       "id": "rule:enterprise-tier-requires-agreement",
       "uuid": "30000000000000000000000000000015",
-      "specificScenarioStage": "On tier assignment",
-      "businessLogicRuleName": "Enterprise tier requires signed agreement + Finance approval",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "企业等级须主协议及财务批准",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On tier assignment",
-      "standardizedLogicRule": "A customer may be assigned Enterprise tier only after a signed master agreement is on file and Finance approval is recorded.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "只有在已存档签署的主协议并记录财务批准后，客户方可被分配企业等级。",
       "relatedEntities": [
-        "Customer (Customer)"
+        "客户 (Customer)"
       ],
       "businessBackgroundReason": "Approval-authority-matrix thresholds requiring Director / Finance Manager / Finance sign-off.",
       "ruleSource": "02-business-rules-policy.md",
@@ -2028,16 +2028,16 @@
     {
       "id": "rule:defective-return-90-days",
       "uuid": "30000000000000000000000000000016",
-      "specificScenarioStage": "On return initiation",
-      "businessLogicRuleName": "Defective product return within 90 days",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "缺陷产品90天内可退货",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On return initiation",
-      "standardizedLogicRule": "A return for a defective product may be initiated within 90 days of the delivery date regardless of the standard 30-day window.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "缺陷产品的退货可在送达日期起 90 天内发起，不受标准 30 天窗口限制。",
       "relatedEntities": [
-        "Return (Return)",
-        "Shipment (Shipment)",
-        "Product (Product)"
+        "退货 (Return)",
+        "发货 (Shipment)",
+        "产品 (Product)"
       ],
       "businessBackgroundReason": "Windows, final-sale, delivered-state and store-credit expiry governing returns and refunds.",
       "ruleSource": "02-business-rules-policy.md",
@@ -2100,14 +2100,14 @@
     {
       "id": "rule:inactive-customer-dormant",
       "uuid": "30000000000000000000000000000017",
-      "specificScenarioStage": "On 24 months inactivity / before order placement",
-      "businessLogicRuleName": "Inactive 24 months sets credit status Dormant",
+      "specificScenarioStage": "状态流转",
+      "businessLogicRuleName": "停用24个月转为休眠",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On 24 months inactivity / before order placement",
-      "standardizedLogicRule": "A customer whose account has been inactive for 24 months shall have their credit status set to Dormant, after which new order placement requires re-verification.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "账户停用满 24 个月的客户，其信用状态应设为休眠；此后新下单需重新核验。",
       "relatedEntities": [
-        "Customer (Customer)"
+        "客户 (Customer)"
       ],
       "businessBackgroundReason": "Credit screening, hold placement/override authority, and dormancy that gate order placement and confirmation.",
       "ruleSource": "02-business-rules-policy.md",
@@ -2162,14 +2162,14 @@
     {
       "id": "rule:store-credit-expires-12-months",
       "uuid": "30000000000000000000000000000018",
-      "specificScenarioStage": "On store credit issuance",
-      "businessLogicRuleName": "Store credit expires 12 months after issue",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "店内信用发放后12个月过期",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On store credit issuance",
-      "standardizedLogicRule": "Store credit issued in lieu of a refund shall expire 12 months after the date of issue.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "代替退款发放的店内信用应在发放之日起 12 个月后过期。",
       "relatedEntities": [
-        "Customer (Customer)"
+        "客户 (Customer)"
       ],
       "businessBackgroundReason": "Windows, final-sale, delivered-state and store-credit expiry governing returns and refunds.",
       "ruleSource": "02-business-rules-policy.md",
@@ -2299,9 +2299,9 @@
       "uuid": "40000000000000000000000000000001",
       "name": "RegisterCustomer",
       "nameZh": "注册客户",
-      "description": "Create a new Customer record from a submitted profile with default Standard tier and Active credit status.",
+      "description": "根据提交的资料创建新客户记录，默认标准等级与有效信用状态。",
       "descriptionZh": "根据提交的资料创建新客户记录，默认标准等级与有效信用状态。",
-      "submission_criteria": "1. Event CUSTOMER_SIGNUP_SUBMITTED has been received",
+      "submission_criteria": "1. 事件 CUSTOMER_SIGNUP_SUBMITTED 已送达",
       "object_type": "action",
       "category": "注册客户",
       "actor": [
@@ -2317,20 +2317,20 @@
         {
           "order": "1",
           "name": "captureSubmittedCustomerProfile",
-          "description": "Capture submitted customer profile.",
+          "description": "捕获提交的客户资料。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "createCustomerWithTierStandardAnd",
-          "description": "Create Customer with tier = Standard and creditStatus = Active.",
+          "description": "创建客户，等级=标准，信用状态=有效。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"RegisterCustomer\" action. Create a new Customer record from a submitted profile with default Standard tier and Active credit status. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"RegisterCustomer\" using profile. Create a new Customer record from a submitted profile with default Standard tier and Active credit status. Produce customer and emit the appropriate events.",
+      "system_prompt": "作为负责「RegisterCustomer」动作的自动化人工操作员，根据提交的资料创建新客户记录，默认标准等级与有效信用状态。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（profile）执行「RegisterCustomer」。根据提交的资料创建新客户记录，默认标准等级与有效信用状态。 产出（customer）并发出相应事件。",
       "tool_use": [
         "Salesforce"
       ],
@@ -2438,16 +2438,17 @@
         "role": "Customer Service Representative",
         "roleZh": "客户服务代表",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:assign-credit-limit",
       "uuid": "40000000000000000000000000000002",
       "name": "AssignCreditLimit",
       "nameZh": "分配信用额度",
-      "description": "Set a customer's credit limit and confirm tier from a credit assessment.",
+      "description": "依据信用评估设定客户信用额度并确认等级。",
       "descriptionZh": "依据信用评估设定客户信用额度并确认等级。",
-      "submission_criteria": "1. Event CUSTOMER_CREATED has been received\n2. Rule \"Enterprise tier requires signed agreement + Finance approval\" is satisfied",
+      "submission_criteria": "1. 事件 CUSTOMER_CREATED 已送达\n2. 规则「企业等级须主协议及财务批准」已满足",
       "object_type": "action",
       "category": "分配信用额度",
       "actor": [
@@ -2463,28 +2464,28 @@
         {
           "order": "1",
           "name": "readCustomerCreatedAndCreditAssessment",
-          "description": "Read CustomerCreated and credit assessment.",
+          "description": "读取客户已创建事件与信用评估。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "setCreditLimitDefault10000",
-          "description": "Set creditLimit (default $10,000 Standard; up to $250,000 Enterprise) and confirm tier.",
+          "description": "设定信用额度（标准默认1万美元；企业最高25万美元）并确认等级。",
           "object_type": "logic",
-          "submission_criteria": "On tier assignment",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "enterprise-tier-requires-agreement",
-              "name": "Enterprise tier requires signed agreement + Finance approval",
-              "submission_criteria": "On tier assignment",
-              "description": "A customer may be assigned Enterprise tier only after a signed master agreement is on file and Finance approval is recorded."
+              "name": "企业等级须主协议及财务批准",
+              "submission_criteria": "",
+              "description": "只有在已存档签署的主协议并记录财务批准后，客户方可被分配企业等级。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"AssignCreditLimit\" action. Set a customer's credit limit and confirm tier from a credit assessment. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"AssignCreditLimit\" using customer, assessment. Set a customer's credit limit and confirm tier from a credit assessment. Produce customer and emit the appropriate events.",
+      "system_prompt": "作为负责「AssignCreditLimit」动作的自动化人工操作员，依据信用评估设定客户信用额度并确认等级。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（customer、assessment）执行「AssignCreditLimit」。依据信用评估设定客户信用额度并确认等级。 产出（customer）并发出相应事件。",
       "tool_use": [
         "NetSuite"
       ],
@@ -2613,16 +2614,17 @@
         "role": "Finance Analyst",
         "roleZh": "财务分析师",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:place-order",
       "uuid": "40000000000000000000000000000003",
       "name": "PlaceOrder",
       "nameZh": "下单",
-      "description": "Capture a cart of products for an authenticated customer into a Pending order with line items and a calculated total.",
+      "description": "将已认证客户的购物车捕获为待处理订单，含行项与计算总额。",
       "descriptionZh": "将已认证客户的购物车捕获为待处理订单，含行项与计算总额。",
-      "submission_criteria": "1. Event CHECKOUT_SUBMITTED has been received\n2. Rule \"Order references one Active Customer\" is satisfied",
+      "submission_criteria": "1. 事件 CHECKOUT_SUBMITTED 已送达\n2. 规则「订单引用一个有效客户」已满足",
       "object_type": "action",
       "category": "下单",
       "actor": [
@@ -2641,35 +2643,35 @@
         {
           "order": "1",
           "name": "validateTheOrderReferencesOneActive",
-          "description": "Validate the order references one Active customer.",
+          "description": "校验订单引用一个有效客户。",
           "object_type": "logic",
-          "submission_criteria": "On order placement",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "order-references-active-customer",
-              "name": "Order references one Active Customer",
-              "submission_criteria": "On order placement",
-              "description": "Every order must reference exactly one customer whose credit status is Active at the time of order placement."
+              "name": "订单引用一个有效客户",
+              "submission_criteria": "",
+              "description": "每个订单在下单时必须引用且仅引用一个信用状态为有效的客户。"
             }
           ]
         },
         {
           "order": "2",
           "name": "createOrderStatusPendingWithChild",
-          "description": "Create Order (status Pending) with child LineItem records.",
+          "description": "创建待处理订单及其子行项记录。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "3",
           "name": "calculateOrderTotalFromLineItems",
-          "description": "Calculate order total from line items.",
+          "description": "根据行项计算订单总额。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"PlaceOrder\" action. Capture a cart of products for an authenticated customer into a Pending order with line items and a calculated total. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"PlaceOrder\" using customer, products. Capture a cart of products for an authenticated customer into a Pending order with line items and a calculated total. Produce order, line_items and emit the appropriate events.",
+      "system_prompt": "作为负责「PlaceOrder」动作的自动化人工操作员，将已认证客户的购物车捕获为待处理订单，含行项与计算总额。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（customer、products）执行「PlaceOrder」。将已认证客户的购物车捕获为待处理订单，含行项与计算总额。 产出（order、line_items）并发出相应事件。",
       "tool_use": [
         "OMS"
       ],
@@ -2825,16 +2827,17 @@
         "role": "Customer",
         "roleZh": "客户",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:screen-order-for-credit",
       "uuid": "40000000000000000000000000000004",
       "name": "ScreenOrderForCredit",
       "nameZh": "信用与付款筛查",
-      "description": "Check invoice aging and available credit; either authorize payment and draft an invoice, or place a credit hold.",
+      "description": "检查发票账龄与可用信用；要么授权付款并起草发票，要么放置信用冻结。",
       "descriptionZh": "检查发票账龄与可用信用；要么授权付款并起草发票，要么放置信用冻结。",
-      "submission_criteria": "1. Event ORDER_PLACED has been received\n2. Rule \"Block order on 60+ day overdue invoice\" is satisfied\n3. Rule \"No confirm over credit limit (non-Enterprise)\" is satisfied",
+      "submission_criteria": "1. 事件 ORDER_PLACED 已送达\n2. 规则「逾期60天以上发票阻止下单」已满足\n3. 规则「超信用额度不得确认（非企业）」已满足",
       "object_type": "action",
       "category": "信用与付款筛查",
       "actor": [
@@ -2854,43 +2857,43 @@
         {
           "order": "1",
           "name": "checkOutstandingInvoiceAgingFor60",
-          "description": "Check outstanding Invoice aging for 60+ day overdue.",
+          "description": "检查未结发票是否逾期60天以上。",
           "object_type": "logic",
-          "submission_criteria": "On credit screen at order placement",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "no-order-when-invoice-overdue",
-              "name": "Block order on 60+ day overdue invoice",
-              "submission_criteria": "On credit screen at order placement",
-              "description": "A customer may not place an order if any of their invoice records are overdue by 60 or more days."
+              "name": "逾期60天以上发票阻止下单",
+              "submission_criteria": "",
+              "description": "若客户有任何发票逾期达 60 天或以上，则该客户不得下单。"
             }
           ]
         },
         {
           "order": "2",
           "name": "checkAvailableCreditAgainstAssignedCredit",
-          "description": "Check available credit against assigned credit limit.",
+          "description": "对照分配的信用额度检查可用信用。",
           "object_type": "logic",
-          "submission_criteria": "On credit screen at order placement",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "no-confirm-over-credit-limit",
-              "name": "No confirm over credit limit (non-Enterprise)",
-              "submission_criteria": "On credit screen at order placement",
-              "description": "An order may not be confirmed if its total would cause the customer's open balance to exceed their assigned credit limit, unless the customer's tier is Enterprise."
+              "name": "超信用额度不得确认（非企业）",
+              "submission_criteria": "",
+              "description": "若订单总额将导致客户未结余额超过其分配的信用额度，则不得确认该订单；企业等级客户除外。"
             }
           ]
         },
         {
           "order": "3",
           "name": "onPassAuthorizePaymentAndCreate",
-          "description": "On pass: authorize Payment and create draft Invoice. On fail: create CreditHold.",
+          "description": "通过则授权付款并创建草稿发票；不通过则创建信用冻结。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"ScreenOrderForCredit\" action. Check invoice aging and available credit; either authorize payment and draft an invoice, or place a credit hold. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"ScreenOrderForCredit\" using order, customer. Check invoice aging and available credit; either authorize payment and draft an invoice, or place a credit hold. Produce payment, invoice, credit_hold and emit the appropriate events.",
+      "system_prompt": "作为负责「ScreenOrderForCredit」动作的自动化系统，检查发票账龄与可用信用；要么授权付款并起草发票，要么放置信用冻结。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（order、customer）执行「ScreenOrderForCredit」。检查发票账龄与可用信用；要么授权付款并起草发票，要么放置信用冻结。 产出（payment、invoice、credit_hold）并发出相应事件。",
       "tool_use": [
         "NetSuite"
       ],
@@ -3067,16 +3070,17 @@
         "role": "OMS Credit Gate",
         "roleZh": "OMS信用门控",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:allocate-inventory",
       "uuid": "40000000000000000000000000000005",
       "name": "AllocateInventory",
       "nameZh": "分配库存",
-      "description": "Reserve inventory against the order's line items and set the order to Confirmed.",
+      "description": "针对订单行项预留库存并将订单置为已确认。",
       "descriptionZh": "针对订单行项预留库存并将订单置为已确认。",
-      "submission_criteria": "1. Event PAYMENT_AUTHORIZED has been received\n2. Event CREDIT_HOLD_RELEASED has been received\n3. Rule \"Allocation requires stock unless backorderable\" is satisfied\n4. Rule \"Credit limit required before confirm\" is satisfied",
+      "submission_criteria": "1. 事件 PAYMENT_AUTHORIZED 已送达\n2. 事件 CREDIT_HOLD_RELEASED 已送达\n3. 规则「分配须有库存或可缺货补单」已满足\n4. 规则「确认前须有信用额度」已满足",
       "object_type": "action",
       "category": "分配库存",
       "actor": [
@@ -3096,28 +3100,28 @@
         {
           "order": "1",
           "name": "verifyOnHandInventoryCoversOrdered",
-          "description": "Verify on-hand inventory covers ordered quantity unless backorderable.",
+          "description": "核验现有库存覆盖订购数量，除非可缺货补单。",
           "object_type": "logic",
-          "submission_criteria": "On inventory allocation",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "allocate-requires-stock-or-backorder",
-              "name": "Allocation requires stock unless backorderable",
-              "submission_criteria": "On inventory allocation",
-              "description": "A line item may not be allocated against inventory unless on-hand quantity covers the ordered quantity, unless the referenced product is flagged backorderable."
+              "name": "分配须有库存或可缺货补单",
+              "submission_criteria": "",
+              "description": "除非现有数量足以覆盖订购数量，否则行项不得对库存进行分配；所引用产品被标记为可缺货补单的除外。"
             }
           ]
         },
         {
           "order": "2",
           "name": "increaseInventoryReservedQtyAndSet",
-          "description": "Increase Inventory.reservedQty and set Order.status = Confirmed.",
+          "description": "增加库存预留数量并将订单状态置为已确认。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"AllocateInventory\" action. Reserve inventory against the order's line items and set the order to Confirmed. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"AllocateInventory\" using order, line_items. Reserve inventory against the order's line items and set the order to Confirmed. Produce inventory, order and emit the appropriate events.",
+      "system_prompt": "作为负责「AllocateInventory」动作的自动化系统，针对订单行项预留库存并将订单置为已确认。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（order、line_items）执行「AllocateInventory」。针对订单行项预留库存并将订单置为已确认。 产出（inventory、order）并发出相应事件。",
       "tool_use": [
         "NetSuite"
       ],
@@ -3284,16 +3288,17 @@
         "role": "OMS Allocation Engine",
         "roleZh": "OMS分配引擎",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:create-shipment",
       "uuid": "40000000000000000000000000000006",
       "name": "CreateShipment",
       "nameZh": "创建发货",
-      "description": "Create a Shipment in Picking status with a packing list and carrier assignment for a confirmed order.",
+      "description": "为已确认订单创建拣货状态的发货，含装箱单与承运商分配。",
       "descriptionZh": "为已确认订单创建拣货状态的发货，含装箱单与承运商分配。",
-      "submission_criteria": "1. Event INVENTORY_RESERVED has been received\n2. Rule \"No fulfillment under active credit hold\" is satisfied\n3. Rule \"International shipping to approved countries only\" is satisfied",
+      "submission_criteria": "1. 事件 INVENTORY_RESERVED 已送达\n2. 规则「信用冻结期间不得履约」已满足\n3. 规则「国际发货仅限批准国家」已满足",
       "object_type": "action",
       "category": "创建发货",
       "actor": [
@@ -3311,28 +3316,28 @@
         {
           "order": "1",
           "name": "confirmNoActiveCreditHoldAnd",
-          "description": "Confirm no active credit hold and international destination is approved.",
+          "description": "确认无有效信用冻结且国际目的地已获批准。",
           "object_type": "logic",
-          "submission_criteria": "On Order.status -> Fulfilled",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "no-fulfill-under-credit-hold",
-              "name": "No fulfillment under active credit hold",
-              "submission_criteria": "On Order.status -> Fulfilled",
-              "description": "An order shall not be marked Fulfilled while an active credit hold exists against it."
+              "name": "信用冻结期间不得履约",
+              "submission_criteria": "",
+              "description": "当订单存在有效信用冻结时，不得将其标记为已履约。"
             }
           ]
         },
         {
           "order": "2",
           "name": "createShipmentStatusPickingWithPacking",
-          "description": "Create Shipment (status Picking) with packing list and carrier.",
+          "description": "创建拣货状态发货，含装箱单与承运商。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"CreateShipment\" action. Create a Shipment in Picking status with a packing list and carrier assignment for a confirmed order. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"CreateShipment\" using order. Create a Shipment in Picking status with a packing list and carrier assignment for a confirmed order. Produce shipment and emit the appropriate events.",
+      "system_prompt": "作为负责「CreateShipment」动作的自动化人工操作员，为已确认订单创建拣货状态的发货，含装箱单与承运商分配。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（order）执行「CreateShipment」。为已确认订单创建拣货状态的发货，含装箱单与承运商分配。 产出（shipment）并发出相应事件。",
       "tool_use": [
         "ShipStation"
       ],
@@ -3455,16 +3460,17 @@
         "role": "Warehouse Operator",
         "roleZh": "仓库操作员",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:dispatch-shipment",
       "uuid": "40000000000000000000000000000007",
       "name": "DispatchShipment",
       "nameZh": "发运发货",
-      "description": "Produce a tracking number and set shipment In Transit and order Fulfilled.",
+      "description": "生成追踪号，并将发货置为在途、订单置为已履约。",
       "descriptionZh": "生成追踪号，并将发货置为在途、订单置为已履约。",
-      "submission_criteria": "1. Event SHIPMENT_CREATED has been received\n2. Rule \"No fulfillment under active credit hold\" is satisfied\n3. Rule \"Fulfill only after payment in full\" is satisfied",
+      "submission_criteria": "1. 事件 SHIPMENT_CREATED 已送达\n2. 规则「信用冻结期间不得履约」已满足\n3. 规则「全额付款后方可履约」已满足",
       "object_type": "action",
       "category": "发运发货",
       "actor": [
@@ -3482,36 +3488,36 @@
         {
           "order": "1",
           "name": "ensureNoActiveCreditHoldBefore",
-          "description": "Ensure no active credit hold before marking Fulfilled.",
+          "description": "标记为已履约前确保无有效信用冻结。",
           "object_type": "logic",
-          "submission_criteria": "On Order.status -> Fulfilled",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "no-fulfill-under-credit-hold",
-              "name": "No fulfillment under active credit hold",
-              "submission_criteria": "On Order.status -> Fulfilled",
-              "description": "An order shall not be marked Fulfilled while an active credit hold exists against it."
+              "name": "信用冻结期间不得履约",
+              "submission_criteria": "",
+              "description": "当订单存在有效信用冻结时，不得将其标记为已履约。"
             }
           ]
         },
         {
           "order": "2",
           "name": "assignTrackingNumberSetShipmentStatus",
-          "description": "Assign tracking number; set Shipment.status = In Transit and Order.status = Fulfilled.",
+          "description": "分配追踪号；将发货置为在途、订单置为已履约。",
           "object_type": "logic",
-          "submission_criteria": "On Order.status -> Fulfilled",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "fulfill-after-payment",
-              "name": "Fulfill only after payment in full",
-              "submission_criteria": "On Order.status -> Fulfilled",
-              "description": "An order may only be fulfilled after its payment is received in full, unless the customer's tier is Enterprise, in which case the order is fulfilled on net-30 invoice terms."
+              "name": "全额付款后方可履约",
+              "submission_criteria": "",
+              "description": "订单仅在其付款全额收讫后方可履约；企业等级客户除外，此时按净30天发票账期履约。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"DispatchShipment\" action. Produce a tracking number and set shipment In Transit and order Fulfilled. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"DispatchShipment\" using shipment. Produce a tracking number and set shipment In Transit and order Fulfilled. Produce shipment, order and emit the appropriate events.",
+      "system_prompt": "作为负责「DispatchShipment」动作的自动化系统，生成追踪号，并将发货置为在途、订单置为已履约。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（shipment）执行「DispatchShipment」。生成追踪号，并将发货置为在途、订单置为已履约。 产出（shipment、order）并发出相应事件。",
       "tool_use": [
         "ShipStation"
       ],
@@ -3646,16 +3652,17 @@
         "role": "Carrier Integration",
         "roleZh": "承运商集成",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:confirm-delivery",
       "uuid": "40000000000000000000000000000008",
       "name": "ConfirmDelivery",
       "nameZh": "确认送达",
-      "description": "Set shipment Delivered and record a deliveredAt timestamp from the carrier webhook.",
+      "description": "依据承运商回调将发货置为已送达并记录送达时间。",
       "descriptionZh": "依据承运商回调将发货置为已送达并记录送达时间。",
-      "submission_criteria": "1. Event SHIPMENT_DISPATCHED has been received",
+      "submission_criteria": "1. 事件 SHIPMENT_DISPATCHED 已送达",
       "object_type": "action",
       "category": "确认送达",
       "actor": [
@@ -3671,20 +3678,20 @@
         {
           "order": "1",
           "name": "consumeCarrierDeliveryWebhook",
-          "description": "Consume carrier delivery webhook.",
+          "description": "接收承运商送达回调。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "setShipmentStatusDeliveredAndRecord",
-          "description": "Set Shipment.status = Delivered and record deliveredAt (starts 30-day return clock).",
+          "description": "将发货置为已送达并记录送达时间（启动30天退货计时）。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"ConfirmDelivery\" action. Set shipment Delivered and record a deliveredAt timestamp from the carrier webhook. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"ConfirmDelivery\" using shipment. Set shipment Delivered and record a deliveredAt timestamp from the carrier webhook. Produce shipment and emit the appropriate events.",
+      "system_prompt": "作为负责「ConfirmDelivery」动作的自动化系统，依据承运商回调将发货置为已送达并记录送达时间。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（shipment）执行「ConfirmDelivery」。依据承运商回调将发货置为已送达并记录送达时间。 产出（shipment）并发出相应事件。",
       "tool_use": [
         "ShipStation"
       ],
@@ -3796,16 +3803,17 @@
         "role": "Carrier Integration",
         "roleZh": "承运商集成",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:settle-invoice",
       "uuid": "40000000000000000000000000000009",
       "name": "SettleInvoice",
       "nameZh": "结清发票",
-      "description": "Finalize the draft invoice and record the matched payment (up-front for Standard, net-30 for Enterprise).",
+      "description": "完结草稿发票并记录匹配付款（标准客户预付，企业客户净30天）。",
       "descriptionZh": "完结草稿发票并记录匹配付款（标准客户预付，企业客户净30天）。",
-      "submission_criteria": "1. Event ORDER_FULFILLED has been received",
+      "submission_criteria": "1. 事件 ORDER_FULFILLED 已送达",
       "object_type": "action",
       "category": "结清发票",
       "actor": [
@@ -3823,28 +3831,28 @@
         {
           "order": "1",
           "name": "finalizeInvoiceStatusIssued",
-          "description": "Finalize Invoice (status Issued).",
+          "description": "完结发票（状态：已开具）。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "recordMatchedPaymentOnSettlementSet",
-          "description": "Record matched Payment; on settlement set Invoice.status = Paid.",
+          "description": "记录匹配付款；结算后将发票置为已付。",
           "object_type": "logic",
-          "submission_criteria": "On Order.status -> Fulfilled",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "fulfill-after-payment",
-              "name": "Fulfill only after payment in full",
-              "submission_criteria": "On Order.status -> Fulfilled",
-              "description": "An order may only be fulfilled after its payment is received in full, unless the customer's tier is Enterprise, in which case the order is fulfilled on net-30 invoice terms."
+              "name": "全额付款后方可履约",
+              "submission_criteria": "",
+              "description": "订单仅在其付款全额收讫后方可履约；企业等级客户除外，此时按净30天发票账期履约。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"SettleInvoice\" action. Finalize the draft invoice and record the matched payment (up-front for Standard, net-30 for Enterprise). Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"SettleInvoice\" using order, invoice. Finalize the draft invoice and record the matched payment (up-front for Standard, net-30 for Enterprise). Produce invoice, payment and emit the appropriate events.",
+      "system_prompt": "作为负责「SettleInvoice」动作的自动化人工操作员，完结草稿发票并记录匹配付款（标准客户预付，企业客户净30天）。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（order、invoice）执行「SettleInvoice」。完结草稿发票并记录匹配付款（标准客户预付，企业客户净30天）。 产出（invoice、payment）并发出相应事件。",
       "tool_use": [
         "NetSuite"
       ],
@@ -3993,16 +4001,17 @@
         "role": "Finance Analyst",
         "roleZh": "财务分析师",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:close-order",
       "uuid": "40000000000000000000000000000010",
       "name": "CloseOrder",
       "nameZh": "关闭订单",
-      "description": "Reconcile settled payment and delivery to set the order Closed.",
+      "description": "对账已结算付款与送达，将订单置为已关闭。",
       "descriptionZh": "对账已结算付款与送达，将订单置为已关闭。",
-      "submission_criteria": "1. Event PAYMENT_SETTLED has been received\n2. Event ORDER_DELIVERED has been received",
+      "submission_criteria": "1. 事件 PAYMENT_SETTLED 已送达\n2. 事件 ORDER_DELIVERED 已送达",
       "object_type": "action",
       "category": "关闭订单",
       "actor": [
@@ -4021,20 +4030,20 @@
         {
           "order": "1",
           "name": "reconcilePaymentSettledAndOrderDelivered",
-          "description": "Reconcile PaymentSettled and OrderDelivered.",
+          "description": "对账付款已结算与订单已送达。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "setOrderStatusClosed",
-          "description": "Set Order.status = Closed.",
+          "description": "将订单状态置为已关闭。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"CloseOrder\" action. Reconcile settled payment and delivery to set the order Closed. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"CloseOrder\" using order, invoice, payment. Reconcile settled payment and delivery to set the order Closed. Produce order and emit the appropriate events.",
+      "system_prompt": "作为负责「CloseOrder」动作的自动化系统，对账已结算付款与送达，将订单置为已关闭。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（order、invoice、payment）执行「CloseOrder」。对账已结算付款与送达，将订单置为已关闭。 产出（order）并发出相应事件。",
       "tool_use": [
         "OMS"
       ],
@@ -4174,16 +4183,17 @@
         "role": "OMS Reconciliation",
         "roleZh": "OMS对账",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:initiate-return",
       "uuid": "40000000000000000000000000000011",
       "name": "InitiateReturn",
       "nameZh": "发起退货",
-      "description": "Create a Requested return against a delivered order's line items, checking eligibility windows and final-sale.",
+      "description": "针对已送达订单行项创建请求状态退货，校验资格窗口与最终特卖。",
       "descriptionZh": "针对已送达订单行项创建请求状态退货，校验资格窗口与最终特卖。",
-      "submission_criteria": "1. Event RETURN_REQUESTED has been received\n2. Rule \"30-day full-refund return window\" is satisfied\n3. Rule \"Final-sale products not returnable\" is satisfied\n4. Rule \"Defective product return within 90 days\" is satisfied",
+      "submission_criteria": "1. 事件 RETURN_REQUESTED 已送达\n2. 规则「30天全额退款退货窗口」已满足\n3. 规则「最终特卖产品不可退货」已满足\n4. 规则「缺陷产品90天内可退货」已满足",
       "object_type": "action",
       "category": "发起退货",
       "actor": [
@@ -4203,43 +4213,43 @@
         {
           "order": "1",
           "name": "checkReturnWindow30DaysOr",
-          "description": "Check return window (30 days, or 90 for defective) vs deliveredAt.",
+          "description": "对照送达时间检查退货窗口（30天，缺陷90天）。",
           "object_type": "logic",
-          "submission_criteria": "On return initiation",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "return-window-30-days",
-              "name": "30-day full-refund return window",
-              "submission_criteria": "On return initiation",
-              "description": "A return must be initiated within 30 days of the shipment delivery date for a full refund; after 30 days, the customer may receive store credit only."
+              "name": "30天全额退款退货窗口",
+              "submission_criteria": "",
+              "description": "退货必须在发货送达日期起 30 天内发起方可全额退款；超过 30 天，客户仅可获得店内信用。"
             }
           ]
         },
         {
           "order": "2",
           "name": "rejectFinalSaleProducts",
-          "description": "Reject final-sale products.",
+          "description": "拒绝最终特卖产品。",
           "object_type": "logic",
-          "submission_criteria": "On return initiation",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "final-sale-not-returnable",
-              "name": "Final-sale products not returnable",
-              "submission_criteria": "On return initiation",
-              "description": "A product marked final-sale may not be returned under any circumstances."
+              "name": "最终特卖产品不可退货",
+              "submission_criteria": "",
+              "description": "标记为最终特卖的产品在任何情况下均不可退货。"
             }
           ]
         },
         {
           "order": "3",
           "name": "createReturnStatusRequestedReferencingOriginal",
-          "description": "Create Return (status Requested) referencing original LineItem(s).",
+          "description": "创建请求状态退货，引用原始行项。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"InitiateReturn\" action. Create a Requested return against a delivered order's line items, checking eligibility windows and final-sale. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"InitiateReturn\" using order, line_items. Create a Requested return against a delivered order's line items, checking eligibility windows and final-sale. Produce return and emit the appropriate events.",
+      "system_prompt": "作为负责「InitiateReturn」动作的自动化人工操作员，针对已送达订单行项创建请求状态退货，校验资格窗口与最终特卖。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（order、line_items）执行「InitiateReturn」。针对已送达订单行项创建请求状态退货，校验资格窗口与最终特卖。 产出（return）并发出相应事件。",
       "tool_use": [
         "Salesforce"
       ],
@@ -4395,16 +4405,17 @@
         "role": "Customer",
         "roleZh": "客户",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:authorize-return",
       "uuid": "40000000000000000000000000000012",
       "name": "AuthorizeReturn",
       "nameZh": "授权退货",
-      "description": "Validate eligibility and issue an RMA number on an approved return.",
+      "description": "校验资格并在批准的退货上签发RMA编号。",
       "descriptionZh": "校验资格并在批准的退货上签发RMA编号。",
-      "submission_criteria": "1. Event RETURN_INITIATED has been received\n2. Rule \"Return approval requires Delivered shipment\" is satisfied",
+      "submission_criteria": "1. 事件 RETURN_INITIATED 已送达\n2. 规则「退货批准须发货已送达」已满足",
       "object_type": "action",
       "category": "授权退货",
       "actor": [
@@ -4421,28 +4432,28 @@
         {
           "order": "1",
           "name": "validateTheShipmentStatusIsDelivered",
-          "description": "Validate the shipment status is Delivered.",
+          "description": "校验发货状态为已送达。",
           "object_type": "logic",
-          "submission_criteria": "On return authorization",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "return-requires-delivered-shipment",
-              "name": "Return approval requires Delivered shipment",
-              "submission_criteria": "On return authorization",
-              "description": "A return may not be approved unless it references a line item on an order whose shipment status is Delivered."
+              "name": "退货批准须发货已送达",
+              "submission_criteria": "",
+              "description": "除非退货引用的行项所属订单的发货状态为已送达，否则不得批准该退货。"
             }
           ]
         },
         {
           "order": "2",
           "name": "setReturnStatusApprovedAndIssue",
-          "description": "Set Return.status = Approved and issue RMA number.",
+          "description": "将退货置为已批准并签发RMA编号。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"AuthorizeReturn\" action. Validate eligibility and issue an RMA number on an approved return. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"AuthorizeReturn\" using return. Validate eligibility and issue an RMA number on an approved return. Produce return and emit the appropriate events.",
+      "system_prompt": "作为负责「AuthorizeReturn」动作的自动化人工操作员，校验资格并在批准的退货上签发RMA编号。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（return）执行「AuthorizeReturn」。校验资格并在批准的退货上签发RMA编号。 产出（return）并发出相应事件。",
       "tool_use": [
         "OMS"
       ],
@@ -4560,16 +4571,17 @@
         "role": "Returns Specialist",
         "roleZh": "退货专员",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:receive-return",
       "uuid": "40000000000000000000000000000013",
       "name": "ReceiveReturn",
       "nameZh": "接收退货",
-      "description": "Inspect inbound returned goods against the RMA and restock sellable inventory.",
+      "description": "依据RMA检验入库退货商品，并将可售商品回补库存。",
       "descriptionZh": "依据RMA检验入库退货商品，并将可售商品回补库存。",
-      "submission_criteria": "1. Event RETURN_AUTHORIZED has been received",
+      "submission_criteria": "1. 事件 RETURN_AUTHORIZED 已送达",
       "object_type": "action",
       "category": "接收退货",
       "actor": [
@@ -4586,20 +4598,20 @@
         {
           "order": "1",
           "name": "receiveInboundShipmentAgainstTheRMA",
-          "description": "Receive inbound shipment against the RMA and inspect.",
+          "description": "依据RMA接收入库发货并检验。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "ifSellableIncrementInventoryOnHand",
-          "description": "If sellable, increment Inventory.onHandQty and set Return.status = Received.",
+          "description": "若可售，增加现有库存并将退货置为已收货。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"ReceiveReturn\" action. Inspect inbound returned goods against the RMA and restock sellable inventory. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"ReceiveReturn\" using return. Inspect inbound returned goods against the RMA and restock sellable inventory. Produce return, inventory and emit the appropriate events.",
+      "system_prompt": "作为负责「ReceiveReturn」动作的自动化人工操作员，依据RMA检验入库退货商品，并将可售商品回补库存。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（return）执行「ReceiveReturn」。依据RMA检验入库退货商品，并将可售商品回补库存。 产出（return、inventory）并发出相应事件。",
       "tool_use": [
         "NetSuite"
       ],
@@ -4718,16 +4730,17 @@
         "role": "Warehouse Operator",
         "roleZh": "仓库操作员",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:issue-refund",
       "uuid": "40000000000000000000000000000014",
       "name": "IssueRefund",
       "nameZh": "发放退款",
-      "description": "Issue a refund payment within window or a store-credit adjustment outside window, plus a credit memo, closing the return.",
+      "description": "窗口内发放退款，窗口外发放店内信用调整，并出具贷项通知单，关闭退货。",
       "descriptionZh": "窗口内发放退款，窗口外发放店内信用调整，并出具贷项通知单，关闭退货。",
-      "submission_criteria": "1. Event RETURN_RECEIVED has been received\n2. Rule \"Finance Manager approval for refunds > $2,000\" is satisfied\n3. Rule \"30-day full-refund return window\" is satisfied\n4. Rule \"Store credit expires 12 months after issue\" is satisfied",
+      "submission_criteria": "1. 事件 RETURN_RECEIVED 已送达\n2. 规则「超2000美元退款须财务经理批准」已满足\n3. 规则「30天全额退款退货窗口」已满足\n4. 规则「店内信用发放后12个月过期」已满足",
       "object_type": "action",
       "category": "发放退款",
       "actor": [
@@ -4746,43 +4759,43 @@
         {
           "order": "1",
           "name": "requireFinanceManagerApprovalForRefunds",
-          "description": "Require Finance Manager approval for refunds over $2,000.",
+          "description": "超过2000美元的退款须财务经理批准。",
           "object_type": "logic",
-          "submission_criteria": "Before refund issuance",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "large-refund-manager-approval",
-              "name": "Finance Manager approval for refunds > $2,000",
-              "submission_criteria": "Before refund issuance",
-              "description": "A refund payment exceeding $2,000 is required to have Finance Manager approval before it is issued."
+              "name": "超2000美元退款须财务经理批准",
+              "submission_criteria": "",
+              "description": "退款金额超过 2,000 美元的，须在发放前获得财务经理批准。"
             }
           ]
         },
         {
           "order": "2",
           "name": "withinWindowCreatePaymentRefundOutside",
-          "description": "Within window: create Payment refund. Outside window: adjust Customer store credit.",
+          "description": "窗口内创建退款；窗口外调整客户店内信用。",
           "object_type": "logic",
-          "submission_criteria": "On return initiation",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "return-window-30-days",
-              "name": "30-day full-refund return window",
-              "submission_criteria": "On return initiation",
-              "description": "A return must be initiated within 30 days of the shipment delivery date for a full refund; after 30 days, the customer may receive store credit only."
+              "name": "30天全额退款退货窗口",
+              "submission_criteria": "",
+              "description": "退货必须在发货送达日期起 30 天内发起方可全额退款；超过 30 天，客户仅可获得店内信用。"
             }
           ]
         },
         {
           "order": "3",
           "name": "postCreditMemoAgainstInvoiceAnd",
-          "description": "Post credit memo against Invoice and set Return.status = Closed.",
+          "description": "对发票出具贷项通知单并将退货置为已关闭。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"IssueRefund\" action. Issue a refund payment within window or a store-credit adjustment outside window, plus a credit memo, closing the return. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"IssueRefund\" using return, invoice. Issue a refund payment within window or a store-credit adjustment outside window, plus a credit memo, closing the return. Produce payment, customer, return and emit the appropriate events.",
+      "system_prompt": "作为负责「IssueRefund」动作的自动化人工操作员，窗口内发放退款，窗口外发放店内信用调整，并出具贷项通知单，关闭退货。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（return、invoice）执行「IssueRefund」。窗口内发放退款，窗口外发放店内信用调整，并出具贷项通知单，关闭退货。 产出（payment、customer、return）并发出相应事件。",
       "tool_use": [
         "Stripe"
       ],
@@ -4954,16 +4967,17 @@
         "role": "Finance Analyst",
         "roleZh": "财务分析师",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:place-credit-hold",
       "uuid": "40000000000000000000000000000015",
       "name": "PlaceCreditHold",
       "nameZh": "放置信用冻结",
-      "description": "Create a CreditHold citing the violated rule and freeze the order following a failed credit screen.",
+      "description": "依据信用筛查失败创建引用违规规则的信用冻结并冻结订单。",
       "descriptionZh": "依据信用筛查失败创建引用违规规则的信用冻结并冻结订单。",
-      "submission_criteria": "1. Event CREDIT_HOLD_PLACED has been received\n2. Rule \"Block order on 60+ day overdue invoice\" is satisfied\n3. Rule \"No confirm over credit limit (non-Enterprise)\" is satisfied",
+      "submission_criteria": "1. 事件 CREDIT_HOLD_PLACED 已送达\n2. 规则「逾期60天以上发票阻止下单」已满足\n3. 规则「超信用额度不得确认（非企业）」已满足",
       "object_type": "action",
       "category": "放置信用冻结",
       "actor": [
@@ -4982,20 +4996,20 @@
         {
           "order": "1",
           "name": "consumeFailedCreditScreenResult",
-          "description": "Consume failed credit screen result.",
+          "description": "接收信用筛查失败结果。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "createCreditHoldCitingR03",
-          "description": "Create CreditHold citing R-03 or R-08 and freeze the Order.",
+          "description": "创建引用R-03或R-08的信用冻结并冻结订单。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"PlaceCreditHold\" action. Create a CreditHold citing the violated rule and freeze the order following a failed credit screen. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"PlaceCreditHold\" using order, customer. Create a CreditHold citing the violated rule and freeze the order following a failed credit screen. Produce credit_hold and emit the appropriate events.",
+      "system_prompt": "作为负责「PlaceCreditHold」动作的自动化系统，依据信用筛查失败创建引用违规规则的信用冻结并冻结订单。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（order、customer）执行「PlaceCreditHold」。依据信用筛查失败创建引用违规规则的信用冻结并冻结订单。 产出（credit_hold）并发出相应事件。",
       "tool_use": [
         "OMS"
       ],
@@ -5131,16 +5145,17 @@
         "role": "OMS Credit Gate",
         "roleZh": "OMS信用门控",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:resolve-credit-hold",
       "uuid": "40000000000000000000000000000016",
       "name": "ResolveCreditHold",
       "nameZh": "解决信用冻结",
-      "description": "Credit Manager records overdue payment and releases the order, or cancels it, overriding the hold with a recorded reason.",
+      "description": "信用经理记录逾期付款并放行订单，或取消订单，并以记录理由解除冻结。",
       "descriptionZh": "信用经理记录逾期付款并放行订单，或取消订单，并以记录理由解除冻结。",
-      "submission_criteria": "1. Event CREDIT_HOLD_OPENED has been received\n2. Rule \"Credit hold override requires Credit Manager + reason\" is satisfied",
+      "submission_criteria": "1. 事件 CREDIT_HOLD_OPENED 已送达\n2. 规则「信用冻结解除须信用经理及理由」已满足",
       "object_type": "action",
       "category": "解决信用冻结",
       "actor": [
@@ -5157,28 +5172,28 @@
         {
           "order": "1",
           "name": "verifyOverrideAuthorityCreditManagerOr",
-          "description": "Verify override authority (Credit Manager or above) and record reason.",
+          "description": "核验解除权限（信用经理及以上）并记录理由。",
           "object_type": "logic",
-          "submission_criteria": "On credit hold override",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "credit-hold-override-authority",
-              "name": "Credit hold override requires Credit Manager + reason",
-              "submission_criteria": "On credit hold override",
-              "description": "An active credit hold may not be overridden except by a Credit Manager or higher, and the override must record a written reason."
+              "name": "信用冻结解除须信用经理及理由",
+              "submission_criteria": "",
+              "description": "有效的信用冻结只能由信用经理或更高级别人员解除，且解除必须记录书面理由。"
             }
           ]
         },
         {
           "order": "2",
           "name": "recordOverdueInvoicePaymentAndRelease",
-          "description": "Record overdue Invoice payment and release Order, or cancel Order.",
+          "description": "记录逾期发票付款并放行订单，或取消订单。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"ResolveCreditHold\" action. Credit Manager records overdue payment and releases the order, or cancels it, overriding the hold with a recorded reason. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"ResolveCreditHold\" using credit_hold, order. Credit Manager records overdue payment and releases the order, or cancels it, overriding the hold with a recorded reason. Produce credit_hold, order and emit the appropriate events.",
+      "system_prompt": "作为负责「ResolveCreditHold」动作的自动化人工操作员，信用经理记录逾期付款并放行订单，或取消订单，并以记录理由解除冻结。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（credit_hold、order）执行「ResolveCreditHold」。信用经理记录逾期付款并放行订单，或取消订单，并以记录理由解除冻结。 产出（credit_hold、order）并发出相应事件。",
       "tool_use": [
         "NetSuite"
       ],
@@ -5318,7 +5333,8 @@
         "role": "Credit Manager",
         "roleZh": "信用经理",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     }
   ],
   "events": [
@@ -5327,7 +5343,7 @@
       "uuid": "50000000000000000000000000000001",
       "name": "CUSTOMER_SIGNUP_SUBMITTED",
       "nameZh": "客户注册已提交",
-      "description": "A prospective customer submitted a signup profile.",
+      "description": "潜在客户已提交注册资料。",
       "descriptionZh": "潜在客户已提交注册资料。",
       "payload": {
         "source_action": "",
@@ -5373,7 +5389,7 @@
       "uuid": "50000000000000000000000000000002",
       "name": "CUSTOMER_CREATED",
       "nameZh": "客户已创建",
-      "description": "A new Customer record was created.",
+      "description": "新客户记录已创建。",
       "descriptionZh": "新客户记录已创建。",
       "payload": {
         "source_action": "registerCustomer",
@@ -5424,7 +5440,7 @@
       "uuid": "50000000000000000000000000000003",
       "name": "CREDIT_LIMIT_ASSIGNED",
       "nameZh": "信用额度已分配",
-      "description": "A customer's credit limit and tier were assigned.",
+      "description": "客户的信用额度与等级已分配。",
       "descriptionZh": "客户的信用额度与等级已分配。",
       "payload": {
         "source_action": "assignCreditLimit",
@@ -5476,7 +5492,7 @@
       "uuid": "50000000000000000000000000000004",
       "name": "CHECKOUT_SUBMITTED",
       "nameZh": "结账已提交",
-      "description": "A customer submitted checkout for a cart.",
+      "description": "客户已提交购物车结账。",
       "descriptionZh": "客户已提交购物车结账。",
       "payload": {
         "source_action": "",
@@ -5539,7 +5555,7 @@
       "uuid": "50000000000000000000000000000005",
       "name": "ORDER_PLACED",
       "nameZh": "订单已下达",
-      "description": "An order was placed in Pending status.",
+      "description": "订单已以待处理状态下达。",
       "descriptionZh": "订单已以待处理状态下达。",
       "payload": {
         "source_action": "placeOrder",
@@ -5590,7 +5606,7 @@
       "uuid": "50000000000000000000000000000006",
       "name": "PAYMENT_AUTHORIZED",
       "nameZh": "付款已授权",
-      "description": "Payment was authorized/captured following a passed credit screen.",
+      "description": "信用筛查通过后付款已授权/扣款。",
       "descriptionZh": "信用筛查通过后付款已授权/扣款。",
       "payload": {
         "source_action": "screenOrderForCredit",
@@ -5657,7 +5673,7 @@
       "uuid": "50000000000000000000000000000007",
       "name": "CREDIT_HOLD_PLACED",
       "nameZh": "信用冻结已触发",
-      "description": "The credit screen failed and a hold is being raised.",
+      "description": "信用筛查失败，正在触发冻结。",
       "descriptionZh": "信用筛查失败，正在触发冻结。",
       "payload": {
         "source_action": "screenOrderForCredit",
@@ -5724,7 +5740,7 @@
       "uuid": "50000000000000000000000000000008",
       "name": "CREDIT_HOLD_OPENED",
       "nameZh": "信用冻结已开立",
-      "description": "A CreditHold record was opened against an order.",
+      "description": "已针对订单开立信用冻结记录。",
       "descriptionZh": "已针对订单开立信用冻结记录。",
       "payload": {
         "source_action": "placeCreditHold",
@@ -5778,7 +5794,7 @@
       "uuid": "50000000000000000000000000000009",
       "name": "CREDIT_HOLD_RELEASED",
       "nameZh": "信用冻结已解除",
-      "description": "A credit hold was overridden and the order released back to allocation.",
+      "description": "信用冻结被解除，订单放行回到分配阶段。",
       "descriptionZh": "信用冻结被解除，订单放行回到分配阶段。",
       "payload": {
         "source_action": "resolveCreditHold",
@@ -5843,7 +5859,7 @@
       "uuid": "50000000000000000000000000000010",
       "name": "ORDER_CANCELLED",
       "nameZh": "订单已取消",
-      "description": "An order was cancelled (e.g. unresolved credit hold).",
+      "description": "订单已取消（例如信用冻结未解决）。",
       "descriptionZh": "订单已取消（例如信用冻结未解决）。",
       "payload": {
         "source_action": "resolveCreditHold",
@@ -5895,7 +5911,7 @@
       "uuid": "50000000000000000000000000000011",
       "name": "INVENTORY_RESERVED",
       "nameZh": "库存已预留",
-      "description": "Inventory was reserved and the order set to Confirmed.",
+      "description": "库存已预留，订单置为已确认。",
       "descriptionZh": "库存已预留，订单置为已确认。",
       "payload": {
         "source_action": "allocateInventory",
@@ -5962,7 +5978,7 @@
       "uuid": "50000000000000000000000000000012",
       "name": "BACKORDER_RAISED",
       "nameZh": "缺货补单已触发",
-      "description": "Stock was short and a backorder was raised during allocation.",
+      "description": "分配时库存不足，触发缺货补单。",
       "descriptionZh": "分配时库存不足，触发缺货补单。",
       "payload": {
         "source_action": "allocateInventory",
@@ -6030,7 +6046,7 @@
       "uuid": "50000000000000000000000000000013",
       "name": "SHIPMENT_CREATED",
       "nameZh": "发货已创建",
-      "description": "A shipment was created in Picking status.",
+      "description": "已创建拣货状态的发货。",
       "descriptionZh": "已创建拣货状态的发货。",
       "payload": {
         "source_action": "createShipment",
@@ -6084,7 +6100,7 @@
       "uuid": "50000000000000000000000000000014",
       "name": "SHIPMENT_DISPATCHED",
       "nameZh": "发货已发运",
-      "description": "A shipment was dispatched with a tracking number.",
+      "description": "发货已发运并带有追踪号。",
       "descriptionZh": "发货已发运并带有追踪号。",
       "payload": {
         "source_action": "dispatchShipment",
@@ -6135,7 +6151,7 @@
       "uuid": "50000000000000000000000000000015",
       "name": "ORDER_FULFILLED",
       "nameZh": "订单已履约",
-      "description": "An order was marked Fulfilled on dispatch.",
+      "description": "发运时订单已标记为已履约。",
       "descriptionZh": "发运时订单已标记为已履约。",
       "payload": {
         "source_action": "dispatchShipment",
@@ -6189,7 +6205,7 @@
       "uuid": "50000000000000000000000000000016",
       "name": "ORDER_DELIVERED",
       "nameZh": "订单已送达",
-      "description": "The shipment was delivered to the customer.",
+      "description": "发货已送达客户。",
       "descriptionZh": "发货已送达客户。",
       "payload": {
         "source_action": "confirmDelivery",
@@ -6251,7 +6267,7 @@
       "uuid": "50000000000000000000000000000017",
       "name": "INVOICE_ISSUED",
       "nameZh": "发票已开具",
-      "description": "An invoice was finalized and issued.",
+      "description": "发票已完结并开具。",
       "descriptionZh": "发票已完结并开具。",
       "payload": {
         "source_action": "settleInvoice",
@@ -6305,7 +6321,7 @@
       "uuid": "50000000000000000000000000000018",
       "name": "PAYMENT_SETTLED",
       "nameZh": "付款已结算",
-      "description": "Payment was settled against the invoice.",
+      "description": "付款已对发票结算。",
       "descriptionZh": "付款已对发票结算。",
       "payload": {
         "source_action": "settleInvoice",
@@ -6372,7 +6388,7 @@
       "uuid": "50000000000000000000000000000019",
       "name": "ORDER_CLOSED",
       "nameZh": "订单已关闭",
-      "description": "The order was reconciled and closed.",
+      "description": "订单已对账并关闭。",
       "descriptionZh": "订单已对账并关闭。",
       "payload": {
         "source_action": "closeOrder",
@@ -6424,7 +6440,7 @@
       "uuid": "50000000000000000000000000000020",
       "name": "RETURN_REQUESTED",
       "nameZh": "退货已请求",
-      "description": "A customer requested a return.",
+      "description": "客户已请求退货。",
       "descriptionZh": "客户已请求退货。",
       "payload": {
         "source_action": "",
@@ -6489,7 +6505,7 @@
       "uuid": "50000000000000000000000000000021",
       "name": "RETURN_INITIATED",
       "nameZh": "退货已发起",
-      "description": "A Return record was created in Requested status.",
+      "description": "已创建请求状态的退货记录。",
       "descriptionZh": "已创建请求状态的退货记录。",
       "payload": {
         "source_action": "initiateReturn",
@@ -6543,7 +6559,7 @@
       "uuid": "50000000000000000000000000000022",
       "name": "RETURN_AUTHORIZED",
       "nameZh": "退货已授权",
-      "description": "A return was approved with an RMA number.",
+      "description": "退货已批准并带有RMA编号。",
       "descriptionZh": "退货已批准并带有RMA编号。",
       "payload": {
         "source_action": "authorizeReturn",
@@ -6597,7 +6613,7 @@
       "uuid": "50000000000000000000000000000023",
       "name": "RETURN_RECEIVED",
       "nameZh": "退货已收货",
-      "description": "Returned goods were received and inspected.",
+      "description": "退货商品已收货并检验。",
       "descriptionZh": "退货商品已收货并检验。",
       "payload": {
         "source_action": "receiveReturn",
@@ -6648,7 +6664,7 @@
       "uuid": "50000000000000000000000000000024",
       "name": "REFUND_ISSUED",
       "nameZh": "退款已发放",
-      "description": "A refund or store credit was issued and the return closed.",
+      "description": "退款或店内信用已发放，退货已关闭。",
       "descriptionZh": "退款或店内信用已发放，退货已关闭。",
       "payload": {
         "source_action": "issueRefund",
@@ -6717,7 +6733,7 @@
         "en": "Customer Onboarding",
         "zh": "客户开户"
       },
-      "description": "Create a customer account and assign a credit limit and tier.",
+      "description": "客户开户",
       "actor": [
         "Human"
       ],
@@ -6728,14 +6744,14 @@
         {
           "order": "1",
           "name": "registerCustomer",
-          "description": "Create a new Customer record from a submitted profile with default Standard tier and Active credit status.",
+          "description": "根据提交的资料创建新客户记录，默认标准等级与有效信用状态。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "2",
           "name": "assignCreditLimit",
-          "description": "Set a customer's credit limit and confirm tier from a credit assessment.",
+          "description": "依据信用评估设定客户信用额度并确认等级。",
           "type": "manual",
           "condition": ""
         }
@@ -6818,7 +6834,7 @@
         "en": "Order to Cash",
         "zh": "订单到回款"
       },
-      "description": "End-to-end flow from order capture through credit screening, allocation, fulfillment, invoicing and close.",
+      "description": "订单到回款",
       "actor": [
         "Human",
         "System"
@@ -6830,63 +6846,63 @@
         {
           "order": "1",
           "name": "placeOrder",
-          "description": "Capture a cart of products for an authenticated customer into a Pending order with line items and a calculated total.",
+          "description": "将已认证客户的购物车捕获为待处理订单，含行项与计算总额。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "2",
           "name": "screenOrderForCredit",
-          "description": "Check invoice aging and available credit; either authorize payment and draft an invoice, or place a credit hold.",
+          "description": "检查发票账龄与可用信用；要么授权付款并起草发票，要么放置信用冻结。",
           "type": "tool",
           "condition": "Credit passed"
         },
         {
           "order": "3",
           "name": "allocateInventory",
-          "description": "Reserve inventory against the order's line items and set the order to Confirmed.",
+          "description": "针对订单行项预留库存并将订单置为已确认。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "4",
           "name": "createShipment",
-          "description": "Create a Shipment in Picking status with a packing list and carrier assignment for a confirmed order.",
+          "description": "为已确认订单创建拣货状态的发货，含装箱单与承运商分配。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "5",
           "name": "dispatchShipment",
-          "description": "Produce a tracking number and set shipment In Transit and order Fulfilled.",
+          "description": "生成追踪号，并将发货置为在途、订单置为已履约。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "6",
           "name": "confirmDelivery",
-          "description": "Set shipment Delivered and record a deliveredAt timestamp from the carrier webhook.",
+          "description": "依据承运商回调将发货置为已送达并记录送达时间。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "7",
           "name": "settleInvoice",
-          "description": "Finalize the draft invoice and record the matched payment (up-front for Standard, net-30 for Enterprise).",
+          "description": "完结草稿发票并记录匹配付款（标准客户预付，企业客户净30天）。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "8",
           "name": "closeOrder",
-          "description": "Reconcile settled payment and delivery to set the order Closed.",
+          "description": "对账已结算付款与送达，将订单置为已关闭。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "9",
           "name": "placeCreditHold",
-          "description": "Create a CreditHold citing the violated rule and freeze the order following a failed credit screen.",
+          "description": "依据信用筛查失败创建引用违规规则的信用冻结并冻结订单。",
           "type": "tool",
           "condition": ""
         }
@@ -7112,7 +7128,7 @@
         "en": "Returns & Refunds",
         "zh": "退货与退款"
       },
-      "description": "From return initiation through authorization, receipt/restock, and refund or store-credit issuance.",
+      "description": "退货与退款",
       "actor": [
         "Human"
       ],
@@ -7123,28 +7139,28 @@
         {
           "order": "1",
           "name": "initiateReturn",
-          "description": "Create a Requested return against a delivered order's line items, checking eligibility windows and final-sale.",
+          "description": "针对已送达订单行项创建请求状态退货，校验资格窗口与最终特卖。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "2",
           "name": "authorizeReturn",
-          "description": "Validate eligibility and issue an RMA number on an approved return.",
+          "description": "校验资格并在批准的退货上签发RMA编号。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "3",
           "name": "receiveReturn",
-          "description": "Inspect inbound returned goods against the RMA and restock sellable inventory.",
+          "description": "依据RMA检验入库退货商品，并将可售商品回补库存。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "4",
           "name": "issueRefund",
-          "description": "Issue a refund payment within window or a store-credit adjustment outside window, plus a credit memo, closing the return.",
+          "description": "窗口内发放退款，窗口外发放店内信用调整，并出具贷项通知单，关闭退货。",
           "type": "manual",
           "condition": ""
         }
@@ -7271,7 +7287,7 @@
         "en": "Credit Hold Review",
         "zh": "信用冻结审查"
       },
-      "description": "Detect and place a credit hold, then review and resolve by releasing the order back to allocation or cancelling it.",
+      "description": "信用冻结审查",
       "actor": [
         "System",
         "Human"
@@ -7283,21 +7299,21 @@
         {
           "order": "1",
           "name": "placeCreditHold",
-          "description": "Create a CreditHold citing the violated rule and freeze the order following a failed credit screen.",
+          "description": "依据信用筛查失败创建引用违规规则的信用冻结并冻结订单。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "2",
           "name": "resolveCreditHold",
-          "description": "Credit Manager records overdue payment and releases the order, or cancels it, overriding the hold with a recorded reason.",
+          "description": "信用经理记录逾期付款并放行订单，或取消订单，并以记录理由解除冻结。",
           "type": "manual",
           "condition": "Released to allocation"
         },
         {
           "order": "3",
           "name": "allocateInventory",
-          "description": "Reserve inventory against the order's line items and set the order to Confirmed.",
+          "description": "针对订单行项预留库存并将订单置为已确认。",
           "type": "tool",
           "condition": ""
         }

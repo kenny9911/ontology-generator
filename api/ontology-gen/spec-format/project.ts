@@ -175,6 +175,8 @@ interface SpecCtx {
   objSpecId: Map<string, string>;
   /** objectType id -> spec object name (display). */
   objName: Map<string, string>;
+  /** objectType id -> Chinese object name (for Chinese-first descriptive output). */
+  objNameZh: Map<string, string>;
   /** objectType id -> primary key column name. */
   objPk: Map<string, string>;
   actionById: Map<string, ActionType>;
@@ -195,12 +197,14 @@ function buildCtx(o: Ontology): SpecCtx {
   const objById = new Map<string, ObjectType>();
   const objSpecId = new Map<string, string>();
   const objName = new Map<string, string>();
+  const objNameZh = new Map<string, string>();
   const objPk = new Map<string, string>();
   for (const obj of o.objects ?? []) {
     const specId = specObjectId(obj.id);
     objById.set(obj.id, obj);
     objSpecId.set(obj.id, specId);
     objName.set(obj.id, obj.name || specId);
+    objNameZh.set(obj.id, obj.nameZh?.trim() || obj.name || specId);
     objPk.set(obj.id, defaultPrimaryKey(obj, specId));
   }
 
@@ -235,6 +239,7 @@ function buildCtx(o: Ontology): SpecCtx {
     objById,
     objSpecId,
     objName,
+    objNameZh,
     objPk,
     actionById,
     actionName,
@@ -252,7 +257,7 @@ function projectProperty(prop: ObjectProperty, ctx: SpecCtx): SpecObjectProperty
   const out: SpecObjectProperty = {
     name: prop.name,
     type: prop.type,
-    description: prop.description?.trim() || `${humanize(prop.name)}.`,
+    description: prop.descriptionZh?.trim() || cjkOr(prop.description, prop.nameZh?.trim() || humanize(prop.name)),
   };
   // A foreign key is only marked when its target object is actually present, so
   // `references` always resolves to an emitted spec object id.
@@ -263,40 +268,44 @@ function projectProperty(prop: ObjectProperty, ctx: SpecCtx): SpecObjectProperty
   return out;
 }
 
+/** Chinese relationship prose synthesized from relationships + FK properties. */
 function synthesizeRelationshipDescription(o: ObjectType, ctx: SpecCtx): string {
   const rels: Relationship[] = ctx.ontology.relationships ?? [];
+  const self = o.nameZh?.trim() || o.name;
+  const refById = new Map<string, string>();
+  for (const [id] of ctx.objSpecId) refById.set(ctx.objSpecId.get(id)!, id);
   const parts: string[] = [];
 
   for (const rel of rels) {
-    if (rel.sourceObjectTypeId === o.id && ctx.objName.has(rel.targetObjectTypeId)) {
-      parts.push(`${o.name} ${humanize(rel.name).toLowerCase()} ${ctx.objName.get(rel.targetObjectTypeId)}.`);
-    } else if (rel.targetObjectTypeId === o.id && ctx.objName.has(rel.sourceObjectTypeId)) {
-      parts.push(`${ctx.objName.get(rel.sourceObjectTypeId)} ${humanize(rel.name).toLowerCase()} ${o.name}.`);
+    const verb = rel.nameZh?.trim() || rel.description?.trim() || humanize(rel.name) || '关联';
+    if (rel.sourceObjectTypeId === o.id && ctx.objNameZh.has(rel.targetObjectTypeId)) {
+      parts.push(`【${self}】${verb}【${ctx.objNameZh.get(rel.targetObjectTypeId)}】。`);
+    } else if (rel.targetObjectTypeId === o.id && ctx.objNameZh.has(rel.sourceObjectTypeId)) {
+      parts.push(`【${ctx.objNameZh.get(rel.sourceObjectTypeId)}】${verb}【${self}】。`);
     }
   }
 
   for (const p of o.properties ?? []) {
-    if (p.is_foreign_key && p.references && ctx.objName.has(p.references)) {
-      parts.push(`${o.name}.${p.name} references ${ctx.objName.get(p.references)}.`);
+    if (p.is_foreign_key && p.references) {
+      const targetId = refById.get(p.references);
+      const targetZh = targetId ? ctx.objNameZh.get(targetId) : undefined;
+      if (targetZh) parts.push(`【${self}】通过 ${p.name} 引用【${targetZh}】。`);
     }
   }
 
   const deduped = uniq(parts);
-  if (deduped.length === 0) {
-    return `${o.name} has no documented relationships to other objects.`;
-  }
-  return deduped.join(' ');
+  return deduped.length === 0 ? `【${self}】暂无与其他对象的关联关系。` : deduped.join('');
 }
 
 function projectObject(o: ObjectType, ctx: SpecCtx): SpecObject {
   const specId = ctx.objSpecId.get(o.id) ?? specObjectId(o.id);
+  const relDesc = o.relationship_description?.trim();
   return {
     id: specId,
     name: o.name || specId,
-    description: o.description?.trim() || '',
+    description: o.descriptionZh?.trim() || o.description?.trim() || '',
     type: o.type ?? heuristicObjectClass(o),
-    relationship_description:
-      o.relationship_description?.trim() || synthesizeRelationshipDescription(o, ctx),
+    relationship_description: hasCJK(relDesc) ? relDesc! : synthesizeRelationshipDescription(o, ctx),
     primary_key: o.primary_key?.trim() || ctx.objPk.get(o.id) || defaultPrimaryKey(o, specId),
     properties: (o.properties ?? []).map((p) => projectProperty(p, ctx)),
   };
@@ -316,28 +325,37 @@ function deriveExecutor(r: Rule, ctx: SpecCtx): SpecExecutorInternal {
 type SpecExecutorInternal = 'Human' | 'Agent';
 
 const nonEmpty = (s: unknown): s is string => typeof s === 'string' && s.trim().length > 0;
+const hasCJK = (s: unknown): boolean => typeof s === 'string' && /[一-鿿]/.test(s);
+/** Keep a single-language string only if it is Chinese; else use the zh fallback. */
+const cjkOr = (s: unknown, fallback: string): string => (hasCJK(s) ? (s as string).trim() : fallback);
 
-function firstClause(text: string): string {
-  const m = text.split(/[.!?;:\n。！？；]/)[0]?.trim() ?? '';
-  return m.length > 80 ? `${m.slice(0, 77)}...` : m || text.slice(0, 77);
-}
+/** Chinese label for a rule kind (used when no Chinese scenario text exists). */
+const KIND_ZH: Record<string, string> = {
+  validation: '数据校验',
+  constraint: '业务约束',
+  derivation: '指标推导',
+  state_transition: '状态流转',
+  authorization: '权限授权',
+  temporal: '时限控制',
+};
 
 function projectRule(r: Rule, ctx: SpecCtx): SpecRule {
-  // Prefer the canonical spec fields (now first-class on Rule); fall back to
-  // deriving from the structural fields for any older/partial node.
+  // Prefer the canonical spec fields (now first-class + Chinese on Rule); fall
+  // back to deriving Chinese-first from the structural fields for older nodes.
   const enforcementLevel =
     r.enforcementLevel ?? (r.severity === 'block' ? 'mandatory' : 'optional');
   const failurePolicy = r.failurePolicy ?? (r.severity === 'block' ? 'block' : 'warn');
 
   const standardizedLogicRule = nonEmpty(r.standardizedLogicRule)
     ? r.standardizedLogicRule
-    : r.statement?.en?.trim() || r.formal?.trim() || r.statement?.zh?.trim() || '';
+    : r.statement?.zh?.trim() || r.statement?.en?.trim() || r.formal?.trim() || '';
 
-  const relatedEntities = nonEmpty(r.relatedEntities?.[0]) || (r.relatedEntities?.length ?? 0) > 0
-    ? r.relatedEntities
-    : (r.appliesToObjectTypeIds ?? [])
-        .filter((id) => ctx.objSpecId.has(id))
-        .map((id) => `${ctx.objName.get(id)} (${ctx.objSpecId.get(id)})`);
+  const relatedEntities =
+    (r.relatedEntities?.length ?? 0) > 0
+      ? r.relatedEntities
+      : (r.appliesToObjectTypeIds ?? [])
+          .filter((id) => ctx.objSpecId.has(id))
+          .map((id) => `${ctx.objNameZh.get(id)} (${ctx.objSpecId.get(id)})`);
 
   const groupRationale = r.groupId
     ? (ctx.ontology.ruleGroups ?? []).find((g) => g.id === r.groupId)?.rationale
@@ -347,15 +365,15 @@ function projectRule(r: Rule, ctx: SpecCtx): SpecRule {
     id: stripPrefix(r.id),
     specificScenarioStage: nonEmpty(r.specificScenarioStage)
       ? r.specificScenarioStage
-      : r.trigger?.description?.trim() || humanize(r.kind),
+      : cjkOr(r.trigger?.description, KIND_ZH[r.kind] || '业务约束'),
     businessLogicRuleName: nonEmpty(r.businessLogicRuleName)
       ? r.businessLogicRuleName
-      : r.title?.trim() || firstClause(standardizedLogicRule) || stripPrefix(r.id),
+      : r.titleZh?.trim() || r.title?.trim() || stripPrefix(r.id),
     applicableClient: nonEmpty(r.applicableClient) ? r.applicableClient : '通用',
     applicableDepartment: nonEmpty(r.applicableDepartment) ? r.applicableDepartment : 'N/A',
     submissionCriteria: nonEmpty(r.submissionCriteria)
       ? r.submissionCriteria
-      : r.trigger?.description?.trim() || r.expression?.predicate?.trim() || '',
+      : cjkOr(r.trigger?.description, cjkOr(r.expression?.predicate, '')),
     standardizedLogicRule,
     relatedEntities,
     businessBackgroundReason: nonEmpty(r.businessBackgroundReason)
@@ -493,42 +511,42 @@ function collectToolUse(a: ActionType): string[] {
   return uniq(tools);
 }
 
+/** Prefer the canonical (Chinese) spec field; fall back to deriving for old nodes. */
 function projectAction(a: ActionType, ctx: SpecCtx): SpecAction {
   const inputs = (a.inputs ?? []).map((io) => projectInput(io, ctx));
   const outputs = (a.outputs ?? []).map((io) => projectOutput(io));
   const inputNames = inputs.map((i) => i.name).join(', ') || 'the provided inputs';
   const outputNames = outputs.map((o) => o.name).join(', ') || 'the resulting records';
+  const has = (v: unknown[] | undefined): boolean => Array.isArray(v) && v.length > 0;
 
   return {
     id: stripPrefix(a.id),
     name: ctx.actionName.get(a.id) ?? camel(a.name),
     description: a.description?.trim() || '',
-    submission_criteria: synthSubmissionCriteria(a, ctx),
+    submission_criteria: nonEmpty(a.submission_criteria) ? a.submission_criteria : synthSubmissionCriteria(a, ctx),
     object_type: 'action',
-    category: a.nameZh?.trim() || humanize(a.name),
-    actor: a.actorRef?.kind ? [capActorKind(a.actorRef.kind)] : ['Agent'],
-    trigger: (a.triggeredByEventIds ?? [])
-      .filter((eid) => ctx.eventName.has(eid))
-      .map((eid) => ctx.eventName.get(eid)!),
-    target_objects: collectTargetObjects(a, ctx),
+    category: nonEmpty(a.category) ? a.category : a.nameZh?.trim() || humanize(a.name),
+    actor: has(a.actor) ? a.actor : a.actorRef?.kind ? [capActorKind(a.actorRef.kind)] : ['Agent'],
+    trigger: has(a.trigger)
+      ? a.trigger
+      : (a.triggeredByEventIds ?? []).filter((eid) => ctx.eventName.has(eid)).map((eid) => ctx.eventName.get(eid)!),
+    target_objects: has(a.target_objects) ? a.target_objects : collectTargetObjects(a, ctx),
     inputs,
     outputs,
-    action_steps: (a.steps ?? []).map((s) => projectActionStep(s, ctx)),
-    system_prompt:
-      `You are an automated ${actorLabel(a.actorRef?.kind)} responsible for the "${a.name}" action. ` +
-      `${a.description?.trim() ?? ''} Read the required objects from the ontology, honor every ` +
-      `precondition, and perform the steps in order.`,
-    user_prompt:
-      `Execute "${a.name}" using ${inputNames}. ${a.description?.trim() ?? ''} ` +
-      `Produce ${outputNames} and emit the appropriate events.`,
-    tool_use: collectToolUse(a),
-    side_effects: projectSideEffects(a, ctx),
-    triggered_event: uniq(
-      (a.emitsEvents ?? [])
-        .map((em) => em.eventTypeId)
-        .filter((eid) => ctx.eventName.has(eid))
-        .map((eid) => ctx.eventName.get(eid)!),
-    ),
+    action_steps: has(a.action_steps) ? a.action_steps : (a.steps ?? []).map((s) => projectActionStep(s, ctx)),
+    system_prompt: nonEmpty(a.system_prompt)
+      ? a.system_prompt
+      : `You are an automated ${actorLabel(a.actorRef?.kind)} responsible for the "${a.name}" action. ` +
+        `${a.description?.trim() ?? ''} Read the required objects, honor every precondition, and perform the steps in order.`,
+    user_prompt: nonEmpty(a.user_prompt)
+      ? a.user_prompt
+      : `Execute "${a.name}" using ${inputNames}. ${a.description?.trim() ?? ''} Produce ${outputNames} and emit the appropriate events.`,
+    typescript_code: a.typescript_code ?? '',
+    tool_use: a.tool_use ?? collectToolUse(a),
+    side_effects: a.side_effects ?? projectSideEffects(a, ctx),
+    triggered_event: has(a.triggered_event)
+      ? a.triggered_event
+      : uniq((a.emitsEvents ?? []).map((em) => em.eventTypeId).filter((eid) => ctx.eventName.has(eid)).map((eid) => ctx.eventName.get(eid)!)),
   };
 }
 
@@ -574,7 +592,7 @@ function projectEvent(e: EventType, ctx: SpecCtx): SpecEvent {
 
   return {
     name: ctx.eventName.get(e.id) ?? eventSpecName(e.name || e.id),
-    description: e.description?.trim() || '',
+    description: nonEmpty(e.descriptionZh) ? e.descriptionZh : e.description?.trim() || '',
     payload: {
       source_action: sourceActionId ? ctx.actionName.get(sourceActionId)! : '',
       event_data: eventData,
@@ -617,7 +635,7 @@ function projectWorkflow(p: Process, ctx: SpecCtx): SpecWorkflow {
     return {
       order: String(step.order),
       name: a ? ctx.actionName.get(a.id)! : stripPrefix(step.actionTypeId),
-      description: a?.description?.trim() || '',
+      description: a ? cjkOr(a.descriptionZh, a.description?.trim() || '') : '',
       type: workflowStepType(a),
       condition: edge?.condition?.trim() || edge?.label?.en?.trim() || '',
     };
@@ -637,8 +655,8 @@ function projectWorkflow(p: Process, ctx: SpecCtx): SpecWorkflow {
   return {
     id: stripPrefix(p.id),
     name: camel(p.name?.en || '') || stripPrefix(p.id),
-    description: p.description?.trim() || p.name?.en?.trim() || '',
-    actor,
+    description: cjkOr(p.description, p.name?.zh?.trim() || p.name?.en?.trim() || ''),
+    actor: actor.length > 0 ? actor : ['Agent'],
     trigger,
     actions: steps,
     triggered_event: triggeredEvent,

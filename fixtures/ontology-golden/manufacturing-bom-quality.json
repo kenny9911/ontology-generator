@@ -42,52 +42,52 @@
       "uuid": "10000000000000000000000000000001",
       "name": "Part",
       "nameZh": "零件",
-      "description": "A manufactured or purchased item identified by part_number, carrying its currently effective revision, safety classification, and inspection requirement; SAP ECC MARA/MARC master.",
+      "description": "由 part_number 标识的制造或采购物料，携带当前生效修订、安全分级与检验要求；SAP ECC MARA/MARC 主数据。",
       "descriptionZh": "由 part_number 标识的制造或采购物料，携带当前生效修订、安全分级与检验要求；SAP ECC MARA/MARC 主数据。",
       "type": "data",
-      "relationship_description": "BillOfMaterials includes Part. BillOfMaterials assembles Part. EngineeringChange affects Part. WorkOrder produces Part. Supplier supplies Part. InspectionLot inspects Part. NonConformance affects Part.",
+      "relationship_description": "【物料清单】包含【零件】。【物料清单】装配【零件】。【工程变更】影响【零件】。【生产工单】生产【零件】。【供应商】供应【零件】。【检验批】检验【零件】。【不合格品】涉及【零件】。",
       "primary_key": "part_number",
       "properties": [
         {
           "name": "part_number",
           "type": "String",
-          "description": "Primary key. Format NN-A (e.g. 12-A).",
+          "description": "零件号",
           "nameZh": "零件号"
         },
         {
           "name": "revision",
           "type": "String",
-          "description": "Currently effective revision, e.g. E.",
+          "description": "修订",
           "nameZh": "修订"
         },
         {
           "name": "description",
           "type": "String",
-          "description": "",
+          "description": "描述",
           "nameZh": "描述"
         },
         {
           "name": "safety_class",
           "type": "List<String>",
-          "description": "Drives [R-03],[R-13],[R-15].",
+          "description": "安全分级",
           "nameZh": "安全分级"
         },
         {
           "name": "inspection_required",
           "type": "Boolean",
-          "description": "Drives [R-07].",
+          "description": "需检验",
           "nameZh": "需检验"
         },
         {
           "name": "unit_of_measure",
           "type": "String",
-          "description": "",
+          "description": "计量单位",
           "nameZh": "计量单位"
         },
         {
           "name": "make_or_buy",
           "type": "List<String>",
-          "description": "Buy parts link to a Supplier.",
+          "description": "自制或外购",
           "nameZh": "自制或外购"
         }
       ],
@@ -118,22 +118,22 @@
       "uuid": "10000000000000000000000000000002",
       "name": "BillOfMaterials",
       "nameZh": "物料清单",
-      "description": "The revisioned component structure of an assembled Part, with an effectivity window and a component list; SAP ECC STKO/STPO.",
+      "description": "已装配零件的修订化组件结构，含生效期窗口与组件清单；SAP ECC STKO/STPO。",
       "descriptionZh": "已装配零件的修订化组件结构，含生效期窗口与组件清单；SAP ECC STKO/STPO。",
       "type": "data",
-      "relationship_description": "BillOfMaterials includes Part. BillOfMaterials assembles Part. EngineeringChange produces BillOfMaterials. WorkOrder built to BillOfMaterials. BillOfMaterials.parent_part_number references Part.",
+      "relationship_description": "【物料清单】包含【零件】。【物料清单】装配【零件】。【工程变更】产出【物料清单】。【生产工单】依据【物料清单】。",
       "primary_key": "bom_id",
       "properties": [
         {
           "name": "bom_id",
           "type": "String",
-          "description": "Primary key.",
+          "description": "物料清单编号",
           "nameZh": "物料清单编号"
         },
         {
           "name": "parent_part_number",
           "type": "String",
-          "description": "FK -> Part.part_number. The assembled Part.",
+          "description": "母件零件号",
           "nameZh": "母件零件号",
           "is_foreign_key": true,
           "references": "objectType:part"
@@ -141,25 +141,25 @@
         {
           "name": "bom_revision",
           "type": "String",
-          "description": "",
+          "description": "清单修订",
           "nameZh": "清单修订"
         },
         {
           "name": "effective_from",
           "type": "Date",
-          "description": "Governed by [R-06].",
+          "description": "生效起始日",
           "nameZh": "生效起始日"
         },
         {
           "name": "effective_to",
           "type": "Date",
-          "description": "",
+          "description": "生效结束日",
           "nameZh": "生效结束日"
         },
         {
           "name": "components",
           "type": "List<String>",
-          "description": "List of {part_number (FK -> Part), quantity, component_revision}.",
+          "description": "组件清单",
           "nameZh": "组件清单"
         }
       ],
@@ -189,58 +189,58 @@
       "uuid": "10000000000000000000000000000003",
       "name": "EngineeringChange",
       "nameZh": "工程变更",
-      "description": "A governed request to change product structure, moving Draft -> Classified -> Approved/Rejected -> Released; Jira ECR record.",
+      "description": "对产品结构的受控变更请求，状态为草稿->已分类->已批准/已拒绝->已发布；Jira ECR 记录。",
       "descriptionZh": "对产品结构的受控变更请求，状态为草稿->已分类->已批准/已拒绝->已发布；Jira ECR 记录。",
       "type": "system",
-      "relationship_description": "EngineeringChange affects Part. EngineeringChange produces BillOfMaterials.",
+      "relationship_description": "【工程变更】影响【零件】。【工程变更】产出【物料清单】。",
       "primary_key": "ecr_id",
       "properties": [
         {
           "name": "ecr_id",
           "type": "String",
-          "description": "Primary key. Format ECR-#####.",
+          "description": "变更编号",
           "nameZh": "变更编号"
         },
         {
           "name": "status",
           "type": "List<String>",
-          "description": "",
+          "description": "状态",
           "nameZh": "状态"
         },
         {
           "name": "category",
           "type": "List<String>",
-          "description": "Set by ClassifyEngineeringChange.",
+          "description": "类别",
           "nameZh": "类别"
         },
         {
           "name": "affected_parts",
           "type": "List<String>",
-          "description": "List (FK -> Part.part_number).",
+          "description": "受影响零件",
           "nameZh": "受影响零件"
         },
         {
           "name": "safety_classified",
           "type": "Boolean",
-          "description": "Drives [R-03].",
+          "description": "安全分类标记",
           "nameZh": "安全分类标记"
         },
         {
           "name": "requires_second_approval",
           "type": "Boolean",
-          "description": "",
+          "description": "需二次批准",
           "nameZh": "需二次批准"
         },
         {
           "name": "emergency",
           "type": "Boolean",
-          "description": "Exception E2 to [R-06].",
+          "description": "紧急变更",
           "nameZh": "紧急变更"
         },
         {
           "name": "approver_ids",
           "type": "List<String>",
-          "description": "Quorum check [R-05].",
+          "description": "批准人编号",
           "nameZh": "批准人编号"
         }
       ],
@@ -270,22 +270,22 @@
       "uuid": "10000000000000000000000000000004",
       "name": "WorkOrder",
       "nameZh": "生产工单",
-      "description": "A shop-floor order to build a parent Part against a frozen BOM revision, progressing Created -> Released -> InProcess -> Closed (or Blocked); SAP ECC AUFK/AFKO.",
+      "description": "依冻结的清单修订生产母件的车间工单，状态为已创建->已下达->进行中->已关闭（或已冻结）；SAP ECC AUFK/AFKO。",
       "descriptionZh": "依冻结的清单修订生产母件的车间工单，状态为已创建->已下达->进行中->已关闭（或已冻结）；SAP ECC AUFK/AFKO。",
       "type": "data",
-      "relationship_description": "WorkOrder built to BillOfMaterials. WorkOrder produces Part. InspectionLot against WorkOrder. WorkOrder.parent_part_number references Part. WorkOrder.bom_id references BillOfMaterials.",
+      "relationship_description": "【生产工单】依据【物料清单】。【生产工单】生产【零件】。【检验批】对应【生产工单】。",
       "primary_key": "work_order_id",
       "properties": [
         {
           "name": "work_order_id",
           "type": "String",
-          "description": "Primary key. Format WO-######.",
+          "description": "工单编号",
           "nameZh": "工单编号"
         },
         {
           "name": "parent_part_number",
           "type": "String",
-          "description": "FK -> Part.",
+          "description": "母件零件号",
           "nameZh": "母件零件号",
           "is_foreign_key": true,
           "references": "objectType:part"
@@ -293,7 +293,7 @@
         {
           "name": "bom_id",
           "type": "String",
-          "description": "FK -> BillOfMaterials.bom_id. Revision frozen at release per [R-09].",
+          "description": "物料清单编号",
           "nameZh": "物料清单编号",
           "is_foreign_key": true,
           "references": "objectType:billOfMaterials"
@@ -301,19 +301,19 @@
         {
           "name": "bom_revision",
           "type": "String",
-          "description": "The revision built to.",
+          "description": "清单修订",
           "nameZh": "清单修订"
         },
         {
           "name": "status",
           "type": "List<String>",
-          "description": "[R-01],[R-16].",
+          "description": "状态",
           "nameZh": "状态"
         },
         {
           "name": "quantity",
           "type": "Integer",
-          "description": "",
+          "description": "数量",
           "nameZh": "数量"
         }
       ],
@@ -343,34 +343,34 @@
       "uuid": "10000000000000000000000000000005",
       "name": "Supplier",
       "nameZh": "供应商",
-      "description": "A vendor of purchased Parts, carrying a qualification status and a rolling 90-day rejection rate; SAP ECC LFA1.",
+      "description": "外购零件的供应商，携带资格状态与滚动 90 天拒收率；SAP ECC LFA1。",
       "descriptionZh": "外购零件的供应商，携带资格状态与滚动 90 天拒收率；SAP ECC LFA1。",
       "type": "data",
-      "relationship_description": "Supplier supplies Part. Supplier responsible for NonConformance.",
+      "relationship_description": "【供应商】供应【零件】。【供应商】对应【不合格品】。",
       "primary_key": "supplier_id",
       "properties": [
         {
           "name": "supplier_id",
           "type": "String",
-          "description": "Primary key.",
+          "description": "供应商编号",
           "nameZh": "供应商编号"
         },
         {
           "name": "name",
           "type": "String",
-          "description": "",
+          "description": "名称",
           "nameZh": "名称"
         },
         {
           "name": "qualification_status",
           "type": "List<String>",
-          "description": "[R-10].",
+          "description": "资格状态",
           "nameZh": "资格状态"
         },
         {
           "name": "rejection_rate_90d",
           "type": "Float",
-          "description": "Drives [R-11] (threshold 2%).",
+          "description": "90天拒收率",
           "nameZh": "90天拒收率"
         }
       ],
@@ -400,22 +400,22 @@
       "uuid": "10000000000000000000000000000006",
       "name": "InspectionLot",
       "nameZh": "检验批",
-      "description": "A quality lot opened against a finished or incoming Part lot, carrying a sampling plan and a usage-decision status; SAP ECC QALS.",
+      "description": "针对成品或来料零件批开立的质量批，携带抽样计划与使用决策状态；SAP ECC QALS。",
       "descriptionZh": "针对成品或来料零件批开立的质量批，携带抽样计划与使用决策状态；SAP ECC QALS。",
       "type": "data",
-      "relationship_description": "InspectionLot inspects Part. InspectionLot against WorkOrder. Inspection records InspectionLot. InspectionLot.part_number references Part. InspectionLot.work_order_id references WorkOrder. InspectionLot.supplier_id references Supplier.",
+      "relationship_description": "【检验批】检验【零件】。【检验批】对应【生产工单】。【检验记录】记录【检验批】。",
       "primary_key": "lot_id",
       "properties": [
         {
           "name": "lot_id",
           "type": "String",
-          "description": "Primary key. Format LOT-########.",
+          "description": "批号",
           "nameZh": "批号"
         },
         {
           "name": "part_number",
           "type": "String",
-          "description": "FK -> Part.",
+          "description": "零件号",
           "nameZh": "零件号",
           "is_foreign_key": true,
           "references": "objectType:part"
@@ -423,7 +423,7 @@
         {
           "name": "work_order_id",
           "type": "String",
-          "description": "FK -> WorkOrder. Null for incoming inspection.",
+          "description": "工单编号",
           "nameZh": "工单编号",
           "is_foreign_key": true,
           "references": "objectType:workOrder"
@@ -431,7 +431,7 @@
         {
           "name": "supplier_id",
           "type": "String",
-          "description": "FK -> Supplier. Set for incoming inspection.",
+          "description": "供应商编号",
           "nameZh": "供应商编号",
           "is_foreign_key": true,
           "references": "objectType:supplier"
@@ -439,19 +439,19 @@
         {
           "name": "lot_type",
           "type": "List<String>",
-          "description": "",
+          "description": "批类型",
           "nameZh": "批类型"
         },
         {
           "name": "sample_size",
           "type": "Integer",
-          "description": "",
+          "description": "样本量",
           "nameZh": "样本量"
         },
         {
           "name": "status",
           "type": "List<String>",
-          "description": "[R-04],[R-08].",
+          "description": "状态",
           "nameZh": "状态"
         }
       ],
@@ -482,22 +482,22 @@
       "uuid": "10000000000000000000000000000007",
       "name": "Inspection",
       "nameZh": "检验记录",
-      "description": "The recorded result of measuring an InspectionLot's characteristics, with a defect count and an aggregate Pass/Fail; immutable once posted; Quality Data Mart.",
+      "description": "对检验批特性测量后的结果记录，含缺陷数与汇总合格/不合格；过账后不可更改；质量数据集市。",
       "descriptionZh": "对检验批特性测量后的结果记录，含缺陷数与汇总合格/不合格；过账后不可更改；质量数据集市。",
       "type": "data",
-      "relationship_description": "Inspection records InspectionLot. Inspection.lot_id references InspectionLot.",
+      "relationship_description": "【检验记录】记录【检验批】。",
       "primary_key": "inspection_id",
       "properties": [
         {
           "name": "inspection_id",
           "type": "String",
-          "description": "Primary key.",
+          "description": "检验编号",
           "nameZh": "检验编号"
         },
         {
           "name": "lot_id",
           "type": "String",
-          "description": "FK -> InspectionLot.",
+          "description": "批号",
           "nameZh": "批号",
           "is_foreign_key": true,
           "references": "objectType:inspectionLot"
@@ -505,31 +505,31 @@
         {
           "name": "characteristics",
           "type": "List<String>",
-          "description": "List of {name, measured_value, result enum(Pass,Fail)}.",
+          "description": "特性清单",
           "nameZh": "特性清单"
         },
         {
           "name": "defect_count",
           "type": "Integer",
-          "description": "Compared to AQL number [R-08].",
+          "description": "缺陷数",
           "nameZh": "缺陷数"
         },
         {
           "name": "aggregate_result",
           "type": "List<String>",
-          "description": "",
+          "description": "汇总结果",
           "nameZh": "汇总结果"
         },
         {
           "name": "inspected_by",
           "type": "String",
-          "description": "Quality Inspector id.",
+          "description": "检验员",
           "nameZh": "检验员"
         },
         {
           "name": "posted",
           "type": "Boolean",
-          "description": "Once true, immutable per [R-17].",
+          "description": "已过账",
           "nameZh": "已过账"
         }
       ],
@@ -558,22 +558,22 @@
       "uuid": "10000000000000000000000000000008",
       "name": "NonConformance",
       "nameZh": "不合格品",
-      "description": "A quality defect record opened on a rejected lot, carrying severity, owner, and status Open -> Assigned -> Dispositioned -> Closed; Quality Data Mart.",
+      "description": "针对拒收批开立的质量缺陷记录，携带严重度、负责人及状态：开立->已分派->已处置->已关闭；质量数据集市。",
       "descriptionZh": "针对拒收批开立的质量缺陷记录，携带严重度、负责人及状态：开立->已分派->已处置->已关闭；质量数据集市。",
       "type": "data",
-      "relationship_description": "NonConformance affects Part. NonConformance resolved by Disposition. CorrectiveAction resolves NonConformance. Supplier responsible for NonConformance. NonConformance.part_number references Part. NonConformance.lot_id references InspectionLot. NonConformance.supplier_id references Supplier.",
+      "relationship_description": "【不合格品】涉及【零件】。【不合格品】处置为【处置】。【纠正措施】纠正【不合格品】。【供应商】对应【不合格品】。",
       "primary_key": "ncr_id",
       "properties": [
         {
           "name": "ncr_id",
           "type": "String",
-          "description": "Primary key. Format NCR-#####.",
+          "description": "不合格编号",
           "nameZh": "不合格编号"
         },
         {
           "name": "part_number",
           "type": "String",
-          "description": "FK -> Part.",
+          "description": "零件号",
           "nameZh": "零件号",
           "is_foreign_key": true,
           "references": "objectType:part"
@@ -581,7 +581,7 @@
         {
           "name": "lot_id",
           "type": "String",
-          "description": "FK -> InspectionLot.",
+          "description": "批号",
           "nameZh": "批号",
           "is_foreign_key": true,
           "references": "objectType:inspectionLot"
@@ -589,7 +589,7 @@
         {
           "name": "supplier_id",
           "type": "String",
-          "description": "FK -> Supplier.",
+          "description": "供应商编号",
           "nameZh": "供应商编号",
           "is_foreign_key": true,
           "references": "objectType:supplier"
@@ -597,25 +597,25 @@
         {
           "name": "severity",
           "type": "List<String>",
-          "description": "[R-20].",
+          "description": "严重度",
           "nameZh": "严重度"
         },
         {
           "name": "owner_id",
           "type": "String",
-          "description": "Assigned within 24h [R-12].",
+          "description": "负责人编号",
           "nameZh": "负责人编号"
         },
         {
           "name": "status",
           "type": "List<String>",
-          "description": "",
+          "description": "状态",
           "nameZh": "状态"
         },
         {
           "name": "opened_at",
           "type": "Timestamp",
-          "description": "Clock for [R-12],[R-15].",
+          "description": "开立时间",
           "nameZh": "开立时间"
         }
       ],
@@ -647,22 +647,22 @@
       "uuid": "10000000000000000000000000000009",
       "name": "Disposition",
       "nameZh": "处置",
-      "description": "The decision on how to handle a nonconforming lot — UseAsIs, Rework, ReturnToSupplier, Quarantine, or Scrap — with optional QM sign-off; Quality Data Mart.",
+      "description": "对不合格批的处置决定——照用、返工、退供应商、隔离或报废——并视需要由质量经理签核；质量数据集市。",
       "descriptionZh": "对不合格批的处置决定——照用、返工、退供应商、隔离或报废——并视需要由质量经理签核；质量数据集市。",
       "type": "data",
-      "relationship_description": "NonConformance resolved by Disposition. Disposition.ncr_id references NonConformance.",
+      "relationship_description": "【不合格品】处置为【处置】。",
       "primary_key": "disposition_id",
       "properties": [
         {
           "name": "disposition_id",
           "type": "String",
-          "description": "Primary key.",
+          "description": "处置编号",
           "nameZh": "处置编号"
         },
         {
           "name": "ncr_id",
           "type": "String",
-          "description": "FK -> NonConformance.",
+          "description": "不合格编号",
           "nameZh": "不合格编号",
           "is_foreign_key": true,
           "references": "objectType:nonConformance"
@@ -670,13 +670,13 @@
         {
           "name": "decision",
           "type": "List<String>",
-          "description": "[R-02],[R-13].",
+          "description": "决定",
           "nameZh": "决定"
         },
         {
           "name": "approved_by",
           "type": "String",
-          "description": "QM sign-off when required [R-13],[R-19].",
+          "description": "批准人",
           "nameZh": "批准人"
         }
       ],
@@ -705,22 +705,22 @@
       "uuid": "1000000000000000000000000000000a",
       "name": "CorrectiveAction",
       "nameZh": "纠正措施",
-      "description": "A CAPA opened from a disposition and root-cause analysis, with a due date and verification gate; must be verified effective before its NonConformance can close; Quality Data Mart.",
+      "description": "由处置与根因分析开立的纠正措施(CAPA)，含到期日与验证关卡；其不合格品关闭前必须验证有效；质量数据集市。",
       "descriptionZh": "由处置与根因分析开立的纠正措施(CAPA)，含到期日与验证关卡；其不合格品关闭前必须验证有效；质量数据集市。",
       "type": "data",
-      "relationship_description": "CorrectiveAction resolves NonConformance. CorrectiveAction.ncr_id references NonConformance.",
+      "relationship_description": "【纠正措施】纠正【不合格品】。",
       "primary_key": "capa_id",
       "properties": [
         {
           "name": "capa_id",
           "type": "String",
-          "description": "Primary key. Format CAPA-#####.",
+          "description": "纠正措施编号",
           "nameZh": "纠正措施编号"
         },
         {
           "name": "ncr_id",
           "type": "String",
-          "description": "FK -> NonConformance.",
+          "description": "不合格编号",
           "nameZh": "不合格编号",
           "is_foreign_key": true,
           "references": "objectType:nonConformance"
@@ -728,25 +728,25 @@
         {
           "name": "root_cause",
           "type": "String",
-          "description": "",
+          "description": "根本原因",
           "nameZh": "根本原因"
         },
         {
           "name": "due_date",
           "type": "Date",
-          "description": "",
+          "description": "到期日",
           "nameZh": "到期日"
         },
         {
           "name": "verified_effective",
           "type": "Boolean",
-          "description": "Gate for [R-18].",
+          "description": "已验证有效",
           "nameZh": "已验证有效"
         },
         {
           "name": "status",
           "type": "List<String>",
-          "description": "",
+          "description": "状态",
           "nameZh": "状态"
         }
       ],
@@ -1139,16 +1139,16 @@
     {
       "id": "rule:R-01-workorder-effective-revision",
       "uuid": "30000000000000000000000000000001",
-      "specificScenarioStage": "On WorkOrder release",
-      "businessLogicRuleName": "WorkOrder release requires effective revisions",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "工单下达要求生效修订",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On WorkOrder release",
-      "standardizedLogicRule": "A WorkOrder may not be released unless every component Part in its BillOfMaterials is at the currently effective revision.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "除非其物料清单中的每个组件零件均处于当前生效修订，否则不得下达生产工单。",
       "relatedEntities": [
-        "WorkOrder (Work_Order)",
-        "BillOfMaterials (Bill_Of_Materials)",
-        "Part (Part)"
+        "生产工单 (Work_Order)",
+        "物料清单 (Bill_Of_Materials)",
+        "零件 (Part)"
       ],
       "businessBackgroundReason": "Section A of POL-QMS-08: controls on revision effectivity and the engineering-change gate.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1210,17 +1210,17 @@
     {
       "id": "rule:R-02-quarantine-blocks-release",
       "uuid": "30000000000000000000000000000002",
-      "specificScenarioStage": "Constraint",
-      "businessLogicRuleName": "Quarantine disposition blocks release",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "隔离处置阻止下达",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
       "submissionCriteria": "",
-      "standardizedLogicRule": "A component Part that has an open NonConformance with Disposition = Quarantine shall not be consumed by any newly released WorkOrder.",
+      "standardizedLogicRule": "存在处置为隔离的开立不合格品的组件零件，不得被任何新下达的生产工单消耗。",
       "relatedEntities": [
-        "Part (Part)",
-        "NonConformance (Non_Conformance)",
-        "Disposition (Disposition)",
-        "WorkOrder (Work_Order)"
+        "零件 (Part)",
+        "不合格品 (Non_Conformance)",
+        "处置 (Disposition)",
+        "生产工单 (Work_Order)"
       ],
       "businessBackgroundReason": "Section A of POL-QMS-08: controls on revision effectivity and the engineering-change gate.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1264,15 +1264,15 @@
     {
       "id": "rule:R-03-safety-second-approval",
       "uuid": "30000000000000000000000000000003",
-      "specificScenarioStage": "Authorization",
-      "businessLogicRuleName": "Safety changes need second approval",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "安全变更需二次批准",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
       "submissionCriteria": "",
-      "standardizedLogicRule": "Any EngineeringChange that affects a Part whose safety_class is Critical is required to obtain a second engineer's approval before it may be released.",
+      "standardizedLogicRule": "任何影响 safety_class 为 Critical 零件的工程变更，在发布前必须取得第二位工程师的批准。",
       "relatedEntities": [
-        "EngineeringChange (Engineering_Change)",
-        "Part (Part)"
+        "工程变更 (Engineering_Change)",
+        "零件 (Part)"
       ],
       "businessBackgroundReason": "Section A of POL-QMS-08: controls on revision effectivity and the engineering-change gate.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1315,16 +1315,16 @@
     {
       "id": "rule:R-04-no-ship-until-accepted",
       "uuid": "30000000000000000000000000000004",
-      "specificScenarioStage": "State Transition",
-      "businessLogicRuleName": "No ship until lot accepted; reject opens NCR",
+      "specificScenarioStage": "状态流转",
+      "businessLogicRuleName": "检验合格前不得发运；拒收开立不合格品",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
       "submissionCriteria": "",
-      "standardizedLogicRule": "A finished lot may not ship until its InspectionLot is Accepted; a Rejected InspectionLot shall automatically open a NonConformance.",
+      "standardizedLogicRule": "成品批在其检验批被接受前不得发运；被拒收的检验批应自动开立不合格品。",
       "relatedEntities": [
-        "InspectionLot (Inspection_Lot)",
-        "NonConformance (Non_Conformance)",
-        "Part (Part)"
+        "检验批 (Inspection_Lot)",
+        "不合格品 (Non_Conformance)",
+        "零件 (Part)"
       ],
       "businessBackgroundReason": "Section B of POL-QMS-08: build, backflush, inspection and lot-closure controls.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1367,14 +1367,14 @@
     {
       "id": "rule:R-05-ccb-quorum",
       "uuid": "30000000000000000000000000000005",
-      "specificScenarioStage": "Constraint",
-      "businessLogicRuleName": "CCB quorum of three",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "变更委员会法定人数为三",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
       "submissionCriteria": "",
-      "standardizedLogicRule": "An EngineeringChange must be approved by a Change Control Board quorum of at least three voting members before it moves to status Approved.",
+      "standardizedLogicRule": "工程变更在转为已批准状态前，须经变更控制委员会至少三名表决成员的法定批准。",
       "relatedEntities": [
-        "EngineeringChange (Engineering_Change)"
+        "工程变更 (Engineering_Change)"
       ],
       "businessBackgroundReason": "Section A of POL-QMS-08: controls on revision effectivity and the engineering-change gate.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1416,15 +1416,15 @@
     {
       "id": "rule:R-06-effective-from-lead-time",
       "uuid": "30000000000000000000000000000006",
-      "specificScenarioStage": "Temporal",
-      "businessLogicRuleName": "BOM effectivity lead time",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "物料清单生效提前期",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
       "submissionCriteria": "",
-      "standardizedLogicRule": "A BillOfMaterials revision shall carry an effective_from date no fewer than 5 business days in the future, except that an EngineeringChange flagged emergency = true may be made effective immediately with VP of Quality approval.",
+      "standardizedLogicRule": "物料清单修订的 effective_from 日期不得少于未来 5 个工作日，但标记 emergency = true 的工程变更经质量副总裁批准可立即生效。",
       "relatedEntities": [
-        "BillOfMaterials (Bill_Of_Materials)",
-        "EngineeringChange (Engineering_Change)"
+        "物料清单 (Bill_Of_Materials)",
+        "工程变更 (Engineering_Change)"
       ],
       "businessBackgroundReason": "Section A of POL-QMS-08: controls on revision effectivity and the engineering-change gate.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1467,15 +1467,15 @@
     {
       "id": "rule:R-07-inspectionlot-required",
       "uuid": "30000000000000000000000000000007",
-      "specificScenarioStage": "Constraint",
-      "businessLogicRuleName": "InspectionLot required when flagged",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "需检验时必开检验批",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
       "submissionCriteria": "",
-      "standardizedLogicRule": "An InspectionLot is required for every finished lot of any Part whose inspection_required flag is true.",
+      "standardizedLogicRule": "对 inspection_required 标志为真的任何零件的每个成品批，均需开立检验批。",
       "relatedEntities": [
-        "InspectionLot (Inspection_Lot)",
-        "Part (Part)"
+        "检验批 (Inspection_Lot)",
+        "零件 (Part)"
       ],
       "businessBackgroundReason": "Section B of POL-QMS-08: build, backflush, inspection and lot-closure controls.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1517,15 +1517,15 @@
     {
       "id": "rule:R-08-aql-acceptance",
       "uuid": "30000000000000000000000000000008",
-      "specificScenarioStage": "Derivation",
-      "businessLogicRuleName": "AQL acceptance number",
+      "specificScenarioStage": "指标推导",
+      "businessLogicRuleName": "AQL 接收数",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
       "submissionCriteria": "",
-      "standardizedLogicRule": "An InspectionLot shall be set to Accepted only when the observed defect count is at or below the AQL 1.0 acceptance number for the applicable sample size; otherwise it must be set to Rejected.",
+      "standardizedLogicRule": "检验批仅在观察缺陷数不超过适用样本量的 AQL 1.0 接收数时方可置为接受，否则须置为拒收。",
       "relatedEntities": [
-        "InspectionLot (Inspection_Lot)",
-        "Inspection (Inspection)"
+        "检验批 (Inspection_Lot)",
+        "检验记录 (Inspection)"
       ],
       "businessBackgroundReason": "Section B of POL-QMS-08: build, backflush, inspection and lot-closure controls.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1569,16 +1569,16 @@
     {
       "id": "rule:R-09-backflush-frozen-revision",
       "uuid": "30000000000000000000000000000009",
-      "specificScenarioStage": "Constraint",
-      "businessLogicRuleName": "Backflush against frozen revision",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "按冻结修订倒冲",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
       "submissionCriteria": "",
-      "standardizedLogicRule": "Every component goods issue must be backflushed against the bom_revision recorded on the released WorkOrder, and may not be backflushed against a later revision.",
+      "standardizedLogicRule": "每次组件发料必须按已下达工单上记录的 bom_revision 倒冲，且不得按更晚修订倒冲。",
       "relatedEntities": [
-        "WorkOrder (Work_Order)",
-        "BillOfMaterials (Bill_Of_Materials)",
-        "Part (Part)"
+        "生产工单 (Work_Order)",
+        "物料清单 (Bill_Of_Materials)",
+        "零件 (Part)"
       ],
       "businessBackgroundReason": "Section B of POL-QMS-08: build, backflush, inspection and lot-closure controls.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1621,14 +1621,14 @@
     {
       "id": "rule:R-10-approved-supplier-only",
       "uuid": "3000000000000000000000000000000a",
-      "specificScenarioStage": "Authorization",
-      "businessLogicRuleName": "Receive only from approved suppliers",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "仅从合格供应商收货",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
       "submissionCriteria": "",
-      "standardizedLogicRule": "Goods may be received only from a Supplier whose qualification_status is Approved.",
+      "standardizedLogicRule": "仅可从 qualification_status 为 Approved 的供应商收货。",
       "relatedEntities": [
-        "Supplier (Supplier)"
+        "供应商 (Supplier)"
       ],
       "businessBackgroundReason": "Section C of POL-QMS-08: supplier qualification and scorecard controls.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1669,14 +1669,14 @@
     {
       "id": "rule:R-11-rejection-rate-requalification",
       "uuid": "3000000000000000000000000000000b",
-      "specificScenarioStage": "Constraint",
-      "businessLogicRuleName": "Rejection-rate auto re-qualification",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "拒收率自动再资格化",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
       "submissionCriteria": "",
-      "standardizedLogicRule": "A Supplier whose incoming-lot rejection rate exceeds 2% over any rolling 90-day window shall be automatically flagged for re-qualification.",
+      "standardizedLogicRule": "在任何滚动 90 天窗口内来料批拒收率超过 2% 的供应商，应被自动标记为需再资格化。",
       "relatedEntities": [
-        "Supplier (Supplier)"
+        "供应商 (Supplier)"
       ],
       "businessBackgroundReason": "Section C of POL-QMS-08: supplier qualification and scorecard controls.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1717,14 +1717,14 @@
     {
       "id": "rule:R-12-ncr-owner-24h",
       "uuid": "3000000000000000000000000000000c",
-      "specificScenarioStage": "Temporal",
-      "businessLogicRuleName": "NCR owner within 24h",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "不合格品 24 小时内指派负责人",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
       "submissionCriteria": "",
-      "standardizedLogicRule": "A NonConformance must be assigned an owner within 24 hours of being opened.",
+      "standardizedLogicRule": "不合格品须在开立后 24 小时内指派负责人。",
       "relatedEntities": [
-        "NonConformance (Non_Conformance)"
+        "不合格品 (Non_Conformance)"
       ],
       "businessBackgroundReason": "Section D of POL-QMS-08: NCR triage, disposition sign-off, escalation and CAPA gating.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1766,15 +1766,15 @@
     {
       "id": "rule:R-13-useasis-rework-qm-signoff",
       "uuid": "3000000000000000000000000000000d",
-      "specificScenarioStage": "Authorization",
-      "businessLogicRuleName": "QM sign-off for UseAsIs/Rework on safety parts",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "安全零件照用/返工需质量经理签核",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
       "submissionCriteria": "",
-      "standardizedLogicRule": "A Disposition of UseAsIs or Rework on a Part whose safety_class is Critical is required to carry Quality Manager sign-off.",
+      "standardizedLogicRule": "对 safety_class 为 Critical 零件作出照用或返工处置时，须由质量经理签核。",
       "relatedEntities": [
-        "Disposition (Disposition)",
-        "Part (Part)"
+        "处置 (Disposition)",
+        "零件 (Part)"
       ],
       "businessBackgroundReason": "Section D of POL-QMS-08: NCR triage, disposition sign-off, escalation and CAPA gating.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1818,16 +1818,16 @@
     {
       "id": "rule:R-14-recurrence-capa",
       "uuid": "3000000000000000000000000000000e",
-      "specificScenarioStage": "Constraint",
-      "businessLogicRuleName": "Recurring NCR triggers CAPA",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "重复不合格触发纠正措施",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
       "submissionCriteria": "",
-      "standardizedLogicRule": "A NonConformance that recurs three or more times within any 90-day window for the same Part shall trigger a formal CorrectiveAction (CAPA).",
+      "standardizedLogicRule": "同一零件在任何 90 天窗口内重复出现三次或以上的不合格品，应触发正式纠正措施(CAPA)。",
       "relatedEntities": [
-        "NonConformance (Non_Conformance)",
-        "CorrectiveAction (Corrective_Action)",
-        "Part (Part)"
+        "不合格品 (Non_Conformance)",
+        "纠正措施 (Corrective_Action)",
+        "零件 (Part)"
       ],
       "businessBackgroundReason": "Section D of POL-QMS-08: NCR triage, disposition sign-off, escalation and CAPA gating.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1867,15 +1867,15 @@
     {
       "id": "rule:R-15-safety-escalation-4h",
       "uuid": "3000000000000000000000000000000f",
-      "specificScenarioStage": "Temporal",
-      "businessLogicRuleName": "Safety NCR escalation within 4h",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "安全不合格品 4 小时内升级",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
       "submissionCriteria": "",
-      "standardizedLogicRule": "A NonConformance involving a Part whose safety_class is Critical must be escalated to the Quality Manager within 4 hours of being opened.",
+      "standardizedLogicRule": "涉及 safety_class 为 Critical 零件的不合格品，须在开立后 4 小时内升级至质量经理。",
       "relatedEntities": [
-        "NonConformance (Non_Conformance)",
-        "Part (Part)"
+        "不合格品 (Non_Conformance)",
+        "零件 (Part)"
       ],
       "businessBackgroundReason": "Section D of POL-QMS-08: NCR triage, disposition sign-off, escalation and CAPA gating.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1918,15 +1918,15 @@
     {
       "id": "rule:R-16-no-close-open-lot",
       "uuid": "30000000000000000000000000000010",
-      "specificScenarioStage": "Constraint",
-      "businessLogicRuleName": "No WorkOrder close with open lot",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "存在未结检验批不得关闭工单",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
       "submissionCriteria": "",
-      "standardizedLogicRule": "A WorkOrder may not be closed while any linked InspectionLot remains in status Open or InProcess.",
+      "standardizedLogicRule": "当任何关联检验批仍处于开立或进行中状态时，不得关闭生产工单。",
       "relatedEntities": [
-        "WorkOrder (Work_Order)",
-        "InspectionLot (Inspection_Lot)"
+        "生产工单 (Work_Order)",
+        "检验批 (Inspection_Lot)"
       ],
       "businessBackgroundReason": "Section B of POL-QMS-08: build, backflush, inspection and lot-closure controls.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1969,15 +1969,15 @@
     {
       "id": "rule:R-17-inspection-immutable",
       "uuid": "30000000000000000000000000000011",
-      "specificScenarioStage": "Constraint",
-      "businessLogicRuleName": "Inspection immutable after posting",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "检验过账后不可更改",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
       "submissionCriteria": "",
-      "standardizedLogicRule": "An Inspection record may not be edited after its InspectionLot usage decision has been posted; corrections shall be made through a new, linked Inspection.",
+      "standardizedLogicRule": "检验记录在其检验批使用决策过账后不得修改；更正须通过新的关联检验记录进行。",
       "relatedEntities": [
-        "Inspection (Inspection)",
-        "InspectionLot (Inspection_Lot)"
+        "检验记录 (Inspection)",
+        "检验批 (Inspection_Lot)"
       ],
       "businessBackgroundReason": "Section E of POL-QMS-08: record immutability, disposition authorization and customer-ship eligibility.",
       "ruleSource": "02-business-rules-policy.md",
@@ -2019,15 +2019,15 @@
     {
       "id": "rule:R-18-capa-verified-before-close",
       "uuid": "30000000000000000000000000000012",
-      "specificScenarioStage": "State Transition",
-      "businessLogicRuleName": "CAPA verified before NCR close",
+      "specificScenarioStage": "状态流转",
+      "businessLogicRuleName": "纠正措施验证后方可关闭不合格品",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
       "submissionCriteria": "",
-      "standardizedLogicRule": "A CorrectiveAction must be verified effective before its linked NonConformance may be set to status Closed.",
+      "standardizedLogicRule": "纠正措施须经验证有效，其关联不合格品方可置为已关闭状态。",
       "relatedEntities": [
-        "CorrectiveAction (Corrective_Action)",
-        "NonConformance (Non_Conformance)"
+        "纠正措施 (Corrective_Action)",
+        "不合格品 (Non_Conformance)"
       ],
       "businessBackgroundReason": "Section D of POL-QMS-08: NCR triage, disposition sign-off, escalation and CAPA gating.",
       "ruleSource": "02-business-rules-policy.md",
@@ -2070,14 +2070,14 @@
     {
       "id": "rule:R-19-disposition-authorization",
       "uuid": "30000000000000000000000000000013",
-      "specificScenarioStage": "Authorization",
-      "businessLogicRuleName": "Only Quality Engineer posts Disposition",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "仅质量工程师可过账处置",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
       "submissionCriteria": "",
-      "standardizedLogicRule": "Only a Quality Engineer or higher is authorized to post a Disposition; a Quality Inspector may not post a Disposition.",
+      "standardizedLogicRule": "仅质量工程师或更高级别有权过账处置；质量检验员不得过账处置。",
       "relatedEntities": [
-        "Disposition (Disposition)"
+        "处置 (Disposition)"
       ],
       "businessBackgroundReason": "Section E of POL-QMS-08: record immutability, disposition authorization and customer-ship eligibility.",
       "ruleSource": "02-business-rules-policy.md",
@@ -2118,15 +2118,15 @@
     {
       "id": "rule:R-20-no-ship-unresolved-major",
       "uuid": "30000000000000000000000000000014",
-      "specificScenarioStage": "Constraint",
-      "businessLogicRuleName": "No customer ship with unresolved Major/Critical NCR",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "存在未解决重大/严重不合格不得发运客户",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
       "submissionCriteria": "",
-      "standardizedLogicRule": "A Part may not be released to a customer-facing shipment if any of its constituent component lots has an unresolved NonConformance with severity Major or Critical.",
+      "standardizedLogicRule": "若零件的任何组成组件批存在严重度为 Major 或 Critical 的未解决不合格品，则该零件不得发往面向客户的发运。",
       "relatedEntities": [
-        "Part (Part)",
-        "NonConformance (Non_Conformance)"
+        "零件 (Part)",
+        "不合格品 (Non_Conformance)"
       ],
       "businessBackgroundReason": "Section E of POL-QMS-08: record immutability, disposition authorization and customer-ship eligibility.",
       "ruleSource": "02-business-rules-policy.md",
@@ -2244,9 +2244,9 @@
       "uuid": "40000000000000000000000000000001",
       "name": "RaiseEngineeringChange",
       "nameZh": "提出工程变更",
-      "description": "Create a new EngineeringChange record in status Draft from the proposed change description and affected Part numbers.",
+      "description": "根据提议的变更说明与受影响零件号，创建状态为草稿的新工程变更记录。",
       "descriptionZh": "根据提议的变更说明与受影响零件号，创建状态为草稿的新工程变更记录。",
-      "submission_criteria": "1. Event CHANGE_NEED_IDENTIFIED has been received",
+      "submission_criteria": "1. 事件 CHANGE_NEED_IDENTIFIED 已送达",
       "object_type": "action",
       "category": "提出工程变更",
       "actor": [
@@ -2263,20 +2263,20 @@
         {
           "order": "1",
           "name": "captureTheProposedChangeDescriptionAnd",
-          "description": "Capture the proposed change description and affected Part numbers.",
+          "description": "捕获提议的变更说明与受影响零件号。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "createANewEngineeringChangeIn",
-          "description": "Create a new EngineeringChange in status Draft with a unique ecr_id.",
+          "description": "创建状态为草稿、具有唯一 ecr_id 的新工程变更。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"RaiseEngineeringChange\" action. Create a new EngineeringChange record in status Draft from the proposed change description and affected Part numbers. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"RaiseEngineeringChange\" using change_description, affected_parts. Create a new EngineeringChange record in status Draft from the proposed change description and affected Part numbers. Produce engineering_change and emit the appropriate events.",
+      "system_prompt": "作为负责「RaiseEngineeringChange」动作的自动化人工操作员，根据提议的变更说明与受影响零件号，创建状态为草稿的新工程变更记录。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（change_description、affected_parts）执行「RaiseEngineeringChange」。根据提议的变更说明与受影响零件号，创建状态为草稿的新工程变更记录。 产出（engineering_change）并发出相应事件。",
       "tool_use": [
         "Jira ECR"
       ],
@@ -2406,16 +2406,17 @@
         "role": "Requestor",
         "roleZh": "申请人",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:classify-engineering-change",
       "uuid": "40000000000000000000000000000002",
       "name": "ClassifyEngineeringChange",
       "nameZh": "分类工程变更",
-      "description": "Classify the change category (Minor/Major/Safety) and set requires_second_approval when any affected Part is safety-critical per R-03.",
+      "description": "对变更类别（次要/重大/安全）进行分类，并在任一受影响零件为安全关键时按 R-03 设置需二次批准。",
       "descriptionZh": "对变更类别（次要/重大/安全）进行分类，并在任一受影响零件为安全关键时按 R-03 设置需二次批准。",
-      "submission_criteria": "1. Event ENGINEERING_CHANGE_RAISED has been received\n2. Rule \"Safety changes need second approval\" is satisfied",
+      "submission_criteria": "1. 事件 ENGINEERING_CHANGE_RAISED 已送达\n2. 规则「安全变更需二次批准」已满足",
       "object_type": "action",
       "category": "分类工程变更",
       "actor": [
@@ -2432,28 +2433,28 @@
         {
           "order": "1",
           "name": "readTheAffectedPartSafetyClass",
-          "description": "Read the affected Part safety_class master data.",
+          "description": "读取受影响零件的 safety_class 主数据。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "setCategoryMinorMajorSafetyAnd",
-          "description": "Set category (Minor/Major/Safety) and requires_second_approval per R-03 when any affected Part.safety_class = Critical.",
+          "description": "当任一受影响 Part.safety_class = Critical 时，按 R-03 设置类别与需二次批准。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "R-03-safety-second-approval",
-              "name": "Safety changes need second approval",
+              "name": "安全变更需二次批准",
               "submission_criteria": "",
-              "description": "Any EngineeringChange that affects a Part whose safety_class is Critical is required to obtain a second engineer's approval before it may be released."
+              "description": "任何影响 safety_class 为 Critical 零件的工程变更，在发布前必须取得第二位工程师的批准。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated agent responsible for the \"ClassifyEngineeringChange\" action. Classify the change category (Minor/Major/Safety) and set requires_second_approval when any affected Part is safety-critical per R-03. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"ClassifyEngineeringChange\" using engineering_change, affected_part_master. Classify the change category (Minor/Major/Safety) and set requires_second_approval when any affected Part is safety-critical per R-03. Produce engineering_change and emit the appropriate events.",
+      "system_prompt": "作为负责「ClassifyEngineeringChange」动作的自动化智能体，对变更类别（次要/重大/安全）进行分类，并在任一受影响零件为安全关键时按 R-03 设置需二次批准。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（engineering_change、affected_part_master）执行「ClassifyEngineeringChange」。对变更类别（次要/重大/安全）进行分类，并在任一受影响零件为安全关键时按 R-03 设置需二次批准。 产出（engineering_change）并发出相应事件。",
       "tool_use": [
         "Jira ECR"
       ],
@@ -2581,16 +2582,17 @@
         "role": "Change Coordinator",
         "roleZh": "变更协调员",
         "kind": "agent"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:approve-engineering-change",
       "uuid": "40000000000000000000000000000003",
       "name": "ApproveEngineeringChange",
       "nameZh": "批准工程变更",
-      "description": "Review the EngineeringChange at the CCB and produce an approval decision; enforces CCB quorum (R-05) and second-engineer approval for safety changes (R-03).",
+      "description": "在变更控制委员会审查工程变更并产出批准决定；执行委员会法定人数(R-05)及安全变更的第二工程师批准(R-03)。",
       "descriptionZh": "在变更控制委员会审查工程变更并产出批准决定；执行委员会法定人数(R-05)及安全变更的第二工程师批准(R-03)。",
-      "submission_criteria": "1. Event ENGINEERING_CHANGE_CLASSIFIED has been received\n2. Rule \"CCB quorum of three\" is satisfied\n3. Rule \"Safety changes need second approval\" is satisfied",
+      "submission_criteria": "1. 事件 ENGINEERING_CHANGE_CLASSIFIED 已送达\n2. 规则「变更委员会法定人数为三」已满足\n3. 规则「安全变更需二次批准」已满足",
       "object_type": "action",
       "category": "批准工程变更",
       "actor": [
@@ -2606,43 +2608,43 @@
         {
           "order": "1",
           "name": "collectCCBVotesAndVerifyA",
-          "description": "Collect CCB votes and verify a quorum of at least three voting members per R-05.",
+          "description": "收集委员会投票并按 R-05 核验至少三名表决成员的法定人数。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "R-05-ccb-quorum",
-              "name": "CCB quorum of three",
+              "name": "变更委员会法定人数为三",
               "submission_criteria": "",
-              "description": "An EngineeringChange must be approved by a Change Control Board quorum of at least three voting members before it moves to status Approved."
+              "description": "工程变更在转为已批准状态前，须经变更控制委员会至少三名表决成员的法定批准。"
             }
           ]
         },
         {
           "order": "2",
           "name": "forASafetyClassifiedChangeVerify",
-          "description": "For a Safety-classified change, verify a second engineer's approval per R-03 before release.",
+          "description": "对安全分类变更，发布前按 R-03 核验第二位工程师的批准。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "R-03-safety-second-approval",
-              "name": "Safety changes need second approval",
+              "name": "安全变更需二次批准",
               "submission_criteria": "",
-              "description": "Any EngineeringChange that affects a Part whose safety_class is Critical is required to obtain a second engineer's approval before it may be released."
+              "description": "任何影响 safety_class 为 Critical 零件的工程变更，在发布前必须取得第二位工程师的批准。"
             }
           ]
         },
         {
           "order": "3",
           "name": "setEngineeringChangeStatusToApproved",
-          "description": "Set EngineeringChange.status to Approved or Rejected.",
+          "description": "将工程变更状态置为已批准或已拒绝。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"ApproveEngineeringChange\" action. Review the EngineeringChange at the CCB and produce an approval decision; enforces CCB quorum (R-05) and second-engineer approval for safety changes (R-03). Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"ApproveEngineeringChange\" using engineering_change, ccb_votes. Review the EngineeringChange at the CCB and produce an approval decision; enforces CCB quorum (R-05) and second-engineer approval for safety changes (R-03). Produce engineering_change and emit the appropriate events.",
+      "system_prompt": "作为负责「ApproveEngineeringChange」动作的自动化人工操作员，在变更控制委员会审查工程变更并产出批准决定；执行委员会法定人数(R-05)及安全变更的第二工程师批准(R-03)。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（engineering_change、ccb_votes）执行「ApproveEngineeringChange」。在变更控制委员会审查工程变更并产出批准决定；执行委员会法定人数(R-05)及安全变更的第二工程师批准(R-03)。 产出（engineering_change）并发出相应事件。",
       "tool_use": [
         "Jira ECR"
       ],
@@ -2790,16 +2792,17 @@
         "role": "Change Control Board",
         "roleZh": "变更控制委员会",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:set-revision-effectivity",
       "uuid": "40000000000000000000000000000004",
       "name": "SetRevisionEffectivity",
       "nameZh": "设定修订生效",
-      "description": "Produce a new effective BillOfMaterials revision and bump each affected Part.revision; enforces the effective_from lead time per R-06.",
+      "description": "产出新的生效物料清单修订并提升每个受影响 Part.revision；按 R-06 执行生效起始日提前期。",
       "descriptionZh": "产出新的生效物料清单修订并提升每个受影响 Part.revision；按 R-06 执行生效起始日提前期。",
-      "submission_criteria": "1. Event ENGINEERING_CHANGE_APPROVED has been received\n2. Rule \"BOM effectivity lead time\" is satisfied",
+      "submission_criteria": "1. 事件 ENGINEERING_CHANGE_APPROVED 已送达\n2. 规则「物料清单生效提前期」已满足",
       "object_type": "action",
       "category": "设定修订生效",
       "actor": [
@@ -2817,28 +2820,28 @@
         {
           "order": "1",
           "name": "createANewBillOfMaterials",
-          "description": "Create a new BillOfMaterials revision with an effective_from date at least 5 business days out per R-06 (unless emergency).",
+          "description": "按 R-06 创建生效起始日至少未来 5 个工作日的新物料清单修订（紧急情形除外）。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "R-06-effective-from-lead-time",
-              "name": "BOM effectivity lead time",
+              "name": "物料清单生效提前期",
               "submission_criteria": "",
-              "description": "A BillOfMaterials revision shall carry an effective_from date no fewer than 5 business days in the future, except that an EngineeringChange flagged emergency = true may be made effective immediately with VP of Quality approval."
+              "description": "物料清单修订的 effective_from 日期不得少于未来 5 个工作日，但标记 emergency = true 的工程变更经质量副总裁批准可立即生效。"
             }
           ]
         },
         {
           "order": "2",
           "name": "bumpEachAffectedPartRevisionAnd",
-          "description": "Bump each affected Part.revision and set EngineeringChange.status to Released.",
+          "description": "提升每个受影响 Part.revision 并将工程变更状态置为已发布。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated agent responsible for the \"SetRevisionEffectivity\" action. Produce a new effective BillOfMaterials revision and bump each affected Part.revision; enforces the effective_from lead time per R-06. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"SetRevisionEffectivity\" using engineering_change. Produce a new effective BillOfMaterials revision and bump each affected Part.revision; enforces the effective_from lead time per R-06. Produce bill_of_materials, affected_parts and emit the appropriate events.",
+      "system_prompt": "作为负责「SetRevisionEffectivity」动作的自动化智能体，产出新的生效物料清单修订并提升每个受影响 Part.revision；按 R-06 执行生效起始日提前期。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（engineering_change）执行「SetRevisionEffectivity」。产出新的生效物料清单修订并提升每个受影响 Part.revision；按 R-06 执行生效起始日提前期。 产出（bill_of_materials、affected_parts）并发出相应事件。",
       "tool_use": [
         "SAP ECC"
       ],
@@ -2972,16 +2975,17 @@
         "role": "Manufacturing Engineer",
         "roleZh": "制造工程师",
         "kind": "agent"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:revalidate-open-work-orders",
       "uuid": "40000000000000000000000000000005",
       "name": "RevalidateOpenWorkOrders",
       "nameZh": "重校开放工单",
-      "description": "Evaluate all open WorkOrders referencing an affected Part and produce a hold flag on any still pointing at a superseded revision per R-01.",
+      "description": "评估所有引用受影响零件的开放工单，对仍指向被替代修订者按 R-01 产出冻结标记。",
       "descriptionZh": "评估所有引用受影响零件的开放工单，对仍指向被替代修订者按 R-01 产出冻结标记。",
-      "submission_criteria": "1. Event REVISION_BECAME_EFFECTIVE has been received\n2. Rule \"WorkOrder release requires effective revisions\" is satisfied",
+      "submission_criteria": "1. 事件 REVISION_BECAME_EFFECTIVE 已送达\n2. 规则「工单下达要求生效修订」已满足",
       "object_type": "action",
       "category": "重校开放工单",
       "actor": [
@@ -2998,28 +3002,28 @@
         {
           "order": "1",
           "name": "findAllOpenWorkOrdersThat",
-          "description": "Find all open WorkOrders that reference an affected Part.",
+          "description": "查找所有引用受影响零件的开放工单。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "flagAnyWorkOrderStillPointing",
-          "description": "Flag any WorkOrder still pointing at a superseded revision per R-01.",
+          "description": "按 R-01 标记仍指向被替代修订的任何工单。",
           "object_type": "logic",
-          "submission_criteria": "On WorkOrder release",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "R-01-workorder-effective-revision",
-              "name": "WorkOrder release requires effective revisions",
-              "submission_criteria": "On WorkOrder release",
-              "description": "A WorkOrder may not be released unless every component Part in its BillOfMaterials is at the currently effective revision."
+              "name": "工单下达要求生效修订",
+              "submission_criteria": "",
+              "description": "除非其物料清单中的每个组件零件均处于当前生效修订，否则不得下达生产工单。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated agent responsible for the \"RevalidateOpenWorkOrders\" action. Evaluate all open WorkOrders referencing an affected Part and produce a hold flag on any still pointing at a superseded revision per R-01. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"RevalidateOpenWorkOrders\" using affected_parts, open_work_orders. Evaluate all open WorkOrders referencing an affected Part and produce a hold flag on any still pointing at a superseded revision per R-01. Produce flagged_work_orders and emit the appropriate events.",
+      "system_prompt": "作为负责「RevalidateOpenWorkOrders」动作的自动化智能体，评估所有引用受影响零件的开放工单，对仍指向被替代修订者按 R-01 产出冻结标记。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（affected_parts、open_work_orders）执行「RevalidateOpenWorkOrders」。评估所有引用受影响零件的开放工单，对仍指向被替代修订者按 R-01 产出冻结标记。 产出（flagged_work_orders）并发出相应事件。",
       "tool_use": [
         "SAP ECC"
       ],
@@ -3155,16 +3159,17 @@
         "role": "Manufacturing Engineer",
         "roleZh": "制造工程师",
         "kind": "agent"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:release-work-order",
       "uuid": "40000000000000000000000000000006",
       "name": "ReleaseWorkOrder",
       "nameZh": "下达工单",
-      "description": "Release a WorkOrder with reserved components against the currently effective BillOfMaterials; blocked unless all components are at effective revision (R-01) and none carry a Quarantine NonConformance (R-02).",
+      "description": "依当前生效物料清单下达带预留组件的工单；除非所有组件均为生效修订(R-01)且无隔离不合格(R-02)，否则阻止。",
       "descriptionZh": "依当前生效物料清单下达带预留组件的工单；除非所有组件均为生效修订(R-01)且无隔离不合格(R-02)，否则阻止。",
-      "submission_criteria": "1. Event PRODUCTION_DEMAND_CONFIRMED has been received\n2. Event REVISION_BECAME_EFFECTIVE has been received\n3. Rule \"WorkOrder release requires effective revisions\" is satisfied\n4. Rule \"Quarantine disposition blocks release\" is satisfied",
+      "submission_criteria": "1. 事件 PRODUCTION_DEMAND_CONFIRMED 已送达\n2. 事件 REVISION_BECAME_EFFECTIVE 已送达\n3. 规则「工单下达要求生效修订」已满足\n4. 规则「隔离处置阻止下达」已满足",
       "object_type": "action",
       "category": "下达工单",
       "actor": [
@@ -3185,43 +3190,43 @@
         {
           "order": "1",
           "name": "verifyEveryComponentPartIsAt",
-          "description": "Verify every component Part is at the currently effective revision per R-01.",
+          "description": "按 R-01 核验每个组件零件均为当前生效修订。",
           "object_type": "logic",
-          "submission_criteria": "On WorkOrder release",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "R-01-workorder-effective-revision",
-              "name": "WorkOrder release requires effective revisions",
-              "submission_criteria": "On WorkOrder release",
-              "description": "A WorkOrder may not be released unless every component Part in its BillOfMaterials is at the currently effective revision."
+              "name": "工单下达要求生效修订",
+              "submission_criteria": "",
+              "description": "除非其物料清单中的每个组件零件均处于当前生效修订，否则不得下达生产工单。"
             }
           ]
         },
         {
           "order": "2",
           "name": "verifyNoComponentPartCarriesAn",
-          "description": "Verify no component Part carries an open NonConformance with Disposition = Quarantine per R-02.",
+          "description": "按 R-02 核验无组件零件存在处置为隔离的开立不合格品。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "R-02-quarantine-blocks-release",
-              "name": "Quarantine disposition blocks release",
+              "name": "隔离处置阻止下达",
               "submission_criteria": "",
-              "description": "A component Part that has an open NonConformance with Disposition = Quarantine shall not be consumed by any newly released WorkOrder."
+              "description": "存在处置为隔离的开立不合格品的组件零件，不得被任何新下达的生产工单消耗。"
             }
           ]
         },
         {
           "order": "3",
           "name": "releaseTheWorkOrderAndReserve",
-          "description": "Release the WorkOrder and reserve components.",
+          "description": "下达工单并预留组件。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated agent responsible for the \"ReleaseWorkOrder\" action. Release a WorkOrder with reserved components against the currently effective BillOfMaterials; blocked unless all components are at effective revision (R-01) and none carry a Quarantine NonConformance (R-02). Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"ReleaseWorkOrder\" using planned_order, bill_of_materials. Release a WorkOrder with reserved components against the currently effective BillOfMaterials; blocked unless all components are at effective revision (R-01) and none carry a Quarantine NonConformance (R-02). Produce work_order and emit the appropriate events.",
+      "system_prompt": "作为负责「ReleaseWorkOrder」动作的自动化智能体，依当前生效物料清单下达带预留组件的工单；除非所有组件均为生效修订(R-01)且无隔离不合格(R-02)，否则阻止。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（planned_order、bill_of_materials）执行「ReleaseWorkOrder」。依当前生效物料清单下达带预留组件的工单；除非所有组件均为生效修订(R-01)且无隔离不合格(R-02)，否则阻止。 产出（work_order）并发出相应事件。",
       "tool_use": [
         "SAP ECC"
       ],
@@ -3374,16 +3379,17 @@
         "role": "Production Supervisor",
         "roleZh": "生产主管",
         "kind": "agent"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:confirm-production-operation",
       "uuid": "40000000000000000000000000000007",
       "name": "ConfirmProductionOperation",
       "nameZh": "确认生产操作",
-      "description": "Confirm operation yield from issued components and, at the final operation, produce a finished Part lot pending inspection; backflushes against the released WorkOrder BOM revision per R-09.",
+      "description": "依已发料组件确认操作产出，并在最终操作产出待检成品零件批；按 R-09 依已下达工单的物料清单修订倒冲。",
       "descriptionZh": "依已发料组件确认操作产出，并在最终操作产出待检成品零件批；按 R-09 依已下达工单的物料清单修订倒冲。",
-      "submission_criteria": "1. Event WORK_ORDER_RELEASED has been received\n2. Rule \"Backflush against frozen revision\" is satisfied",
+      "submission_criteria": "1. 事件 WORK_ORDER_RELEASED 已送达\n2. 规则「按冻结修订倒冲」已满足",
       "object_type": "action",
       "category": "确认生产操作",
       "actor": [
@@ -3400,28 +3406,28 @@
         {
           "order": "1",
           "name": "backflushEveryComponentGoodsIssueAgainst",
-          "description": "Backflush every component goods issue against the released WorkOrder bom_revision per R-09.",
+          "description": "按 R-09 依已下达工单 bom_revision 倒冲每次组件发料。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "R-09-backflush-frozen-revision",
-              "name": "Backflush against frozen revision",
+              "name": "按冻结修订倒冲",
               "submission_criteria": "",
-              "description": "Every component goods issue must be backflushed against the bom_revision recorded on the released WorkOrder, and may not be backflushed against a later revision."
+              "description": "每次组件发料必须按已下达工单上记录的 bom_revision 倒冲，且不得按更晚修订倒冲。"
             }
           ]
         },
         {
           "order": "2",
           "name": "confirmOperationYieldAtTheFinal",
-          "description": "Confirm operation yield; at the final operation, produce a finished Part lot pending inspection.",
+          "description": "确认操作产出；在最终操作产出待检成品零件批。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"ConfirmProductionOperation\" action. Confirm operation yield from issued components and, at the final operation, produce a finished Part lot pending inspection; backflushes against the released WorkOrder BOM revision per R-09. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"ConfirmProductionOperation\" using work_order, issued_components. Confirm operation yield from issued components and, at the final operation, produce a finished Part lot pending inspection; backflushes against the released WorkOrder BOM revision per R-09. Produce finished_part_lot and emit the appropriate events.",
+      "system_prompt": "作为负责「ConfirmProductionOperation」动作的自动化人工操作员，依已发料组件确认操作产出，并在最终操作产出待检成品零件批；按 R-09 依已下达工单的物料清单修订倒冲。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（work_order、issued_components）执行「ConfirmProductionOperation」。依已发料组件确认操作产出，并在最终操作产出待检成品零件批；按 R-09 依已下达工单的物料清单修订倒冲。 产出（finished_part_lot）并发出相应事件。",
       "tool_use": [
         "SAP ECC"
       ],
@@ -3564,16 +3570,17 @@
         "role": "Production Supervisor",
         "roleZh": "生产主管",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:open-inspection-lot",
       "uuid": "40000000000000000000000000000008",
       "name": "OpenInspectionLot",
       "nameZh": "开立检验批",
-      "description": "Create a new InspectionLot in status Open with a sampling plan; mandatory for any finished lot of a Part whose inspection_required is true per R-07.",
+      "description": "创建带抽样计划、状态为开立的新检验批；按 R-07 对 inspection_required 为真零件的任何成品批为强制。",
       "descriptionZh": "创建带抽样计划、状态为开立的新检验批；按 R-07 对 inspection_required 为真零件的任何成品批为强制。",
-      "submission_criteria": "1. Event FINISHED_LOT_PRODUCED has been received\n2. Rule \"InspectionLot required when flagged\" is satisfied",
+      "submission_criteria": "1. 事件 FINISHED_LOT_PRODUCED 已送达\n2. 规则「需检验时必开检验批」已满足",
       "object_type": "action",
       "category": "开立检验批",
       "actor": [
@@ -3590,28 +3597,28 @@
         {
           "order": "1",
           "name": "checkThePartInspectionRequiredFlag",
-          "description": "Check the Part inspection_required flag per R-07.",
+          "description": "按 R-07 检查零件 inspection_required 标志。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "R-07-inspectionlot-required",
-              "name": "InspectionLot required when flagged",
+              "name": "需检验时必开检验批",
               "submission_criteria": "",
-              "description": "An InspectionLot is required for every finished lot of any Part whose inspection_required flag is true."
+              "description": "对 inspection_required 标志为真的任何零件的每个成品批，均需开立检验批。"
             }
           ]
         },
         {
           "order": "2",
           "name": "createANewInspectionLotIn",
-          "description": "Create a new InspectionLot in status Open with a sampling plan.",
+          "description": "创建带抽样计划、状态为开立的新检验批。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"OpenInspectionLot\" action. Create a new InspectionLot in status Open with a sampling plan; mandatory for any finished lot of a Part whose inspection_required is true per R-07. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"OpenInspectionLot\" using finished_part_lot, inspection_plan. Create a new InspectionLot in status Open with a sampling plan; mandatory for any finished lot of a Part whose inspection_required is true per R-07. Produce inspection_lot and emit the appropriate events.",
+      "system_prompt": "作为负责「OpenInspectionLot」动作的自动化系统，创建带抽样计划、状态为开立的新检验批；按 R-07 对 inspection_required 为真零件的任何成品批为强制。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（finished_part_lot、inspection_plan）执行「OpenInspectionLot」。创建带抽样计划、状态为开立的新检验批；按 R-07 对 inspection_required 为真零件的任何成品批为强制。 产出（inspection_lot）并发出相应事件。",
       "tool_use": [
         "SAP ECC"
       ],
@@ -3741,16 +3748,17 @@
         "role": "SAP ECC",
         "roleZh": "SAP ECC",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:record-inspection",
       "uuid": "40000000000000000000000000000009",
       "name": "RecordInspection",
       "nameZh": "记录检验",
-      "description": "Produce an Inspection record with pass/fail per characteristic and an aggregate result; the lot is Accepted only if defects are at or below the AQL acceptance number per R-08. Used for both finished-lot and incoming inspection.",
+      "description": "产出含各特性合格/不合格及汇总结果的检验记录；仅当缺陷数不超过 AQL 接收数时该批方为接受(R-08)。用于成品批与来料检验。",
       "descriptionZh": "产出含各特性合格/不合格及汇总结果的检验记录；仅当缺陷数不超过 AQL 接收数时该批方为接受(R-08)。用于成品批与来料检验。",
-      "submission_criteria": "1. Event INSPECTION_LOT_OPENED has been received\n2. Rule \"AQL acceptance number\" is satisfied",
+      "submission_criteria": "1. 事件 INSPECTION_LOT_OPENED 已送达\n2. 规则「AQL 接收数」已满足",
       "object_type": "action",
       "category": "记录检验",
       "actor": [
@@ -3767,28 +3775,28 @@
         {
           "order": "1",
           "name": "measureCharacteristicsAgainstTheSamplingPlan",
-          "description": "Measure characteristics against the sampling plan.",
+          "description": "依抽样计划测量特性。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "setTheLotAcceptedOnlyIf",
-          "description": "Set the lot Accepted only if defect count is at or below the AQL acceptance number; otherwise Rejected, per R-08.",
+          "description": "按 R-08，仅当缺陷数不超过 AQL 接收数时置批为接受，否则拒收。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "R-08-aql-acceptance",
-              "name": "AQL acceptance number",
+              "name": "AQL 接收数",
               "submission_criteria": "",
-              "description": "An InspectionLot shall be set to Accepted only when the observed defect count is at or below the AQL 1.0 acceptance number for the applicable sample size; otherwise it must be set to Rejected."
+              "description": "检验批仅在观察缺陷数不超过适用样本量的 AQL 1.0 接收数时方可置为接受，否则须置为拒收。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"RecordInspection\" action. Produce an Inspection record with pass/fail per characteristic and an aggregate result; the lot is Accepted only if defects are at or below the AQL acceptance number per R-08. Used for both finished-lot and incoming inspection. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"RecordInspection\" using inspection_lot, measured_characteristics. Produce an Inspection record with pass/fail per characteristic and an aggregate result; the lot is Accepted only if defects are at or below the AQL acceptance number per R-08. Used for both finished-lot and incoming inspection. Produce inspection and emit the appropriate events.",
+      "system_prompt": "作为负责「RecordInspection」动作的自动化人工操作员，产出含各特性合格/不合格及汇总结果的检验记录；仅当缺陷数不超过 AQL 接收数时该批方为接受(R-08)。用于成品批与来料检验。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（inspection_lot、measured_characteristics）执行「RecordInspection」。产出含各特性合格/不合格及汇总结果的检验记录；仅当缺陷数不超过 AQL 接收数时该批方为接受(R-08)。用于成品批与来料检验。 产出（inspection）并发出相应事件。",
       "tool_use": [
         "Quality Data Mart"
       ],
@@ -3918,16 +3926,17 @@
         "role": "Quality Inspector",
         "roleZh": "质量检验员",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:post-usage-decision",
       "uuid": "4000000000000000000000000000000a",
       "name": "PostUsageDecision",
       "nameZh": "过账使用决策",
-      "description": "On Accepted, post the lot to unrestricted stock and clear it to ship per R-04; on Rejected, automatically open a NonConformance per R-04 and post to blocked stock.",
+      "description": "接受时按 R-04 将批过账至非限制库存并放行发运；拒收时按 R-04 自动开立不合格品并过账至冻结库存。",
       "descriptionZh": "接受时按 R-04 将批过账至非限制库存并放行发运；拒收时按 R-04 自动开立不合格品并过账至冻结库存。",
-      "submission_criteria": "1. Event INSPECTION_RECORDED has been received\n2. Rule \"No ship until lot accepted; reject opens NCR\" is satisfied",
+      "submission_criteria": "1. 事件 INSPECTION_RECORDED 已送达\n2. 规则「检验合格前不得发运；拒收开立不合格品」已满足",
       "object_type": "action",
       "category": "过账使用决策",
       "actor": [
@@ -3946,36 +3955,36 @@
         {
           "order": "1",
           "name": "onAcceptedPostTheLotTo",
-          "description": "On Accepted, post the lot to unrestricted stock and clear to ship per R-04.",
+          "description": "接受时按 R-04 将批过账至非限制库存并放行发运。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "R-04-no-ship-until-accepted",
-              "name": "No ship until lot accepted; reject opens NCR",
+              "name": "检验合格前不得发运；拒收开立不合格品",
               "submission_criteria": "",
-              "description": "A finished lot may not ship until its InspectionLot is Accepted; a Rejected InspectionLot shall automatically open a NonConformance."
+              "description": "成品批在其检验批被接受前不得发运；被拒收的检验批应自动开立不合格品。"
             }
           ]
         },
         {
           "order": "2",
           "name": "onRejectedAutomaticallyOpenANon",
-          "description": "On Rejected, automatically open a NonConformance per R-04 and post to blocked stock.",
+          "description": "拒收时按 R-04 自动开立不合格品并过账至冻结库存。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "R-04-no-ship-until-accepted",
-              "name": "No ship until lot accepted; reject opens NCR",
+              "name": "检验合格前不得发运；拒收开立不合格品",
               "submission_criteria": "",
-              "description": "A finished lot may not ship until its InspectionLot is Accepted; a Rejected InspectionLot shall automatically open a NonConformance."
+              "description": "成品批在其检验批被接受前不得发运；被拒收的检验批应自动开立不合格品。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated agent responsible for the \"PostUsageDecision\" action. On Accepted, post the lot to unrestricted stock and clear it to ship per R-04; on Rejected, automatically open a NonConformance per R-04 and post to blocked stock. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"PostUsageDecision\" using inspection. On Accepted, post the lot to unrestricted stock and clear it to ship per R-04; on Rejected, automatically open a NonConformance per R-04 and post to blocked stock. Produce inspection_lot, non_conformance and emit the appropriate events.",
+      "system_prompt": "作为负责「PostUsageDecision」动作的自动化智能体，接受时按 R-04 将批过账至非限制库存并放行发运；拒收时按 R-04 自动开立不合格品并过账至冻结库存。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（inspection）执行「PostUsageDecision」。接受时按 R-04 将批过账至非限制库存并放行发运；拒收时按 R-04 自动开立不合格品并过账至冻结库存。 产出（inspection_lot、non_conformance）并发出相应事件。",
       "tool_use": [
         "SAP ECC"
       ],
@@ -4117,16 +4126,17 @@
         "role": "Quality Inspector",
         "roleZh": "质量检验员",
         "kind": "agent"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:release-lot-to-ship",
       "uuid": "4000000000000000000000000000000b",
       "name": "ReleaseLotToShip",
       "nameZh": "放行批发运",
-      "description": "Produce a delivery-eligible lot from an accepted finished lot; a finished lot may not ship until its InspectionLot is Accepted per R-04.",
+      "description": "由已接受成品批产出可交付批；成品批在其检验批被接受前不得发运(R-04)。",
       "descriptionZh": "由已接受成品批产出可交付批；成品批在其检验批被接受前不得发运(R-04)。",
-      "submission_criteria": "1. Event INSPECTION_LOT_ACCEPTED has been received\n2. Rule \"No ship until lot accepted; reject opens NCR\" is satisfied\n3. Rule \"No customer ship with unresolved Major/Critical NCR\" is satisfied\n4. Rule \"No WorkOrder close with open lot\" is satisfied",
+      "submission_criteria": "1. 事件 INSPECTION_LOT_ACCEPTED 已送达\n2. 规则「检验合格前不得发运；拒收开立不合格品」已满足\n3. 规则「存在未解决重大/严重不合格不得发运客户」已满足\n4. 规则「存在未结检验批不得关闭工单」已满足",
       "object_type": "action",
       "category": "放行批发运",
       "actor": [
@@ -4145,51 +4155,51 @@
         {
           "order": "1",
           "name": "verifyTheInspectionLotIsAccepted",
-          "description": "Verify the InspectionLot is Accepted before shipping per R-04.",
+          "description": "按 R-04 在发运前核验检验批为已接受。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "R-04-no-ship-until-accepted",
-              "name": "No ship until lot accepted; reject opens NCR",
+              "name": "检验合格前不得发运；拒收开立不合格品",
               "submission_criteria": "",
-              "description": "A finished lot may not ship until its InspectionLot is Accepted; a Rejected InspectionLot shall automatically open a NonConformance."
+              "description": "成品批在其检验批被接受前不得发运；被拒收的检验批应自动开立不合格品。"
             }
           ]
         },
         {
           "order": "2",
           "name": "verifyNoConstituentComponentLotHas",
-          "description": "Verify no constituent component lot has an unresolved Major/Critical NonConformance per R-20.",
+          "description": "按 R-20 核验无组成组件批存在未解决的重大/严重不合格品。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "R-20-no-ship-unresolved-major",
-              "name": "No customer ship with unresolved Major/Critical NCR",
+              "name": "存在未解决重大/严重不合格不得发运客户",
               "submission_criteria": "",
-              "description": "A Part may not be released to a customer-facing shipment if any of its constituent component lots has an unresolved NonConformance with severity Major or Critical."
+              "description": "若零件的任何组成组件批存在严重度为 Major 或 Critical 的未解决不合格品，则该零件不得发往面向客户的发运。"
             }
           ]
         },
         {
           "order": "3",
           "name": "produceADeliveryEligibleLotAnd",
-          "description": "Produce a delivery-eligible lot and close the WorkOrder.",
+          "description": "产出可交付批并关闭工单。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "R-16-no-close-open-lot",
-              "name": "No WorkOrder close with open lot",
+              "name": "存在未结检验批不得关闭工单",
               "submission_criteria": "",
-              "description": "A WorkOrder may not be closed while any linked InspectionLot remains in status Open or InProcess."
+              "description": "当任何关联检验批仍处于开立或进行中状态时，不得关闭生产工单。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated agent responsible for the \"ReleaseLotToShip\" action. Produce a delivery-eligible lot from an accepted finished lot; a finished lot may not ship until its InspectionLot is Accepted per R-04. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"ReleaseLotToShip\" using inspection_lot, finished_lot. Produce a delivery-eligible lot from an accepted finished lot; a finished lot may not ship until its InspectionLot is Accepted per R-04. Produce shippable_lot, work_order and emit the appropriate events.",
+      "system_prompt": "作为负责「ReleaseLotToShip」动作的自动化智能体，由已接受成品批产出可交付批；成品批在其检验批被接受前不得发运(R-04)。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（inspection_lot、finished_lot）执行「ReleaseLotToShip」。由已接受成品批产出可交付批；成品批在其检验批被接受前不得发运(R-04)。 产出（shippable_lot、work_order）并发出相应事件。",
       "tool_use": [
         "SAP ECC"
       ],
@@ -4348,16 +4358,17 @@
         "role": "Production Supervisor",
         "roleZh": "生产主管",
         "kind": "agent"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:post-goods-receipt",
       "uuid": "4000000000000000000000000000000c",
       "name": "PostGoodsReceipt",
       "nameZh": "过账收货",
-      "description": "Produce a received Part lot in quality-inspection stock and, for inspection-required parts, an incoming InspectionLot; goods may be received only from an Approved Supplier per R-10.",
+      "description": "产出处于质检库存的收货零件批，并对需检验零件产出来料检验批；按 R-10 仅可从合格供应商收货。",
       "descriptionZh": "产出处于质检库存的收货零件批，并对需检验零件产出来料检验批；按 R-10 仅可从合格供应商收货。",
-      "submission_criteria": "1. Event SUPPLIER_DELIVERY_ARRIVED has been received\n2. Rule \"Receive only from approved suppliers\" is satisfied",
+      "submission_criteria": "1. 事件 SUPPLIER_DELIVERY_ARRIVED 已送达\n2. 规则「仅从合格供应商收货」已满足",
       "object_type": "action",
       "category": "过账收货",
       "actor": [
@@ -4375,28 +4386,28 @@
         {
           "order": "1",
           "name": "verifyTheSupplierQualificationStatusIs",
-          "description": "Verify the Supplier qualification_status is Approved per R-10.",
+          "description": "按 R-10 核验供应商 qualification_status 为合格。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "R-10-approved-supplier-only",
-              "name": "Receive only from approved suppliers",
+              "name": "仅从合格供应商收货",
               "submission_criteria": "",
-              "description": "Goods may be received only from a Supplier whose qualification_status is Approved."
+              "description": "仅可从 qualification_status 为 Approved 的供应商收货。"
             }
           ]
         },
         {
           "order": "2",
           "name": "postTheReceivedPartLotTo",
-          "description": "Post the received Part lot to quality-inspection stock and open an incoming InspectionLot for inspection-required parts.",
+          "description": "将收货零件批过账至质检库存，并为需检验零件开立来料检验批。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"PostGoodsReceipt\" action. Produce a received Part lot in quality-inspection stock and, for inspection-required parts, an incoming InspectionLot; goods may be received only from an Approved Supplier per R-10. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"PostGoodsReceipt\" using inbound_delivery, supplier. Produce a received Part lot in quality-inspection stock and, for inspection-required parts, an incoming InspectionLot; goods may be received only from an Approved Supplier per R-10. Produce received_part_lot, inspection_lot and emit the appropriate events.",
+      "system_prompt": "作为负责「PostGoodsReceipt」动作的自动化人工操作员，产出处于质检库存的收货零件批，并对需检验零件产出来料检验批；按 R-10 仅可从合格供应商收货。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（inbound_delivery、supplier）执行「PostGoodsReceipt」。产出处于质检库存的收货零件批，并对需检验零件产出来料检验批；按 R-10 仅可从合格供应商收货。 产出（received_part_lot、inspection_lot）并发出相应事件。",
       "tool_use": [
         "SAP ECC"
       ],
@@ -4539,16 +4550,17 @@
         "role": "Receiving Clerk",
         "roleZh": "收货员",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:triage-non-conformance",
       "uuid": "4000000000000000000000000000000d",
       "name": "TriageNonConformance",
       "nameZh": "分检不合格品",
-      "description": "Produce an owner assignment and severity for an auto-opened NonConformance; an owner must be assigned within 24h (R-12) and a safety-critical Part NCR escalated to the Quality Manager within 4h (R-15).",
+      "description": "为自动开立的不合格品产出负责人指派与严重度；须在 24 小时内指派负责人(R-12)，安全关键零件不合格须在 4 小时内升级至质量经理(R-15)。",
       "descriptionZh": "为自动开立的不合格品产出负责人指派与严重度；须在 24 小时内指派负责人(R-12)，安全关键零件不合格须在 4 小时内升级至质量经理(R-15)。",
-      "submission_criteria": "1. Event NON_CONFORMANCE_OPENED has been received\n2. Rule \"NCR owner within 24h\" is satisfied\n3. Rule \"Safety NCR escalation within 4h\" is satisfied",
+      "submission_criteria": "1. 事件 NON_CONFORMANCE_OPENED 已送达\n2. 规则「不合格品 24 小时内指派负责人」已满足\n3. 规则「安全不合格品 4 小时内升级」已满足",
       "object_type": "action",
       "category": "分检不合格品",
       "actor": [
@@ -4565,36 +4577,36 @@
         {
           "order": "1",
           "name": "assignAnOwnerWithin24Hours",
-          "description": "Assign an owner within 24 hours of opening per R-12.",
+          "description": "按 R-12 在开立后 24 小时内指派负责人。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "R-12-ncr-owner-24h",
-              "name": "NCR owner within 24h",
+              "name": "不合格品 24 小时内指派负责人",
               "submission_criteria": "",
-              "description": "A NonConformance must be assigned an owner within 24 hours of being opened."
+              "description": "不合格品须在开立后 24 小时内指派负责人。"
             }
           ]
         },
         {
           "order": "2",
           "name": "escalateASafetyClassifiedPartNonconformance",
-          "description": "Escalate a safety-classified Part nonconformance to the Quality Manager within 4 hours per R-15.",
+          "description": "按 R-15 在 4 小时内将安全分类零件不合格升级至质量经理。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "R-15-safety-escalation-4h",
-              "name": "Safety NCR escalation within 4h",
+              "name": "安全不合格品 4 小时内升级",
               "submission_criteria": "",
-              "description": "A NonConformance involving a Part whose safety_class is Critical must be escalated to the Quality Manager within 4 hours of being opened."
+              "description": "涉及 safety_class 为 Critical 零件的不合格品，须在开立后 4 小时内升级至质量经理。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated agent responsible for the \"TriageNonConformance\" action. Produce an owner assignment and severity for an auto-opened NonConformance; an owner must be assigned within 24h (R-12) and a safety-critical Part NCR escalated to the Quality Manager within 4h (R-15). Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"TriageNonConformance\" using non_conformance. Produce an owner assignment and severity for an auto-opened NonConformance; an owner must be assigned within 24h (R-12) and a safety-critical Part NCR escalated to the Quality Manager within 4h (R-15). Produce non_conformance and emit the appropriate events.",
+      "system_prompt": "作为负责「TriageNonConformance」动作的自动化智能体，为自动开立的不合格品产出负责人指派与严重度；须在 24 小时内指派负责人(R-12)，安全关键零件不合格须在 4 小时内升级至质量经理(R-15)。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（non_conformance）执行「TriageNonConformance」。为自动开立的不合格品产出负责人指派与严重度；须在 24 小时内指派负责人(R-12)，安全关键零件不合格须在 4 小时内升级至质量经理(R-15)。 产出（non_conformance）并发出相应事件。",
       "tool_use": [
         "Quality Data Mart"
       ],
@@ -4718,16 +4730,17 @@
         "role": "Quality Engineer",
         "roleZh": "质量工程师",
         "kind": "agent"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:disposition-non-conformance",
       "uuid": "4000000000000000000000000000000e",
       "name": "DispositionNonConformance",
       "nameZh": "处置不合格品",
-      "description": "Produce a Disposition of UseAsIs, Rework, ReturnToSupplier, Quarantine, or Scrap; UseAsIs/Rework on a safety-critical Part requires QM sign-off (R-13) and a Quarantine blocks new WorkOrder release (R-02); only a Quality Engineer or higher may post it (R-19).",
+      "description": "产出照用、返工、退供应商、隔离或报废处置；安全关键零件照用/返工需质量经理签核(R-13)，隔离将阻止新工单下达(R-02)；仅质量工程师或更高级别可过账(R-19)。",
       "descriptionZh": "产出照用、返工、退供应商、隔离或报废处置；安全关键零件照用/返工需质量经理签核(R-13)，隔离将阻止新工单下达(R-02)；仅质量工程师或更高级别可过账(R-19)。",
-      "submission_criteria": "1. Event NON_CONFORMANCE_ASSIGNED has been received\n2. Rule \"Only Quality Engineer posts Disposition\" is satisfied\n3. Rule \"QM sign-off for UseAsIs/Rework on safety parts\" is satisfied\n4. Rule \"Quarantine disposition blocks release\" is satisfied",
+      "submission_criteria": "1. 事件 NON_CONFORMANCE_ASSIGNED 已送达\n2. 规则「仅质量工程师可过账处置」已满足\n3. 规则「安全零件照用/返工需质量经理签核」已满足\n4. 规则「隔离处置阻止下达」已满足",
       "object_type": "action",
       "category": "处置不合格品",
       "actor": [
@@ -4745,51 +4758,51 @@
         {
           "order": "1",
           "name": "verifyTheActorIsAQuality",
-          "description": "Verify the actor is a Quality Engineer or higher per R-19.",
+          "description": "按 R-19 核验执行人为质量工程师或更高级别。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "R-19-disposition-authorization",
-              "name": "Only Quality Engineer posts Disposition",
+              "name": "仅质量工程师可过账处置",
               "submission_criteria": "",
-              "description": "Only a Quality Engineer or higher is authorized to post a Disposition; a Quality Inspector may not post a Disposition."
+              "description": "仅质量工程师或更高级别有权过账处置；质量检验员不得过账处置。"
             }
           ]
         },
         {
           "order": "2",
           "name": "forUseAsIsReworkOn",
-          "description": "For UseAsIs/Rework on a safety-critical Part, obtain Quality Manager sign-off per R-13.",
+          "description": "对安全关键零件的照用/返工，按 R-13 取得质量经理签核。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "R-13-useasis-rework-qm-signoff",
-              "name": "QM sign-off for UseAsIs/Rework on safety parts",
+              "name": "安全零件照用/返工需质量经理签核",
               "submission_criteria": "",
-              "description": "A Disposition of UseAsIs or Rework on a Part whose safety_class is Critical is required to carry Quality Manager sign-off."
+              "description": "对 safety_class 为 Critical 零件作出照用或返工处置时，须由质量经理签核。"
             }
           ]
         },
         {
           "order": "3",
           "name": "produceTheDispositionAQuarantineBlocks",
-          "description": "Produce the Disposition; a Quarantine blocks the affected Part from new WorkOrder release per R-02.",
+          "description": "产出处置；隔离将按 R-02 阻止受影响零件的新工单下达。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "R-02-quarantine-blocks-release",
-              "name": "Quarantine disposition blocks release",
+              "name": "隔离处置阻止下达",
               "submission_criteria": "",
-              "description": "A component Part that has an open NonConformance with Disposition = Quarantine shall not be consumed by any newly released WorkOrder."
+              "description": "存在处置为隔离的开立不合格品的组件零件，不得被任何新下达的生产工单消耗。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated agent responsible for the \"DispositionNonConformance\" action. Produce a Disposition of UseAsIs, Rework, ReturnToSupplier, Quarantine, or Scrap; UseAsIs/Rework on a safety-critical Part requires QM sign-off (R-13) and a Quarantine blocks new WorkOrder release (R-02); only a Quality Engineer or higher may post it (R-19). Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"DispositionNonConformance\" using non_conformance, investigation_findings. Produce a Disposition of UseAsIs, Rework, ReturnToSupplier, Quarantine, or Scrap; UseAsIs/Rework on a safety-critical Part requires QM sign-off (R-13) and a Quarantine blocks new WorkOrder release (R-02); only a Quality Engineer or higher may post it (R-19). Produce disposition and emit the appropriate events.",
+      "system_prompt": "作为负责「DispositionNonConformance」动作的自动化智能体，产出照用、返工、退供应商、隔离或报废处置；安全关键零件照用/返工需质量经理签核(R-13)，隔离将阻止新工单下达(R-02)；仅质量工程师或更高级别可过账(R-19)。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（non_conformance、investigation_findings）执行「DispositionNonConformance」。产出照用、返工、退供应商、隔离或报废处置；安全关键零件照用/返工需质量经理签核(R-13)，隔离将阻止新工单下达(R-02)；仅质量工程师或更高级别可过账(R-19)。 产出（disposition）并发出相应事件。",
       "tool_use": [
         "Quality Data Mart"
       ],
@@ -4935,16 +4948,17 @@
         "role": "Quality Engineer",
         "roleZh": "质量工程师",
         "kind": "agent"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:open-corrective-action",
       "uuid": "4000000000000000000000000000000f",
       "name": "OpenCorrectiveAction",
       "nameZh": "开立纠正措施",
-      "description": "Produce a CorrectiveAction with a due date from the Disposition and root-cause analysis; a NonConformance recurring three or more times in 90 days for the same Part requires a formal CAPA (R-14), and a CAPA must be verified effective before its NonConformance may close (R-18).",
+      "description": "依处置与根因分析产出含到期日的纠正措施；同一零件 90 天内重复三次或以上的不合格品需正式 CAPA(R-14)，且 CAPA 须验证有效后其不合格品方可关闭(R-18)。",
       "descriptionZh": "依处置与根因分析产出含到期日的纠正措施；同一零件 90 天内重复三次或以上的不合格品需正式 CAPA(R-14)，且 CAPA 须验证有效后其不合格品方可关闭(R-18)。",
-      "submission_criteria": "1. Event NON_CONFORMANCE_DISPOSITIONED has been received\n2. Rule \"Recurring NCR triggers CAPA\" is satisfied\n3. Rule \"CAPA verified before NCR close\" is satisfied",
+      "submission_criteria": "1. 事件 NON_CONFORMANCE_DISPOSITIONED 已送达\n2. 规则「重复不合格触发纠正措施」已满足\n3. 规则「纠正措施验证后方可关闭不合格品」已满足",
       "object_type": "action",
       "category": "开立纠正措施",
       "actor": [
@@ -4963,43 +4977,43 @@
         {
           "order": "1",
           "name": "ifANonConformanceRecursThree",
-          "description": "If a NonConformance recurs three or more times within 90 days for the same Part, require a formal CorrectiveAction per R-14.",
+          "description": "若同一零件 90 天内重复三次或以上，按 R-14 要求正式纠正措施。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "R-14-recurrence-capa",
-              "name": "Recurring NCR triggers CAPA",
+              "name": "重复不合格触发纠正措施",
               "submission_criteria": "",
-              "description": "A NonConformance that recurs three or more times within any 90-day window for the same Part shall trigger a formal CorrectiveAction (CAPA)."
+              "description": "同一零件在任何 90 天窗口内重复出现三次或以上的不合格品，应触发正式纠正措施(CAPA)。"
             }
           ]
         },
         {
           "order": "2",
           "name": "produceACorrectiveActionWithA",
-          "description": "Produce a CorrectiveAction with a due date; on verification, close it and the NonConformance per R-18.",
+          "description": "产出含到期日的纠正措施；验证后按 R-18 关闭其与不合格品。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "R-18-capa-verified-before-close",
-              "name": "CAPA verified before NCR close",
+              "name": "纠正措施验证后方可关闭不合格品",
               "submission_criteria": "",
-              "description": "A CorrectiveAction must be verified effective before its linked NonConformance may be set to status Closed."
+              "description": "纠正措施须经验证有效，其关联不合格品方可置为已关闭状态。"
             }
           ]
         },
         {
           "order": "3",
           "name": "ifTheFixChangesProductStructure",
-          "description": "If the fix changes product structure, raise a new EngineeringChange (re-entering Process P1).",
+          "description": "若修复改变产品结构，提出新工程变更（重入流程 P1）。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated agent responsible for the \"OpenCorrectiveAction\" action. Produce a CorrectiveAction with a due date from the Disposition and root-cause analysis; a NonConformance recurring three or more times in 90 days for the same Part requires a formal CAPA (R-14), and a CAPA must be verified effective before its NonConformance may close (R-18). Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"OpenCorrectiveAction\" using disposition, root_cause_analysis. Produce a CorrectiveAction with a due date from the Disposition and root-cause analysis; a NonConformance recurring three or more times in 90 days for the same Part requires a formal CAPA (R-14), and a CAPA must be verified effective before its NonConformance may close (R-18). Produce corrective_action, engineering_change and emit the appropriate events.",
+      "system_prompt": "作为负责「OpenCorrectiveAction」动作的自动化智能体，依处置与根因分析产出含到期日的纠正措施；同一零件 90 天内重复三次或以上的不合格品需正式 CAPA(R-14)，且 CAPA 须验证有效后其不合格品方可关闭(R-18)。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（disposition、root_cause_analysis）执行「OpenCorrectiveAction」。依处置与根因分析产出含到期日的纠正措施；同一零件 90 天内重复三次或以上的不合格品需正式 CAPA(R-14)，且 CAPA 须验证有效后其不合格品方可关闭(R-18)。 产出（corrective_action、engineering_change）并发出相应事件。",
       "tool_use": [
         "Quality Data Mart"
       ],
@@ -5164,7 +5178,8 @@
         "role": "Quality Engineer",
         "roleZh": "质量工程师",
         "kind": "agent"
-      }
+      },
+      "typescript_code": ""
     }
   ],
   "events": [
@@ -5173,7 +5188,7 @@
       "uuid": "50000000000000000000000000000001",
       "name": "CHANGE_NEED_IDENTIFIED",
       "nameZh": "已识别变更需求",
-      "description": "A defect trend, customer request, or cost reduction surfaces a need to change product structure.",
+      "description": "缺陷趋势、客户请求或成本降低暴露出更改产品结构的需求。",
       "descriptionZh": "缺陷趋势、客户请求或成本降低暴露出更改产品结构的需求。",
       "payload": {
         "source_action": "",
@@ -5219,7 +5234,7 @@
       "uuid": "50000000000000000000000000000002",
       "name": "ENGINEERING_CHANGE_RAISED",
       "nameZh": "工程变更已提出",
-      "description": "A new EngineeringChange has been raised in Draft status.",
+      "description": "已提出状态为草稿的新工程变更。",
       "descriptionZh": "已提出状态为草稿的新工程变更。",
       "payload": {
         "source_action": "raiseEngineeringChange",
@@ -5270,7 +5285,7 @@
       "uuid": "50000000000000000000000000000003",
       "name": "ENGINEERING_CHANGE_CLASSIFIED",
       "nameZh": "工程变更已分类",
-      "description": "An EngineeringChange has been classified with a category and second-approval flag.",
+      "description": "工程变更已分类，含类别与二次批准标记。",
       "descriptionZh": "工程变更已分类，含类别与二次批准标记。",
       "payload": {
         "source_action": "classifyEngineeringChange",
@@ -5321,7 +5336,7 @@
       "uuid": "50000000000000000000000000000004",
       "name": "ENGINEERING_CHANGE_APPROVED",
       "nameZh": "工程变更已批准",
-      "description": "An EngineeringChange has been approved by the CCB.",
+      "description": "工程变更已经变更控制委员会批准。",
       "descriptionZh": "工程变更已经变更控制委员会批准。",
       "payload": {
         "source_action": "approveEngineeringChange",
@@ -5382,7 +5397,7 @@
       "uuid": "50000000000000000000000000000005",
       "name": "ENGINEERING_CHANGE_REJECTED",
       "nameZh": "工程变更已拒绝",
-      "description": "An EngineeringChange has been rejected by the CCB.",
+      "description": "工程变更已被变更控制委员会拒绝。",
       "descriptionZh": "工程变更已被变更控制委员会拒绝。",
       "payload": {
         "source_action": "approveEngineeringChange",
@@ -5431,7 +5446,7 @@
       "uuid": "50000000000000000000000000000006",
       "name": "REVISION_BECAME_EFFECTIVE",
       "nameZh": "修订已生效",
-      "description": "A BOM revision became effective on its effective_from date.",
+      "description": "物料清单修订在其生效起始日生效。",
       "descriptionZh": "物料清单修订在其生效起始日生效。",
       "payload": {
         "source_action": "setRevisionEffectivity",
@@ -5492,7 +5507,7 @@
       "uuid": "50000000000000000000000000000007",
       "name": "BOM_REVISION_PUBLISHED",
       "nameZh": "物料清单修订已发布",
-      "description": "A new BOM revision was published to downstream systems.",
+      "description": "新物料清单修订已发布至下游系统。",
       "descriptionZh": "新物料清单修订已发布至下游系统。",
       "payload": {
         "source_action": "setRevisionEffectivity",
@@ -5560,7 +5575,7 @@
       "uuid": "50000000000000000000000000000008",
       "name": "WORK_ORDER_REVALIDATION_REQUIRED",
       "nameZh": "工单需重校",
-      "description": "An open WorkOrder still points at a superseded revision and must be revalidated.",
+      "description": "开放工单仍指向被替代修订，须重校。",
       "descriptionZh": "开放工单仍指向被替代修订，须重校。",
       "payload": {
         "source_action": "revalidateOpenWorkOrders",
@@ -5608,7 +5623,7 @@
       "uuid": "50000000000000000000000000000009",
       "name": "PRODUCTION_DEMAND_CONFIRMED",
       "nameZh": "生产需求已确认",
-      "description": "A production demand (planned order) has been confirmed, triggering work-order release.",
+      "description": "生产需求（计划订单）已确认，触发工单下达。",
       "descriptionZh": "生产需求（计划订单）已确认，触发工单下达。",
       "payload": {
         "source_action": "",
@@ -5653,7 +5668,7 @@
       "uuid": "5000000000000000000000000000000a",
       "name": "WORK_ORDER_RELEASED",
       "nameZh": "工单已下达",
-      "description": "A WorkOrder has been released with reserved components.",
+      "description": "工单已下达并预留组件。",
       "descriptionZh": "工单已下达并预留组件。",
       "payload": {
         "source_action": "releaseWorkOrder",
@@ -5713,7 +5728,7 @@
       "uuid": "5000000000000000000000000000000b",
       "name": "WORK_ORDER_RELEASE_BLOCKED",
       "nameZh": "工单下达受阻",
-      "description": "WorkOrder release was blocked because a release rule failed.",
+      "description": "因下达规则未通过，工单下达受阻。",
       "descriptionZh": "因下达规则未通过，工单下达受阻。",
       "payload": {
         "source_action": "releaseWorkOrder",
@@ -5771,7 +5786,7 @@
       "uuid": "5000000000000000000000000000000c",
       "name": "PRODUCTION_OPERATION_CONFIRMED",
       "nameZh": "生产操作已确认",
-      "description": "A production operation has been confirmed.",
+      "description": "生产操作已确认。",
       "descriptionZh": "生产操作已确认。",
       "payload": {
         "source_action": "confirmProductionOperation",
@@ -5819,7 +5834,7 @@
       "uuid": "5000000000000000000000000000000d",
       "name": "FINISHED_LOT_PRODUCED",
       "nameZh": "成品批已产出",
-      "description": "A finished Part lot has been produced at the final operation.",
+      "description": "在最终操作产出成品零件批。",
       "descriptionZh": "在最终操作产出成品零件批。",
       "payload": {
         "source_action": "confirmProductionOperation",
@@ -5889,7 +5904,7 @@
       "uuid": "5000000000000000000000000000000e",
       "name": "INSPECTION_LOT_OPENED",
       "nameZh": "检验批已开立",
-      "description": "An InspectionLot has been opened for a finished or incoming lot.",
+      "description": "已为成品或来料批开立检验批。",
       "descriptionZh": "已为成品或来料批开立检验批。",
       "payload": {
         "source_action": "openInspectionLot",
@@ -5965,7 +5980,7 @@
       "uuid": "5000000000000000000000000000000f",
       "name": "INSPECTION_RECORDED",
       "nameZh": "检验已记录",
-      "description": "An Inspection result has been recorded for a lot.",
+      "description": "已为批记录检验结果。",
       "descriptionZh": "已为批记录检验结果。",
       "payload": {
         "source_action": "recordInspection",
@@ -6035,7 +6050,7 @@
       "uuid": "50000000000000000000000000000010",
       "name": "INSPECTION_LOT_ACCEPTED",
       "nameZh": "检验批已接受",
-      "description": "An InspectionLot usage decision was posted as Accepted.",
+      "description": "检验批使用决策过账为接受。",
       "descriptionZh": "检验批使用决策过账为接受。",
       "payload": {
         "source_action": "postUsageDecision",
@@ -6085,7 +6100,7 @@
       "uuid": "50000000000000000000000000000011",
       "name": "INSPECTION_LOT_REJECTED",
       "nameZh": "检验批已拒收",
-      "description": "An InspectionLot usage decision was posted as Rejected.",
+      "description": "检验批使用决策过账为拒收。",
       "descriptionZh": "检验批使用决策过账为拒收。",
       "payload": {
         "source_action": "postUsageDecision",
@@ -6143,7 +6158,7 @@
       "uuid": "50000000000000000000000000000012",
       "name": "NON_CONFORMANCE_OPENED",
       "nameZh": "不合格品已开立",
-      "description": "A NonConformance was automatically opened on a rejected lot.",
+      "description": "在拒收批上自动开立不合格品。",
       "descriptionZh": "在拒收批上自动开立不合格品。",
       "payload": {
         "source_action": "postUsageDecision",
@@ -6213,7 +6228,7 @@
       "uuid": "50000000000000000000000000000013",
       "name": "NON_CONFORMANCE_ASSIGNED",
       "nameZh": "不合格品已分派",
-      "description": "A NonConformance has been assigned an owner and severity.",
+      "description": "不合格品已指派负责人与严重度。",
       "descriptionZh": "不合格品已指派负责人与严重度。",
       "payload": {
         "source_action": "triageNonConformance",
@@ -6273,7 +6288,7 @@
       "uuid": "50000000000000000000000000000014",
       "name": "NON_CONFORMANCE_DISPOSITIONED",
       "nameZh": "不合格品已处置",
-      "description": "A NonConformance has been dispositioned with a decision.",
+      "description": "不合格品已作出处置决定。",
       "descriptionZh": "不合格品已作出处置决定。",
       "payload": {
         "source_action": "dispositionNonConformance",
@@ -6343,7 +6358,7 @@
       "uuid": "50000000000000000000000000000015",
       "name": "CORRECTIVE_ACTION_OPENED",
       "nameZh": "纠正措施已开立",
-      "description": "A CorrectiveAction has been opened with a due date.",
+      "description": "已开立含到期日的纠正措施。",
       "descriptionZh": "已开立含到期日的纠正措施。",
       "payload": {
         "source_action": "openCorrectiveAction",
@@ -6401,7 +6416,7 @@
       "uuid": "50000000000000000000000000000016",
       "name": "CORRECTIVE_ACTION_CLOSED",
       "nameZh": "纠正措施已关闭",
-      "description": "A CorrectiveAction was verified effective and closed.",
+      "description": "纠正措施经验证有效并关闭。",
       "descriptionZh": "纠正措施经验证有效并关闭。",
       "payload": {
         "source_action": "openCorrectiveAction",
@@ -6459,7 +6474,7 @@
       "uuid": "50000000000000000000000000000017",
       "name": "NON_CONFORMANCE_CLOSED",
       "nameZh": "不合格品已关闭",
-      "description": "A NonConformance was set to Closed after its CorrectiveAction was verified effective.",
+      "description": "纠正措施验证有效后不合格品被置为已关闭。",
       "descriptionZh": "纠正措施验证有效后不合格品被置为已关闭。",
       "payload": {
         "source_action": "openCorrectiveAction",
@@ -6507,7 +6522,7 @@
       "uuid": "50000000000000000000000000000018",
       "name": "SUPPLIER_DELIVERY_ARRIVED",
       "nameZh": "供应商交货已到达",
-      "description": "A Supplier delivery has arrived against a purchase order.",
+      "description": "供应商交货已按采购订单到达。",
       "descriptionZh": "供应商交货已按采购订单到达。",
       "payload": {
         "source_action": "",
@@ -6562,7 +6577,7 @@
       "uuid": "50000000000000000000000000000019",
       "name": "FINISHED_LOT_SHIPPABLE",
       "nameZh": "成品批可发运",
-      "description": "A finished lot is delivery-eligible after acceptance.",
+      "description": "成品批在接受后可交付。",
       "descriptionZh": "成品批在接受后可交付。",
       "payload": {
         "source_action": "releaseLotToShip",
@@ -6610,7 +6625,7 @@
       "uuid": "5000000000000000000000000000001a",
       "name": "GOODS_RECEIPT_POSTED",
       "nameZh": "收货已过账",
-      "description": "A supplier goods receipt was posted to quality-inspection stock.",
+      "description": "供应商收货已过账至质检库存。",
       "descriptionZh": "供应商收货已过账至质检库存。",
       "payload": {
         "source_action": "postGoodsReceipt",
@@ -6672,7 +6687,7 @@
         "en": "Engineering Change to Effectivity",
         "zh": "工程变更到生效"
       },
-      "description": "How a proposed change to product structure moves from request through review, approval, and revision effectivity so the shop floor builds only to the currently effective specification.",
+      "description": "工程变更到生效",
       "actor": [
         "Human",
         "Agent"
@@ -6684,35 +6699,35 @@
         {
           "order": "1",
           "name": "raiseEngineeringChange",
-          "description": "Create a new EngineeringChange record in status Draft from the proposed change description and affected Part numbers.",
+          "description": "根据提议的变更说明与受影响零件号，创建状态为草稿的新工程变更记录。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "2",
           "name": "classifyEngineeringChange",
-          "description": "Classify the change category (Minor/Major/Safety) and set requires_second_approval when any affected Part is safety-critical per R-03.",
+          "description": "对变更类别（次要/重大/安全）进行分类，并在任一受影响零件为安全关键时按 R-03 设置需二次批准。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "3",
           "name": "approveEngineeringChange",
-          "description": "Review the EngineeringChange at the CCB and produce an approval decision; enforces CCB quorum (R-05) and second-engineer approval for safety changes (R-03).",
+          "description": "在变更控制委员会审查工程变更并产出批准决定；执行委员会法定人数(R-05)及安全变更的第二工程师批准(R-03)。",
           "type": "manual",
           "condition": "Approved"
         },
         {
           "order": "4",
           "name": "setRevisionEffectivity",
-          "description": "Produce a new effective BillOfMaterials revision and bump each affected Part.revision; enforces the effective_from lead time per R-06.",
+          "description": "产出新的生效物料清单修订并提升每个受影响 Part.revision；按 R-06 执行生效起始日提前期。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "5",
           "name": "revalidateOpenWorkOrders",
-          "description": "Evaluate all open WorkOrders referencing an affected Part and produce a hold flag on any still pointing at a superseded revision per R-01.",
+          "description": "评估所有引用受影响零件的开放工单，对仍指向被替代修订者按 R-01 产出冻结标记。",
           "type": "tool",
           "condition": ""
         }
@@ -6857,7 +6872,7 @@
         "en": "Build to Inspection",
         "zh": "生产到检验"
       },
-      "description": "How a WorkOrder is released against an effective BillOfMaterials, built, inspected via an InspectionLot, and either released to stock/ship or routed into a NonConformance.",
+      "description": "生产到检验",
       "actor": [
         "Agent",
         "Human",
@@ -6871,49 +6886,49 @@
         {
           "order": "1",
           "name": "releaseWorkOrder",
-          "description": "Release a WorkOrder with reserved components against the currently effective BillOfMaterials; blocked unless all components are at effective revision (R-01) and none carry a Quarantine NonConformance (R-02).",
+          "description": "依当前生效物料清单下达带预留组件的工单；除非所有组件均为生效修订(R-01)且无隔离不合格(R-02)，否则阻止。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "2",
           "name": "confirmProductionOperation",
-          "description": "Confirm operation yield from issued components and, at the final operation, produce a finished Part lot pending inspection; backflushes against the released WorkOrder BOM revision per R-09.",
+          "description": "依已发料组件确认操作产出，并在最终操作产出待检成品零件批；按 R-09 依已下达工单的物料清单修订倒冲。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "3",
           "name": "openInspectionLot",
-          "description": "Create a new InspectionLot in status Open with a sampling plan; mandatory for any finished lot of a Part whose inspection_required is true per R-07.",
+          "description": "创建带抽样计划、状态为开立的新检验批；按 R-07 对 inspection_required 为真零件的任何成品批为强制。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "4",
           "name": "recordInspection",
-          "description": "Produce an Inspection record with pass/fail per characteristic and an aggregate result; the lot is Accepted only if defects are at or below the AQL acceptance number per R-08. Used for both finished-lot and incoming inspection.",
+          "description": "产出含各特性合格/不合格及汇总结果的检验记录；仅当缺陷数不超过 AQL 接收数时该批方为接受(R-08)。用于成品批与来料检验。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "5",
           "name": "postUsageDecision",
-          "description": "On Accepted, post the lot to unrestricted stock and clear it to ship per R-04; on Rejected, automatically open a NonConformance per R-04 and post to blocked stock.",
+          "description": "接受时按 R-04 将批过账至非限制库存并放行发运；拒收时按 R-04 自动开立不合格品并过账至冻结库存。",
           "type": "tool",
           "condition": "Accepted"
         },
         {
           "order": "6",
           "name": "releaseLotToShip",
-          "description": "Produce a delivery-eligible lot from an accepted finished lot; a finished lot may not ship until its InspectionLot is Accepted per R-04.",
+          "description": "由已接受成品批产出可交付批；成品批在其检验批被接受前不得发运(R-04)。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "7",
           "name": "triageNonConformance",
-          "description": "Produce an owner assignment and severity for an auto-opened NonConformance; an owner must be assigned within 24h (R-12) and a safety-critical Part NCR escalated to the Quality Manager within 4h (R-15).",
+          "description": "为自动开立的不合格品产出负责人指派与严重度；须在 24 小时内指派负责人(R-12)，安全关键零件不合格须在 4 小时内升级至质量经理(R-15)。",
           "type": "tool",
           "condition": ""
         }
@@ -7096,7 +7111,7 @@
         "en": "Supplier Qualification & Incoming Inspection",
         "zh": "供应商资格与来料检验"
       },
-      "description": "How a Supplier-provided Part lot is received and inspected before consumption.",
+      "description": "供应商资格与来料检验",
       "actor": [
         "Human"
       ],
@@ -7107,21 +7122,21 @@
         {
           "order": "1",
           "name": "postGoodsReceipt",
-          "description": "Produce a received Part lot in quality-inspection stock and, for inspection-required parts, an incoming InspectionLot; goods may be received only from an Approved Supplier per R-10.",
+          "description": "产出处于质检库存的收货零件批，并对需检验零件产出来料检验批；按 R-10 仅可从合格供应商收货。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "2",
           "name": "recordInspection",
-          "description": "Produce an Inspection record with pass/fail per characteristic and an aggregate result; the lot is Accepted only if defects are at or below the AQL acceptance number per R-08. Used for both finished-lot and incoming inspection.",
+          "description": "产出含各特性合格/不合格及汇总结果的检验记录；仅当缺陷数不超过 AQL 接收数时该批方为接受(R-08)。用于成品批与来料检验。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "3",
           "name": "postUsageDecision",
-          "description": "On Accepted, post the lot to unrestricted stock and clear it to ship per R-04; on Rejected, automatically open a NonConformance per R-04 and post to blocked stock.",
+          "description": "接受时按 R-04 将批过账至非限制库存并放行发运；拒收时按 R-04 自动开立不合格品并过账至冻结库存。",
           "type": "tool",
           "condition": ""
         }
@@ -7219,7 +7234,7 @@
         "en": "Nonconformance Disposition & CAPA",
         "zh": "不合格品处置与纠正措施"
       },
-      "description": "How a NonConformance is investigated, dispositioned, and closed.",
+      "description": "不合格品处置与纠正措施",
       "actor": [
         "Agent",
         "Human"
@@ -7231,21 +7246,21 @@
         {
           "order": "1",
           "name": "triageNonConformance",
-          "description": "Produce an owner assignment and severity for an auto-opened NonConformance; an owner must be assigned within 24h (R-12) and a safety-critical Part NCR escalated to the Quality Manager within 4h (R-15).",
+          "description": "为自动开立的不合格品产出负责人指派与严重度；须在 24 小时内指派负责人(R-12)，安全关键零件不合格须在 4 小时内升级至质量经理(R-15)。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "2",
           "name": "dispositionNonConformance",
-          "description": "Produce a Disposition of UseAsIs, Rework, ReturnToSupplier, Quarantine, or Scrap; UseAsIs/Rework on a safety-critical Part requires QM sign-off (R-13) and a Quarantine blocks new WorkOrder release (R-02); only a Quality Engineer or higher may post it (R-19).",
+          "description": "产出照用、返工、退供应商、隔离或报废处置；安全关键零件照用/返工需质量经理签核(R-13)，隔离将阻止新工单下达(R-02)；仅质量工程师或更高级别可过账(R-19)。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "3",
           "name": "openCorrectiveAction",
-          "description": "Produce a CorrectiveAction with a due date from the Disposition and root-cause analysis; a NonConformance recurring three or more times in 90 days for the same Part requires a formal CAPA (R-14), and a CAPA must be verified effective before its NonConformance may close (R-18).",
+          "description": "依处置与根因分析产出含到期日的纠正措施；同一零件 90 天内重复三次或以上的不合格品需正式 CAPA(R-14)，且 CAPA 须验证有效后其不合格品方可关闭(R-18)。",
           "type": "tool",
           "condition": ""
         }

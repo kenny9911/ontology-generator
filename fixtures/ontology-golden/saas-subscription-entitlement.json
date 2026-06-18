@@ -42,40 +42,40 @@
       "uuid": "3c4d5e6f70819203a4b5c6d7e8f9a0b1",
       "name": "Account",
       "nameZh": "客户账户",
-      "description": "The commercial customer relationship of record, held in Salesforce CRM.",
+      "description": "在 Salesforce CRM 中记录的商业客户关系主体。",
       "descriptionZh": "在 Salesforce CRM 中记录的商业客户关系主体。",
       "type": "data",
-      "relationship_description": "Account signs Contract. Account holds Subscription. Account.csm_owner_id references Account.",
+      "relationship_description": "【客户账户】签署【合同】。【客户账户】持有【订阅】。",
       "primary_key": "account_id",
       "properties": [
         {
           "name": "account_id",
           "type": "String",
-          "description": "Primary key.",
+          "description": "账户ID",
           "nameZh": "账户ID"
         },
         {
           "name": "legal_name",
           "type": "String",
-          "description": "",
+          "description": "法定名称",
           "nameZh": "法定名称"
         },
         {
           "name": "tier",
           "type": "List<String>",
-          "description": "Drives R-06 overage suppression.",
+          "description": "层级",
           "nameZh": "层级"
         },
         {
           "name": "net_terms",
           "type": "Boolean",
-          "description": "Drives the R-02 provisioning-gate exception.",
+          "description": "账期标志",
           "nameZh": "账期标志"
         },
         {
           "name": "csm_owner_id",
           "type": "String",
-          "description": "FK to the owning user (CSM).",
+          "description": "客户成功负责人ID",
           "nameZh": "客户成功负责人ID",
           "is_foreign_key": true,
           "references": "objectType:account"
@@ -107,22 +107,22 @@
       "uuid": "4d5e6f70819203a4b5c6d7e8f9a0b1c2",
       "name": "Contract",
       "nameZh": "合同",
-      "description": "An executed commercial agreement with term dates and committed quantities, held in Salesforce CRM.",
+      "description": "已签署的商业协议，含合同期限与承诺数量，由 Salesforce CRM 记录。",
       "descriptionZh": "已签署的商业协议，含合同期限与承诺数量，由 Salesforce CRM 记录。",
       "type": "data",
-      "relationship_description": "Account signs Contract. Contract references Plan. Contract generates Subscription. Contract.account_id references Account. Contract.plan_code references Plan.",
+      "relationship_description": "【客户账户】签署【合同】。【合同】引用【套餐】。【合同】生成【订阅】。",
       "primary_key": "contract_id",
       "properties": [
         {
           "name": "contract_id",
           "type": "String",
-          "description": "Primary key.",
+          "description": "合同ID",
           "nameZh": "合同ID"
         },
         {
           "name": "account_id",
           "type": "String",
-          "description": "FK to Account.",
+          "description": "账户ID",
           "nameZh": "账户ID",
           "is_foreign_key": true,
           "references": "objectType:account"
@@ -130,7 +130,7 @@
         {
           "name": "plan_code",
           "type": "String",
-          "description": "FK to Plan.",
+          "description": "套餐代码",
           "nameZh": "套餐代码",
           "is_foreign_key": true,
           "references": "objectType:plan"
@@ -138,37 +138,37 @@
         {
           "name": "term_start",
           "type": "Date",
-          "description": "",
+          "description": "起始日期",
           "nameZh": "起始日期"
         },
         {
           "name": "term_end",
           "type": "Date",
-          "description": "Drives R-08, R-09.",
+          "description": "结束日期",
           "nameZh": "结束日期"
         },
         {
           "name": "term_months",
           "type": "Integer",
-          "description": "Minimum 12 per R-18.",
+          "description": "合同月数",
           "nameZh": "合同月数"
         },
         {
           "name": "seat_count",
           "type": "Integer",
-          "description": "Drives R-17 seat cap.",
+          "description": "席位数",
           "nameZh": "席位数"
         },
         {
           "name": "discount_pct",
           "type": "Float",
-          "description": "Drives R-07 approval thresholds.",
+          "description": "折扣百分比",
           "nameZh": "折扣百分比"
         },
         {
           "name": "tier",
           "type": "List<String>",
-          "description": "",
+          "description": "层级",
           "nameZh": "层级"
         }
       ],
@@ -199,22 +199,22 @@
       "uuid": "5e6f70819203a4b5c6d7e8f9a0b1c2d3",
       "name": "Subscription",
       "nameZh": "订阅",
-      "description": "An active, billable instance of a Plan tied to an Account and Contract, held in Stripe Billing.",
+      "description": "与账户和合同绑定的可计费套餐实例，由 Stripe Billing 记录。",
       "descriptionZh": "与账户和合同绑定的可计费套餐实例，由 Stripe Billing 记录。",
       "type": "data",
-      "relationship_description": "Account holds Subscription. Contract generates Subscription. Subscription has Entitlement. Subscription meters UsageRecord. Subscription billed by Invoice. Subscription has renewal RenewalOpportunity. Subscription tracked by ProvisioningTask. Subscription.account_id references Account. Subscription.contract_id references Contract. Subscription.plan_code references Plan.",
+      "relationship_description": "【客户账户】持有【订阅】。【合同】生成【订阅】。【订阅】拥有【权益】。【订阅】计量【用量记录】。【订阅】开票于【发票】。【订阅】拥有续约【续约商机】。【订阅】跟踪于【开通任务】。",
       "primary_key": "subscription_id",
       "properties": [
         {
           "name": "subscription_id",
           "type": "String",
-          "description": "Primary key.",
+          "description": "订阅ID",
           "nameZh": "订阅ID"
         },
         {
           "name": "account_id",
           "type": "String",
-          "description": "FK to Account.",
+          "description": "账户ID",
           "nameZh": "账户ID",
           "is_foreign_key": true,
           "references": "objectType:account"
@@ -222,7 +222,7 @@
         {
           "name": "contract_id",
           "type": "String",
-          "description": "FK to Contract.",
+          "description": "合同ID",
           "nameZh": "合同ID",
           "is_foreign_key": true,
           "references": "objectType:contract"
@@ -230,7 +230,7 @@
         {
           "name": "plan_code",
           "type": "String",
-          "description": "FK to Plan.",
+          "description": "套餐代码",
           "nameZh": "套餐代码",
           "is_foreign_key": true,
           "references": "objectType:plan"
@@ -238,25 +238,25 @@
         {
           "name": "status",
           "type": "List<String>",
-          "description": "Lifecycle per R-09, R-10, R-13, R-20.",
+          "description": "状态",
           "nameZh": "状态"
         },
         {
           "name": "current_period_start",
           "type": "Timestamp",
-          "description": "",
+          "description": "当前周期起始",
           "nameZh": "当前周期起始"
         },
         {
           "name": "current_period_end",
           "type": "Timestamp",
-          "description": "Drives R-04, R-16.",
+          "description": "当前周期结束",
           "nameZh": "当前周期结束"
         },
         {
           "name": "renewed_through",
           "type": "Date",
-          "description": "",
+          "description": "续约至",
           "nameZh": "续约至"
         }
       ],
@@ -290,46 +290,46 @@
       "uuid": "6f70819203a4b5c6d7e8f9a0b1c2d3e4",
       "name": "Plan",
       "nameZh": "套餐",
-      "description": "A packaged offering with included quota, tier, and feature keys, held in the Entitlement Service.",
+      "description": "包含配额、层级与功能键的打包产品，由权益服务记录。",
       "descriptionZh": "包含配额、层级与功能键的打包产品，由权益服务记录。",
       "type": "data",
-      "relationship_description": "Contract references Plan. Plan defines Entitlement.",
+      "relationship_description": "【合同】引用【套餐】。【套餐】定义【权益】。",
       "primary_key": "plan_code",
       "properties": [
         {
           "name": "plan_code",
           "type": "String",
-          "description": "Primary key.",
+          "description": "套餐代码",
           "nameZh": "套餐代码"
         },
         {
           "name": "display_name",
           "type": "String",
-          "description": "",
+          "description": "显示名称",
           "nameZh": "显示名称"
         },
         {
           "name": "included_quota",
           "type": "Integer",
-          "description": "Unit per quota_unit; drives R-03.",
+          "description": "包含配额",
           "nameZh": "包含配额"
         },
         {
           "name": "quota_unit",
           "type": "List<String>",
-          "description": "",
+          "description": "配额单位",
           "nameZh": "配额单位"
         },
         {
           "name": "tier",
           "type": "List<String>",
-          "description": "Drives R-06.",
+          "description": "层级",
           "nameZh": "层级"
         },
         {
           "name": "feature_keys",
           "type": "List<String>",
-          "description": "Maps to Entitlement grants.",
+          "description": "功能键",
           "nameZh": "功能键"
         }
       ],
@@ -359,22 +359,22 @@
       "uuid": "70819203a4b5c6d7e8f9a0b1c2d3e4f5",
       "name": "Entitlement",
       "nameZh": "权益",
-      "description": "A granted feature, quota limit, or seat allocation derived from a Plan, enforced via LaunchDarkly.",
+      "description": "由套餐派生并通过 LaunchDarkly 实施的功能、配额或席位授予。",
       "descriptionZh": "由套餐派生并通过 LaunchDarkly 实施的功能、配额或席位授予。",
       "type": "data",
-      "relationship_description": "Plan defines Entitlement. Subscription has Entitlement. Entitlement.subscription_id references Subscription.",
+      "relationship_description": "【套餐】定义【权益】。【订阅】拥有【权益】。",
       "primary_key": "entitlement_id",
       "properties": [
         {
           "name": "entitlement_id",
           "type": "String",
-          "description": "Primary key.",
+          "description": "权益ID",
           "nameZh": "权益ID"
         },
         {
           "name": "subscription_id",
           "type": "String",
-          "description": "FK to Subscription.",
+          "description": "订阅ID",
           "nameZh": "订阅ID",
           "is_foreign_key": true,
           "references": "objectType:subscription"
@@ -382,31 +382,31 @@
         {
           "name": "feature_key",
           "type": "String",
-          "description": "Flag enforced in LaunchDarkly.",
+          "description": "功能键",
           "nameZh": "功能键"
         },
         {
           "name": "quota_limit",
           "type": "Integer",
-          "description": "Nullable for unlimited tier.",
+          "description": "配额上限",
           "nameZh": "配额上限"
         },
         {
           "name": "seat_grant",
           "type": "Integer",
-          "description": "Must be <= Contract.seat_count per R-17.",
+          "description": "席位授予",
           "nameZh": "席位授予"
         },
         {
           "name": "state",
           "type": "List<String>",
-          "description": "Drives R-04, R-10, R-12.",
+          "description": "状态",
           "nameZh": "状态"
         },
         {
           "name": "effective_at",
           "type": "Timestamp",
-          "description": "",
+          "description": "生效时间",
           "nameZh": "生效时间"
         }
       ],
@@ -436,22 +436,22 @@
       "uuid": "819203a4b5c6d7e8f9a0b1c2d3e4f506",
       "name": "UsageRecord",
       "nameZh": "用量记录",
-      "description": "A timestamped metered-consumption row keyed to a Subscription, held in Stripe Billing.",
+      "description": "与订阅关联的带时间戳的计量消耗记录，由 Stripe Billing 记录。",
       "descriptionZh": "与订阅关联的带时间戳的计量消耗记录，由 Stripe Billing 记录。",
       "type": "data",
-      "relationship_description": "Subscription meters UsageRecord. UsageRecord.subscription_id references Subscription.",
+      "relationship_description": "【订阅】计量【用量记录】。",
       "primary_key": "usage_id",
       "properties": [
         {
           "name": "usage_id",
           "type": "String",
-          "description": "Primary key.",
+          "description": "用量ID",
           "nameZh": "用量ID"
         },
         {
           "name": "subscription_id",
           "type": "String",
-          "description": "FK to Subscription.",
+          "description": "订阅ID",
           "nameZh": "订阅ID",
           "is_foreign_key": true,
           "references": "objectType:subscription"
@@ -459,19 +459,19 @@
         {
           "name": "metric",
           "type": "List<String>",
-          "description": "Matches Plan.quota_unit.",
+          "description": "指标",
           "nameZh": "指标"
         },
         {
           "name": "quantity",
           "type": "Integer",
-          "description": "",
+          "description": "数量",
           "nameZh": "数量"
         },
         {
           "name": "recorded_at",
           "type": "Timestamp",
-          "description": "",
+          "description": "记录时间",
           "nameZh": "记录时间"
         }
       ],
@@ -500,22 +500,22 @@
       "uuid": "9203a4b5c6d7e8f9a0b1c2d3e4f50617",
       "name": "Invoice",
       "nameZh": "发票",
-      "description": "A period bill referencing its Subscription, with recurring plus overage line items, held in Stripe Billing.",
+      "description": "引用其订阅、含经常性与超量行项的周期账单，由 Stripe Billing 记录。",
       "descriptionZh": "引用其订阅、含经常性与超量行项的周期账单，由 Stripe Billing 记录。",
       "type": "data",
-      "relationship_description": "Subscription billed by Invoice. Invoice settled by Payment. Invoice.subscription_id references Subscription.",
+      "relationship_description": "【订阅】开票于【发票】。【发票】结算于【付款】。",
       "primary_key": "invoice_id",
       "properties": [
         {
           "name": "invoice_id",
           "type": "String",
-          "description": "Primary key.",
+          "description": "发票ID",
           "nameZh": "发票ID"
         },
         {
           "name": "subscription_id",
           "type": "String",
-          "description": "FK to Subscription; required per R-15.",
+          "description": "订阅ID",
           "nameZh": "订阅ID",
           "is_foreign_key": true,
           "references": "objectType:subscription"
@@ -523,37 +523,37 @@
         {
           "name": "period_start",
           "type": "Date",
-          "description": "",
+          "description": "周期起始",
           "nameZh": "周期起始"
         },
         {
           "name": "period_end",
           "type": "Date",
-          "description": "",
+          "description": "周期结束",
           "nameZh": "周期结束"
         },
         {
           "name": "subtotal",
           "type": "Float",
-          "description": "",
+          "description": "小计",
           "nameZh": "小计"
         },
         {
           "name": "overage_amount",
           "type": "Float",
-          "description": "From R-03 calculation.",
+          "description": "超量金额",
           "nameZh": "超量金额"
         },
         {
           "name": "status",
           "type": "List<String>",
-          "description": "",
+          "description": "状态",
           "nameZh": "状态"
         },
         {
           "name": "line_items",
           "type": "List<String>",
-          "description": ">=1 required per R-15.",
+          "description": "行项目",
           "nameZh": "行项目"
         }
       ],
@@ -583,22 +583,22 @@
       "uuid": "03a4b5c6d7e8f9a0b1c2d3e4f5061728",
       "name": "Payment",
       "nameZh": "付款",
-      "description": "A charge against an open Invoice, recording success or failure, held in Stripe Billing.",
+      "description": "针对未结发票的扣款，记录成功或失败，由 Stripe Billing 记录。",
       "descriptionZh": "针对未结发票的扣款，记录成功或失败，由 Stripe Billing 记录。",
       "type": "data",
-      "relationship_description": "Invoice settled by Payment. Payment.invoice_id references Invoice.",
+      "relationship_description": "【发票】结算于【付款】。",
       "primary_key": "payment_id",
       "properties": [
         {
           "name": "payment_id",
           "type": "String",
-          "description": "Primary key.",
+          "description": "付款ID",
           "nameZh": "付款ID"
         },
         {
           "name": "invoice_id",
           "type": "String",
-          "description": "FK to Invoice.",
+          "description": "发票ID",
           "nameZh": "发票ID",
           "is_foreign_key": true,
           "references": "objectType:invoice"
@@ -606,25 +606,25 @@
         {
           "name": "amount",
           "type": "Float",
-          "description": "",
+          "description": "金额",
           "nameZh": "金额"
         },
         {
           "name": "status",
           "type": "List<String>",
-          "description": "Drives R-11, R-12, R-19.",
+          "description": "状态",
           "nameZh": "状态"
         },
         {
           "name": "attempt_no",
           "type": "Integer",
-          "description": "1-3 per dunning, R-11.",
+          "description": "尝试次数",
           "nameZh": "尝试次数"
         },
         {
           "name": "paid_at",
           "type": "Timestamp",
-          "description": "",
+          "description": "支付时间",
           "nameZh": "支付时间"
         }
       ],
@@ -653,22 +653,22 @@
       "uuid": "a4b5c6d7e8f9a0b1c2d3e4f506172839",
       "name": "RenewalOpportunity",
       "nameZh": "续约商机",
-      "description": "A renewal sales opportunity opened ahead of term-end for a Subscription, held in Salesforce CRM.",
+      "description": "在订阅合同期满前开立的续约销售商机，由 Salesforce CRM 记录。",
       "descriptionZh": "在订阅合同期满前开立的续约销售商机，由 Salesforce CRM 记录。",
       "type": "data",
-      "relationship_description": "Subscription has renewal RenewalOpportunity. RenewalOpportunity.subscription_id references Subscription.",
+      "relationship_description": "【订阅】拥有续约【续约商机】。",
       "primary_key": "renewal_id",
       "properties": [
         {
           "name": "renewal_id",
           "type": "String",
-          "description": "Primary key.",
+          "description": "续约ID",
           "nameZh": "续约ID"
         },
         {
           "name": "subscription_id",
           "type": "String",
-          "description": "FK to Subscription.",
+          "description": "订阅ID",
           "nameZh": "订阅ID",
           "is_foreign_key": true,
           "references": "objectType:subscription"
@@ -676,19 +676,19 @@
         {
           "name": "stage",
           "type": "List<String>",
-          "description": "R-13 closes as lost.",
+          "description": "阶段",
           "nameZh": "阶段"
         },
         {
           "name": "opened_at",
           "type": "Date",
-          "description": "T-90 per R-08.",
+          "description": "开立时间",
           "nameZh": "开立时间"
         },
         {
           "name": "target_close",
           "type": "Date",
-          "description": "",
+          "description": "目标关闭日期",
           "nameZh": "目标关闭日期"
         }
       ],
@@ -717,22 +717,22 @@
       "uuid": "b5c6d7e8f9a0b1c2d3e4f50617283940",
       "name": "ProvisioningTask",
       "nameZh": "开通任务",
-      "description": "A unit of grant, revoke, or reconcile work tracked by the Entitlement Service.",
+      "description": "由权益服务跟踪的授予、撤销或对账工作单元。",
       "descriptionZh": "由权益服务跟踪的授予、撤销或对账工作单元。",
       "type": "data",
-      "relationship_description": "Subscription tracked by ProvisioningTask. ProvisioningTask.subscription_id references Subscription.",
+      "relationship_description": "【订阅】跟踪于【开通任务】。",
       "primary_key": "task_id",
       "properties": [
         {
           "name": "task_id",
           "type": "String",
-          "description": "Primary key.",
+          "description": "任务ID",
           "nameZh": "任务ID"
         },
         {
           "name": "subscription_id",
           "type": "String",
-          "description": "FK to Subscription.",
+          "description": "订阅ID",
           "nameZh": "订阅ID",
           "is_foreign_key": true,
           "references": "objectType:subscription"
@@ -740,13 +740,13 @@
         {
           "name": "type",
           "type": "List<String>",
-          "description": "",
+          "description": "类型",
           "nameZh": "类型"
         },
         {
           "name": "status",
           "type": "List<String>",
-          "description": "",
+          "description": "状态",
           "nameZh": "状态"
         }
       ],
@@ -1074,17 +1074,17 @@
     {
       "id": "rule:entitlements-match-plan",
       "uuid": "1728394051627a8b9c0d1e2f30415263",
-      "specificScenarioStage": "Continuous and nightly reconciliation",
-      "businessLogicRuleName": "Entitlements must match current Plan",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "权益须与当前套餐一致",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "Continuous and nightly reconciliation",
-      "standardizedLogicRule": "An Account's active Entitlements must at all times match the entitlement set defined by its current Subscription Plan.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "账户的活动权益必须始终与其当前订阅套餐所定义的权益集合一致。",
       "relatedEntities": [
-        "Account (Account)",
-        "Entitlement (Entitlement)",
-        "Plan (Plan)",
-        "Subscription (Subscription)"
+        "客户账户 (Account)",
+        "权益 (Entitlement)",
+        "套餐 (Plan)",
+        "订阅 (Subscription)"
       ],
       "businessBackgroundReason": "Keeps the granted entitlement set consistent with the Plan and caps seat grants.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1149,18 +1149,18 @@
     {
       "id": "rule:provision-after-invoice",
       "uuid": "28394051627a8b9c0d1e2f3041526374",
-      "specificScenarioStage": "Before Provision Entitlements (SOP step 1.5)",
-      "businessLogicRuleName": "Provision only after initial Invoice",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "仅在初始发票后开通",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "Before Provision Entitlements (SOP step 1.5)",
-      "standardizedLogicRule": "A Subscription's Entitlements shall not be provisioned before the initial Invoice is issued, unless the Contract carries a net_terms flag.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "在初始发票开具之前，订阅的权益不得开通，除非合同带有 net_terms 标志。",
       "relatedEntities": [
-        "Subscription (Subscription)",
-        "Entitlement (Entitlement)",
-        "Invoice (Invoice)",
-        "Contract (Contract)",
-        "Account (Account)"
+        "订阅 (Subscription)",
+        "权益 (Entitlement)",
+        "发票 (Invoice)",
+        "合同 (Contract)",
+        "客户账户 (Account)"
       ],
       "businessBackgroundReason": "Controls when entitlements may be provisioned relative to invoicing, with net-terms exception.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1224,16 +1224,16 @@
     {
       "id": "rule:overage-billed-next-invoice",
       "uuid": "394051627a8b9c0d1e2f304152637485",
-      "specificScenarioStage": "At billing-period close",
-      "businessLogicRuleName": "Bill overage on next Invoice",
+      "specificScenarioStage": "指标推导",
+      "businessLogicRuleName": "超量计入下一张发票",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "At billing-period close",
-      "standardizedLogicRule": "Usage beyond a Plan's included quota must be billed as an overage line item on the next Invoice.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "超出套餐包含配额的用量必须在下一张发票上作为超量行项计费。",
       "relatedEntities": [
-        "UsageRecord (Usage_Record)",
-        "Plan (Plan)",
-        "Invoice (Invoice)"
+        "用量记录 (Usage_Record)",
+        "套餐 (Plan)",
+        "发票 (Invoice)"
       ],
       "businessBackgroundReason": "Governs metering, overage calculation, invoice validity, and revenue recognition.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1296,16 +1296,16 @@
     {
       "id": "rule:downgrade-no-early-revoke",
       "uuid": "4051627a8b9c0d1e2f30415263748596",
-      "specificScenarioStage": "On Plan downgrade",
-      "businessLogicRuleName": "Downgrade never revokes before period end",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "降级不在周期结束前撤销",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On Plan downgrade",
-      "standardizedLogicRule": "A Plan downgrade may not revoke the removed features before the end of the current billing period.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "套餐降级在当前计费周期结束前不得撤销已移除的功能。",
       "relatedEntities": [
-        "Plan (Plan)",
-        "Entitlement (Entitlement)",
-        "Subscription (Subscription)"
+        "套餐 (Plan)",
+        "权益 (Entitlement)",
+        "订阅 (Subscription)"
       ],
       "businessBackgroundReason": "Keeps the granted entitlement set consistent with the Plan and caps seat grants.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1368,16 +1368,16 @@
     {
       "id": "rule:drift-remediation-sla",
       "uuid": "51627a8b9c0d1e2f3041526374859607",
-      "specificScenarioStage": "On entitlement drift detection",
-      "businessLogicRuleName": "Remediate drift within one business day; escalate at 72h",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "权益漂移须一个工作日内修复，超72小时升级",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On entitlement drift detection",
-      "standardizedLogicRule": "Detected entitlement drift is required to be remediated within one business day, and drift unresolved beyond 72 hours must be escalated to the RevOps lead.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "检测到的权益漂移须在一个工作日内修复，超过72小时未解决的漂移必须升级至 RevOps 负责人。",
       "relatedEntities": [
-        "Entitlement (Entitlement)",
-        "ProvisioningTask (Provisioning_Task)",
-        "Subscription (Subscription)"
+        "权益 (Entitlement)",
+        "开通任务 (Provisioning_Task)",
+        "订阅 (Subscription)"
       ],
       "businessBackgroundReason": "Keeps the granted entitlement set consistent with the Plan and caps seat grants.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1432,16 +1432,16 @@
     {
       "id": "rule:unlimited-no-overage",
       "uuid": "627a8b9c0d1e2f304152637485960718",
-      "specificScenarioStage": "During overage calculation",
-      "businessLogicRuleName": "Unlimited tier incurs no overage",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "无限层级不产生超量费用",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "During overage calculation",
-      "standardizedLogicRule": "A Subscription on an unlimited-tier Contract shall not incur overage charges regardless of recorded usage.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "无限层级合同下的订阅无论记录用量如何均不产生超量费用。",
       "relatedEntities": [
-        "Subscription (Subscription)",
-        "Contract (Contract)",
-        "Invoice (Invoice)"
+        "订阅 (Subscription)",
+        "合同 (Contract)",
+        "发票 (Invoice)"
       ],
       "businessBackgroundReason": "Governs metering, overage calculation, invoice validity, and revenue recognition.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1504,14 +1504,14 @@
     {
       "id": "rule:discount-approval-thresholds",
       "uuid": "7a8b9c0d1e2f30415263748596071829",
-      "specificScenarioStage": "Before Contract signature, during quote validation",
-      "businessLogicRuleName": "Discount approval thresholds (20% Deal Desk, 40% VP)",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "折扣审批阈值（20% Deal Desk，40% 销售副总）",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "Before Contract signature, during quote validation",
-      "standardizedLogicRule": "A quote whose discount exceeds 20% of list price must be approved by the Deal Desk, and a discount exceeding 40% is required to receive VP of Sales approval before the Contract may be signed.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "折扣超过标价20%的报价须经 Deal Desk 批准，超过40%的折扣须在合同签署前获得销售副总批准。",
       "relatedEntities": [
-        "Contract (Contract)"
+        "合同 (Contract)"
       ],
       "businessBackgroundReason": "Gates that must pass before a Contract may be signed (discount thresholds, minimum term).",
       "ruleSource": "02-business-rules-policy.md",
@@ -1567,16 +1567,16 @@
     {
       "id": "rule:renewal-opens-t90",
       "uuid": "8b9c0d1e2f304152637485960718293a",
-      "specificScenarioStage": "At T-90 renewal window",
-      "businessLogicRuleName": "Open renewal no later than T-90",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "续约商机最迟提前90天开立",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "At T-90 renewal window",
-      "standardizedLogicRule": "A RenewalOpportunity must be opened no later than 90 days before the Subscription term-end date.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "续约商机必须在订阅合同期满日前不晚于90天开立。",
       "relatedEntities": [
-        "RenewalOpportunity (Renewal_Opportunity)",
-        "Subscription (Subscription)",
-        "Contract (Contract)"
+        "续约商机 (Renewal_Opportunity)",
+        "订阅 (Subscription)",
+        "合同 (Contract)"
       ],
       "businessBackgroundReason": "Timing and provisioning of renewals, upgrades, and trial conversion.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1639,16 +1639,16 @@
     {
       "id": "rule:grace-period-14d",
       "uuid": "9c0d1e2f304152637485960718293a4b",
-      "specificScenarioStage": "When term-end passes without renewal",
-      "businessLogicRuleName": "Unrenewed subscription enters 14-day grace",
+      "specificScenarioStage": "状态流转",
+      "businessLogicRuleName": "未续约订阅进入14天宽限期",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "When term-end passes without renewal",
-      "standardizedLogicRule": "A Subscription not renewed by its term-end date shall move to a 14-day grace period during which Entitlements remain active.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "未在合同期满日前续约的订阅应进入14天宽限期，期间权益保持有效。",
       "relatedEntities": [
-        "Subscription (Subscription)",
-        "Entitlement (Entitlement)",
-        "Contract (Contract)"
+        "订阅 (Subscription)",
+        "权益 (Entitlement)",
+        "合同 (Contract)"
       ],
       "businessBackgroundReason": "Grace, dunning, suspension, reinstatement, and churn state transitions.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1706,15 +1706,15 @@
     {
       "id": "rule:suspend-on-grace-expiry",
       "uuid": "0d1e2f304152637485960718293a4b5c",
-      "specificScenarioStage": "On grace-period expiry (+14d)",
-      "businessLogicRuleName": "Suspend and revoke on grace expiry",
+      "specificScenarioStage": "状态流转",
+      "businessLogicRuleName": "宽限期满后暂停并撤销",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On grace-period expiry (+14d)",
-      "standardizedLogicRule": "A Subscription whose 14-day grace period expires without renewal must be suspended and all of its Entitlements revoked.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "14天宽限期满仍未续约的订阅必须被暂停，并撤销其所有权益。",
       "relatedEntities": [
-        "Subscription (Subscription)",
-        "Entitlement (Entitlement)"
+        "订阅 (Subscription)",
+        "权益 (Entitlement)"
       ],
       "businessBackgroundReason": "Grace, dunning, suspension, reinstatement, and churn state transitions.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1772,15 +1772,15 @@
     {
       "id": "rule:dunning-3-retries-10-days",
       "uuid": "1e2f304152637485960718293a4b5c6d",
-      "specificScenarioStage": "On Payment failure",
-      "businessLogicRuleName": "Dunning: max 3 retries over 10 days",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "催款：10天内最多3次重试",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On Payment failure",
-      "standardizedLogicRule": "A failed Payment shall trigger a dunning sequence of no more than 3 automated retry attempts spread over 10 calendar days.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "付款失败应触发催款流程，自动重试不超过3次，分布于10个日历日内。",
       "relatedEntities": [
-        "Payment (Payment)",
-        "Invoice (Invoice)"
+        "付款 (Payment)",
+        "发票 (Invoice)"
       ],
       "businessBackgroundReason": "Grace, dunning, suspension, reinstatement, and churn state transitions.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1838,17 +1838,17 @@
     {
       "id": "rule:reinstate-after-catchup",
       "uuid": "2f304152637485960718293a4b5c6d7e",
-      "specificScenarioStage": "On successful catch-up payment for a suspended subscription",
-      "businessLogicRuleName": "Reinstate only after catch-up payment; re-grant within 1h",
+      "specificScenarioStage": "状态流转",
+      "businessLogicRuleName": "仅在补缴后恢复，并在1小时内重新授予",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On successful catch-up payment for a suspended subscription",
-      "standardizedLogicRule": "A suspended Subscription may be reinstated only after a successful catch-up Payment clears all overdue Invoices, after which Entitlements must be re-granted within 1 hour.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "被暂停的订阅仅在成功补缴付款结清所有逾期发票后方可恢复，此后权益须在1小时内重新授予。",
       "relatedEntities": [
-        "Subscription (Subscription)",
-        "Payment (Payment)",
-        "Invoice (Invoice)",
-        "Entitlement (Entitlement)"
+        "订阅 (Subscription)",
+        "付款 (Payment)",
+        "发票 (Invoice)",
+        "权益 (Entitlement)"
       ],
       "businessBackgroundReason": "Grace, dunning, suspension, reinstatement, and churn state transitions.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1913,15 +1913,15 @@
     {
       "id": "rule:churn-after-30-days",
       "uuid": "304152637485960718293a4b5c6d7e8f",
-      "specificScenarioStage": "When suspension exceeds 30 days",
-      "businessLogicRuleName": "Cancel after 30 days suspended",
+      "specificScenarioStage": "状态流转",
+      "businessLogicRuleName": "暂停超30天后取消",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "When suspension exceeds 30 days",
-      "standardizedLogicRule": "A Subscription that remains suspended for more than 30 consecutive days must be cancelled and its RenewalOpportunity closed as lost.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "连续暂停超过30天的订阅必须被取消，其续约商机关闭为已流失。",
       "relatedEntities": [
-        "Subscription (Subscription)",
-        "RenewalOpportunity (Renewal_Opportunity)"
+        "订阅 (Subscription)",
+        "续约商机 (Renewal_Opportunity)"
       ],
       "businessBackgroundReason": "Grace, dunning, suspension, reinstatement, and churn state transitions.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1983,15 +1983,15 @@
     {
       "id": "rule:one-active-subscription-per-product",
       "uuid": "4152637485960718293a4b5c6d7e8f90",
-      "specificScenarioStage": "On subscription creation",
-      "businessLogicRuleName": "One active subscription per product line",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "每条产品线仅一个活动订阅",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On subscription creation",
-      "standardizedLogicRule": "An Account may not hold more than one active Subscription per product line at any time.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "任何时候账户每条产品线不得持有超过一个活动订阅。",
       "relatedEntities": [
-        "Account (Account)",
-        "Subscription (Subscription)"
+        "客户账户 (Account)",
+        "订阅 (Subscription)"
       ],
       "businessBackgroundReason": "Uniqueness constraints enforced at subscription creation.",
       "ruleSource": "02-business-rules-policy.md",
@@ -2049,15 +2049,15 @@
     {
       "id": "rule:invoice-references-subscription",
       "uuid": "52637485960718293a4b5c6d7e8f9001",
-      "specificScenarioStage": "Before Invoice issuance",
-      "businessLogicRuleName": "Invoice must reference a Subscription and have a line item",
+      "specificScenarioStage": "数据校验",
+      "businessLogicRuleName": "发票须引用订阅且至少含一个行项",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "Before Invoice issuance",
-      "standardizedLogicRule": "Every Invoice must reference the Subscription that generated it and shall not be issued without at least one line item.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "每张发票必须引用生成它的订阅，且无至少一个行项不得开具。",
       "relatedEntities": [
-        "Invoice (Invoice)",
-        "Subscription (Subscription)"
+        "发票 (Invoice)",
+        "订阅 (Subscription)"
       ],
       "businessBackgroundReason": "Governs metering, overage calculation, invoice validity, and revenue recognition.",
       "ruleSource": "02-business-rules-policy.md",
@@ -2115,17 +2115,17 @@
     {
       "id": "rule:upgrade-immediate-prorated",
       "uuid": "637485960718293a4b5c6d7e8f900112",
-      "specificScenarioStage": "On mid-term Plan upgrade",
-      "businessLogicRuleName": "Mid-term upgrade provisioned immediately, prorated",
+      "specificScenarioStage": "指标推导",
+      "businessLogicRuleName": "期中升级立即开通并按比例计费",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On mid-term Plan upgrade",
-      "standardizedLogicRule": "A mid-term upgrade is required to be provisioned immediately and the price difference shall be prorated on the next Invoice.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "期中升级须立即开通，差价应在下一张发票上按比例分摊。",
       "relatedEntities": [
-        "Subscription (Subscription)",
-        "Entitlement (Entitlement)",
-        "Invoice (Invoice)",
-        "Plan (Plan)"
+        "订阅 (Subscription)",
+        "权益 (Entitlement)",
+        "发票 (Invoice)",
+        "套餐 (Plan)"
       ],
       "businessBackgroundReason": "Timing and provisioning of renewals, upgrades, and trial conversion.",
       "ruleSource": "02-business-rules-policy.md",
@@ -2188,15 +2188,15 @@
     {
       "id": "rule:seat-grant-cap",
       "uuid": "7485960718293a4b5c6d7e8f90011223",
-      "specificScenarioStage": "On entitlement grant",
-      "businessLogicRuleName": "Seat grant cannot exceed purchased seats",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "席位授予不得超过已购席位数",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On entitlement grant",
-      "standardizedLogicRule": "A seat-based Entitlement may not grant more active seats than the seat count purchased on the Contract.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "基于席位的权益授予的活动席位数不得超过合同购买的席位数。",
       "relatedEntities": [
-        "Entitlement (Entitlement)",
-        "Contract (Contract)"
+        "权益 (Entitlement)",
+        "合同 (Contract)"
       ],
       "businessBackgroundReason": "Keeps the granted entitlement set consistent with the Plan and caps seat grants.",
       "ruleSource": "02-business-rules-policy.md",
@@ -2258,14 +2258,14 @@
     {
       "id": "rule:min-12-month-term",
       "uuid": "85960718293a4b5c6d7e8f9001122334",
-      "specificScenarioStage": "Before Contract signature",
-      "businessLogicRuleName": "Minimum 12-month term unless Finance exception",
+      "specificScenarioStage": "数据校验",
+      "businessLogicRuleName": "最短12个月合同期，除非财务批准例外",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "Before Contract signature",
-      "standardizedLogicRule": "A Contract term shall be a minimum of 12 months unless a month-to-month exception is approved by Finance.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "合同期限最短为12个月，除非财务批准按月例外。",
       "relatedEntities": [
-        "Contract (Contract)"
+        "合同 (Contract)"
       ],
       "businessBackgroundReason": "Gates that must pass before a Contract may be signed (discount thresholds, minimum term).",
       "ruleSource": "02-business-rules-policy.md",
@@ -2321,16 +2321,16 @@
     {
       "id": "rule:no-revenue-before-payment",
       "uuid": "960718293a4b5c6d7e8f900112233445",
-      "specificScenarioStage": "Before revenue recognition",
-      "businessLogicRuleName": "No revenue recognition before payment succeeds",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "付款成功前不得确认收入",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "Before revenue recognition",
-      "standardizedLogicRule": "Revenue may not be recognized against a Subscription until the corresponding Invoice Payment has succeeded.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "在相应发票付款成功之前，不得对订阅确认收入。",
       "relatedEntities": [
-        "Subscription (Subscription)",
-        "Invoice (Invoice)",
-        "Payment (Payment)"
+        "订阅 (Subscription)",
+        "发票 (Invoice)",
+        "付款 (Payment)"
       ],
       "businessBackgroundReason": "Governs metering, overage calculation, invoice validity, and revenue recognition.",
       "ruleSource": "02-business-rules-policy.md",
@@ -2388,15 +2388,15 @@
     {
       "id": "rule:trial-auto-convert-30d",
       "uuid": "0718293a4b5c6d7e8f90011223344556",
-      "specificScenarioStage": "At trial end",
-      "businessLogicRuleName": "Free trial auto-converts or suspends; max 30 days",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "免费试用自动转换或暂停，最长30天",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "At trial end",
-      "standardizedLogicRule": "A free-trial Subscription must auto-convert to a paid Plan at trial end or be suspended, and may not extend beyond 30 days without CSM approval.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "免费试用订阅须在试用期结束时自动转为付费套餐或被暂停，且未经 CSM 批准不得超过30天。",
       "relatedEntities": [
-        "Subscription (Subscription)",
-        "Plan (Plan)"
+        "订阅 (Subscription)",
+        "套餐 (Plan)"
       ],
       "businessBackgroundReason": "Timing and provisioning of renewals, upgrades, and trial conversion.",
       "ruleSource": "02-business-rules-policy.md",
@@ -2548,9 +2548,9 @@
       "uuid": "18293a4b5c6d7e8f9001122334455667",
       "name": "CreateOrderForm",
       "nameZh": "创建订单表",
-      "description": "Consumes a Closed-Won Opportunity and selected Plan; produces a draft Order Form linked to the Account.",
+      "description": "消费赢单商机与所选套餐，生成与账户关联的订单表草稿。",
       "descriptionZh": "消费赢单商机与所选套餐，生成与账户关联的订单表草稿。",
-      "submission_criteria": "1. Event OPPORTUNITY_CLOSED_WON has been received",
+      "submission_criteria": "1. 事件 OPPORTUNITY_CLOSED_WON 已送达",
       "object_type": "action",
       "category": "创建订单表",
       "actor": [
@@ -2568,20 +2568,20 @@
         {
           "order": "1",
           "name": "consumeTheClosedWonOpportunityAnd",
-          "description": "Consume the Closed-Won Opportunity and the selected Plan.",
+          "description": "消费赢单商机与所选套餐。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "produceADraftOrderFormLinked",
-          "description": "Produce a draft Order Form linked to the Account.",
+          "description": "生成与账户关联的订单表草稿。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"CreateOrderForm\" action. Consumes a Closed-Won Opportunity and selected Plan; produces a draft Order Form linked to the Account. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"CreateOrderForm\" using account, plan. Consumes a Closed-Won Opportunity and selected Plan; produces a draft Order Form linked to the Account. Produce contract and emit the appropriate events.",
+      "system_prompt": "作为负责「CreateOrderForm」动作的自动化人工操作员，消费赢单商机与所选套餐，生成与账户关联的订单表草稿。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（account、plan）执行「CreateOrderForm」。消费赢单商机与所选套餐，生成与账户关联的订单表草稿。 产出（contract）并发出相应事件。",
       "tool_use": [
         "salesforce"
       ],
@@ -2709,16 +2709,17 @@
         "role": "Account Executive",
         "roleZh": "客户经理",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:validate-quote",
       "uuid": "293a4b5c6d7e8f900112233445566778",
       "name": "ValidateQuote",
       "nameZh": "校验报价",
-      "description": "Consumes the draft Order Form, list price, and discount; produces an approved or rejected quote. Above-threshold discounts require escalation.",
+      "description": "消费订单表草稿、标价与折扣，生成已批准或被拒绝的报价；超阈值折扣需升级审批。",
       "descriptionZh": "消费订单表草稿、标价与折扣，生成已批准或被拒绝的报价；超阈值折扣需升级审批。",
-      "submission_criteria": "1. Event ORDER_FORM_DRAFTED has been received\n2. Rule \"Discount approval thresholds (20% Deal Desk, 40% VP)\" is satisfied\n3. Rule \"Minimum 12-month term unless Finance exception\" is satisfied",
+      "submission_criteria": "1. 事件 ORDER_FORM_DRAFTED 已送达\n2. 规则「折扣审批阈值（20% Deal Desk，40% 销售副总）」已满足\n3. 规则「最短12个月合同期，除非财务批准例外」已满足",
       "object_type": "action",
       "category": "校验报价",
       "actor": [
@@ -2735,50 +2736,50 @@
         {
           "order": "1",
           "name": "consumeTheDraftOrderFormList",
-          "description": "Consume the draft Order Form, list price, and discount.",
+          "description": "消费订单表草稿、标价与折扣。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "applyDiscountApprovalThresholdsEscalateAbove",
-          "description": "Apply discount approval thresholds; escalate above-threshold discounts.",
+          "description": "应用折扣审批阈值，超阈值折扣升级。",
           "object_type": "logic",
-          "submission_criteria": "Before Contract signature, during quote validation",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "discount-approval-thresholds",
-              "name": "Discount approval thresholds (20% Deal Desk, 40% VP)",
-              "submission_criteria": "Before Contract signature, during quote validation",
-              "description": "A quote whose discount exceeds 20% of list price must be approved by the Deal Desk, and a discount exceeding 40% is required to receive VP of Sales approval before the Contract may be signed."
+              "name": "折扣审批阈值（20% Deal Desk，40% 销售副总）",
+              "submission_criteria": "",
+              "description": "折扣超过标价20%的报价须经 Deal Desk 批准，超过40%的折扣须在合同签署前获得销售副总批准。"
             }
           ]
         },
         {
           "order": "3",
           "name": "verifyMinimum12MonthTermUnless",
-          "description": "Verify minimum 12-month term unless Finance month-to-month exception.",
+          "description": "校验最短12个月合同期，除非财务批准按月例外。",
           "object_type": "logic",
-          "submission_criteria": "Before Contract signature",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "min-12-month-term",
-              "name": "Minimum 12-month term unless Finance exception",
-              "submission_criteria": "Before Contract signature",
-              "description": "A Contract term shall be a minimum of 12 months unless a month-to-month exception is approved by Finance."
+              "name": "最短12个月合同期，除非财务批准例外",
+              "submission_criteria": "",
+              "description": "合同期限最短为12个月，除非财务批准按月例外。"
             }
           ]
         },
         {
           "order": "4",
           "name": "produceAnApprovedOrRejectedQuote",
-          "description": "Produce an approved or rejected quote.",
+          "description": "生成已批准或被拒绝的报价。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"ValidateQuote\" action. Consumes the draft Order Form, list price, and discount; produces an approved or rejected quote. Above-threshold discounts require escalation. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"ValidateQuote\" using contract. Consumes the draft Order Form, list price, and discount; produces an approved or rejected quote. Above-threshold discounts require escalation. Produce contract and emit the appropriate events.",
+      "system_prompt": "作为负责「ValidateQuote」动作的自动化人工操作员，消费订单表草稿、标价与折扣，生成已批准或被拒绝的报价；超阈值折扣需升级审批。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（contract）执行「ValidateQuote」。消费订单表草稿、标价与折扣，生成已批准或被拒绝的报价；超阈值折扣需升级审批。 产出（contract）并发出相应事件。",
       "tool_use": [
         "salesforce"
       ],
@@ -2927,16 +2928,17 @@
         "role": "Deal Desk Analyst",
         "roleZh": "交易台分析师",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:sign-contract",
       "uuid": "3a4b5c6d7e8f90011223344556677889",
       "name": "SignContract",
       "nameZh": "签署合同",
-      "description": "Consumes the approved Order Form; produces an executed Contract with term start, term end, and committed quantities.",
+      "description": "消费已批准的订单表，生成含起止日期与承诺数量的已签署合同。",
       "descriptionZh": "消费已批准的订单表，生成含起止日期与承诺数量的已签署合同。",
-      "submission_criteria": "1. Event QUOTE_APPROVED has been received\n2. Rule \"Discount approval thresholds (20% Deal Desk, 40% VP)\" is satisfied\n3. Rule \"Minimum 12-month term unless Finance exception\" is satisfied",
+      "submission_criteria": "1. 事件 QUOTE_APPROVED 已送达\n2. 规则「折扣审批阈值（20% Deal Desk，40% 销售副总）」已满足\n3. 规则「最短12个月合同期，除非财务批准例外」已满足",
       "object_type": "action",
       "category": "签署合同",
       "actor": [
@@ -2952,27 +2954,27 @@
         {
           "order": "1",
           "name": "consumeTheApprovedOrderForm",
-          "description": "Consume the approved Order Form.",
+          "description": "消费已批准的订单表。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "captureCustomerCounterSignatureInSalesforce",
-          "description": "Capture customer counter-signature in Salesforce.",
+          "description": "在 Salesforce 中获取客户会签。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "3",
           "name": "produceAnExecutedContractWithTerm",
-          "description": "Produce an executed Contract with term start, term end, and committed quantities.",
+          "description": "生成含起止日期与承诺数量的已签署合同。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"SignContract\" action. Consumes the approved Order Form; produces an executed Contract with term start, term end, and committed quantities. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"SignContract\" using contract. Consumes the approved Order Form; produces an executed Contract with term start, term end, and committed quantities. Produce contract and emit the appropriate events.",
+      "system_prompt": "作为负责「SignContract」动作的自动化系统，消费已批准的订单表，生成含起止日期与承诺数量的已签署合同。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（contract）执行「SignContract」。消费已批准的订单表，生成含起止日期与承诺数量的已签署合同。 产出（contract）并发出相应事件。",
       "tool_use": [
         "salesforce"
       ],
@@ -3102,16 +3104,17 @@
         "role": "Salesforce CRM",
         "roleZh": "Salesforce CRM",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:create-subscription",
       "uuid": "4b5c6d7e8f9001122334455667788990",
       "name": "CreateSubscription",
       "nameZh": "创建订阅",
-      "description": "Consumes the executed Contract and Plan; produces an active Subscription and the first Invoice (initial term charge).",
+      "description": "消费已签署合同与套餐，生成活动订阅与首张发票（初始合同期收费）。",
       "descriptionZh": "消费已签署合同与套餐，生成活动订阅与首张发票（初始合同期收费）。",
-      "submission_criteria": "1. Event CONTRACT_SIGNED has been received\n2. Rule \"One active subscription per product line\" is satisfied\n3. Rule \"Invoice must reference a Subscription and have a line item\" is satisfied",
+      "submission_criteria": "1. 事件 CONTRACT_SIGNED 已送达\n2. 规则「每条产品线仅一个活动订阅」已满足\n3. 规则「发票须引用订阅且至少含一个行项」已满足",
       "object_type": "action",
       "category": "创建订阅",
       "actor": [
@@ -3130,43 +3133,43 @@
         {
           "order": "1",
           "name": "verifyTheAccountHoldsNoOther",
-          "description": "Verify the Account holds no other active Subscription on this product line.",
+          "description": "确认账户在该产品线无其他活动订阅。",
           "object_type": "logic",
-          "submission_criteria": "On subscription creation",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "one-active-subscription-per-product",
-              "name": "One active subscription per product line",
-              "submission_criteria": "On subscription creation",
-              "description": "An Account may not hold more than one active Subscription per product line at any time."
+              "name": "每条产品线仅一个活动订阅",
+              "submission_criteria": "",
+              "description": "任何时候账户每条产品线不得持有超过一个活动订阅。"
             }
           ]
         },
         {
           "order": "2",
           "name": "consumeTheExecutedContractAndPlan",
-          "description": "Consume the executed Contract and Plan; create an active Subscription.",
+          "description": "消费已签署合同与套餐，创建活动订阅。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "3",
           "name": "issueTheFirstInvoiceForThe",
-          "description": "Issue the first Invoice for the initial term charge.",
+          "description": "为初始合同期收费开具首张发票。",
           "object_type": "logic",
-          "submission_criteria": "Before Invoice issuance",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "invoice-references-subscription",
-              "name": "Invoice must reference a Subscription and have a line item",
-              "submission_criteria": "Before Invoice issuance",
-              "description": "Every Invoice must reference the Subscription that generated it and shall not be issued without at least one line item."
+              "name": "发票须引用订阅且至少含一个行项",
+              "submission_criteria": "",
+              "description": "每张发票必须引用生成它的订阅，且无至少一个行项不得开具。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated agent responsible for the \"CreateSubscription\" action. Consumes the executed Contract and Plan; produces an active Subscription and the first Invoice (initial term charge). Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"CreateSubscription\" using contract, plan. Consumes the executed Contract and Plan; produces an active Subscription and the first Invoice (initial term charge). Produce subscription, invoice and emit the appropriate events.",
+      "system_prompt": "作为负责「CreateSubscription」动作的自动化智能体，消费已签署合同与套餐，生成活动订阅与首张发票（初始合同期收费）。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（contract、plan）执行「CreateSubscription」。消费已签署合同与套餐，生成活动订阅与首张发票（初始合同期收费）。 产出（subscription、invoice）并发出相应事件。",
       "tool_use": [
         "stripe"
       ],
@@ -3338,16 +3341,17 @@
         "role": "RevOps Automation",
         "roleZh": "营收运营自动化",
         "kind": "agent"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:provision-entitlements",
       "uuid": "5c6d7e8f900112233445566778899001",
       "name": "ProvisionEntitlements",
       "nameZh": "开通权益",
-      "description": "Consumes the Subscription's Plan mapping; produces Entitlement records (feature flags, quota limits, seat counts) and closes the ProvisioningTask.",
+      "description": "消费订阅的套餐映射，生成权益记录（功能开关、配额、席位），并关闭开通任务。",
       "descriptionZh": "消费订阅的套餐映射，生成权益记录（功能开关、配额、席位），并关闭开通任务。",
-      "submission_criteria": "1. Event SUBSCRIPTION_CREATED has been received\n2. Rule \"Provision only after initial Invoice\" is satisfied\n3. Rule \"Seat grant cannot exceed purchased seats\" is satisfied",
+      "submission_criteria": "1. 事件 SUBSCRIPTION_CREATED 已送达\n2. 规则「仅在初始发票后开通」已满足\n3. 规则「席位授予不得超过已购席位数」已满足",
       "object_type": "action",
       "category": "开通权益",
       "actor": [
@@ -3366,43 +3370,43 @@
         {
           "order": "1",
           "name": "confirmTheInitialInvoiceIsIssued",
-          "description": "Confirm the initial Invoice is issued (or the Contract is net_terms) before provisioning.",
+          "description": "在开通前确认已开具初始发票（或合同为账期）。",
           "object_type": "logic",
-          "submission_criteria": "Before Provision Entitlements (SOP step 1.5)",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "provision-after-invoice",
-              "name": "Provision only after initial Invoice",
-              "submission_criteria": "Before Provision Entitlements (SOP step 1.5)",
-              "description": "A Subscription's Entitlements shall not be provisioned before the initial Invoice is issued, unless the Contract carries a net_terms flag."
+              "name": "仅在初始发票后开通",
+              "submission_criteria": "",
+              "description": "在初始发票开具之前，订阅的权益不得开通，除非合同带有 net_terms 标志。"
             }
           ]
         },
         {
           "order": "2",
           "name": "consumeTheSubscriptionSPlanMapping",
-          "description": "Consume the Subscription's Plan mapping and grant entitlements; cap seat grants to purchased seats.",
+          "description": "消费订阅的套餐映射并授予权益，将席位授予限制在已购席位数内。",
           "object_type": "logic",
-          "submission_criteria": "On entitlement grant",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "seat-grant-cap",
-              "name": "Seat grant cannot exceed purchased seats",
-              "submission_criteria": "On entitlement grant",
-              "description": "A seat-based Entitlement may not grant more active seats than the seat count purchased on the Contract."
+              "name": "席位授予不得超过已购席位数",
+              "submission_criteria": "",
+              "description": "基于席位的权益授予的活动席位数不得超过合同购买的席位数。"
             }
           ]
         },
         {
           "order": "3",
           "name": "closeTheProvisioningTask",
-          "description": "Close the ProvisioningTask.",
+          "description": "关闭开通任务。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"ProvisionEntitlements\" action. Consumes the Subscription's Plan mapping; produces Entitlement records (feature flags, quota limits, seat counts) and closes the ProvisioningTask. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"ProvisionEntitlements\" using subscription. Consumes the Subscription's Plan mapping; produces Entitlement records (feature flags, quota limits, seat counts) and closes the ProvisioningTask. Produce entitlements, provisioning_task and emit the appropriate events.",
+      "system_prompt": "作为负责「ProvisionEntitlements」动作的自动化系统，消费订阅的套餐映射，生成权益记录（功能开关、配额、席位），并关闭开通任务。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（subscription）执行「ProvisionEntitlements」。消费订阅的套餐映射，生成权益记录（功能开关、配额、席位），并关闭开通任务。 产出（entitlements、provisioning_task）并发出相应事件。",
       "tool_use": [
         "launchdarkly",
         "Feature flags set in LaunchDarkly."
@@ -3559,16 +3563,17 @@
         "role": "Entitlement Service",
         "roleZh": "权益服务",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:reconcile-entitlements",
       "uuid": "6d7e8f90011223344556677889900112",
       "name": "ReconcileEntitlements",
       "nameZh": "对账权益",
-      "description": "Consumes the live Entitlement set and the Plan spec; produces a drift report and, if mismatched, a remediation ProvisioningTask.",
+      "description": "消费现有权益集合与套餐规格，生成漂移报告；若不匹配则生成修复开通任务。",
       "descriptionZh": "消费现有权益集合与套餐规格，生成漂移报告；若不匹配则生成修复开通任务。",
-      "submission_criteria": "1. Event PROVISIONING_COMPLETED has been received\n2. Rule \"Entitlements must match current Plan\" is satisfied\n3. Rule \"Remediate drift within one business day; escalate at 72h\" is satisfied",
+      "submission_criteria": "1. 事件 PROVISIONING_COMPLETED 已送达\n2. 规则「权益须与当前套餐一致」已满足\n3. 规则「权益漂移须一个工作日内修复，超72小时升级」已满足",
       "object_type": "action",
       "category": "对账权益",
       "actor": [
@@ -3587,36 +3592,36 @@
         {
           "order": "1",
           "name": "compareTheLiveEntitlementSetAgainst",
-          "description": "Compare the live Entitlement set against the Plan feature_keys spec.",
+          "description": "将现有权益集合与套餐 feature_keys 规格比对。",
           "object_type": "logic",
-          "submission_criteria": "Continuous and nightly reconciliation",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "entitlements-match-plan",
-              "name": "Entitlements must match current Plan",
-              "submission_criteria": "Continuous and nightly reconciliation",
-              "description": "An Account's active Entitlements must at all times match the entitlement set defined by its current Subscription Plan."
+              "name": "权益须与当前套餐一致",
+              "submission_criteria": "",
+              "description": "账户的活动权益必须始终与其当前订阅套餐所定义的权益集合一致。"
             }
           ]
         },
         {
           "order": "2",
           "name": "onMismatchCreateARemediationProvisioning",
-          "description": "On mismatch, create a remediation ProvisioningTask and flag drift for SLA tracking.",
+          "description": "若不匹配，创建修复开通任务并标记漂移以跟踪SLA。",
           "object_type": "logic",
-          "submission_criteria": "On entitlement drift detection",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "drift-remediation-sla",
-              "name": "Remediate drift within one business day; escalate at 72h",
-              "submission_criteria": "On entitlement drift detection",
-              "description": "Detected entitlement drift is required to be remediated within one business day, and drift unresolved beyond 72 hours must be escalated to the RevOps lead."
+              "name": "权益漂移须一个工作日内修复，超72小时升级",
+              "submission_criteria": "",
+              "description": "检测到的权益漂移须在一个工作日内修复，超过72小时未解决的漂移必须升级至 RevOps 负责人。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated agent responsible for the \"ReconcileEntitlements\" action. Consumes the live Entitlement set and the Plan spec; produces a drift report and, if mismatched, a remediation ProvisioningTask. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"ReconcileEntitlements\" using subscription, entitlements. Consumes the live Entitlement set and the Plan spec; produces a drift report and, if mismatched, a remediation ProvisioningTask. Produce provisioning_task and emit the appropriate events.",
+      "system_prompt": "作为负责「ReconcileEntitlements」动作的自动化智能体，消费现有权益集合与套餐规格，生成漂移报告；若不匹配则生成修复开通任务。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（subscription、entitlements）执行「ReconcileEntitlements」。消费现有权益集合与套餐规格，生成漂移报告；若不匹配则生成修复开通任务。 产出（provisioning_task）并发出相应事件。",
       "tool_use": [
         "launchdarkly"
       ],
@@ -3775,14 +3780,15 @@
         "role": "RevOps Automation",
         "roleZh": "营收运营自动化",
         "kind": "agent"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:record-usage",
       "uuid": "7e8f900112233445566778899001122a",
       "name": "RecordUsage",
       "nameZh": "记录用量",
-      "description": "Consumes metered product events (API calls, seats, GB); produces timestamped UsageRecord rows keyed to the Subscription.",
+      "description": "消费计量的产品事件（API调用、席位、GB），生成与订阅关联的带时间戳用量记录。",
       "descriptionZh": "消费计量的产品事件（API调用、席位、GB），生成与订阅关联的带时间戳用量记录。",
       "submission_criteria": "",
       "object_type": "action",
@@ -3799,20 +3805,20 @@
         {
           "order": "1",
           "name": "consumeMeteredProductEventsForThe",
-          "description": "Consume metered product events for the Subscription.",
+          "description": "消费订阅的计量产品事件。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "writeATimestampedUsageRecordRow",
-          "description": "Write a timestamped UsageRecord row keyed to the Subscription.",
+          "description": "写入与订阅关联的带时间戳用量记录行。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"RecordUsage\" action. Consumes metered product events (API calls, seats, GB); produces timestamped UsageRecord rows keyed to the Subscription. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"RecordUsage\" using subscription. Consumes metered product events (API calls, seats, GB); produces timestamped UsageRecord rows keyed to the Subscription. Produce usage_record and emit the appropriate events.",
+      "system_prompt": "作为负责「RecordUsage」动作的自动化系统，消费计量的产品事件（API调用、席位、GB），生成与订阅关联的带时间戳用量记录。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（subscription）执行「RecordUsage」。消费计量的产品事件（API调用、席位、GB），生成与订阅关联的带时间戳用量记录。 产出（usage_record）并发出相应事件。",
       "tool_use": [
         "stripe"
       ],
@@ -3923,16 +3929,17 @@
         "role": "Product Runtime",
         "roleZh": "产品运行时",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:calculate-overage",
       "uuid": "8f900112233445566778899001122ab3",
       "name": "CalculateOverage",
       "nameZh": "计算超量",
-      "description": "Consumes cumulative UsageRecord totals and the Entitlement included quota; produces an overage quantity when usage exceeds quota.",
+      "description": "消费累计用量总额与权益包含配额，当用量超过配额时生成超量数量。",
       "descriptionZh": "消费累计用量总额与权益包含配额，当用量超过配额时生成超量数量。",
-      "submission_criteria": "1. Event USAGE_RECORDED has been received\n2. Rule \"Bill overage on next Invoice\" is satisfied\n3. Rule \"Unlimited tier incurs no overage\" is satisfied",
+      "submission_criteria": "1. 事件 USAGE_RECORDED 已送达\n2. 规则「超量计入下一张发票」已满足\n3. 规则「无限层级不产生超量费用」已满足",
       "object_type": "action",
       "category": "计算超量",
       "actor": [
@@ -3951,43 +3958,43 @@
         {
           "order": "1",
           "name": "sumCumulativeUsageRecordTotalsAnd",
-          "description": "Sum cumulative UsageRecord totals and compare to the included quota.",
+          "description": "汇总累计用量并与包含配额比较。",
           "object_type": "logic",
-          "submission_criteria": "At billing-period close",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "overage-billed-next-invoice",
-              "name": "Bill overage on next Invoice",
-              "submission_criteria": "At billing-period close",
-              "description": "Usage beyond a Plan's included quota must be billed as an overage line item on the next Invoice."
+              "name": "超量计入下一张发票",
+              "submission_criteria": "",
+              "description": "超出套餐包含配额的用量必须在下一张发票上作为超量行项计费。"
             }
           ]
         },
         {
           "order": "2",
           "name": "shortCircuitToWithinQuotaFor",
-          "description": "Short-circuit to within-quota for unlimited-tier contracts.",
+          "description": "对无限层级合同短路为未超配额。",
           "object_type": "logic",
-          "submission_criteria": "During overage calculation",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "unlimited-no-overage",
-              "name": "Unlimited tier incurs no overage",
-              "submission_criteria": "During overage calculation",
-              "description": "A Subscription on an unlimited-tier Contract shall not incur overage charges regardless of recorded usage."
+              "name": "无限层级不产生超量费用",
+              "submission_criteria": "",
+              "description": "无限层级合同下的订阅无论记录用量如何均不产生超量费用。"
             }
           ]
         },
         {
           "order": "3",
           "name": "produceAnOverageQuantityWhenUsage",
-          "description": "Produce an overage quantity when usage exceeds quota.",
+          "description": "当用量超过配额时生成超量数量。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated agent responsible for the \"CalculateOverage\" action. Consumes cumulative UsageRecord totals and the Entitlement included quota; produces an overage quantity when usage exceeds quota. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"CalculateOverage\" using subscription, usage_records, entitlement. Consumes cumulative UsageRecord totals and the Entitlement included quota; produces an overage quantity when usage exceeds quota. Produce overage_quantity and emit the appropriate events.",
+      "system_prompt": "作为负责「CalculateOverage」动作的自动化智能体，消费累计用量总额与权益包含配额，当用量超过配额时生成超量数量。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（subscription、usage_records、entitlement）执行「CalculateOverage」。消费累计用量总额与权益包含配额，当用量超过配额时生成超量数量。 产出（overage_quantity）并发出相应事件。",
       "tool_use": [
         "stripe"
       ],
@@ -4156,16 +4163,17 @@
         "role": "RevOps Automation",
         "roleZh": "营收运营自动化",
         "kind": "agent"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:issue-invoice",
       "uuid": "900112233445566778899001122ab3c4",
       "name": "IssueInvoice",
       "nameZh": "开具发票",
-      "description": "Consumes the recurring plan charge plus any overage line items; produces the period Invoice.",
+      "description": "消费经常性套餐收费及任何超量行项，生成周期发票。",
       "descriptionZh": "消费经常性套餐收费及任何超量行项，生成周期发票。",
-      "submission_criteria": "1. Event OVERAGE_DETECTED has been received\n2. Event USAGE_WITHIN_QUOTA has been received\n3. Rule \"Invoice must reference a Subscription and have a line item\" is satisfied",
+      "submission_criteria": "1. 事件 OVERAGE_DETECTED 已送达\n2. 事件 USAGE_WITHIN_QUOTA 已送达\n3. 规则「发票须引用订阅且至少含一个行项」已满足",
       "object_type": "action",
       "category": "开具发票",
       "actor": [
@@ -4184,35 +4192,35 @@
         {
           "order": "1",
           "name": "assembleTheRecurringPlanChargePlus",
-          "description": "Assemble the recurring plan charge plus any overage line items.",
+          "description": "组装经常性套餐收费及任何超量行项。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "validateTheInvoiceReferencesItsSubscription",
-          "description": "Validate the Invoice references its Subscription and has at least one line item.",
+          "description": "校验发票引用其订阅且至少含一个行项。",
           "object_type": "logic",
-          "submission_criteria": "Before Invoice issuance",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "invoice-references-subscription",
-              "name": "Invoice must reference a Subscription and have a line item",
-              "submission_criteria": "Before Invoice issuance",
-              "description": "Every Invoice must reference the Subscription that generated it and shall not be issued without at least one line item."
+              "name": "发票须引用订阅且至少含一个行项",
+              "submission_criteria": "",
+              "description": "每张发票必须引用生成它的订阅，且无至少一个行项不得开具。"
             }
           ]
         },
         {
           "order": "3",
           "name": "produceThePeriodInvoice",
-          "description": "Produce the period Invoice.",
+          "description": "生成周期发票。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"IssueInvoice\" action. Consumes the recurring plan charge plus any overage line items; produces the period Invoice. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"IssueInvoice\" using subscription. Consumes the recurring plan charge plus any overage line items; produces the period Invoice. Produce invoice and emit the appropriate events.",
+      "system_prompt": "作为负责「IssueInvoice」动作的自动化系统，消费经常性套餐收费及任何超量行项，生成周期发票。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（subscription）执行「IssueInvoice」。消费经常性套餐收费及任何超量行项，生成周期发票。 产出（invoice）并发出相应事件。",
       "tool_use": [
         "stripe"
       ],
@@ -4340,16 +4348,17 @@
         "role": "Stripe Billing",
         "roleZh": "Stripe 计费",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:collect-payment",
       "uuid": "0112233445566778899001122ab3c4d5",
       "name": "CollectPayment",
       "nameZh": "收取付款",
-      "description": "Consumes a payment instrument charge against the open Invoice; produces a Payment and marks the Invoice Paid or Failed.",
+      "description": "对未结发票发起付款工具扣款，生成付款并将发票标记为已付或失败。",
       "descriptionZh": "对未结发票发起付款工具扣款，生成付款并将发票标记为已付或失败。",
-      "submission_criteria": "1. Event INVOICE_ISSUED has been received",
+      "submission_criteria": "1. 事件 INVOICE_ISSUED 已送达",
       "object_type": "action",
       "category": "收取付款",
       "actor": [
@@ -4366,20 +4375,20 @@
         {
           "order": "1",
           "name": "chargeThePaymentInstrumentAgainstThe",
-          "description": "Charge the payment instrument against the open Invoice.",
+          "description": "对未结发票发起付款工具扣款。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "produceAPaymentAndMarkThe",
-          "description": "Produce a Payment and mark the Invoice Paid or Failed.",
+          "description": "生成付款并将发票标记为已付或失败。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"CollectPayment\" action. Consumes a payment instrument charge against the open Invoice; produces a Payment and marks the Invoice Paid or Failed. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"CollectPayment\" using invoice. Consumes a payment instrument charge against the open Invoice; produces a Payment and marks the Invoice Paid or Failed. Produce payment and emit the appropriate events.",
+      "system_prompt": "作为负责「CollectPayment」动作的自动化系统，对未结发票发起付款工具扣款，生成付款并将发票标记为已付或失败。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（invoice）执行「CollectPayment」。对未结发票发起付款工具扣款，生成付款并将发票标记为已付或失败。 产出（payment）并发出相应事件。",
       "tool_use": [
         "stripe"
       ],
@@ -4502,16 +4511,17 @@
         "role": "Stripe Billing",
         "roleZh": "Stripe 计费",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:recognize-revenue",
       "uuid": "112233445566778899001122ab3c4d5e",
       "name": "RecognizeRevenue",
       "nameZh": "确认收入",
-      "description": "Consumes the Subscription term and Invoice; produces recognized revenue schedules.",
+      "description": "消费订阅合同期与发票，生成已确认收入计划。",
       "descriptionZh": "消费订阅合同期与发票，生成已确认收入计划。",
-      "submission_criteria": "1. Event PAYMENT_SUCCEEDED has been received\n2. Rule \"No revenue recognition before payment succeeds\" is satisfied",
+      "submission_criteria": "1. 事件 PAYMENT_SUCCEEDED 已送达\n2. 规则「付款成功前不得确认收入」已满足",
       "object_type": "action",
       "category": "确认收入",
       "actor": [
@@ -4528,28 +4538,28 @@
         {
           "order": "1",
           "name": "verifyTheCorrespondingInvoicePaymentHas",
-          "description": "Verify the corresponding Invoice Payment has succeeded.",
+          "description": "确认相应发票付款已成功。",
           "object_type": "logic",
-          "submission_criteria": "Before revenue recognition",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "no-revenue-before-payment",
-              "name": "No revenue recognition before payment succeeds",
-              "submission_criteria": "Before revenue recognition",
-              "description": "Revenue may not be recognized against a Subscription until the corresponding Invoice Payment has succeeded."
+              "name": "付款成功前不得确认收入",
+              "submission_criteria": "",
+              "description": "在相应发票付款成功之前，不得对订阅确认收入。"
             }
           ]
         },
         {
           "order": "2",
           "name": "consumeTheSubscriptionTermAndInvoice",
-          "description": "Consume the Subscription term and Invoice; produce recognized revenue schedules.",
+          "description": "消费订阅合同期与发票，生成已确认收入计划。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"RecognizeRevenue\" action. Consumes the Subscription term and Invoice; produces recognized revenue schedules. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"RecognizeRevenue\" using subscription, invoice. Consumes the Subscription term and Invoice; produces recognized revenue schedules. Produce subscription and emit the appropriate events.",
+      "system_prompt": "作为负责「RecognizeRevenue」动作的自动化人工操作员，消费订阅合同期与发票，生成已确认收入计划。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（subscription、invoice）执行「RecognizeRevenue」。消费订阅合同期与发票，生成已确认收入计划。 产出（subscription）并发出相应事件。",
       "tool_use": [],
       "side_effects": {
         "data_changes": [
@@ -4683,16 +4693,17 @@
         "role": "Finance / Revenue Accountant",
         "roleZh": "财务/收入会计",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:open-renewal",
       "uuid": "2233445566778899001122ab3c4d5e6f",
       "name": "OpenRenewal",
       "nameZh": "开立续约",
-      "description": "Consumes a Subscription approaching term end; produces a RenewalOpportunity 90 days before term-end.",
+      "description": "消费临近期满的订阅，在期满前90天生成续约商机。",
       "descriptionZh": "消费临近期满的订阅，在期满前90天生成续约商机。",
-      "submission_criteria": "1. Event RENEWAL_WINDOW_OPENED has been received\n2. Rule \"Open renewal no later than T-90\" is satisfied",
+      "submission_criteria": "1. 事件 RENEWAL_WINDOW_OPENED 已送达\n2. 规则「续约商机最迟提前90天开立」已满足",
       "object_type": "action",
       "category": "开立续约",
       "actor": [
@@ -4710,28 +4721,28 @@
         {
           "order": "1",
           "name": "detectTheSubscriptionApproachingTermEnd",
-          "description": "Detect the Subscription approaching term end at the T-90 window.",
+          "description": "在T-90窗口检测临近期满的订阅。",
           "object_type": "logic",
-          "submission_criteria": "At T-90 renewal window",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "renewal-opens-t90",
-              "name": "Open renewal no later than T-90",
-              "submission_criteria": "At T-90 renewal window",
-              "description": "A RenewalOpportunity must be opened no later than 90 days before the Subscription term-end date."
+              "name": "续约商机最迟提前90天开立",
+              "submission_criteria": "",
+              "description": "续约商机必须在订阅合同期满日前不晚于90天开立。"
             }
           ]
         },
         {
           "order": "2",
           "name": "produceARenewalOpportunityInSalesforce",
-          "description": "Produce a RenewalOpportunity in Salesforce.",
+          "description": "在 Salesforce 中生成续约商机。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated agent responsible for the \"OpenRenewal\" action. Consumes a Subscription approaching term end; produces a RenewalOpportunity 90 days before term-end. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"OpenRenewal\" using subscription. Consumes a Subscription approaching term end; produces a RenewalOpportunity 90 days before term-end. Produce renewal_opportunity and emit the appropriate events.",
+      "system_prompt": "作为负责「OpenRenewal」动作的自动化智能体，消费临近期满的订阅，在期满前90天生成续约商机。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（subscription）执行「OpenRenewal」。消费临近期满的订阅，在期满前90天生成续约商机。 产出（renewal_opportunity）并发出相应事件。",
       "tool_use": [
         "salesforce"
       ],
@@ -4851,16 +4862,17 @@
         "role": "RevOps Automation",
         "roleZh": "营收运营自动化",
         "kind": "agent"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:process-renewal",
       "uuid": "33445566778899001122ab3c4d5e6f70",
       "name": "ProcessRenewal",
       "nameZh": "处理续约",
-      "description": "Consumes the customer's renewal decision; produces a renewed Subscription, an upgrade, or a downgrade.",
+      "description": "消费客户的续约决定，生成续约、升级或降级后的订阅。",
       "descriptionZh": "消费客户的续约决定，生成续约、升级或降级后的订阅。",
-      "submission_criteria": "1. Event RENEWAL_OPPORTUNITY_CREATED has been received",
+      "submission_criteria": "1. 事件 RENEWAL_OPPORTUNITY_CREATED 已送达",
       "object_type": "action",
       "category": "处理续约",
       "actor": [
@@ -4878,20 +4890,20 @@
         {
           "order": "1",
           "name": "consumeTheCustomerSRenewalDecision",
-          "description": "Consume the customer's renewal decision (renew, upgrade, or downgrade).",
+          "description": "消费客户的续约决定（续约、升级或降级）。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "produceARenewedSubscriptionAnUpgrade",
-          "description": "Produce a renewed Subscription, an upgrade, or a downgrade.",
+          "description": "生成续约、升级或降级后的订阅。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"ProcessRenewal\" action. Consumes the customer's renewal decision; produces a renewed Subscription, an upgrade, or a downgrade. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"ProcessRenewal\" using renewal_opportunity, plan. Consumes the customer's renewal decision; produces a renewed Subscription, an upgrade, or a downgrade. Produce subscription and emit the appropriate events.",
+      "system_prompt": "作为负责「ProcessRenewal」动作的自动化人工操作员，消费客户的续约决定，生成续约、升级或降级后的订阅。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（renewal_opportunity、plan）执行「ProcessRenewal」。消费客户的续约决定，生成续约、升级或降级后的订阅。 产出（subscription）并发出相应事件。",
       "tool_use": [
         "salesforce"
       ],
@@ -5030,16 +5042,17 @@
         "role": "Customer Success Manager",
         "roleZh": "客户成功经理",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:adjust-entitlements",
       "uuid": "445566778899001122ab3c4d5e6f7081",
       "name": "AdjustEntitlements",
       "nameZh": "调整权益",
-      "description": "Consumes the new Plan mapping; on upgrade grants new Entitlements immediately, on downgrade schedules revocation of removed features at period end.",
+      "description": "消费新套餐映射，升级时立即授予新权益，降级时安排在周期结束撤销已移除功能。",
       "descriptionZh": "消费新套餐映射，升级时立即授予新权益，降级时安排在周期结束撤销已移除功能。",
-      "submission_criteria": "1. Event PLAN_UPGRADED has been received\n2. Event PLAN_DOWNGRADED has been received\n3. Rule \"Mid-term upgrade provisioned immediately, prorated\" is satisfied\n4. Rule \"Downgrade never revokes before period end\" is satisfied",
+      "submission_criteria": "1. 事件 PLAN_UPGRADED 已送达\n2. 事件 PLAN_DOWNGRADED 已送达\n3. 规则「期中升级立即开通并按比例计费」已满足\n4. 规则「降级不在周期结束前撤销」已满足",
       "object_type": "action",
       "category": "调整权益",
       "actor": [
@@ -5058,36 +5071,36 @@
         {
           "order": "1",
           "name": "onUpgradeGrantNewEntitlementsImmediately",
-          "description": "On upgrade, grant new Entitlements immediately and prorate the difference on the next Invoice.",
+          "description": "升级时立即授予新权益，并在下一张发票按比例分摊差价。",
           "object_type": "logic",
-          "submission_criteria": "On mid-term Plan upgrade",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "upgrade-immediate-prorated",
-              "name": "Mid-term upgrade provisioned immediately, prorated",
-              "submission_criteria": "On mid-term Plan upgrade",
-              "description": "A mid-term upgrade is required to be provisioned immediately and the price difference shall be prorated on the next Invoice."
+              "name": "期中升级立即开通并按比例计费",
+              "submission_criteria": "",
+              "description": "期中升级须立即开通，差价应在下一张发票上按比例分摊。"
             }
           ]
         },
         {
           "order": "2",
           "name": "onDowngradeScheduleRevocationOfRemoved",
-          "description": "On downgrade, schedule revocation of removed features at period end; never revoke before period end.",
+          "description": "降级时安排在周期结束撤销已移除功能，绝不提前撤销。",
           "object_type": "logic",
-          "submission_criteria": "On Plan downgrade",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "downgrade-no-early-revoke",
-              "name": "Downgrade never revokes before period end",
-              "submission_criteria": "On Plan downgrade",
-              "description": "A Plan downgrade may not revoke the removed features before the end of the current billing period."
+              "name": "降级不在周期结束前撤销",
+              "submission_criteria": "",
+              "description": "套餐降级在当前计费周期结束前不得撤销已移除的功能。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"AdjustEntitlements\" action. Consumes the new Plan mapping; on upgrade grants new Entitlements immediately, on downgrade schedules revocation of removed features at period end. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"AdjustEntitlements\" using subscription, plan. Consumes the new Plan mapping; on upgrade grants new Entitlements immediately, on downgrade schedules revocation of removed features at period end. Produce entitlements and emit the appropriate events.",
+      "system_prompt": "作为负责「AdjustEntitlements」动作的自动化系统，消费新套餐映射，升级时立即授予新权益，降级时安排在周期结束撤销已移除功能。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（subscription、plan）执行「AdjustEntitlements」。消费新套餐映射，升级时立即授予新权益，降级时安排在周期结束撤销已移除功能。 产出（entitlements）并发出相应事件。",
       "tool_use": [
         "launchdarkly",
         "Feature flags adjusted in LaunchDarkly."
@@ -5242,16 +5255,17 @@
         "role": "Entitlement Service",
         "roleZh": "权益服务",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:enter-grace-period",
       "uuid": "5566778899001122ab3c4d5e6f708192",
       "name": "EnterGracePeriod",
       "nameZh": "进入宽限期",
-      "description": "Consumes a Subscription not renewed by its term-end date; produces a 14-day grace state.",
+      "description": "消费未在期满日续约的订阅，生成14天宽限状态。",
       "descriptionZh": "消费未在期满日续约的订阅，生成14天宽限状态。",
-      "submission_criteria": "1. Rule \"Unrenewed subscription enters 14-day grace\" is satisfied",
+      "submission_criteria": "1. 规则「未续约订阅进入14天宽限期」已满足",
       "object_type": "action",
       "category": "进入宽限期",
       "actor": [
@@ -5266,28 +5280,28 @@
         {
           "order": "1",
           "name": "detectASubscriptionWhoseTermEnd",
-          "description": "Detect a Subscription whose term-end passed without renewal.",
+          "description": "检测期满未续约的订阅。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "moveTheSubscriptionToA14",
-          "description": "Move the Subscription to a 14-day grace state with Entitlements remaining active.",
+          "description": "将订阅置于14天宽限状态，权益保持有效。",
           "object_type": "logic",
-          "submission_criteria": "When term-end passes without renewal",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "grace-period-14d",
-              "name": "Unrenewed subscription enters 14-day grace",
-              "submission_criteria": "When term-end passes without renewal",
-              "description": "A Subscription not renewed by its term-end date shall move to a 14-day grace period during which Entitlements remain active."
+              "name": "未续约订阅进入14天宽限期",
+              "submission_criteria": "",
+              "description": "未在合同期满日前续约的订阅应进入14天宽限期，期间权益保持有效。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated agent responsible for the \"EnterGracePeriod\" action. Consumes a Subscription not renewed by its term-end date; produces a 14-day grace state. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"EnterGracePeriod\" using subscription. Consumes a Subscription not renewed by its term-end date; produces a 14-day grace state. Produce subscription and emit the appropriate events.",
+      "system_prompt": "作为负责「EnterGracePeriod」动作的自动化智能体，消费未在期满日续约的订阅，生成14天宽限状态。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（subscription）执行「EnterGracePeriod」。消费未在期满日续约的订阅，生成14天宽限状态。 产出（subscription）并发出相应事件。",
       "tool_use": [
         "stripe"
       ],
@@ -5406,16 +5420,17 @@
         "role": "RevOps Automation",
         "roleZh": "营收运营自动化",
         "kind": "agent"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:run-dunning",
       "uuid": "66778899001122ab3c4d5e6f70819203",
       "name": "RunDunning",
       "nameZh": "执行催款",
-      "description": "Consumes a PaymentFailed Invoice; produces a dunning schedule of up to 3 retries over 10 days.",
+      "description": "消费付款失败的发票，生成最多3次、分布于10天的催款重试计划。",
       "descriptionZh": "消费付款失败的发票，生成最多3次、分布于10天的催款重试计划。",
-      "submission_criteria": "1. Event PAYMENT_FAILED has been received\n2. Rule \"Dunning: max 3 retries over 10 days\" is satisfied",
+      "submission_criteria": "1. 事件 PAYMENT_FAILED 已送达\n2. 规则「催款：10天内最多3次重试」已满足",
       "object_type": "action",
       "category": "执行催款",
       "actor": [
@@ -5432,28 +5447,28 @@
         {
           "order": "1",
           "name": "buildADunningScheduleOfNo",
-          "description": "Build a dunning schedule of no more than 3 retries over 10 calendar days.",
+          "description": "构建不超过3次、分布于10个日历日的催款计划。",
           "object_type": "logic",
-          "submission_criteria": "On Payment failure",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "dunning-3-retries-10-days",
-              "name": "Dunning: max 3 retries over 10 days",
-              "submission_criteria": "On Payment failure",
-              "description": "A failed Payment shall trigger a dunning sequence of no more than 3 automated retry attempts spread over 10 calendar days."
+              "name": "催款：10天内最多3次重试",
+              "submission_criteria": "",
+              "description": "付款失败应触发催款流程，自动重试不超过3次，分布于10个日历日内。"
             }
           ]
         },
         {
           "order": "2",
           "name": "onTerminalFailureAfterRetriesAre",
-          "description": "On terminal failure after retries are exhausted, signal dunning exhausted.",
+          "description": "重试耗尽仍失败时，发出催款耗尽信号。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated agent responsible for the \"RunDunning\" action. Consumes a PaymentFailed Invoice; produces a dunning schedule of up to 3 retries over 10 days. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"RunDunning\" using invoice. Consumes a PaymentFailed Invoice; produces a dunning schedule of up to 3 retries over 10 days. Produce payment and emit the appropriate events.",
+      "system_prompt": "作为负责「RunDunning」动作的自动化智能体，消费付款失败的发票，生成最多3次、分布于10天的催款重试计划。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（invoice）执行「RunDunning」。消费付款失败的发票，生成最多3次、分布于10天的催款重试计划。 产出（payment）并发出相应事件。",
       "tool_use": [
         "stripe"
       ],
@@ -5580,16 +5595,17 @@
         "role": "RevOps Automation",
         "roleZh": "营收运营自动化",
         "kind": "agent"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:suspend-subscription",
       "uuid": "778899001122ab3c4d5e6f7081920314",
       "name": "SuspendSubscription",
       "nameZh": "暂停订阅",
-      "description": "Consumes a Subscription whose grace period or dunning is exhausted; produces a Suspended Subscription and revokes all Entitlement access.",
+      "description": "消费宽限期或催款耗尽的订阅，生成已暂停订阅并撤销所有权益访问。",
       "descriptionZh": "消费宽限期或催款耗尽的订阅，生成已暂停订阅并撤销所有权益访问。",
-      "submission_criteria": "1. Event GRACE_PERIOD_STARTED has been received\n2. Event DUNNING_EXHAUSTED has been received\n3. Rule \"Suspend and revoke on grace expiry\" is satisfied",
+      "submission_criteria": "1. 事件 GRACE_PERIOD_STARTED 已送达\n2. 事件 DUNNING_EXHAUSTED 已送达\n3. 规则「宽限期满后暂停并撤销」已满足",
       "object_type": "action",
       "category": "暂停订阅",
       "actor": [
@@ -5607,28 +5623,28 @@
         {
           "order": "1",
           "name": "confirmGracePeriod14dOrDunning",
-          "description": "Confirm grace period (+14d) or dunning is exhausted.",
+          "description": "确认宽限期（+14天）或催款已耗尽。",
           "object_type": "logic",
-          "submission_criteria": "On grace-period expiry (+14d)",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "suspend-on-grace-expiry",
-              "name": "Suspend and revoke on grace expiry",
-              "submission_criteria": "On grace-period expiry (+14d)",
-              "description": "A Subscription whose 14-day grace period expires without renewal must be suspended and all of its Entitlements revoked."
+              "name": "宽限期满后暂停并撤销",
+              "submission_criteria": "",
+              "description": "14天宽限期满仍未续约的订阅必须被暂停，并撤销其所有权益。"
             }
           ]
         },
         {
           "order": "2",
           "name": "setTheSubscriptionToSuspendedAnd",
-          "description": "Set the Subscription to Suspended and revoke all Entitlement access.",
+          "description": "将订阅置为暂停并撤销所有权益访问。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"SuspendSubscription\" action. Consumes a Subscription whose grace period or dunning is exhausted; produces a Suspended Subscription and revokes all Entitlement access. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"SuspendSubscription\" using subscription. Consumes a Subscription whose grace period or dunning is exhausted; produces a Suspended Subscription and revokes all Entitlement access. Produce subscription and emit the appropriate events.",
+      "system_prompt": "作为负责「SuspendSubscription」动作的自动化系统，消费宽限期或催款耗尽的订阅，生成已暂停订阅并撤销所有权益访问。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（subscription）执行「SuspendSubscription」。消费宽限期或催款耗尽的订阅，生成已暂停订阅并撤销所有权益访问。 产出（subscription）并发出相应事件。",
       "tool_use": [
         "launchdarkly",
         "All feature flags revoked in LaunchDarkly."
@@ -5764,16 +5780,17 @@
         "role": "Entitlement Service",
         "roleZh": "权益服务",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:reinstate-subscription",
       "uuid": "8899001122ab3c4d5e6f708192031425",
       "name": "ReinstateSubscription",
       "nameZh": "恢复订阅",
-      "description": "Consumes a successful catch-up Payment on a Suspended Subscription; produces a reactivated Subscription and re-grants Entitlement access.",
+      "description": "消费已暂停订阅的成功补缴付款，生成重新激活的订阅并重新授予权益访问。",
       "descriptionZh": "消费已暂停订阅的成功补缴付款，生成重新激活的订阅并重新授予权益访问。",
-      "submission_criteria": "1. Event PAYMENT_SUCCEEDED has been received\n2. Rule \"Reinstate only after catch-up payment; re-grant within 1h\" is satisfied",
+      "submission_criteria": "1. 事件 PAYMENT_SUCCEEDED 已送达\n2. 规则「仅在补缴后恢复，并在1小时内重新授予」已满足",
       "object_type": "action",
       "category": "恢复订阅",
       "actor": [
@@ -5792,28 +5809,28 @@
         {
           "order": "1",
           "name": "verifyASuccessfulCatchUpPayment",
-          "description": "Verify a successful catch-up Payment cleared all overdue Invoices.",
+          "description": "确认成功补缴付款已结清所有逾期发票。",
           "object_type": "logic",
-          "submission_criteria": "On successful catch-up payment for a suspended subscription",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "reinstate-after-catchup",
-              "name": "Reinstate only after catch-up payment; re-grant within 1h",
-              "submission_criteria": "On successful catch-up payment for a suspended subscription",
-              "description": "A suspended Subscription may be reinstated only after a successful catch-up Payment clears all overdue Invoices, after which Entitlements must be re-granted within 1 hour."
+              "name": "仅在补缴后恢复，并在1小时内重新授予",
+              "submission_criteria": "",
+              "description": "被暂停的订阅仅在成功补缴付款结清所有逾期发票后方可恢复，此后权益须在1小时内重新授予。"
             }
           ]
         },
         {
           "order": "2",
           "name": "reactivateTheSubscriptionAndReGrant",
-          "description": "Reactivate the Subscription and re-grant Entitlement access within 1 hour.",
+          "description": "重新激活订阅并在1小时内重新授予权益访问。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"ReinstateSubscription\" action. Consumes a successful catch-up Payment on a Suspended Subscription; produces a reactivated Subscription and re-grants Entitlement access. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"ReinstateSubscription\" using subscription, payment. Consumes a successful catch-up Payment on a Suspended Subscription; produces a reactivated Subscription and re-grants Entitlement access. Produce subscription and emit the appropriate events.",
+      "system_prompt": "作为负责「ReinstateSubscription」动作的自动化系统，消费已暂停订阅的成功补缴付款，生成重新激活的订阅并重新授予权益访问。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（subscription、payment）执行「ReinstateSubscription」。消费已暂停订阅的成功补缴付款，生成重新激活的订阅并重新授予权益访问。 产出（subscription）并发出相应事件。",
       "tool_use": [
         "launchdarkly",
         "Feature flags re-granted in LaunchDarkly."
@@ -5962,16 +5979,17 @@
         "role": "Entitlement Service",
         "roleZh": "权益服务",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:churn-subscription",
       "uuid": "99001122ab3c4d5e6f70819203142536",
       "name": "ChurnSubscription",
       "nameZh": "流失订阅",
-      "description": "Consumes a Subscription suspended beyond 30 days; produces a Cancelled Subscription and a closed-lost RenewalOpportunity.",
+      "description": "消费暂停超过30天的订阅，生成已取消订阅与关闭为流失的续约商机。",
       "descriptionZh": "消费暂停超过30天的订阅，生成已取消订阅与关闭为流失的续约商机。",
-      "submission_criteria": "1. Event SUBSCRIPTION_SUSPENDED has been received\n2. Rule \"Cancel after 30 days suspended\" is satisfied",
+      "submission_criteria": "1. 事件 SUBSCRIPTION_SUSPENDED 已送达\n2. 规则「暂停超30天后取消」已满足",
       "object_type": "action",
       "category": "流失订阅",
       "actor": [
@@ -5988,28 +6006,28 @@
         {
           "order": "1",
           "name": "confirmTheSubscriptionHasRemainedSuspended",
-          "description": "Confirm the Subscription has remained suspended for more than 30 consecutive days.",
+          "description": "确认订阅已连续暂停超过30天。",
           "object_type": "logic",
-          "submission_criteria": "When suspension exceeds 30 days",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "churn-after-30-days",
-              "name": "Cancel after 30 days suspended",
-              "submission_criteria": "When suspension exceeds 30 days",
-              "description": "A Subscription that remains suspended for more than 30 consecutive days must be cancelled and its RenewalOpportunity closed as lost."
+              "name": "暂停超30天后取消",
+              "submission_criteria": "",
+              "description": "连续暂停超过30天的订阅必须被取消，其续约商机关闭为已流失。"
             }
           ]
         },
         {
           "order": "2",
           "name": "cancelTheSubscriptionAndCloseIts",
-          "description": "Cancel the Subscription and close its RenewalOpportunity as lost.",
+          "description": "取消订阅并将其续约商机关闭为流失。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated agent responsible for the \"ChurnSubscription\" action. Consumes a Subscription suspended beyond 30 days; produces a Cancelled Subscription and a closed-lost RenewalOpportunity. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"ChurnSubscription\" using subscription. Consumes a Subscription suspended beyond 30 days; produces a Cancelled Subscription and a closed-lost RenewalOpportunity. Produce subscription, renewal_opportunity and emit the appropriate events.",
+      "system_prompt": "作为负责「ChurnSubscription」动作的自动化智能体，消费暂停超过30天的订阅，生成已取消订阅与关闭为流失的续约商机。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（subscription）执行「ChurnSubscription」。消费暂停超过30天的订阅，生成已取消订阅与关闭为流失的续约商机。 产出（subscription、renewal_opportunity）并发出相应事件。",
       "tool_use": [
         "salesforce"
       ],
@@ -6141,7 +6159,8 @@
         "role": "RevOps Automation",
         "roleZh": "营收运营自动化",
         "kind": "agent"
-      }
+      },
+      "typescript_code": ""
     }
   ],
   "events": [
@@ -6150,7 +6169,7 @@
       "uuid": "001122ab3c4d5e6f7081920314253647",
       "name": "OPPORTUNITY_CLOSED_WON",
       "nameZh": "商机赢单",
-      "description": "An Opportunity is marked Closed-Won, kicking off the quote-to-provision flow.",
+      "description": "商机标记为赢单，启动报价到开通流程。",
       "descriptionZh": "商机标记为赢单，启动报价到开通流程。",
       "payload": {
         "source_action": "",
@@ -6194,7 +6213,7 @@
       "uuid": "1122ab3c4d5e6f708192031425364758",
       "name": "ORDER_FORM_DRAFTED",
       "nameZh": "订单表已起草",
-      "description": "A draft Order Form has been created for the Account.",
+      "description": "已为账户创建订单表草稿。",
       "descriptionZh": "已为账户创建订单表草稿。",
       "payload": {
         "source_action": "createOrderForm",
@@ -6245,7 +6264,7 @@
       "uuid": "22ab3c4d5e6f70819203142536475869",
       "name": "QUOTE_APPROVED",
       "nameZh": "报价已批准",
-      "description": "The quote passed Deal Desk and any required VP approval.",
+      "description": "报价通过 Deal Desk 及必要的副总审批。",
       "descriptionZh": "报价通过 Deal Desk 及必要的副总审批。",
       "payload": {
         "source_action": "validateQuote",
@@ -6296,7 +6315,7 @@
       "uuid": "ab3c4d5e6f7081920314253647586970",
       "name": "QUOTE_REJECTED",
       "nameZh": "报价被拒绝",
-      "description": "The quote was rejected during validation.",
+      "description": "报价在校验中被拒绝。",
       "descriptionZh": "报价在校验中被拒绝。",
       "payload": {
         "source_action": "validateQuote",
@@ -6345,7 +6364,7 @@
       "uuid": "3c4d5e6f708192031425364758697081",
       "name": "CONTRACT_SIGNED",
       "nameZh": "合同已签署",
-      "description": "An executed Contract with term and committed quantities.",
+      "description": "含期限与承诺数量的已签署合同。",
       "descriptionZh": "含期限与承诺数量的已签署合同。",
       "payload": {
         "source_action": "signContract",
@@ -6396,7 +6415,7 @@
       "uuid": "4d5e6f70819203142536475869708192",
       "name": "SUBSCRIPTION_CREATED",
       "nameZh": "订阅已创建",
-      "description": "An active Subscription has been created in Stripe.",
+      "description": "已在 Stripe 中创建活动订阅。",
       "descriptionZh": "已在 Stripe 中创建活动订阅。",
       "payload": {
         "source_action": "createSubscription",
@@ -6452,7 +6471,7 @@
       "uuid": "5e6f708192031425364758697081920a",
       "name": "INVOICE_ISSUED",
       "nameZh": "发票已开具",
-      "description": "A period or initial-term Invoice has been issued.",
+      "description": "已开具周期或初始合同期发票。",
       "descriptionZh": "已开具周期或初始合同期发票。",
       "payload": {
         "source_action": "createSubscription",
@@ -6509,7 +6528,7 @@
       "uuid": "6f708192031425364758697081920ab1",
       "name": "ENTITLEMENT_GRANTED",
       "nameZh": "权益已授予",
-      "description": "One or more Entitlements were granted and enforced in LaunchDarkly.",
+      "description": "一个或多个权益被授予并在 LaunchDarkly 中实施。",
       "descriptionZh": "一个或多个权益被授予并在 LaunchDarkly 中实施。",
       "payload": {
         "source_action": "provisionEntitlements",
@@ -6565,7 +6584,7 @@
       "uuid": "708192031425364758697081920ab1c2",
       "name": "PROVISIONING_COMPLETED",
       "nameZh": "开通已完成",
-      "description": "The ProvisioningTask has been closed after entitlements were granted.",
+      "description": "授予权益后开通任务已关闭。",
       "descriptionZh": "授予权益后开通任务已关闭。",
       "payload": {
         "source_action": "provisionEntitlements",
@@ -6616,7 +6635,7 @@
       "uuid": "8192031425364758697081920ab1c2d3",
       "name": "ENTITLEMENT_DRIFT_DETECTED",
       "nameZh": "权益漂移已检测",
-      "description": "Reconciliation found a mismatch between granted Entitlements and the Plan spec.",
+      "description": "对账发现已授予权益与套餐规格不匹配。",
       "descriptionZh": "对账发现已授予权益与套餐规格不匹配。",
       "payload": {
         "source_action": "reconcileEntitlements",
@@ -6665,7 +6684,7 @@
       "uuid": "192031425364758697081920ab1c2d3e",
       "name": "USAGE_RECORDED",
       "nameZh": "用量已记录",
-      "description": "A metered UsageRecord row was appended for a Subscription.",
+      "description": "为订阅追加了一条计量用量记录。",
       "descriptionZh": "为订阅追加了一条计量用量记录。",
       "payload": {
         "source_action": "recordUsage",
@@ -6716,7 +6735,7 @@
       "uuid": "2031425364758697081920ab1c2d3e4f",
       "name": "OVERAGE_DETECTED",
       "nameZh": "超量已检测",
-      "description": "Cumulative usage exceeded the included quota for a non-unlimited Subscription.",
+      "description": "非无限层级订阅的累计用量超过包含配额。",
       "descriptionZh": "非无限层级订阅的累计用量超过包含配额。",
       "payload": {
         "source_action": "calculateOverage",
@@ -6767,7 +6786,7 @@
       "uuid": "031425364758697081920ab1c2d3e4f5",
       "name": "USAGE_WITHIN_QUOTA",
       "nameZh": "用量在配额内",
-      "description": "Usage stayed within quota (or unlimited tier), short-circuiting overage.",
+      "description": "用量保持在配额内（或为无限层级），短路超量计算。",
       "descriptionZh": "用量保持在配额内（或为无限层级），短路超量计算。",
       "payload": {
         "source_action": "calculateOverage",
@@ -6818,7 +6837,7 @@
       "uuid": "1425364758697081920ab1c2d3e4f506",
       "name": "PAYMENT_SUCCEEDED",
       "nameZh": "付款成功",
-      "description": "A Payment cleared against an open Invoice.",
+      "description": "针对未结发票的付款已清算。",
       "descriptionZh": "针对未结发票的付款已清算。",
       "payload": {
         "source_action": "collectPayment",
@@ -6870,7 +6889,7 @@
       "uuid": "425364758697081920ab1c2d3e4f5061",
       "name": "PAYMENT_FAILED",
       "nameZh": "付款失败",
-      "description": "A Payment attempt against an open Invoice failed.",
+      "description": "针对未结发票的付款尝试失败。",
       "descriptionZh": "针对未结发票的付款尝试失败。",
       "payload": {
         "source_action": "collectPayment",
@@ -6921,7 +6940,7 @@
       "uuid": "25364758697081920ab1c2d3e4f50617",
       "name": "REVENUE_RECOGNIZED",
       "nameZh": "收入已确认",
-      "description": "Revenue schedules were recognized against a Subscription after payment succeeded.",
+      "description": "付款成功后已对订阅确认收入计划。",
       "descriptionZh": "付款成功后已对订阅确认收入计划。",
       "payload": {
         "source_action": "recognizeRevenue",
@@ -6970,7 +6989,7 @@
       "uuid": "5364758697081920ab1c2d3e4f506172",
       "name": "RENEWAL_WINDOW_OPENED",
       "nameZh": "续约窗口已开启",
-      "description": "The T-90 renewal window opened for a Subscription approaching term-end.",
+      "description": "临近期满订阅的T-90续约窗口已开启。",
       "descriptionZh": "临近期满订阅的T-90续约窗口已开启。",
       "payload": {
         "source_action": "",
@@ -7022,7 +7041,7 @@
       "uuid": "364758697081920ab1c2d3e4f5061728",
       "name": "RENEWAL_OPPORTUNITY_CREATED",
       "nameZh": "续约商机已创建",
-      "description": "A RenewalOpportunity was created in Salesforce at T-90.",
+      "description": "在T-90时于 Salesforce 创建了续约商机。",
       "descriptionZh": "在T-90时于 Salesforce 创建了续约商机。",
       "payload": {
         "source_action": "openRenewal",
@@ -7073,7 +7092,7 @@
       "uuid": "4758697081920ab1c2d3e4f506172839",
       "name": "SUBSCRIPTION_RENEWED",
       "nameZh": "订阅已续约",
-      "description": "A Subscription was renewed for a new term.",
+      "description": "订阅已续约新合同期。",
       "descriptionZh": "订阅已续约新合同期。",
       "payload": {
         "source_action": "processRenewal",
@@ -7122,7 +7141,7 @@
       "uuid": "58697081920ab1c2d3e4f50617283940",
       "name": "PLAN_UPGRADED",
       "nameZh": "套餐已升级",
-      "description": "A Subscription's Plan was upgraded.",
+      "description": "订阅的套餐已升级。",
       "descriptionZh": "订阅的套餐已升级。",
       "payload": {
         "source_action": "processRenewal",
@@ -7173,7 +7192,7 @@
       "uuid": "8697081920ab1c2d3e4f506172839405",
       "name": "PLAN_DOWNGRADED",
       "nameZh": "套餐已降级",
-      "description": "A Subscription's Plan was downgraded; removed features revoke at period end.",
+      "description": "订阅的套餐已降级，已移除功能在周期结束时撤销。",
       "descriptionZh": "订阅的套餐已降级，已移除功能在周期结束时撤销。",
       "payload": {
         "source_action": "processRenewal",
@@ -7224,7 +7243,7 @@
       "uuid": "697081920ab1c2d3e4f506172839405a",
       "name": "ENTITLEMENT_REVOKED",
       "nameZh": "权益已撤销",
-      "description": "Entitlements were revoked (downgrade at period end or suspension).",
+      "description": "权益已被撤销（降级周期结束或暂停）。",
       "descriptionZh": "权益已被撤销（降级周期结束或暂停）。",
       "payload": {
         "source_action": "adjustEntitlements",
@@ -7279,7 +7298,7 @@
       "uuid": "97081920ab1c2d3e4f506172839405a6",
       "name": "GRACE_PERIOD_STARTED",
       "nameZh": "宽限期已开始",
-      "description": "An unrenewed Subscription entered a 14-day grace period.",
+      "description": "未续约订阅进入14天宽限期。",
       "descriptionZh": "未续约订阅进入14天宽限期。",
       "payload": {
         "source_action": "enterGracePeriod",
@@ -7330,7 +7349,7 @@
       "uuid": "7081920ab1c2d3e4f506172839405a6b",
       "name": "DUNNING_STARTED",
       "nameZh": "催款已开始",
-      "description": "A dunning retry sequence was started on a failed Invoice.",
+      "description": "对失败发票启动了催款重试流程。",
       "descriptionZh": "对失败发票启动了催款重试流程。",
       "payload": {
         "source_action": "runDunning",
@@ -7379,7 +7398,7 @@
       "uuid": "081920ab1c2d3e4f506172839405a6b7",
       "name": "DUNNING_EXHAUSTED",
       "nameZh": "催款已耗尽",
-      "description": "All dunning retries failed; the account proceeds to suspension.",
+      "description": "所有催款重试均失败，账户转入暂停。",
       "descriptionZh": "所有催款重试均失败，账户转入暂停。",
       "payload": {
         "source_action": "runDunning",
@@ -7430,7 +7449,7 @@
       "uuid": "81920ab1c2d3e4f506172839405a6b7c",
       "name": "SUBSCRIPTION_SUSPENDED",
       "nameZh": "订阅已暂停",
-      "description": "A Subscription was suspended and its Entitlements revoked.",
+      "description": "订阅已被暂停且其权益已撤销。",
       "descriptionZh": "订阅已被暂停且其权益已撤销。",
       "payload": {
         "source_action": "suspendSubscription",
@@ -7481,7 +7500,7 @@
       "uuid": "1920ab1c2d3e4f506172839405a6b7c8",
       "name": "SUBSCRIPTION_REINSTATED",
       "nameZh": "订阅已恢复",
-      "description": "A suspended Subscription was reactivated after a catch-up payment.",
+      "description": "暂停订阅在补缴付款后已重新激活。",
       "descriptionZh": "暂停订阅在补缴付款后已重新激活。",
       "payload": {
         "source_action": "reinstateSubscription",
@@ -7530,7 +7549,7 @@
       "uuid": "920ab1c2d3e4f506172839405a6b7c8d",
       "name": "SUBSCRIPTION_CANCELLED",
       "nameZh": "订阅已取消",
-      "description": "A Subscription suspended over 30 days was cancelled (churn).",
+      "description": "暂停超30天的订阅已被取消（流失）。",
       "descriptionZh": "暂停超30天的订阅已被取消（流失）。",
       "payload": {
         "source_action": "churnSubscription",
@@ -7583,7 +7602,7 @@
         "en": "Quote to Provision",
         "zh": "报价到开通"
       },
-      "description": "From an approved Opportunity through a signed Order Form to a live, fully entitled Subscription.",
+      "description": "报价到开通",
       "actor": [
         "Human",
         "System",
@@ -7596,42 +7615,42 @@
         {
           "order": "1",
           "name": "createOrderForm",
-          "description": "Consumes a Closed-Won Opportunity and selected Plan; produces a draft Order Form linked to the Account.",
+          "description": "消费赢单商机与所选套餐，生成与账户关联的订单表草稿。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "2",
           "name": "validateQuote",
-          "description": "Consumes the draft Order Form, list price, and discount; produces an approved or rejected quote. Above-threshold discounts require escalation.",
+          "description": "消费订单表草稿、标价与折扣，生成已批准或被拒绝的报价；超阈值折扣需升级审批。",
           "type": "manual",
           "condition": "Approved"
         },
         {
           "order": "3",
           "name": "signContract",
-          "description": "Consumes the approved Order Form; produces an executed Contract with term start, term end, and committed quantities.",
+          "description": "消费已批准的订单表，生成含起止日期与承诺数量的已签署合同。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "4",
           "name": "createSubscription",
-          "description": "Consumes the executed Contract and Plan; produces an active Subscription and the first Invoice (initial term charge).",
+          "description": "消费已签署合同与套餐，生成活动订阅与首张发票（初始合同期收费）。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "5",
           "name": "provisionEntitlements",
-          "description": "Consumes the Subscription's Plan mapping; produces Entitlement records (feature flags, quota limits, seat counts) and closes the ProvisioningTask.",
+          "description": "消费订阅的套餐映射，生成权益记录（功能开关、配额、席位），并关闭开通任务。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "6",
           "name": "reconcileEntitlements",
-          "description": "Consumes the live Entitlement set and the Plan spec; produces a drift report and, if mismatched, a remediation ProvisioningTask.",
+          "description": "消费现有权益集合与套餐规格，生成漂移报告；若不匹配则生成修复开通任务。",
           "type": "tool",
           "condition": ""
         }
@@ -7798,7 +7817,7 @@
         "en": "Usage to Invoice",
         "zh": "用量到开票"
       },
-      "description": "Continuous metering of consumption against included quota, overage calculation, invoicing, collection, and revenue recognition.",
+      "description": "用量到开票",
       "actor": [
         "System",
         "Agent",
@@ -7812,35 +7831,35 @@
         {
           "order": "1",
           "name": "recordUsage",
-          "description": "Consumes metered product events (API calls, seats, GB); produces timestamped UsageRecord rows keyed to the Subscription.",
+          "description": "消费计量的产品事件（API调用、席位、GB），生成与订阅关联的带时间戳用量记录。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "2",
           "name": "calculateOverage",
-          "description": "Consumes cumulative UsageRecord totals and the Entitlement included quota; produces an overage quantity when usage exceeds quota.",
+          "description": "消费累计用量总额与权益包含配额，当用量超过配额时生成超量数量。",
           "type": "tool",
           "condition": "Overage"
         },
         {
           "order": "3",
           "name": "issueInvoice",
-          "description": "Consumes the recurring plan charge plus any overage line items; produces the period Invoice.",
+          "description": "消费经常性套餐收费及任何超量行项，生成周期发票。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "4",
           "name": "collectPayment",
-          "description": "Consumes a payment instrument charge against the open Invoice; produces a Payment and marks the Invoice Paid or Failed.",
+          "description": "对未结发票发起付款工具扣款，生成付款并将发票标记为已付或失败。",
           "type": "tool",
           "condition": "Paid"
         },
         {
           "order": "5",
           "name": "recognizeRevenue",
-          "description": "Consumes the Subscription term and Invoice; produces recognized revenue schedules.",
+          "description": "消费订阅合同期与发票，生成已确认收入计划。",
           "type": "manual",
           "condition": ""
         }
@@ -8000,7 +8019,7 @@
         "en": "Renewal to Expansion",
         "zh": "续约到扩展"
       },
-      "description": "Term-end renewal, upgrade/downgrade entitlement adjustment, and grace handling.",
+      "description": "续约到扩展",
       "actor": [
         "Agent",
         "Human",
@@ -8013,28 +8032,28 @@
         {
           "order": "1",
           "name": "openRenewal",
-          "description": "Consumes a Subscription approaching term end; produces a RenewalOpportunity 90 days before term-end.",
+          "description": "消费临近期满的订阅，在期满前90天生成续约商机。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "2",
           "name": "processRenewal",
-          "description": "Consumes the customer's renewal decision; produces a renewed Subscription, an upgrade, or a downgrade.",
+          "description": "消费客户的续约决定，生成续约、升级或降级后的订阅。",
           "type": "manual",
           "condition": "Upgrade"
         },
         {
           "order": "3",
           "name": "adjustEntitlements",
-          "description": "Consumes the new Plan mapping; on upgrade grants new Entitlements immediately, on downgrade schedules revocation of removed features at period end.",
+          "description": "消费新套餐映射，升级时立即授予新权益，降级时安排在周期结束撤销已移除功能。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "4",
           "name": "enterGracePeriod",
-          "description": "Consumes a Subscription not renewed by its term-end date; produces a 14-day grace state.",
+          "description": "消费未在期满日续约的订阅，生成14天宽限状态。",
           "type": "tool",
           "condition": ""
         }
@@ -8170,7 +8189,7 @@
         "en": "Suspension to Recovery",
         "zh": "暂停到恢复"
       },
-      "description": "Dunning, suspension, reinstatement, and churn on terminal non-payment.",
+      "description": "暂停到恢复",
       "actor": [
         "Agent",
         "System"
@@ -8183,28 +8202,28 @@
         {
           "order": "1",
           "name": "runDunning",
-          "description": "Consumes a PaymentFailed Invoice; produces a dunning schedule of up to 3 retries over 10 days.",
+          "description": "消费付款失败的发票，生成最多3次、分布于10天的催款重试计划。",
           "type": "tool",
           "condition": "Retries exhausted"
         },
         {
           "order": "2",
           "name": "suspendSubscription",
-          "description": "Consumes a Subscription whose grace period or dunning is exhausted; produces a Suspended Subscription and revokes all Entitlement access.",
+          "description": "消费宽限期或催款耗尽的订阅，生成已暂停订阅并撤销所有权益访问。",
           "type": "tool",
           "condition": "Catch-up paid"
         },
         {
           "order": "3",
           "name": "reinstateSubscription",
-          "description": "Consumes a successful catch-up Payment on a Suspended Subscription; produces a reactivated Subscription and re-grants Entitlement access.",
+          "description": "消费已暂停订阅的成功补缴付款，生成重新激活的订阅并重新授予权益访问。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "4",
           "name": "churnSubscription",
-          "description": "Consumes a Subscription suspended beyond 30 days; produces a Cancelled Subscription and a closed-lost RenewalOpportunity.",
+          "description": "消费暂停超过30天的订阅，生成已取消订阅与关闭为流失的续约商机。",
           "type": "tool",
           "condition": ""
         }

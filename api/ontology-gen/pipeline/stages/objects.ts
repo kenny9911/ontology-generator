@@ -377,7 +377,15 @@ export async function extractObjects(
       const confidence = rawConfidence(ro?.confidence);
       const properties = mapProperties(ro?.properties ?? ro?.attributes);
       const modelId = str(ro?.id).trim();
-      const relDesc = optString(ro?.relationship_description ?? ro?.relationshipNote);
+      // relationship prose, Chinese-first: a bilingual relationshipNote {en,zh}
+      // yields its zh side; a bare string is used as-is.
+      const relRaw = ro?.relationship_description ?? ro?.relationshipNote;
+      const relDesc =
+        typeof relRaw === 'string'
+          ? optString(relRaw)
+          : relRaw && typeof relRaw === 'object'
+            ? optStr((relRaw as { zh?: unknown }).zh) ?? optStr((relRaw as { en?: unknown }).en)
+            : undefined;
 
       const existing = objectByName.get(key);
       if (existing) {
@@ -405,7 +413,7 @@ export async function extractObjects(
         uuid: randomUUID(),
         name,
         nameZh,
-        description: str(ro?.description),
+        description: optStr(ro?.descriptionZh) || str(ro?.description),
         type: toObjectClass(ro?.type ?? ro?.objectClass) ?? classify(name, id, nameZh),
         relationship_description: relDesc ?? '',
         primary_key: str(ro?.primary_key).trim() || guessPrimaryKey(id, properties),

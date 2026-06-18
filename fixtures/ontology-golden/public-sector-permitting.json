@@ -39,44 +39,44 @@
       "uuid": "22222222222222222222222222220001",
       "name": "Applicant",
       "nameZh": "申请人",
-      "description": "A person who submits an Application and supporting Documents through the public portal.",
+      "description": "通过公共门户提交申请及佐证文件的个人。",
       "descriptionZh": "通过公共门户提交申请及佐证文件的个人。",
       "type": "data",
-      "relationship_description": "Applicant belongs to Household. Applicant submits Application. Applicant.household_id references Household.",
+      "relationship_description": "【申请人】属于【家庭】。【申请人】提交【申请】。",
       "primary_key": "applicant_id",
       "properties": [
         {
           "name": "applicant_id",
           "type": "String",
-          "description": "Primary key.",
+          "description": "主键。",
           "descriptionZh": "主键。"
         },
         {
           "name": "full_name",
           "type": "String",
-          "description": ""
+          "description": "Full Name"
         },
         {
           "name": "national_id",
           "type": "String",
-          "description": "Unique, verified via IDV.",
+          "description": "唯一，经 IDV 核验。",
           "descriptionZh": "唯一，经 IDV 核验。"
         },
         {
           "name": "email",
           "type": "String",
-          "description": ""
+          "description": "Email"
         },
         {
           "name": "residency_verified",
           "type": "Boolean",
-          "description": "Set by IDV per [BR-06].",
+          "description": "由 IDV 依据 [BR-06] 设定。",
           "descriptionZh": "由 IDV 依据 [BR-06] 设定。"
         },
         {
           "name": "household_id",
           "type": "String",
-          "description": "FK to Household.",
+          "description": "外键指向家庭。",
           "descriptionZh": "外键指向家庭。",
           "is_foreign_key": true,
           "references": "objectType:household"
@@ -108,33 +108,33 @@
       "uuid": "22222222222222222222222222220002",
       "name": "Household",
       "nameZh": "家庭",
-      "description": "The household unit whose size and income are tested against program eligibility thresholds.",
+      "description": "其规模与收入用于检验项目资格阈值的家庭单位。",
       "descriptionZh": "其规模与收入用于检验项目资格阈值的家庭单位。",
       "type": "data",
-      "relationship_description": "Applicant belongs to Household.",
+      "relationship_description": "【申请人】属于【家庭】。",
       "primary_key": "household_id",
       "properties": [
         {
           "name": "household_id",
           "type": "String",
-          "description": ""
+          "description": "Household Id"
         },
         {
           "name": "household_size",
           "type": "Integer",
-          "description": "Drives income threshold [BR-05].",
+          "description": "决定收入阈值 [BR-05]。",
           "descriptionZh": "决定收入阈值 [BR-05]。"
         },
         {
           "name": "annual_income",
           "type": "Float",
-          "description": "Tested against threshold.",
+          "description": "与阈值比较。",
           "descriptionZh": "与阈值比较。"
         },
         {
           "name": "address",
           "type": "String",
-          "description": "Within-jurisdiction check.",
+          "description": "辖区内核查。",
           "descriptionZh": "辖区内核查。"
         }
       ],
@@ -163,44 +163,44 @@
       "uuid": "22222222222222222222222222220003",
       "name": "Application",
       "nameZh": "申请",
-      "description": "A request for a benefit or permit, screened, verified, and adjudicated through a Case.",
+      "description": "对福利或许可的请求，经审查、核验并通过案件裁定。",
       "descriptionZh": "对福利或许可的请求，经审查、核验并通过案件裁定。",
       "type": "data",
-      "relationship_description": "Applicant submits Application. Application opens Case. Application has document Document. Application.applicant_id references Applicant.",
+      "relationship_description": "【申请人】提交【申请】。【申请】开立【案件】。【申请】包含文件【文件】。",
       "primary_key": "application_id",
       "properties": [
         {
           "name": "application_id",
           "type": "String",
-          "description": ""
+          "description": "Application Id"
         },
         {
           "name": "applicant_id",
           "type": "String",
-          "description": "",
+          "description": "Applicant Id",
           "is_foreign_key": true,
           "references": "objectType:applicant"
         },
         {
           "name": "program_code",
           "type": "List<String>",
-          "description": ""
+          "description": "Program Code"
         },
         {
           "name": "permit_class",
           "type": "List<String>",
-          "description": "Null for benefits.",
+          "description": "福利申请时为空。",
           "descriptionZh": "福利申请时为空。"
         },
         {
           "name": "status",
           "type": "List<String>",
-          "description": ""
+          "description": "Status"
         },
         {
           "name": "submitted_at",
           "type": "Timestamp",
-          "description": "Starts the statutory clock [BR-03].",
+          "description": "启动法定处理时钟 [BR-03]。",
           "descriptionZh": "启动法定处理时钟 [BR-03]。"
         }
       ],
@@ -231,38 +231,38 @@
       "uuid": "22222222222222222222222222220004",
       "name": "Case",
       "nameZh": "案件",
-      "description": "The adjudication container opened per Application; the unit of recertification and appeal.",
+      "description": "为每个申请开立的裁定容器，是复核与申诉的单位。",
       "descriptionZh": "为每个申请开立的裁定容器，是复核与申诉的单位。",
       "type": "data",
-      "relationship_description": "Application opens Case. Case has determination Determination. Case.application_id references Application.",
+      "relationship_description": "【申请】开立【案件】。【案件】产生裁定【裁定】。",
       "primary_key": "case_id",
       "properties": [
         {
           "name": "case_id",
           "type": "String",
-          "description": ""
+          "description": "Case Id"
         },
         {
           "name": "application_id",
           "type": "String",
-          "description": "",
+          "description": "Application Id",
           "is_foreign_key": true,
           "references": "objectType:application"
         },
         {
           "name": "assigned_caseworker",
           "type": "String",
-          "description": ""
+          "description": "Assigned Caseworker"
         },
         {
           "name": "status",
           "type": "List<String>",
-          "description": ""
+          "description": "Status"
         },
         {
           "name": "recert_due_date",
           "type": "Date",
-          "description": "Drives [BR-17]/[BR-18].",
+          "description": "决定 [BR-17]/[BR-18]。",
           "descriptionZh": "决定 [BR-17]/[BR-18]。"
         }
       ],
@@ -292,38 +292,38 @@
       "uuid": "22222222222222222222222222220005",
       "name": "EligibilityCriterion",
       "nameZh": "资格条件",
-      "description": "A versioned eligibility test (e.g. income threshold by household size) applied by the eligibility engine.",
+      "description": "由资格引擎应用的、带版本的资格测试（如按家庭规模设定的收入阈值）。",
       "descriptionZh": "由资格引擎应用的、带版本的资格测试（如按家庭规模设定的收入阈值）。",
       "type": "data",
-      "relationship_description": "Determination cites EligibilityCriterion.",
+      "relationship_description": "【裁定】援引【资格条件】。",
       "primary_key": "criterion_id",
       "properties": [
         {
           "name": "criterion_id",
           "type": "String",
-          "description": ""
+          "description": "Criterion Id"
         },
         {
           "name": "rule_citation",
           "type": "String",
-          "description": "e.g. BR-05; used in denials [BR-08].",
+          "description": "如 BR-05；用于拒绝裁定 [BR-08]。",
           "descriptionZh": "如 BR-05；用于拒绝裁定 [BR-08]。"
         },
         {
           "name": "program_code",
           "type": "List<String>",
-          "description": ""
+          "description": "Program Code"
         },
         {
           "name": "threshold_value",
           "type": "Float",
-          "description": "Income limit by household size.",
+          "description": "按家庭规模设定的收入上限。",
           "descriptionZh": "按家庭规模设定的收入上限。"
         },
         {
           "name": "ruleset_version",
           "type": "String",
-          "description": "Versioned per [BR-15].",
+          "description": "依据 [BR-15] 设版本。",
           "descriptionZh": "依据 [BR-15] 设版本。"
         }
       ],
@@ -352,44 +352,44 @@
       "uuid": "22222222222222222222222222220006",
       "name": "Document",
       "nameZh": "文件",
-      "description": "A submitted supporting file (income, residency, identity, hardship) with a verification status.",
+      "description": "提交的佐证文件（收入、居住、身份、困难），带核验状态。",
       "descriptionZh": "提交的佐证文件（收入、居住、身份、困难），带核验状态。",
       "type": "data",
-      "relationship_description": "Application has document Document. Document.application_id references Application.",
+      "relationship_description": "【申请】包含文件【文件】。",
       "primary_key": "document_id",
       "properties": [
         {
           "name": "document_id",
           "type": "String",
-          "description": ""
+          "description": "Document Id"
         },
         {
           "name": "application_id",
           "type": "String",
-          "description": "",
+          "description": "Application Id",
           "is_foreign_key": true,
           "references": "objectType:application"
         },
         {
           "name": "doc_type",
           "type": "List<String>",
-          "description": ""
+          "description": "Doc Type"
         },
         {
           "name": "status",
           "type": "List<String>",
-          "description": ""
+          "description": "Status"
         },
         {
           "name": "verified_by",
           "type": "String",
-          "description": "Must differ from logger [BR-02].",
+          "description": "必须不同于登记人 [BR-02]。",
           "descriptionZh": "必须不同于登记人 [BR-02]。"
         },
         {
           "name": "dated_on",
           "type": "Date",
-          "description": "Residency recency [BR-06].",
+          "description": "居住时效 [BR-06]。",
           "descriptionZh": "居住时效 [BR-06]。"
         }
       ],
@@ -418,33 +418,33 @@
       "uuid": "22222222222222222222222222220007",
       "name": "Determination",
       "nameZh": "裁定",
-      "description": "The recorded decision (Approved/Denied) on a Case, snapshotting the decisive criterion and ruleset version.",
+      "description": "对案件作出的已记录决定（批准/拒绝），并快照决定性条件与规则集版本。",
       "descriptionZh": "对案件作出的已记录决定（批准/拒绝），并快照决定性条件与规则集版本。",
       "type": "data",
-      "relationship_description": "Case has determination Determination. Determination cites EligibilityCriterion. Determination yields Permit. Appeal contests Determination. Determination.case_id references Case. Determination.decisive_criterion_id references EligibilityCriterion.",
+      "relationship_description": "【案件】产生裁定【裁定】。【裁定】援引【资格条件】。【裁定】核发【许可证】。【申诉】异议【裁定】。",
       "primary_key": "determination_id",
       "properties": [
         {
           "name": "determination_id",
           "type": "String",
-          "description": ""
+          "description": "Determination Id"
         },
         {
           "name": "case_id",
           "type": "String",
-          "description": "",
+          "description": "Case Id",
           "is_foreign_key": true,
           "references": "objectType:case"
         },
         {
           "name": "outcome",
           "type": "List<String>",
-          "description": ""
+          "description": "Outcome"
         },
         {
           "name": "decisive_criterion_id",
           "type": "String",
-          "description": "FK to EligibilityCriterion [BR-08].",
+          "description": "外键指向资格条件 [BR-08]。",
           "descriptionZh": "外键指向资格条件 [BR-08]。",
           "is_foreign_key": true,
           "references": "objectType:eligibility-criterion"
@@ -452,19 +452,19 @@
         {
           "name": "ruleset_version",
           "type": "String",
-          "description": "Snapshot at decision [BR-15].",
+          "description": "决定时的快照 [BR-15]。",
           "descriptionZh": "决定时的快照 [BR-15]。"
         },
         {
           "name": "benefit_value",
           "type": "Float",
-          "description": "Escalation trigger [BR-07].",
+          "description": "升级触发 [BR-07]。",
           "descriptionZh": "升级触发 [BR-07]。"
         },
         {
           "name": "decided_at",
           "type": "Timestamp",
-          "description": ""
+          "description": "Decided At"
         }
       ],
       "relationshipIds": [
@@ -495,28 +495,28 @@
       "uuid": "22222222222222222222222222220008",
       "name": "Permit",
       "nameZh": "许可证",
-      "description": "An issued operating/occupancy permit with an expiry, optionally subject to inspection.",
+      "description": "已核发的运营/占用许可证，带有效期，部分须接受验收。",
       "descriptionZh": "已核发的运营/占用许可证，带有效期，部分须接受验收。",
       "type": "data",
-      "relationship_description": "Determination yields Permit. Permit requires inspection Inspection. Permit paid by Payment. Permit.determination_id references Determination. Permit.payment_id references Payment.",
+      "relationship_description": "【裁定】核发【许可证】。【许可证】需验收【验收】。【许可证】由缴费支付【缴费】。",
       "primary_key": "permit_id",
       "properties": [
         {
           "name": "permit_id",
           "type": "String",
-          "description": ""
+          "description": "Permit Id"
         },
         {
           "name": "determination_id",
           "type": "String",
-          "description": "",
+          "description": "Determination Id",
           "is_foreign_key": true,
           "references": "objectType:determination"
         },
         {
           "name": "payment_id",
           "type": "String",
-          "description": "Non-null only after PaymentCleared [BR-09].",
+          "description": "仅在缴费结清后非空 [BR-09]。",
           "descriptionZh": "仅在缴费结清后非空 [BR-09]。",
           "is_foreign_key": true,
           "references": "objectType:payment"
@@ -524,17 +524,17 @@
         {
           "name": "status",
           "type": "List<String>",
-          "description": ""
+          "description": "Status"
         },
         {
           "name": "issued_at",
           "type": "Date",
-          "description": ""
+          "description": "Issued At"
         },
         {
           "name": "expires_at",
           "type": "Date",
-          "description": "≤ 12 months [BR-13].",
+          "description": "不超过 12 个月 [BR-13]。",
           "descriptionZh": "不超过 12 个月 [BR-13]。"
         }
       ],
@@ -565,38 +565,38 @@
       "uuid": "22222222222222222222222222220009",
       "name": "Inspection",
       "nameZh": "验收",
-      "description": "A physical check of a permitted activity, recorded as Passed or Failed.",
+      "description": "对获许可活动的实地检查，记录为通过或不通过。",
       "descriptionZh": "对获许可活动的实地检查，记录为通过或不通过。",
       "type": "data",
-      "relationship_description": "Permit requires inspection Inspection. Inspection.permit_id references Permit.",
+      "relationship_description": "【许可证】需验收【验收】。",
       "primary_key": "inspection_id",
       "properties": [
         {
           "name": "inspection_id",
           "type": "String",
-          "description": ""
+          "description": "Inspection Id"
         },
         {
           "name": "permit_id",
           "type": "String",
-          "description": "",
+          "description": "Permit Id",
           "is_foreign_key": true,
           "references": "objectType:permit"
         },
         {
           "name": "status",
           "type": "List<String>",
-          "description": ""
+          "description": "Status"
         },
         {
           "name": "inspector_id",
           "type": "String",
-          "description": ""
+          "description": "Inspector Id"
         },
         {
           "name": "reinspect_by",
           "type": "Date",
-          "description": "30-day window [BR-14].",
+          "description": "30 日窗口 [BR-14]。",
           "descriptionZh": "30 日窗口 [BR-14]。"
         }
       ],
@@ -625,34 +625,34 @@
       "uuid": "22222222222222222222222222220010",
       "name": "Payment",
       "nameZh": "缴费",
-      "description": "A permit fee transaction collected through the payment gateway; must clear before issuance.",
+      "description": "通过支付网关收取的许可费交易；须结清后方可核发。",
       "descriptionZh": "通过支付网关收取的许可费交易；须结清后方可核发。",
       "type": "data",
-      "relationship_description": "Permit paid by Payment. Payment.application_id references Application.",
+      "relationship_description": "【许可证】由缴费支付【缴费】。",
       "primary_key": "payment_id",
       "properties": [
         {
           "name": "payment_id",
           "type": "String",
-          "description": ""
+          "description": "Payment Id"
         },
         {
           "name": "application_id",
           "type": "String",
-          "description": "",
+          "description": "Application Id",
           "is_foreign_key": true,
           "references": "objectType:application"
         },
         {
           "name": "amount",
           "type": "Float",
-          "description": "Per fee schedule.",
+          "description": "依据收费表。",
           "descriptionZh": "依据收费表。"
         },
         {
           "name": "status",
           "type": "List<String>",
-          "description": ""
+          "description": "Status"
         }
       ],
       "relationshipIds": [
@@ -680,39 +680,39 @@
       "uuid": "22222222222222222222222222220011",
       "name": "Appeal",
       "nameZh": "申诉",
-      "description": "A challenge to a Determination, filed within the statutory window and decided by an Appeals Officer.",
+      "description": "对裁定的异议，须在法定期限内提出并由申诉官裁决。",
       "descriptionZh": "对裁定的异议，须在法定期限内提出并由申诉官裁决。",
       "type": "data",
-      "relationship_description": "Appeal contests Determination. Appeal.determination_id references Determination.",
+      "relationship_description": "【申诉】异议【裁定】。",
       "primary_key": "appeal_id",
       "properties": [
         {
           "name": "appeal_id",
           "type": "String",
-          "description": ""
+          "description": "Appeal Id"
         },
         {
           "name": "determination_id",
           "type": "String",
-          "description": "",
+          "description": "Determination Id",
           "is_foreign_key": true,
           "references": "objectType:determination"
         },
         {
           "name": "filed_at",
           "type": "Timestamp",
-          "description": "≤ 30 days of notice [BR-11].",
+          "description": "通知后 30 日内 [BR-11]。",
           "descriptionZh": "通知后 30 日内 [BR-11]。"
         },
         {
           "name": "status",
           "type": "List<String>",
-          "description": ""
+          "description": "Status"
         },
         {
           "name": "decided_at",
           "type": "Timestamp",
-          "description": "≤ 45 days [BR-16].",
+          "description": "45 日内 [BR-16]。",
           "descriptionZh": "45 日内 [BR-16]。"
         }
       ],
@@ -1013,16 +1013,16 @@
     {
       "id": "rule:document-verified-before-determination",
       "uuid": "44444444444444444444444444440001",
-      "specificScenarioStage": "before EvaluateEligibility / RecordDetermination",
-      "businessLogicRuleName": "All required Documents verified before Determination",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "裁定前须核验全部必需文件",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "before EvaluateEligibility / RecordDetermination",
-      "standardizedLogicRule": "An Application may not reach Determination until every required Document has been verified and is on file.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "在每一份必需文件均已核验并归档之前，申请不得进入裁定。",
       "relatedEntities": [
-        "Application (Application)",
-        "Document (Document)",
-        "Determination (Determination)"
+        "申请 (Application)",
+        "文件 (Document)",
+        "裁定 (Determination)"
       ],
       "businessBackgroundReason": "Rules governing when and by whom Documents must be verified before a Case advances, plus the emergency-intake exception.",
       "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
@@ -1080,14 +1080,14 @@
     {
       "id": "rule:separation-of-duties-verification",
       "uuid": "44444444444444444444444444440002",
-      "specificScenarioStage": "Authorization",
-      "businessLogicRuleName": "Separation of duties on Document verification",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "文件核验职责分离",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "document.verified_by != document.logged_by",
-      "standardizedLogicRule": "Each required Document must be verified by a Caseworker other than the Intake Clerk who logged it.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "每份必需文件必须由不同于登记该文件的受理员的个案工作者核验。",
       "relatedEntities": [
-        "Document (Document)"
+        "文件 (Document)"
       ],
       "businessBackgroundReason": "Rules governing when and by whom Documents must be verified before a Case advances, plus the emergency-intake exception.",
       "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
@@ -1139,15 +1139,15 @@
     {
       "id": "rule:determination-time-limit",
       "uuid": "44444444444444444444444444440003",
-      "specificScenarioStage": "clock starts at ApplicationSubmitted",
-      "businessLogicRuleName": "Determination statutory time limit",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "裁定法定时限",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "clock starts at ApplicationSubmitted",
-      "standardizedLogicRule": "A Determination must be recorded within 30 business days of the ApplicationSubmitted event for benefit programs, and within 45 business days for permit applications.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "福利项目须在 ApplicationSubmitted 事件后 30 个工作日内、许可申请须在 45 个工作日内记录裁定。",
       "relatedEntities": [
-        "Application (Application)",
-        "Determination (Determination)"
+        "申请 (Application)",
+        "裁定 (Determination)"
       ],
       "businessBackgroundReason": "Statutory time limits for recording a Determination and suspension/resumption of the clock.",
       "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
@@ -1209,15 +1209,15 @@
     {
       "id": "rule:clock-suspend-on-return",
       "uuid": "44444444444444444444444444440004",
-      "specificScenarioStage": "on Application.status → ReturnedIncomplete",
-      "businessLogicRuleName": "Suspend the clock on ReturnedIncomplete",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "退回不完整时暂停时钟",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "on Application.status → ReturnedIncomplete",
-      "standardizedLogicRule": "The processing clock shall be suspended on the date an Application is set to ReturnedIncomplete and shall resume on the date the missing Document is received.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "处理时钟应在申请被置为 ReturnedIncomplete 之日暂停，并在收到缺失文件之日恢复。",
       "relatedEntities": [
-        "Application (Application)",
-        "Document (Document)"
+        "申请 (Application)",
+        "文件 (Document)"
       ],
       "businessBackgroundReason": "Statutory time limits for recording a Determination and suspension/resumption of the clock.",
       "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
@@ -1264,16 +1264,16 @@
     {
       "id": "rule:income-threshold-ineligible",
       "uuid": "44444444444444444444444444440005",
-      "specificScenarioStage": "Validation",
-      "businessLogicRuleName": "Income over threshold is ineligible",
+      "specificScenarioStage": "数据校验",
+      "businessLogicRuleName": "收入超过阈值即不合格",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "household.annual_income > criterion.threshold_value ? determination.outcome == 'Denied' : true",
-      "standardizedLogicRule": "An Applicant whose Household income exceeds the published program threshold for their Household size is ineligible, and the resulting Determination must be Denied.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "申请人的家庭收入超过其家庭规模对应的项目阈值时即不合格，相应裁定必须为拒绝。",
       "relatedEntities": [
-        "Household (Household)",
-        "EligibilityCriterion (Eligibility_Criterion)",
-        "Determination (Determination)"
+        "家庭 (Household)",
+        "资格条件 (Eligibility_Criterion)",
+        "裁定 (Determination)"
       ],
       "businessBackgroundReason": "Substantive eligibility tests: income threshold, residency recency, and one-active-case limit.",
       "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
@@ -1336,16 +1336,16 @@
     {
       "id": "rule:residency-document-recency",
       "uuid": "44444444444444444444444444440006",
-      "specificScenarioStage": "Validation",
-      "businessLogicRuleName": "Residency Document recency",
+      "specificScenarioStage": "数据校验",
+      "businessLogicRuleName": "居住证明时效",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "document.doc_type != 'RESIDENCY' || daysBetween(document.dated_on, application.submitted_at) <= 90",
-      "standardizedLogicRule": "An Applicant is required to demonstrate residency within the jurisdiction by a Document dated no more than 90 days before the ApplicationSubmitted event.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "申请人须凭日期早于 ApplicationSubmitted 事件不超过 90 天的文件，证明其在辖区内居住。",
       "relatedEntities": [
-        "Document (Document)",
-        "Applicant (Applicant)",
-        "Application (Application)"
+        "文件 (Document)",
+        "申请人 (Applicant)",
+        "申请 (Application)"
       ],
       "businessBackgroundReason": "Substantive eligibility tests: income threshold, residency recency, and one-active-case limit.",
       "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
@@ -1404,15 +1404,15 @@
     {
       "id": "rule:supervisor-approval-threshold",
       "uuid": "44444444444444444444444444440007",
-      "specificScenarioStage": "threshold breach routes to EscalateForApproval",
-      "businessLogicRuleName": "Supervisor approval over value thresholds",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "超额须主管批准",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "threshold breach routes to EscalateForApproval",
-      "standardizedLogicRule": "A Caseworker may not record a Determination whose associated benefit value exceeds $25,000 annually or whose permit fee exceeds $5,000 without Supervisor approval.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "在未经主管批准的情况下，个案工作者不得记录关联福利价值年逾 25,000 美元或许可费逾 5,000 美元的裁定。",
       "relatedEntities": [
-        "Determination (Determination)",
-        "Payment (Payment)"
+        "裁定 (Determination)",
+        "缴费 (Payment)"
       ],
       "businessBackgroundReason": "Escalation thresholds, denial citation, ruleset versioning, and override justification governing Determinations.",
       "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
@@ -1474,15 +1474,15 @@
     {
       "id": "rule:denial-must-cite-criterion",
       "uuid": "44444444444444444444444444440008",
-      "specificScenarioStage": "Constraint",
-      "businessLogicRuleName": "Denied Determination must cite criterion and rule",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "拒绝裁定须援引条件与规则",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "determination.outcome != 'Denied' || (determination.decisive_criterion_id != null && criterion.rule_citation != '')",
-      "standardizedLogicRule": "A Denied Determination shall include the specific EligibilityCriterion and the rule citation that was the basis for denial.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "拒绝裁定应载明作为拒绝依据的具体资格条件及规则引用。",
       "relatedEntities": [
-        "Determination (Determination)",
-        "EligibilityCriterion (Eligibility_Criterion)"
+        "裁定 (Determination)",
+        "资格条件 (Eligibility_Criterion)"
       ],
       "businessBackgroundReason": "Escalation thresholds, denial citation, ruleset versioning, and override justification governing Determinations.",
       "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
@@ -1540,15 +1540,15 @@
     {
       "id": "rule:payment-cleared-before-issuance",
       "uuid": "44444444444444444444444444440009",
-      "specificScenarioStage": "on IssuePermit",
-      "businessLogicRuleName": "Payment cleared before Permit issuance",
+      "specificScenarioStage": "状态流转",
+      "businessLogicRuleName": "缴费结清后方可核发许可",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "on IssuePermit",
-      "standardizedLogicRule": "A Permit may not be issued until its associated Payment has cleared in full, unless the Applicant qualifies for a documented fee waiver.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "在关联缴费全额结清之前不得核发许可，除非申请人符合有据可查的费用豁免。",
       "relatedEntities": [
-        "Permit (Permit)",
-        "Payment (Payment)"
+        "许可证 (Permit)",
+        "缴费 (Payment)"
       ],
       "businessBackgroundReason": "Payment, inspection, expiry, re-inspection, and fee-waiver rules across the Permit lifecycle.",
       "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
@@ -1614,15 +1614,15 @@
     {
       "id": "rule:inspection-required-before-verified",
       "uuid": "44444444444444444444444444440010",
-      "specificScenarioStage": "on RecordInspectionResult",
-      "businessLogicRuleName": "Inspectable Permit requires passed Inspection",
+      "specificScenarioStage": "状态流转",
+      "businessLogicRuleName": "须验收许可须通过验收",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "on RecordInspectionResult",
-      "standardizedLogicRule": "A Permit in an inspectable class is required to undergo a physical Inspection, and may not move to Active-Verified status until that Inspection is recorded as Passed.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "属可验收类别的许可须接受实地验收，且在该验收记录为通过之前不得转为 Active-Verified 状态。",
       "relatedEntities": [
-        "Permit (Permit)",
-        "Inspection (Inspection)"
+        "许可证 (Permit)",
+        "验收 (Inspection)"
       ],
       "businessBackgroundReason": "Payment, inspection, expiry, re-inspection, and fee-waiver rules across the Permit lifecycle.",
       "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
@@ -1684,15 +1684,15 @@
     {
       "id": "rule:appeal-filing-window",
       "uuid": "44444444444444444444444444440011",
-      "specificScenarioStage": "window starts at DeterminationNotified",
-      "businessLogicRuleName": "Appeal filing window of 30 days",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "申诉 30 日提出期限",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "window starts at DeterminationNotified",
-      "standardizedLogicRule": "An Appeal must be filed within 30 calendar days of the DeterminationNotified event, after which the Determination is final.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "申诉须在 DeterminationNotified 事件后 30 个日历日内提出，逾期裁定即为终局。",
       "relatedEntities": [
-        "Appeal (Appeal)",
-        "Determination (Determination)"
+        "申诉 (Appeal)",
+        "裁定 (Determination)"
       ],
       "businessBackgroundReason": "Appeal filing window, benefit-reduction pause, and decision time limit.",
       "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
@@ -1753,16 +1753,16 @@
     {
       "id": "rule:pause-reduction-on-appeal",
       "uuid": "44444444444444444444444444440012",
-      "specificScenarioStage": "on AppealFiled until AppealDecided",
-      "businessLogicRuleName": "Pause benefit reduction once Appeal filed",
+      "specificScenarioStage": "状态流转",
+      "businessLogicRuleName": "提出申诉后暂停福利削减",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "on AppealFiled until AppealDecided",
-      "standardizedLogicRule": "A benefit reduction or suspension shall be paused once an Appeal is filed and may not resume until the AppealDecided event.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "一旦提出申诉，福利的削减或中止应予暂停，且在 AppealDecided 事件之前不得恢复。",
       "relatedEntities": [
-        "Appeal (Appeal)",
-        "Case (Case)",
-        "Determination (Determination)"
+        "申诉 (Appeal)",
+        "案件 (Case)",
+        "裁定 (Determination)"
       ],
       "businessBackgroundReason": "Appeal filing window, benefit-reduction pause, and decision time limit.",
       "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
@@ -1810,15 +1810,15 @@
     {
       "id": "rule:permit-expiry-12-months",
       "uuid": "44444444444444444444444444440013",
-      "specificScenarioStage": "Constraint",
-      "businessLogicRuleName": "Permit expiry within 12 months",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "许可有效期不超过 12 个月",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "application.permit_class == 'PERMANENT' || monthsBetween(permit.issued_at, permit.expires_at) <= 12",
-      "standardizedLogicRule": "An issued Permit shall carry an expiry date no later than 12 months after its issue date, unless the permit class is designated permanent in the Program Eligibility Manual.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "已核发许可的到期日不得晚于其核发日后 12 个月，除非该许可类别在《项目资格手册》中被指定为永久。",
       "relatedEntities": [
-        "Permit (Permit)",
-        "Application (Application)"
+        "许可证 (Permit)",
+        "申请 (Application)"
       ],
       "businessBackgroundReason": "Payment, inspection, expiry, re-inspection, and fee-waiver rules across the Permit lifecycle.",
       "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
@@ -1876,15 +1876,15 @@
     {
       "id": "rule:failed-inspection-reinspect-window",
       "uuid": "44444444444444444444444444440014",
-      "specificScenarioStage": "on InspectionFailed",
-      "businessLogicRuleName": "Re-inspect failed Permit within 30 days or revoke",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "验收不通过须 30 日内复检否则吊销",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "on InspectionFailed",
-      "standardizedLogicRule": "A Permit whose Inspection is recorded as Failed must be re-inspected within 30 calendar days, after which an unresolved failure moves the Permit to Revoked.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "验收记录为不通过的许可须在 30 个日历日内复检，逾期仍未解决的，许可转为吊销。",
       "relatedEntities": [
-        "Inspection (Inspection)",
-        "Permit (Permit)"
+        "验收 (Inspection)",
+        "许可证 (Permit)"
       ],
       "businessBackgroundReason": "Payment, inspection, expiry, re-inspection, and fee-waiver rules across the Permit lifecycle.",
       "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
@@ -1946,15 +1946,15 @@
     {
       "id": "rule:determination-records-ruleset-version",
       "uuid": "44444444444444444444444444440015",
-      "specificScenarioStage": "Derivation",
-      "businessLogicRuleName": "Determination records ruleset version in force",
+      "specificScenarioStage": "指标推导",
+      "businessLogicRuleName": "裁定须记录生效规则集版本",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "determination.ruleset_version != ''",
-      "standardizedLogicRule": "A Determination must record the version of the EligibilityCriterion rule set that was in force on the determination date.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "裁定须记录在裁定之日生效的资格条件规则集版本。",
       "relatedEntities": [
-        "Determination (Determination)",
-        "EligibilityCriterion (Eligibility_Criterion)"
+        "裁定 (Determination)",
+        "资格条件 (Eligibility_Criterion)"
       ],
       "businessBackgroundReason": "Escalation thresholds, denial citation, ruleset versioning, and override justification governing Determinations.",
       "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
@@ -2008,14 +2008,14 @@
     {
       "id": "rule:appeal-decision-time-limit",
       "uuid": "44444444444444444444444444440016",
-      "specificScenarioStage": "window starts at AppealFiled",
-      "businessLogicRuleName": "Appeal decision within 45 days",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "申诉须 45 日内裁决",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "window starts at AppealFiled",
-      "standardizedLogicRule": "An Appeals Officer is required to issue the AppealDecided outcome within 45 calendar days of the AppealFiled event.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "申诉官须在 AppealFiled 事件后 45 个日历日内作出 AppealDecided 结果。",
       "relatedEntities": [
-        "Appeal (Appeal)"
+        "申诉 (Appeal)"
       ],
       "businessBackgroundReason": "Appeal filing window, benefit-reduction pause, and decision time limit.",
       "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
@@ -2072,16 +2072,16 @@
     {
       "id": "rule:recertification-interval",
       "uuid": "44444444444444444444444444440017",
-      "specificScenarioStage": "on recertification interval",
-      "businessLogicRuleName": "Recertify benefit Case every 12 months",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "福利案件每 12 个月复核",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "on recertification interval",
-      "standardizedLogicRule": "A benefit Case must be recertified at least every 12 months, and a Household may not continue receiving benefits past the recertification due date without a renewed Determination.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "福利案件须至少每 12 个月复核一次，家庭在复核到期日之后若无续期裁定不得继续领取福利。",
       "relatedEntities": [
-        "Case (Case)",
-        "Household (Household)",
-        "Determination (Determination)"
+        "案件 (Case)",
+        "家庭 (Household)",
+        "裁定 (Determination)"
       ],
       "businessBackgroundReason": "Recertification interval and automatic suspension on lapse past the grace period.",
       "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
@@ -2139,15 +2139,15 @@
     {
       "id": "rule:recert-lapse-suspend",
       "uuid": "44444444444444444444444444440018",
-      "specificScenarioStage": "on grace period lapse",
-      "businessLogicRuleName": "Suspend Case on recertification lapse past grace",
+      "specificScenarioStage": "状态流转",
+      "businessLogicRuleName": "复核超宽限期失效则中止案件",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "on grace period lapse",
-      "standardizedLogicRule": "A Case whose recertification lapses beyond a 14-day grace period shall be suspended automatically, and the associated Permit, if any, shall move to Expired.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "复核失效超过 14 天宽限期的案件应自动中止，关联许可（如有）转为到期。",
       "relatedEntities": [
-        "Case (Case)",
-        "Permit (Permit)"
+        "案件 (Case)",
+        "许可证 (Permit)"
       ],
       "businessBackgroundReason": "Recertification interval and automatic suspension on lapse past the grace period.",
       "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
@@ -2209,16 +2209,16 @@
     {
       "id": "rule:single-active-case-per-program",
       "uuid": "44444444444444444444444444440019",
-      "specificScenarioStage": "Constraint",
-      "businessLogicRuleName": "One Active benefit Case per program",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "每项目仅一活动福利案件",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "activeBenefitCases(applicant, application.program_code) <= 1",
-      "standardizedLogicRule": "An Applicant may not hold more than one Active benefit Case for the same program at the same time.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "申请人不得同时就同一项目持有一个以上的活动福利案件。",
       "relatedEntities": [
-        "Applicant (Applicant)",
-        "Case (Case)",
-        "Application (Application)"
+        "申请人 (Applicant)",
+        "案件 (Case)",
+        "申请 (Application)"
       ],
       "businessBackgroundReason": "Substantive eligibility tests: income threshold, residency recency, and one-active-case limit.",
       "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
@@ -2277,15 +2277,15 @@
     {
       "id": "rule:override-requires-justification",
       "uuid": "44444444444444444444444444440020",
-      "specificScenarioStage": "Authorization",
-      "businessLogicRuleName": "Override requires Supervisor justification, not retroactive",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "推翻须主管理由且不溯及",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
       "submissionCriteria": "",
-      "standardizedLogicRule": "An override of an automated ineligibility result requires a recorded Supervisor justification and may not be applied retroactively to prior Determinations.",
+      "standardizedLogicRule": "推翻自动不合格结果须有记录在案的主管理由，且不得追溯适用于先前的裁定。",
       "relatedEntities": [
-        "Determination (Determination)",
-        "EligibilityCriterion (Eligibility_Criterion)"
+        "裁定 (Determination)",
+        "资格条件 (Eligibility_Criterion)"
       ],
       "businessBackgroundReason": "Escalation thresholds, denial citation, ruleset versioning, and override justification governing Determinations.",
       "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
@@ -2328,16 +2328,16 @@
     {
       "id": "rule:fee-waiver-exception",
       "uuid": "44444444444444444444444444440021",
-      "specificScenarioStage": "Authorization",
-      "businessLogicRuleName": "Fee waiver exception requires verified hardship",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "费用豁免须经核验困难证明",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
       "submissionCriteria": "",
-      "standardizedLogicRule": "A fee waiver, as an exception to the Payment-clearance rule, is granted only on a verified hardship Document and recorded against the Case.",
+      "standardizedLogicRule": "作为缴费结清规则的例外，费用豁免仅凭经核验的困难证明文件授予，并记录在案件名下。",
       "relatedEntities": [
-        "Payment (Payment)",
-        "Document (Document)",
-        "Case (Case)"
+        "缴费 (Payment)",
+        "文件 (Document)",
+        "案件 (Case)"
       ],
       "businessBackgroundReason": "Payment, inspection, expiry, re-inspection, and fee-waiver rules across the Permit lifecycle.",
       "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
@@ -2382,16 +2382,16 @@
     {
       "id": "rule:emergency-intake-exception",
       "uuid": "44444444444444444444444444440022",
-      "specificScenarioStage": "Authorization",
-      "businessLogicRuleName": "Emergency intake exception with later verification",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "紧急受理例外须事后核验",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
       "submissionCriteria": "",
-      "standardizedLogicRule": "As an exception to the verification rule, a Determination may issue on an unverified Document set where the Applicant presents a qualifying emergency, subject to verification within 10 business days.",
+      "standardizedLogicRule": "作为核验规则的例外，申请人提出合格紧急情况时，裁定可基于未核验的文件集作出，但须在 10 个工作日内完成核验。",
       "relatedEntities": [
-        "Application (Application)",
-        "Document (Document)",
-        "Determination (Determination)"
+        "申请 (Application)",
+        "文件 (Document)",
+        "裁定 (Determination)"
       ],
       "businessBackgroundReason": "Rules governing when and by whom Documents must be verified before a Case advances, plus the emergency-intake exception.",
       "ruleSource": "02-business-rules-policy.md (POL-PBE-007)",
@@ -2533,7 +2533,7 @@
       "uuid": "55555555555555555555555555550001",
       "name": "SubmitApplication",
       "nameZh": "提交申请",
-      "description": "Applicant submits a draft Application and Document set via the portal, producing a Submitted Application and opening a Case.",
+      "description": "申请人通过门户提交申请草稿及文件集，生成已提交申请并开立案件。",
       "descriptionZh": "申请人通过门户提交申请草稿及文件集，生成已提交申请并开立案件。",
       "submission_criteria": "",
       "object_type": "action",
@@ -2552,27 +2552,27 @@
         {
           "order": "1",
           "name": "captureApplicantProfileAndDraftApplication",
-          "description": "Capture Applicant profile and draft Application in PORTAL.",
+          "description": "在门户中采集申请人资料与申请草稿。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "attachUploadedDocumentSetAndPOST",
-          "description": "Attach uploaded Document set and POST to PBE-CMS.",
+          "description": "附加上传的文件集并提交至 PBE-CMS。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "3",
           "name": "setApplicationStatusToSubmittedAnd",
-          "description": "Set Application status to Submitted and open a new Case; start the statutory clock.",
+          "description": "将申请状态置为已提交并开立新案件；启动法定时钟。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"SubmitApplication\" action. Applicant submits a draft Application and Document set via the portal, producing a Submitted Application and opening a Case. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"SubmitApplication\" using applicant, draft_application, documents. Applicant submits a draft Application and Document set via the portal, producing a Submitted Application and opening a Case. Produce application, case and emit the appropriate events.",
+      "system_prompt": "作为负责「SubmitApplication」动作的自动化人工操作员，申请人通过门户提交申请草稿及文件集，生成已提交申请并开立案件。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（applicant、draft_application、documents）执行「SubmitApplication」。申请人通过门户提交申请草稿及文件集，生成已提交申请并开立案件。 产出（application、case）并发出相应事件。",
       "tool_use": [
         "PORTAL"
       ],
@@ -2751,16 +2751,17 @@
         "role": "Applicant",
         "roleZh": "申请人",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:screen-completeness",
       "uuid": "55555555555555555555555555550002",
       "name": "ScreenCompleteness",
       "nameZh": "完整性审查",
-      "description": "Intake Clerk checks the submitted Document set against the required-Document list, accepting or returning the Application.",
+      "description": "受理员将提交的文件集与必需文件清单比对，受理或退回申请。",
       "descriptionZh": "受理员将提交的文件集与必需文件清单比对，受理或退回申请。",
-      "submission_criteria": "1. Event APPLICATION_SUBMITTED has been received",
+      "submission_criteria": "1. 事件 APPLICATION_SUBMITTED 已送达",
       "object_type": "action",
       "category": "完整性审查",
       "actor": [
@@ -2777,35 +2778,35 @@
         {
           "order": "1",
           "name": "pullDocumentInventoryFromDMSFor",
-          "description": "Pull Document inventory from DMS for the Application.",
+          "description": "从 DMS 拉取该申请的文件清单。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "compareAgainstTheProgramSRequired",
-          "description": "Compare against the program's required-Document list.",
+          "description": "与项目的必需文件清单比对。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "3",
           "name": "ifAnyRequiredDocumentIsMissing",
-          "description": "If any required Document is missing set status ReturnedIncomplete and suspend the clock; otherwise set Accepted.",
+          "description": "若缺少任何必需文件则置为退回不完整并暂停时钟；否则置为已受理。",
           "object_type": "logic",
-          "submission_criteria": "on Application.status → ReturnedIncomplete",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "clock-suspend-on-return",
-              "name": "Suspend the clock on ReturnedIncomplete",
-              "submission_criteria": "on Application.status → ReturnedIncomplete",
-              "description": "The processing clock shall be suspended on the date an Application is set to ReturnedIncomplete and shall resume on the date the missing Document is received."
+              "name": "退回不完整时暂停时钟",
+              "submission_criteria": "",
+              "description": "处理时钟应在申请被置为 ReturnedIncomplete 之日暂停，并在收到缺失文件之日恢复。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"ScreenCompleteness\" action. Intake Clerk checks the submitted Document set against the required-Document list, accepting or returning the Application. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"ScreenCompleteness\" using application, documents. Intake Clerk checks the submitted Document set against the required-Document list, accepting or returning the Application. Produce application and emit the appropriate events.",
+      "system_prompt": "作为负责「ScreenCompleteness」动作的自动化人工操作员，受理员将提交的文件集与必需文件清单比对，受理或退回申请。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（application、documents）执行「ScreenCompleteness」。受理员将提交的文件集与必需文件清单比对，受理或退回申请。 产出（application）并发出相应事件。",
       "tool_use": [
         "PBE-CMS"
       ],
@@ -2959,16 +2960,17 @@
         "role": "Intake Clerk",
         "roleZh": "受理员",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:verify-document",
       "uuid": "55555555555555555555555555550003",
       "name": "VerifyDocument",
       "nameZh": "核验文件",
-      "description": "Caseworker verifies each Document content from DMS, marking it Verified or Rejected with a reason code.",
+      "description": "个案工作者从 DMS 核验每份文件内容，标记为已核验或已拒绝并附原因码。",
       "descriptionZh": "个案工作者从 DMS 核验每份文件内容，标记为已核验或已拒绝并附原因码。",
-      "submission_criteria": "1. Event APPLICATION_ACCEPTED has been received\n2. Event RECERTIFICATION_DUE has been received\n3. Rule \"Separation of duties on Document verification\" is satisfied",
+      "submission_criteria": "1. 事件 APPLICATION_ACCEPTED 已送达\n2. 事件 RECERTIFICATION_DUE 已送达\n3. 规则「文件核验职责分离」已满足",
       "object_type": "action",
       "category": "核验文件",
       "actor": [
@@ -2985,43 +2987,43 @@
         {
           "order": "1",
           "name": "readDocumentContentFromDMS",
-          "description": "Read Document content from DMS.",
+          "description": "从 DMS 读取文件内容。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "verifyByACaseworkerOtherThan",
-          "description": "Verify by a Caseworker other than the Intake Clerk who logged it.",
+          "description": "由不同于登记人的个案工作者核验。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "separation-of-duties-verification",
-              "name": "Separation of duties on Document verification",
+              "name": "文件核验职责分离",
               "submission_criteria": "",
-              "description": "Each required Document must be verified by a Caseworker other than the Intake Clerk who logged it."
+              "description": "每份必需文件必须由不同于登记该文件的受理员的个案工作者核验。"
             }
           ]
         },
         {
           "order": "3",
           "name": "markVerifiedOrRejectedWithA",
-          "description": "Mark Verified or Rejected with a reason code; residency Documents must be within recency.",
+          "description": "标记为已核验或已拒绝并附原因码；居住文件须在时效内。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "residency-document-recency",
-              "name": "Residency Document recency",
+              "name": "居住证明时效",
               "submission_criteria": "",
-              "description": "An Applicant is required to demonstrate residency within the jurisdiction by a Document dated no more than 90 days before the ApplicationSubmitted event."
+              "description": "申请人须凭日期早于 ApplicationSubmitted 事件不超过 90 天的文件，证明其在辖区内居住。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"VerifyDocument\" action. Caseworker verifies each Document content from DMS, marking it Verified or Rejected with a reason code. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"VerifyDocument\" using document. Caseworker verifies each Document content from DMS, marking it Verified or Rejected with a reason code. Produce document and emit the appropriate events.",
+      "system_prompt": "作为负责「VerifyDocument」动作的自动化人工操作员，个案工作者从 DMS 核验每份文件内容，标记为已核验或已拒绝并附原因码。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（document）执行「VerifyDocument」。个案工作者从 DMS 核验每份文件内容，标记为已核验或已拒绝并附原因码。 产出（document）并发出相应事件。",
       "tool_use": [
         "DMS"
       ],
@@ -3159,16 +3161,17 @@
         "role": "Caseworker",
         "roleZh": "个案工作者",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:evaluate-eligibility",
       "uuid": "55555555555555555555555555550004",
       "name": "EvaluateEligibility",
       "nameZh": "评估资格",
-      "description": "Caseworker (via the eligibility engine) tests verified Application and Household data against the active EligibilityCriterion set, producing a draft Determination.",
+      "description": "个案工作者通过资格引擎，将已核验的申请与家庭数据与生效资格条件集比对，生成裁定草稿。",
       "descriptionZh": "个案工作者通过资格引擎，将已核验的申请与家庭数据与生效资格条件集比对，生成裁定草稿。",
-      "submission_criteria": "1. Event DOCUMENT_VERIFIED has been received\n2. Rule \"All required Documents verified before Determination\" is satisfied\n3. Rule \"Income over threshold is ineligible\" is satisfied\n4. Rule \"Residency Document recency\" is satisfied",
+      "submission_criteria": "1. 事件 DOCUMENT_VERIFIED 已送达\n2. 规则「裁定前须核验全部必需文件」已满足\n3. 规则「收入超过阈值即不合格」已满足\n4. 规则「居住证明时效」已满足",
       "object_type": "action",
       "category": "评估资格",
       "actor": [
@@ -3188,43 +3191,43 @@
         {
           "order": "1",
           "name": "confirmEveryRequiredDocumentIsVerified",
-          "description": "Confirm every required Document is Verified before evaluating.",
+          "description": "在评估前确认每份必需文件均已核验。",
           "object_type": "logic",
-          "submission_criteria": "before EvaluateEligibility / RecordDetermination",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "document-verified-before-determination",
-              "name": "All required Documents verified before Determination",
-              "submission_criteria": "before EvaluateEligibility / RecordDetermination",
-              "description": "An Application may not reach Determination until every required Document has been verified and is on file."
+              "name": "裁定前须核验全部必需文件",
+              "submission_criteria": "",
+              "description": "在每一份必需文件均已核验并归档之前，申请不得进入裁定。"
             }
           ]
         },
         {
           "order": "2",
           "name": "testHouseholdIncomeAgainstTheThreshold",
-          "description": "Test Household income against the threshold for its size.",
+          "description": "将家庭收入与其规模对应的阈值比对。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "income-threshold-ineligible",
-              "name": "Income over threshold is ineligible",
+              "name": "收入超过阈值即不合格",
               "submission_criteria": "",
-              "description": "An Applicant whose Household income exceeds the published program threshold for their Household size is ineligible, and the resulting Determination must be Denied."
+              "description": "申请人的家庭收入超过其家庭规模对应的项目阈值时即不合格，相应裁定必须为拒绝。"
             }
           ]
         },
         {
           "order": "3",
           "name": "produceADraftDeterminationWithThe",
-          "description": "Produce a draft Determination with the decisive criterion attached.",
+          "description": "生成附带决定性条件的裁定草稿。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated agent responsible for the \"EvaluateEligibility\" action. Caseworker (via the eligibility engine) tests verified Application and Household data against the active EligibilityCriterion set, producing a draft Determination. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"EvaluateEligibility\" using application, household, verified_documents, criteria. Caseworker (via the eligibility engine) tests verified Application and Household data against the active EligibilityCriterion set, producing a draft Determination. Produce draft_determination and emit the appropriate events.",
+      "system_prompt": "作为负责「EvaluateEligibility」动作的自动化智能体，个案工作者通过资格引擎，将已核验的申请与家庭数据与生效资格条件集比对，生成裁定草稿。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（application、household、verified_documents、criteria）执行「EvaluateEligibility」。个案工作者通过资格引擎，将已核验的申请与家庭数据与生效资格条件集比对，生成裁定草稿。 产出（draft_determination）并发出相应事件。",
       "tool_use": [
         "PBE-CMS"
       ],
@@ -3413,16 +3416,17 @@
         "role": "Caseworker",
         "roleZh": "个案工作者",
         "kind": "agent"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:record-determination",
       "uuid": "55555555555555555555555555550005",
       "name": "RecordDetermination",
       "nameZh": "记录裁定",
-      "description": "Caseworker finalizes the draft Determination as Approved or Denied, snapshotting the ruleset version and citation.",
+      "description": "个案工作者将裁定草稿定案为批准或拒绝，并快照规则集版本与引用。",
       "descriptionZh": "个案工作者将裁定草稿定案为批准或拒绝，并快照规则集版本与引用。",
-      "submission_criteria": "1. Event ELIGIBILITY_EVALUATED has been received\n2. Event APPROVAL_REQUESTED has been received\n3. Rule \"Supervisor approval over value thresholds\" is satisfied\n4. Rule \"Denied Determination must cite criterion and rule\" is satisfied\n5. Rule \"Determination records ruleset version in force\" is satisfied\n6. Rule \"Override requires Supervisor justification, not retroactive\" is satisfied",
+      "submission_criteria": "1. 事件 ELIGIBILITY_EVALUATED 已送达\n2. 事件 APPROVAL_REQUESTED 已送达\n3. 规则「超额须主管批准」已满足\n4. 规则「拒绝裁定须援引条件与规则」已满足\n5. 规则「裁定须记录生效规则集版本」已满足\n6. 规则「推翻须主管理由且不溯及」已满足",
       "object_type": "action",
       "category": "记录裁定",
       "actor": [
@@ -3439,51 +3443,51 @@
         {
           "order": "1",
           "name": "ifBenefitValueOrFeeExceeds",
-          "description": "If benefit value or fee exceeds caseworker authority, escalate to Supervisor first.",
+          "description": "若福利价值或费用超过个案工作者权限，先升级至主管。",
           "object_type": "logic",
-          "submission_criteria": "threshold breach routes to EscalateForApproval",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "supervisor-approval-threshold",
-              "name": "Supervisor approval over value thresholds",
-              "submission_criteria": "threshold breach routes to EscalateForApproval",
-              "description": "A Caseworker may not record a Determination whose associated benefit value exceeds $25,000 annually or whose permit fee exceeds $5,000 without Supervisor approval."
+              "name": "超额须主管批准",
+              "submission_criteria": "",
+              "description": "在未经主管批准的情况下，个案工作者不得记录关联福利价值年逾 25,000 美元或许可费逾 5,000 美元的裁定。"
             }
           ]
         },
         {
           "order": "2",
           "name": "finalizeOutcomeAsApprovedOrDenied",
-          "description": "Finalize outcome as Approved or Denied; record ruleset version in force.",
+          "description": "将结果定为批准或拒绝；记录生效规则集版本。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "determination-records-ruleset-version",
-              "name": "Determination records ruleset version in force",
+              "name": "裁定须记录生效规则集版本",
               "submission_criteria": "",
-              "description": "A Determination must record the version of the EligibilityCriterion rule set that was in force on the determination date."
+              "description": "裁定须记录在裁定之日生效的资格条件规则集版本。"
             }
           ]
         },
         {
           "order": "3",
           "name": "forADenialAttachTheSpecific",
-          "description": "For a Denial, attach the specific EligibilityCriterion and rule citation.",
+          "description": "如为拒绝，附上具体资格条件与规则引用。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "denial-must-cite-criterion",
-              "name": "Denied Determination must cite criterion and rule",
+              "name": "拒绝裁定须援引条件与规则",
               "submission_criteria": "",
-              "description": "A Denied Determination shall include the specific EligibilityCriterion and the rule citation that was the basis for denial."
+              "description": "拒绝裁定应载明作为拒绝依据的具体资格条件及规则引用。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"RecordDetermination\" action. Caseworker finalizes the draft Determination as Approved or Denied, snapshotting the ruleset version and citation. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"RecordDetermination\" using draft_determination. Caseworker finalizes the draft Determination as Approved or Denied, snapshotting the ruleset version and citation. Produce determination and emit the appropriate events.",
+      "system_prompt": "作为负责「RecordDetermination」动作的自动化人工操作员，个案工作者将裁定草稿定案为批准或拒绝，并快照规则集版本与引用。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（draft_determination）执行「RecordDetermination」。个案工作者将裁定草稿定案为批准或拒绝，并快照规则集版本与引用。 产出（determination）并发出相应事件。",
       "tool_use": [
         "PBE-CMS"
       ],
@@ -3629,16 +3633,17 @@
         "role": "Caseworker",
         "roleZh": "个案工作者",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:escalate-for-approval",
       "uuid": "55555555555555555555555555550006",
       "name": "EscalateForApproval",
       "nameZh": "升级审批",
-      "description": "Routes a Determination exceeding caseworker authority to a Supervisor for sign-off.",
+      "description": "将超过个案工作者权限的裁定路由至主管签核。",
       "descriptionZh": "将超过个案工作者权限的裁定路由至主管签核。",
-      "submission_criteria": "1. Rule \"Supervisor approval over value thresholds\" is satisfied",
+      "submission_criteria": "1. 规则「超额须主管批准」已满足",
       "object_type": "action",
       "category": "升级审批",
       "actor": [
@@ -3652,21 +3657,21 @@
         {
           "order": "1",
           "name": "setDeterminationStatusToPendingApproval",
-          "description": "Set Determination status to PendingApproval and route to the Supervisor queue.",
+          "description": "将裁定状态置为待批准并路由至主管队列。",
           "object_type": "logic",
-          "submission_criteria": "threshold breach routes to EscalateForApproval",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "supervisor-approval-threshold",
-              "name": "Supervisor approval over value thresholds",
-              "submission_criteria": "threshold breach routes to EscalateForApproval",
-              "description": "A Caseworker may not record a Determination whose associated benefit value exceeds $25,000 annually or whose permit fee exceeds $5,000 without Supervisor approval."
+              "name": "超额须主管批准",
+              "submission_criteria": "",
+              "description": "在未经主管批准的情况下，个案工作者不得记录关联福利价值年逾 25,000 美元或许可费逾 5,000 美元的裁定。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"EscalateForApproval\" action. Routes a Determination exceeding caseworker authority to a Supervisor for sign-off. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"EscalateForApproval\" using determination. Routes a Determination exceeding caseworker authority to a Supervisor for sign-off. Produce determination and emit the appropriate events.",
+      "system_prompt": "作为负责「EscalateForApproval」动作的自动化系统，将超过个案工作者权限的裁定路由至主管签核。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（determination）执行「EscalateForApproval」。将超过个案工作者权限的裁定路由至主管签核。 产出（determination）并发出相应事件。",
       "tool_use": [
         "PBE-CMS"
       ],
@@ -3785,16 +3790,17 @@
         "role": "Caseworker",
         "roleZh": "个案工作者",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:collect-payment",
       "uuid": "55555555555555555555555555550007",
       "name": "CollectPayment",
       "nameZh": "收取缴费",
-      "description": "Collects the permit fee through the payment gateway, producing a Cleared (or Failed) Payment.",
+      "description": "通过支付网关收取许可费，生成已结清（或失败）的缴费。",
       "descriptionZh": "通过支付网关收取许可费，生成已结清（或失败）的缴费。",
-      "submission_criteria": "1. Event DETERMINATION_RECORDED has been received",
+      "submission_criteria": "1. 事件 DETERMINATION_RECORDED 已送达",
       "object_type": "action",
       "category": "收取缴费",
       "actor": [
@@ -3811,20 +3817,20 @@
         {
           "order": "1",
           "name": "presentTheFeeScheduleAndCollect",
-          "description": "Present the fee schedule and collect the Applicant payment instrument via PAY.",
+          "description": "通过 PAY 出示收费表并收取申请人支付工具。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "authorizeAndClearThePaymentSet",
-          "description": "Authorize and clear the Payment; set status Cleared on success.",
+          "description": "授权并结清缴费；成功时置为已结清。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"CollectPayment\" action. Collects the permit fee through the payment gateway, producing a Cleared (or Failed) Payment. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"CollectPayment\" using applicant, fee_amount. Collects the permit fee through the payment gateway, producing a Cleared (or Failed) Payment. Produce payment and emit the appropriate events.",
+      "system_prompt": "作为负责「CollectPayment」动作的自动化人工操作员，通过支付网关收取许可费，生成已结清（或失败）的缴费。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（applicant、fee_amount）执行「CollectPayment」。通过支付网关收取许可费，生成已结清（或失败）的缴费。 产出（payment）并发出相应事件。",
       "tool_use": [
         "PAY"
       ],
@@ -3963,16 +3969,17 @@
         "role": "Applicant",
         "roleZh": "申请人",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:issue-permit",
       "uuid": "55555555555555555555555555550008",
       "name": "IssuePermit",
       "nameZh": "核发许可",
-      "description": "Issues an Active Permit from an approved Determination and a cleared Payment, with issue and expiry dates.",
+      "description": "凭已批准裁定与已结清缴费核发活动许可，并设定核发与到期日。",
       "descriptionZh": "凭已批准裁定与已结清缴费核发活动许可，并设定核发与到期日。",
-      "submission_criteria": "1. Event PAYMENT_CLEARED has been received\n2. Event DETERMINATION_RECORDED has been received\n3. Rule \"Payment cleared before Permit issuance\" is satisfied\n4. Rule \"Permit expiry within 12 months\" is satisfied",
+      "submission_criteria": "1. 事件 PAYMENT_CLEARED 已送达\n2. 事件 DETERMINATION_RECORDED 已送达\n3. 规则「缴费结清后方可核发许可」已满足\n4. 规则「许可有效期不超过 12 个月」已满足",
       "object_type": "action",
       "category": "核发许可",
       "actor": [
@@ -3991,36 +3998,36 @@
         {
           "order": "1",
           "name": "confirmTheDeterminationIsApprovedAnd",
-          "description": "Confirm the Determination is Approved and the Payment is Cleared (or fee waiver).",
+          "description": "确认裁定为批准且缴费已结清（或费用豁免）。",
           "object_type": "logic",
-          "submission_criteria": "on IssuePermit",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "payment-cleared-before-issuance",
-              "name": "Payment cleared before Permit issuance",
-              "submission_criteria": "on IssuePermit",
-              "description": "A Permit may not be issued until its associated Payment has cleared in full, unless the Applicant qualifies for a documented fee waiver."
+              "name": "缴费结清后方可核发许可",
+              "submission_criteria": "",
+              "description": "在关联缴费全额结清之前不得核发许可，除非申请人符合有据可查的费用豁免。"
             }
           ]
         },
         {
           "order": "2",
           "name": "issueThePermitAsActiveWith",
-          "description": "Issue the Permit as Active with an expiry no later than 12 months unless permanent.",
+          "description": "核发活动许可，到期日除永久类外不晚于 12 个月。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "permit-expiry-12-months",
-              "name": "Permit expiry within 12 months",
+              "name": "许可有效期不超过 12 个月",
               "submission_criteria": "",
-              "description": "An issued Permit shall carry an expiry date no later than 12 months after its issue date, unless the permit class is designated permanent in the Program Eligibility Manual."
+              "description": "已核发许可的到期日不得晚于其核发日后 12 个月，除非该许可类别在《项目资格手册》中被指定为永久。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"IssuePermit\" action. Issues an Active Permit from an approved Determination and a cleared Payment, with issue and expiry dates. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"IssuePermit\" using determination, payment. Issues an Active Permit from an approved Determination and a cleared Payment, with issue and expiry dates. Produce permit and emit the appropriate events.",
+      "system_prompt": "作为负责「IssuePermit」动作的自动化系统，凭已批准裁定与已结清缴费核发活动许可，并设定核发与到期日。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（determination、payment）执行「IssuePermit」。凭已批准裁定与已结清缴费核发活动许可，并设定核发与到期日。 产出（permit）并发出相应事件。",
       "tool_use": [
         "PBE-CMS"
       ],
@@ -4173,16 +4180,17 @@
         "role": "PBE-CMS",
         "roleZh": "案件管理系统",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:schedule-inspection",
       "uuid": "55555555555555555555555555550009",
       "name": "ScheduleInspection",
       "nameZh": "安排验收",
-      "description": "Creates a Scheduled Inspection for permit classes requiring a physical check.",
+      "description": "为须实地检查的许可类别创建已排期验收。",
       "descriptionZh": "为须实地检查的许可类别创建已排期验收。",
-      "submission_criteria": "1. Event PERMIT_ISSUED has been received\n2. Rule \"Inspectable Permit requires passed Inspection\" is satisfied",
+      "submission_criteria": "1. 事件 PERMIT_ISSUED 已送达\n2. 规则「须验收许可须通过验收」已满足",
       "object_type": "action",
       "category": "安排验收",
       "actor": [
@@ -4199,28 +4207,28 @@
         {
           "order": "1",
           "name": "determineWhetherThePermitClassIs",
-          "description": "Determine whether the permit class is inspectable.",
+          "description": "判断许可类别是否需验收。",
           "object_type": "logic",
-          "submission_criteria": "on RecordInspectionResult",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "inspection-required-before-verified",
-              "name": "Inspectable Permit requires passed Inspection",
-              "submission_criteria": "on RecordInspectionResult",
-              "description": "A Permit in an inspectable class is required to undergo a physical Inspection, and may not move to Active-Verified status until that Inspection is recorded as Passed."
+              "name": "须验收许可须通过验收",
+              "submission_criteria": "",
+              "description": "属可验收类别的许可须接受实地验收，且在该验收记录为通过之前不得转为 Active-Verified 状态。"
             }
           ]
         },
         {
           "order": "2",
           "name": "createAnInspectionInStatusScheduled",
-          "description": "Create an Inspection in status Scheduled and assign an Inspector.",
+          "description": "创建状态为已排期的验收并指派检查员。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"ScheduleInspection\" action. Creates a Scheduled Inspection for permit classes requiring a physical check. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"ScheduleInspection\" using permit. Creates a Scheduled Inspection for permit classes requiring a physical check. Produce inspection and emit the appropriate events.",
+      "system_prompt": "作为负责「ScheduleInspection」动作的自动化系统，为须实地检查的许可类别创建已排期验收。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（permit）执行「ScheduleInspection」。为须实地检查的许可类别创建已排期验收。 产出（inspection）并发出相应事件。",
       "tool_use": [
         "PBE-CMS"
       ],
@@ -4339,16 +4347,17 @@
         "role": "PBE-CMS",
         "roleZh": "案件管理系统",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:record-inspection-result",
       "uuid": "55555555555555555555555555550010",
       "name": "RecordInspectionResult",
       "nameZh": "记录验收结果",
-      "description": "Records an Inspection as Passed or Failed; a Failed result moves the Permit to ConditionalHold and sets a re-inspection window.",
+      "description": "将验收记录为通过或不通过；不通过则将许可置为条件保留并设定复检窗口。",
       "descriptionZh": "将验收记录为通过或不通过；不通过则将许可置为条件保留并设定复检窗口。",
-      "submission_criteria": "1. Event INSPECTION_SCHEDULED has been received\n2. Rule \"Re-inspect failed Permit within 30 days or revoke\" is satisfied",
+      "submission_criteria": "1. 事件 INSPECTION_SCHEDULED 已送达\n2. 规则「验收不通过须 30 日内复检否则吊销」已满足",
       "object_type": "action",
       "category": "记录验收结果",
       "actor": [
@@ -4365,28 +4374,28 @@
         {
           "order": "1",
           "name": "recordFindingsAndSetStatusPassed",
-          "description": "Record findings and set status Passed or Failed.",
+          "description": "记录检查发现并置为通过或不通过。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "onFailedMovePermitToConditional",
-          "description": "On Failed, move Permit to ConditionalHold and require re-inspection within 30 days.",
+          "description": "不通过时将许可置为条件保留并要求 30 日内复检。",
           "object_type": "logic",
-          "submission_criteria": "on InspectionFailed",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "failed-inspection-reinspect-window",
-              "name": "Re-inspect failed Permit within 30 days or revoke",
-              "submission_criteria": "on InspectionFailed",
-              "description": "A Permit whose Inspection is recorded as Failed must be re-inspected within 30 calendar days, after which an unresolved failure moves the Permit to Revoked."
+              "name": "验收不通过须 30 日内复检否则吊销",
+              "submission_criteria": "",
+              "description": "验收记录为不通过的许可须在 30 个日历日内复检，逾期仍未解决的，许可转为吊销。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"RecordInspectionResult\" action. Records an Inspection as Passed or Failed; a Failed result moves the Permit to ConditionalHold and sets a re-inspection window. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"RecordInspectionResult\" using inspection. Records an Inspection as Passed or Failed; a Failed result moves the Permit to ConditionalHold and sets a re-inspection window. Produce inspection and emit the appropriate events.",
+      "system_prompt": "作为负责「RecordInspectionResult」动作的自动化人工操作员，将验收记录为通过或不通过；不通过则将许可置为条件保留并设定复检窗口。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（inspection）执行「RecordInspectionResult」。将验收记录为通过或不通过；不通过则将许可置为条件保留并设定复检窗口。 产出（inspection）并发出相应事件。",
       "tool_use": [
         "PBE-CMS"
       ],
@@ -4510,16 +4519,17 @@
         "role": "Inspector",
         "roleZh": "检查员",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:notify-determination",
       "uuid": "55555555555555555555555555550011",
       "name": "NotifyDetermination",
       "nameZh": "送达裁定通知",
-      "description": "Renders the recorded Determination into a decision notice with appeal rights and deadline, and sends it to the Applicant.",
+      "description": "将已记录裁定渲染为含申诉权利与期限的决定通知并发送给申请人。",
       "descriptionZh": "将已记录裁定渲染为含申诉权利与期限的决定通知并发送给申请人。",
-      "submission_criteria": "1. Event DETERMINATION_RECORDED has been received\n2. Event APPEAL_DECIDED has been received\n3. Rule \"Appeal filing window of 30 days\" is satisfied",
+      "submission_criteria": "1. 事件 DETERMINATION_RECORDED 已送达\n2. 事件 APPEAL_DECIDED 已送达\n3. 规则「申诉 30 日提出期限」已满足",
       "object_type": "action",
       "category": "送达裁定通知",
       "actor": [
@@ -4537,28 +4547,28 @@
         {
           "order": "1",
           "name": "renderTheDecisionNoticeIncludingAppeal",
-          "description": "Render the decision notice including appeal rights and the 30-day deadline.",
+          "description": "渲染含申诉权利与 30 日期限的决定通知。",
           "object_type": "logic",
-          "submission_criteria": "window starts at DeterminationNotified",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "appeal-filing-window",
-              "name": "Appeal filing window of 30 days",
-              "submission_criteria": "window starts at DeterminationNotified",
-              "description": "An Appeal must be filed within 30 calendar days of the DeterminationNotified event, after which the Determination is final."
+              "name": "申诉 30 日提出期限",
+              "submission_criteria": "",
+              "description": "申诉须在 DeterminationNotified 事件后 30 个日历日内提出，逾期裁定即为终局。"
             }
           ]
         },
         {
           "order": "2",
           "name": "sendTheNoticeToTheApplicant",
-          "description": "Send the notice to the Applicant via NOTIFY.",
+          "description": "通过 NOTIFY 将通知发送给申请人。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"NotifyDetermination\" action. Renders the recorded Determination into a decision notice with appeal rights and deadline, and sends it to the Applicant. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"NotifyDetermination\" using determination, applicant. Renders the recorded Determination into a decision notice with appeal rights and deadline, and sends it to the Applicant. Produce determination and emit the appropriate events.",
+      "system_prompt": "作为负责「NotifyDetermination」动作的自动化系统，将已记录裁定渲染为含申诉权利与期限的决定通知并发送给申请人。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（determination、applicant）执行「NotifyDetermination」。将已记录裁定渲染为含申诉权利与期限的决定通知并发送给申请人。 产出（determination）并发出相应事件。",
       "tool_use": [
         "NOTIFY"
       ],
@@ -4691,16 +4701,17 @@
         "role": "PBE-CMS",
         "roleZh": "案件管理系统",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:file-appeal",
       "uuid": "55555555555555555555555555550012",
       "name": "FileAppeal",
       "nameZh": "提出申诉",
-      "description": "Applicant files an Appeal against a contested Determination within 30 calendar days, pausing any benefit reduction.",
+      "description": "申请人在 30 个日历日内对争议裁定提出申诉，并暂停任何福利削减。",
       "descriptionZh": "申请人在 30 个日历日内对争议裁定提出申诉，并暂停任何福利削减。",
-      "submission_criteria": "1. Event DETERMINATION_NOTIFIED has been received\n2. Rule \"Appeal filing window of 30 days\" is satisfied\n3. Rule \"Pause benefit reduction once Appeal filed\" is satisfied",
+      "submission_criteria": "1. 事件 DETERMINATION_NOTIFIED 已送达\n2. 规则「申诉 30 日提出期限」已满足\n3. 规则「提出申诉后暂停福利削减」已满足",
       "object_type": "action",
       "category": "提出申诉",
       "actor": [
@@ -4718,36 +4729,36 @@
         {
           "order": "1",
           "name": "confirmTheAppealIsFiledWithin",
-          "description": "Confirm the Appeal is filed within 30 calendar days of DeterminationNotified.",
+          "description": "确认申诉在 DeterminationNotified 后 30 个日历日内提出。",
           "object_type": "logic",
-          "submission_criteria": "window starts at DeterminationNotified",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "appeal-filing-window",
-              "name": "Appeal filing window of 30 days",
-              "submission_criteria": "window starts at DeterminationNotified",
-              "description": "An Appeal must be filed within 30 calendar days of the DeterminationNotified event, after which the Determination is final."
+              "name": "申诉 30 日提出期限",
+              "submission_criteria": "",
+              "description": "申诉须在 DeterminationNotified 事件后 30 个日历日内提出，逾期裁定即为终局。"
             }
           ]
         },
         {
           "order": "2",
           "name": "createTheAppealInStatusFiled",
-          "description": "Create the Appeal in status Filed and pause any benefit reduction.",
+          "description": "创建状态为已提出的申诉并暂停任何福利削减。",
           "object_type": "logic",
-          "submission_criteria": "on AppealFiled until AppealDecided",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "pause-reduction-on-appeal",
-              "name": "Pause benefit reduction once Appeal filed",
-              "submission_criteria": "on AppealFiled until AppealDecided",
-              "description": "A benefit reduction or suspension shall be paused once an Appeal is filed and may not resume until the AppealDecided event."
+              "name": "提出申诉后暂停福利削减",
+              "submission_criteria": "",
+              "description": "一旦提出申诉，福利的削减或中止应予暂停，且在 AppealDecided 事件之前不得恢复。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"FileAppeal\" action. Applicant files an Appeal against a contested Determination within 30 calendar days, pausing any benefit reduction. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"FileAppeal\" using determination, grounds. Applicant files an Appeal against a contested Determination within 30 calendar days, pausing any benefit reduction. Produce appeal and emit the appropriate events.",
+      "system_prompt": "作为负责「FileAppeal」动作的自动化人工操作员，申请人在 30 个日历日内对争议裁定提出申诉，并暂停任何福利削减。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（determination、grounds）执行「FileAppeal」。申请人在 30 个日历日内对争议裁定提出申诉，并暂停任何福利削减。 产出（appeal）并发出相应事件。",
       "tool_use": [
         "PORTAL"
       ],
@@ -4892,16 +4903,17 @@
         "role": "Applicant",
         "roleZh": "申请人",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:decide-appeal",
       "uuid": "55555555555555555555555555550013",
       "name": "DecideAppeal",
       "nameZh": "裁决申诉",
-      "description": "Appeals Officer records the Appeal outcome as Upheld or Overturned within 45 calendar days; an overturn revises the Determination.",
+      "description": "申诉官在 45 个日历日内将申诉结果记录为维持或推翻；推翻则修订裁定。",
       "descriptionZh": "申诉官在 45 个日历日内将申诉结果记录为维持或推翻；推翻则修订裁定。",
-      "submission_criteria": "1. Event APPEAL_FILED has been received\n2. Rule \"Appeal decision within 45 days\" is satisfied\n3. Rule \"Determination records ruleset version in force\" is satisfied",
+      "submission_criteria": "1. 事件 APPEAL_FILED 已送达\n2. 规则「申诉须 45 日内裁决」已满足\n3. 规则「裁定须记录生效规则集版本」已满足",
       "object_type": "action",
       "category": "裁决申诉",
       "actor": [
@@ -4920,36 +4932,36 @@
         {
           "order": "1",
           "name": "reviewTheOriginalCaseRecordAnd",
-          "description": "Review the original Case record and the ruleset version in force on the determination date.",
+          "description": "审查原始案件记录与裁定之日生效的规则集版本。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "determination-records-ruleset-version",
-              "name": "Determination records ruleset version in force",
+              "name": "裁定须记录生效规则集版本",
               "submission_criteria": "",
-              "description": "A Determination must record the version of the EligibilityCriterion rule set that was in force on the determination date."
+              "description": "裁定须记录在裁定之日生效的资格条件规则集版本。"
             }
           ]
         },
         {
           "order": "2",
           "name": "recordUpheldStandsOrOverturnedRevise",
-          "description": "Record Upheld (stands) or Overturned (revise Determination in place, preserving prior version) within 45 days.",
+          "description": "在 45 日内记录维持（不变）或推翻（就地修订裁定并保留先前版本）。",
           "object_type": "logic",
-          "submission_criteria": "window starts at AppealFiled",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "appeal-decision-time-limit",
-              "name": "Appeal decision within 45 days",
-              "submission_criteria": "window starts at AppealFiled",
-              "description": "An Appeals Officer is required to issue the AppealDecided outcome within 45 calendar days of the AppealFiled event."
+              "name": "申诉须 45 日内裁决",
+              "submission_criteria": "",
+              "description": "申诉官须在 AppealFiled 事件后 45 个日历日内作出 AppealDecided 结果。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"DecideAppeal\" action. Appeals Officer records the Appeal outcome as Upheld or Overturned within 45 calendar days; an overturn revises the Determination. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"DecideAppeal\" using appeal, case. Appeals Officer records the Appeal outcome as Upheld or Overturned within 45 calendar days; an overturn revises the Determination. Produce appeal, determination and emit the appropriate events.",
+      "system_prompt": "作为负责「DecideAppeal」动作的自动化人工操作员，申诉官在 45 个日历日内将申诉结果记录为维持或推翻；推翻则修订裁定。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（appeal、case）执行「DecideAppeal」。申诉官在 45 个日历日内将申诉结果记录为维持或推翻；推翻则修订裁定。 产出（appeal、determination）并发出相应事件。",
       "tool_use": [
         "PBE-CMS"
       ],
@@ -5099,16 +5111,17 @@
         "role": "Appeals Officer",
         "roleZh": "申诉官",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:trigger-recertification",
       "uuid": "55555555555555555555555555550014",
       "name": "TriggerRecertification",
       "nameZh": "触发复核",
-      "description": "At the recertification interval the system generates a recertification task and notifies the Applicant; lapses suspend the Case.",
+      "description": "在复核间隔到期时系统生成复核任务并通知申请人；逾期失效则中止案件。",
       "descriptionZh": "在复核间隔到期时系统生成复核任务并通知申请人；逾期失效则中止案件。",
-      "submission_criteria": "1. Rule \"Recertify benefit Case every 12 months\" is satisfied\n2. Rule \"Suspend Case on recertification lapse past grace\" is satisfied",
+      "submission_criteria": "1. 规则「福利案件每 12 个月复核」已满足\n2. 规则「复核超宽限期失效则中止案件」已满足",
       "object_type": "action",
       "category": "触发复核",
       "actor": [
@@ -5123,36 +5136,36 @@
         {
           "order": "1",
           "name": "atTheRecertificationIntervalGenerateA",
-          "description": "At the recertification interval, generate a recertification task for the Case.",
+          "description": "在复核间隔到期时为案件生成复核任务。",
           "object_type": "logic",
-          "submission_criteria": "on recertification interval",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "recertification-interval",
-              "name": "Recertify benefit Case every 12 months",
-              "submission_criteria": "on recertification interval",
-              "description": "A benefit Case must be recertified at least every 12 months, and a Household may not continue receiving benefits past the recertification due date without a renewed Determination."
+              "name": "福利案件每 12 个月复核",
+              "submission_criteria": "",
+              "description": "福利案件须至少每 12 个月复核一次，家庭在复核到期日之后若无续期裁定不得继续领取福利。"
             }
           ]
         },
         {
           "order": "2",
           "name": "ifRecertificationLapsesPastThe14",
-          "description": "If recertification lapses past the 14-day grace, suspend the Case and expire any Permit.",
+          "description": "若复核逾 14 天宽限期失效，则中止案件并使任何许可到期。",
           "object_type": "logic",
-          "submission_criteria": "on grace period lapse",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "recert-lapse-suspend",
-              "name": "Suspend Case on recertification lapse past grace",
-              "submission_criteria": "on grace period lapse",
-              "description": "A Case whose recertification lapses beyond a 14-day grace period shall be suspended automatically, and the associated Permit, if any, shall move to Expired."
+              "name": "复核超宽限期失效则中止案件",
+              "submission_criteria": "",
+              "description": "复核失效超过 14 天宽限期的案件应自动中止，关联许可（如有）转为到期。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"TriggerRecertification\" action. At the recertification interval the system generates a recertification task and notifies the Applicant; lapses suspend the Case. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"TriggerRecertification\" using case. At the recertification interval the system generates a recertification task and notifies the Applicant; lapses suspend the Case. Produce case and emit the appropriate events.",
+      "system_prompt": "作为负责「TriggerRecertification」动作的自动化系统，在复核间隔到期时系统生成复核任务并通知申请人；逾期失效则中止案件。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（case）执行「TriggerRecertification」。在复核间隔到期时系统生成复核任务并通知申请人；逾期失效则中止案件。 产出（case）并发出相应事件。",
       "tool_use": [
         "PBE-CMS"
       ],
@@ -5293,7 +5306,8 @@
         "role": "PBE-CMS",
         "roleZh": "案件管理系统",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     }
   ],
   "events": [
@@ -5302,7 +5316,7 @@
       "uuid": "66666666666666666666666666660001",
       "name": "APPLICATION_SUBMITTED",
       "nameZh": "申请已提交",
-      "description": "An Application was submitted via the portal; starts the statutory processing clock.",
+      "description": "申请已通过门户提交；启动法定处理时钟。",
       "descriptionZh": "申请已通过门户提交；启动法定处理时钟。",
       "payload": {
         "source_action": "submitApplication",
@@ -5365,7 +5379,7 @@
       "uuid": "66666666666666666666666666660002",
       "name": "APPLICATION_ACCEPTED",
       "nameZh": "申请已受理",
-      "description": "An Application passed completeness screening and was Accepted.",
+      "description": "申请通过完整性审查并被受理。",
       "descriptionZh": "申请通过完整性审查并被受理。",
       "payload": {
         "source_action": "screenCompleteness",
@@ -5416,7 +5430,7 @@
       "uuid": "66666666666666666666666666660003",
       "name": "APPLICATION_RETURNED",
       "nameZh": "申请被退回",
-      "description": "An Application was returned as incomplete, suspending the processing clock.",
+      "description": "申请因不完整被退回，暂停处理时钟。",
       "descriptionZh": "申请因不完整被退回，暂停处理时钟。",
       "payload": {
         "source_action": "screenCompleteness",
@@ -5476,7 +5490,7 @@
       "uuid": "66666666666666666666666666660004",
       "name": "DOCUMENT_VERIFIED",
       "nameZh": "文件已核验",
-      "description": "A Document was verified by a Caseworker.",
+      "description": "文件已由个案工作者核验。",
       "descriptionZh": "文件已由个案工作者核验。",
       "payload": {
         "source_action": "verifyDocument",
@@ -5547,7 +5561,7 @@
       "uuid": "66666666666666666666666666660005",
       "name": "DOCUMENT_REJECTED",
       "nameZh": "文件被拒绝",
-      "description": "A Document failed verification and was rejected, looping back to a Document request.",
+      "description": "文件核验未通过被拒绝，回退至补件请求。",
       "descriptionZh": "文件核验未通过被拒绝，回退至补件请求。",
       "payload": {
         "source_action": "verifyDocument",
@@ -5606,7 +5620,7 @@
       "uuid": "66666666666666666666666666660006",
       "name": "ELIGIBILITY_EVALUATED",
       "nameZh": "资格已评估",
-      "description": "Eligibility was evaluated and a draft Determination produced with the decisive criterion.",
+      "description": "资格已评估并生成带决定性条件的裁定草稿。",
       "descriptionZh": "资格已评估并生成带决定性条件的裁定草稿。",
       "payload": {
         "source_action": "evaluateEligibility",
@@ -5668,7 +5682,7 @@
       "uuid": "66666666666666666666666666660007",
       "name": "APPROVAL_REQUESTED",
       "nameZh": "已请求审批",
-      "description": "A Determination exceeding caseworker authority was routed to the Supervisor queue.",
+      "description": "超过个案工作者权限的裁定被路由至主管队列。",
       "descriptionZh": "超过个案工作者权限的裁定被路由至主管队列。",
       "payload": {
         "source_action": "escalateForApproval",
@@ -5729,7 +5743,7 @@
       "uuid": "66666666666666666666666666660008",
       "name": "DETERMINATION_RECORDED",
       "nameZh": "裁定已记录",
-      "description": "A Determination was finalized as Approved or Denied.",
+      "description": "裁定已定案为批准或拒绝。",
       "descriptionZh": "裁定已定案为批准或拒绝。",
       "payload": {
         "source_action": "recordDetermination",
@@ -5792,7 +5806,7 @@
       "uuid": "66666666666666666666666666660009",
       "name": "DETERMINATION_NOTIFIED",
       "nameZh": "裁定已送达",
-      "description": "A decision notice with appeal rights and deadline was sent to the Applicant.",
+      "description": "含申诉权利与期限的决定通知已发送给申请人。",
       "descriptionZh": "含申诉权利与期限的决定通知已发送给申请人。",
       "payload": {
         "source_action": "notifyDetermination",
@@ -5853,7 +5867,7 @@
       "uuid": "66666666666666666666666666660010",
       "name": "PAYMENT_CLEARED",
       "nameZh": "缴费已结清",
-      "description": "A permit fee Payment cleared in full.",
+      "description": "许可费缴费已全额结清。",
       "descriptionZh": "许可费缴费已全额结清。",
       "payload": {
         "source_action": "collectPayment",
@@ -5924,7 +5938,7 @@
       "uuid": "66666666666666666666666666660011",
       "name": "PAYMENT_FAILED",
       "nameZh": "缴费失败",
-      "description": "A permit fee Payment failed to clear.",
+      "description": "许可费缴费未能结清。",
       "descriptionZh": "许可费缴费未能结清。",
       "payload": {
         "source_action": "collectPayment",
@@ -5983,7 +5997,7 @@
       "uuid": "66666666666666666666666666660012",
       "name": "PERMIT_ISSUED",
       "nameZh": "许可已核发",
-      "description": "A Permit was issued in status Active with an expiry date.",
+      "description": "许可已核发为活动状态并设定到期日。",
       "descriptionZh": "许可已核发为活动状态并设定到期日。",
       "payload": {
         "source_action": "issuePermit",
@@ -6044,7 +6058,7 @@
       "uuid": "66666666666666666666666666660013",
       "name": "INSPECTION_SCHEDULED",
       "nameZh": "验收已排期",
-      "description": "An Inspection was scheduled for an inspectable Permit.",
+      "description": "已为须验收的许可安排验收。",
       "descriptionZh": "已为须验收的许可安排验收。",
       "payload": {
         "source_action": "scheduleInspection",
@@ -6106,7 +6120,7 @@
       "uuid": "66666666666666666666666666660014",
       "name": "INSPECTION_PASSED",
       "nameZh": "验收通过",
-      "description": "An Inspection was recorded as Passed, allowing the Permit to move to Active-Verified.",
+      "description": "验收记录为通过，许可可转为 Active-Verified。",
       "descriptionZh": "验收记录为通过，许可可转为 Active-Verified。",
       "payload": {
         "source_action": "recordInspectionResult",
@@ -6165,7 +6179,7 @@
       "uuid": "66666666666666666666666666660015",
       "name": "INSPECTION_FAILED",
       "nameZh": "验收不通过",
-      "description": "An Inspection was recorded as Failed, moving the Permit to ConditionalHold with a re-inspection window.",
+      "description": "验收记录为不通过，许可转为条件保留并设定复检窗口。",
       "descriptionZh": "验收记录为不通过，许可转为条件保留并设定复检窗口。",
       "payload": {
         "source_action": "recordInspectionResult",
@@ -6224,7 +6238,7 @@
       "uuid": "66666666666666666666666666660016",
       "name": "APPEAL_FILED",
       "nameZh": "申诉已提出",
-      "description": "An Appeal was filed against a Determination, pausing benefit reduction.",
+      "description": "已对裁定提出申诉，暂停福利削减。",
       "descriptionZh": "已对裁定提出申诉，暂停福利削减。",
       "payload": {
         "source_action": "fileAppeal",
@@ -6291,7 +6305,7 @@
       "uuid": "66666666666666666666666666660017",
       "name": "APPEAL_DECIDED",
       "nameZh": "申诉已裁决",
-      "description": "An Appeal was decided as Upheld or Overturned.",
+      "description": "申诉已裁决为维持或推翻。",
       "descriptionZh": "申诉已裁决为维持或推翻。",
       "payload": {
         "source_action": "decideAppeal",
@@ -6352,7 +6366,7 @@
       "uuid": "66666666666666666666666666660018",
       "name": "RECERTIFICATION_DUE",
       "nameZh": "复核到期",
-      "description": "A Case reached its recertification due date and a recertification task was generated.",
+      "description": "案件已达复核到期日并生成复核任务。",
       "descriptionZh": "案件已达复核到期日并生成复核任务。",
       "payload": {
         "source_action": "triggerRecertification",
@@ -6413,7 +6427,7 @@
       "uuid": "66666666666666666666666666660019",
       "name": "CASE_SUSPENDED",
       "nameZh": "案件已中止",
-      "description": "A Case was automatically suspended on recertification lapse past the grace period.",
+      "description": "案件因复核逾宽限期失效被自动中止。",
       "descriptionZh": "案件因复核逾宽限期失效被自动中止。",
       "payload": {
         "source_action": "triggerRecertification",
@@ -6476,7 +6490,7 @@
         "en": "Intake to Determination",
         "zh": "受理到裁定"
       },
-      "description": "From portal submission through completeness screening, document verification, eligibility evaluation, recording (or escalating) the Determination, to notifying the Applicant.",
+      "description": "受理到裁定",
       "actor": [
         "Human",
         "Agent",
@@ -6489,42 +6503,42 @@
         {
           "order": "1",
           "name": "submitApplication",
-          "description": "Applicant submits a draft Application and Document set via the portal, producing a Submitted Application and opening a Case.",
+          "description": "申请人通过门户提交申请草稿及文件集，生成已提交申请并开立案件。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "2",
           "name": "screenCompleteness",
-          "description": "Intake Clerk checks the submitted Document set against the required-Document list, accepting or returning the Application.",
+          "description": "受理员将提交的文件集与必需文件清单比对，受理或退回申请。",
           "type": "manual",
           "condition": "complete"
         },
         {
           "order": "3",
           "name": "verifyDocument",
-          "description": "Caseworker verifies each Document content from DMS, marking it Verified or Rejected with a reason code.",
+          "description": "个案工作者从 DMS 核验每份文件内容，标记为已核验或已拒绝并附原因码。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "4",
           "name": "evaluateEligibility",
-          "description": "Caseworker (via the eligibility engine) tests verified Application and Household data against the active EligibilityCriterion set, producing a draft Determination.",
+          "description": "个案工作者通过资格引擎，将已核验的申请与家庭数据与生效资格条件集比对，生成裁定草稿。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "5",
           "name": "recordDetermination",
-          "description": "Caseworker finalizes the draft Determination as Approved or Denied, snapshotting the ruleset version and citation.",
+          "description": "个案工作者将裁定草稿定案为批准或拒绝，并快照规则集版本与引用。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "6",
           "name": "notifyDetermination",
-          "description": "Renders the recorded Determination into a decision notice with appeal rights and deadline, and sends it to the Applicant.",
+          "description": "将已记录裁定渲染为含申诉权利与期限的决定通知并发送给申请人。",
           "type": "tool",
           "condition": ""
         }
@@ -6686,7 +6700,7 @@
         "en": "Permit Issuance to Inspection",
         "zh": "核发到验收"
       },
-      "description": "For approved permit Determinations: collect the fee, issue the Permit, and (for inspectable classes) schedule and record the physical Inspection.",
+      "description": "核发到验收",
       "actor": [
         "Human",
         "System"
@@ -6698,28 +6712,28 @@
         {
           "order": "1",
           "name": "collectPayment",
-          "description": "Collects the permit fee through the payment gateway, producing a Cleared (or Failed) Payment.",
+          "description": "通过支付网关收取许可费，生成已结清（或失败）的缴费。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "2",
           "name": "issuePermit",
-          "description": "Issues an Active Permit from an approved Determination and a cleared Payment, with issue and expiry dates.",
+          "description": "凭已批准裁定与已结清缴费核发活动许可，并设定核发与到期日。",
           "type": "tool",
           "condition": "permit.inspectable"
         },
         {
           "order": "3",
           "name": "scheduleInspection",
-          "description": "Creates a Scheduled Inspection for permit classes requiring a physical check.",
+          "description": "为须实地检查的许可类别创建已排期验收。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "4",
           "name": "recordInspectionResult",
-          "description": "Records an Inspection as Passed or Failed; a Failed result moves the Permit to ConditionalHold and sets a re-inspection window.",
+          "description": "将验收记录为通过或不通过；不通过则将许可置为条件保留并设定复检窗口。",
           "type": "manual",
           "condition": ""
         }
@@ -6837,7 +6851,7 @@
         "en": "Determination to Appeal",
         "zh": "裁定到申诉"
       },
-      "description": "An Applicant files an Appeal against a Determination within 30 days; the Appeals Officer reviews and decides within 45 days, then the revised decision is notified.",
+      "description": "裁定到申诉",
       "actor": [
         "Human",
         "System"
@@ -6849,21 +6863,21 @@
         {
           "order": "1",
           "name": "fileAppeal",
-          "description": "Applicant files an Appeal against a contested Determination within 30 calendar days, pausing any benefit reduction.",
+          "description": "申请人在 30 个日历日内对争议裁定提出申诉，并暂停任何福利削减。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "2",
           "name": "decideAppeal",
-          "description": "Appeals Officer records the Appeal outcome as Upheld or Overturned within 45 calendar days; an overturn revises the Determination.",
+          "description": "申诉官在 45 个日历日内将申诉结果记录为维持或推翻；推翻则修订裁定。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "3",
           "name": "notifyDetermination",
-          "description": "Renders the recorded Determination into a decision notice with appeal rights and deadline, and sends it to the Applicant.",
+          "description": "将已记录裁定渲染为含申诉权利与期限的决定通知并发送给申请人。",
           "type": "tool",
           "condition": ""
         }
@@ -6967,7 +6981,7 @@
         "en": "Renewal & Recertification",
         "zh": "续期复核"
       },
-      "description": "At the recertification interval the system triggers recertification; the Applicant and Caseworker re-run document verification, eligibility evaluation, and determination on refreshed data, else the Case is suspended.",
+      "description": "续期复核",
       "actor": [
         "System",
         "Human",
@@ -6980,28 +6994,28 @@
         {
           "order": "1",
           "name": "triggerRecertification",
-          "description": "At the recertification interval the system generates a recertification task and notifies the Applicant; lapses suspend the Case.",
+          "description": "在复核间隔到期时系统生成复核任务并通知申请人；逾期失效则中止案件。",
           "type": "tool",
           "condition": "recertify on time"
         },
         {
           "order": "2",
           "name": "verifyDocument",
-          "description": "Caseworker verifies each Document content from DMS, marking it Verified or Rejected with a reason code.",
+          "description": "个案工作者从 DMS 核验每份文件内容，标记为已核验或已拒绝并附原因码。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "3",
           "name": "evaluateEligibility",
-          "description": "Caseworker (via the eligibility engine) tests verified Application and Household data against the active EligibilityCriterion set, producing a draft Determination.",
+          "description": "个案工作者通过资格引擎，将已核验的申请与家庭数据与生效资格条件集比对，生成裁定草稿。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "4",
           "name": "recordDetermination",
-          "description": "Caseworker finalizes the draft Determination as Approved or Denied, snapshotting the ruleset version and citation.",
+          "description": "个案工作者将裁定草稿定案为批准或拒绝，并快照规则集版本与引用。",
           "type": "manual",
           "condition": ""
         }

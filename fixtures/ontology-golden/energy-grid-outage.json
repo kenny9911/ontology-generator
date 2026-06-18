@@ -42,34 +42,34 @@
       "uuid": "3c4d5e6f708192031425b6c7d8e9f0a3",
       "name": "Substation",
       "nameZh": "变电站",
-      "description": "A facility that transforms and switches voltage; parent of one or more Feeders. System of record: GIS.",
+      "description": "变换和切换电压的设施；一个或多个馈线的父级。记录系统：GIS。",
       "descriptionZh": "变换和切换电压的设施；一个或多个馈线的父级。记录系统：GIS。",
       "type": "data",
-      "relationship_description": "Substation parents Feeder.",
+      "relationship_description": "【变电站】为父级【馈线】。",
       "primary_key": "substation_id",
       "properties": [
         {
           "name": "substation_id",
           "type": "String",
-          "description": "Primary key.",
+          "description": "变电站编号",
           "nameZh": "变电站编号"
         },
         {
           "name": "name",
           "type": "String",
-          "description": "",
+          "description": "名称",
           "nameZh": "名称"
         },
         {
           "name": "voltage_class_kv",
           "type": "Integer",
-          "description": "e.g., 12, 69, 138 kV.",
+          "description": "电压等级千伏",
           "nameZh": "电压等级千伏"
         },
         {
           "name": "region",
           "type": "String",
-          "description": "",
+          "description": "区域",
           "nameZh": "区域"
         }
       ],
@@ -98,22 +98,22 @@
       "uuid": "4d5e6f70819203142536c7d8e9f0a1b4",
       "name": "Feeder",
       "nameZh": "馈线",
-      "description": "A distribution circuit energized from a Substation, serving many ServicePoints. System of record: GIS.",
+      "description": "由变电站供电的配电线路，为多个供电点供电。记录系统：GIS。",
       "descriptionZh": "由变电站供电的配电线路，为多个供电点供电。记录系统：GIS。",
       "type": "data",
-      "relationship_description": "Substation parents Feeder. Feeder serves ServicePoint. Asset mounted on Feeder. OutageEvent occurs on Feeder. Feeder.substation_id references Substation.",
+      "relationship_description": "【变电站】为父级【馈线】。【馈线】供电【供电点】。【资产】安装于【馈线】。【停电事件】发生于【馈线】。",
       "primary_key": "feeder_id",
       "properties": [
         {
           "name": "feeder_id",
           "type": "String",
-          "description": "Primary key.",
+          "description": "馈线编号",
           "nameZh": "馈线编号"
         },
         {
           "name": "substation_id",
           "type": "String",
-          "description": "Foreign key to Substation.",
+          "description": "变电站编号",
           "nameZh": "变电站编号",
           "is_foreign_key": true,
           "references": "objectType:substation"
@@ -121,25 +121,25 @@
         {
           "name": "voltage_class",
           "type": "List<String>",
-          "description": "Drives Rules R-11, R-12.",
+          "description": "电压等级",
           "nameZh": "电压等级"
         },
         {
           "name": "vegetation_cycle_months",
           "type": "Integer",
-          "description": "Clearance cycle.",
+          "description": "植被周期月数",
           "nameZh": "植被周期月数"
         },
         {
           "name": "last_clearance_date",
           "type": "Date",
-          "description": "",
+          "description": "上次清理日期",
           "nameZh": "上次清理日期"
         },
         {
           "name": "wildfire_risk_zone",
           "type": "Boolean",
-          "description": "Drives Rule R-12.",
+          "description": "野火风险区",
           "nameZh": "野火风险区"
         }
       ],
@@ -175,22 +175,22 @@
       "uuid": "5e6f7081920314253647d8e9f0a1b2c5",
       "name": "ServicePoint",
       "nameZh": "供电点",
-      "description": "A metered delivery point mapped to one Customer and one Feeder. System of record: GIS with telemetry via AMI.",
+      "description": "映射到一个客户和一条馈线的计量交付点。记录系统：GIS，遥测通过 AMI。",
       "descriptionZh": "映射到一个客户和一条馈线的计量交付点。记录系统：GIS，遥测通过 AMI。",
       "type": "data",
-      "relationship_description": "Feeder serves ServicePoint. ServicePoint belongs to Customer. OutageEvent affects ServicePoint. ServicePoint.feeder_id references Feeder. ServicePoint.customer_id references Customer.",
+      "relationship_description": "【馈线】供电【供电点】。【供电点】归属于【客户】。【停电事件】影响【供电点】。",
       "primary_key": "service_point_id",
       "properties": [
         {
           "name": "service_point_id",
           "type": "String",
-          "description": "Primary key.",
+          "description": "供电点编号",
           "nameZh": "供电点编号"
         },
         {
           "name": "feeder_id",
           "type": "String",
-          "description": "Foreign key to Feeder (exactly one, Rule R-18).",
+          "description": "馈线编号",
           "nameZh": "馈线编号",
           "is_foreign_key": true,
           "references": "objectType:feeder"
@@ -198,7 +198,7 @@
         {
           "name": "customer_id",
           "type": "String",
-          "description": "Foreign key to Customer (exactly one, Rule R-18).",
+          "description": "客户编号",
           "nameZh": "客户编号",
           "is_foreign_key": true,
           "references": "objectType:customer"
@@ -206,13 +206,13 @@
         {
           "name": "meter_id",
           "type": "String",
-          "description": "AMI device identifier.",
+          "description": "电表编号",
           "nameZh": "电表编号"
         },
         {
           "name": "critical_infrastructure",
           "type": "Boolean",
-          "description": "Drives Rule R-15.",
+          "description": "关键基础设施",
           "nameZh": "关键基础设施"
         }
       ],
@@ -241,34 +241,34 @@
       "uuid": "6f708192031425364758e9f0a1b2c3d6",
       "name": "Customer",
       "nameZh": "客户",
-      "description": "The billed account associated with a ServicePoint, including notification flags. System of record: CIS.",
+      "description": "与供电点关联的计费账户，包含通知标志。记录系统：CIS。",
       "descriptionZh": "与供电点关联的计费账户，包含通知标志。记录系统：CIS。",
       "type": "data",
-      "relationship_description": "ServicePoint belongs to Customer.",
+      "relationship_description": "【供电点】归属于【客户】。",
       "primary_key": "customer_id",
       "properties": [
         {
           "name": "customer_id",
           "type": "String",
-          "description": "Primary key.",
+          "description": "客户编号",
           "nameZh": "客户编号"
         },
         {
           "name": "account_name",
           "type": "String",
-          "description": "",
+          "description": "账户名称",
           "nameZh": "账户名称"
         },
         {
           "name": "life_support_flag",
           "type": "Boolean",
-          "description": "Drives Rules R-14, R-19.",
+          "description": "生命维持依赖标志",
           "nameZh": "生命维持依赖标志"
         },
         {
           "name": "notification_contact",
           "type": "String",
-          "description": "Phone/email.",
+          "description": "通知联系方式",
           "nameZh": "通知联系方式"
         }
       ],
@@ -294,52 +294,52 @@
       "uuid": "708192031425364758690a1b2c3d4e7f",
       "name": "Asset",
       "nameZh": "资产",
-      "description": "Any physical grid component (transformer, breaker, conductor span, recloser) with a unique Asset Tag. System of record: Maximo.",
+      "description": "任何具有唯一资产标签的物理电网组件（变压器、断路器、导线档、重合器）。记录系统：Maximo。",
       "descriptionZh": "任何具有唯一资产标签的物理电网组件（变压器、断路器、导线档、重合器）。记录系统：Maximo。",
       "type": "data",
-      "relationship_description": "Asset mounted on Feeder. Inspection assesses Asset. MaintenanceWorkOrder targets Asset. Asset.feeder_id references Feeder.",
+      "relationship_description": "【资产】安装于【馈线】。【巡检】评估【资产】。【维护工单】针对【资产】。",
       "primary_key": "asset_tag",
       "properties": [
         {
           "name": "asset_tag",
           "type": "String",
-          "description": "Primary key.",
+          "description": "资产标签",
           "nameZh": "资产标签"
         },
         {
           "name": "asset_class",
           "type": "List<String>",
-          "description": "Drives Rules R-01, R-03.",
+          "description": "资产等级",
           "nameZh": "资产等级"
         },
         {
           "name": "safety_classified",
           "type": "Boolean",
-          "description": "Drives Rule R-05.",
+          "description": "安全分类",
           "nameZh": "安全分类"
         },
         {
           "name": "condition_score",
           "type": "Integer",
-          "description": "0–100 health scale. Drives Rule R-04.",
+          "description": "状态评分",
           "nameZh": "状态评分"
         },
         {
           "name": "inspection_interval_months",
           "type": "Integer",
-          "description": "Rated interval.",
+          "description": "巡检间隔月数",
           "nameZh": "巡检间隔月数"
         },
         {
           "name": "last_inspection_date",
           "type": "Date",
-          "description": "",
+          "description": "上次巡检日期",
           "nameZh": "上次巡检日期"
         },
         {
           "name": "feeder_id",
           "type": "String",
-          "description": "Foreign key to Feeder (where applicable).",
+          "description": "馈线编号",
           "nameZh": "馈线编号",
           "is_foreign_key": true,
           "references": "objectType:feeder"
@@ -377,22 +377,22 @@
       "uuid": "8192031425364758697a0b1c2d3e4f80",
       "name": "Inspection",
       "nameZh": "巡检",
-      "description": "A scheduled or ad-hoc condition assessment of an Asset, producing a pass/fail result. System of record: Maximo.",
+      "description": "对资产的计划或临时状态评估，产生通过/不通过结果。记录系统：Maximo。",
       "descriptionZh": "对资产的计划或临时状态评估，产生通过/不通过结果。记录系统：Maximo。",
       "type": "data",
-      "relationship_description": "Inspection assesses Asset. Inspection.asset_tag references Asset.",
+      "relationship_description": "【巡检】评估【资产】。",
       "primary_key": "inspection_id",
       "properties": [
         {
           "name": "inspection_id",
           "type": "String",
-          "description": "Primary key.",
+          "description": "巡检编号",
           "nameZh": "巡检编号"
         },
         {
           "name": "asset_tag",
           "type": "String",
-          "description": "Foreign key to Asset.",
+          "description": "资产标签",
           "nameZh": "资产标签",
           "is_foreign_key": true,
           "references": "objectType:asset"
@@ -400,19 +400,19 @@
         {
           "name": "due_date",
           "type": "Date",
-          "description": "",
+          "description": "到期日",
           "nameZh": "到期日"
         },
         {
           "name": "completed_date",
           "type": "Date",
-          "description": "Nullable until done.",
+          "description": "完成日期",
           "nameZh": "完成日期"
         },
         {
           "name": "result",
           "type": "List<String>",
-          "description": "Drives Rule R-02.",
+          "description": "结果",
           "nameZh": "结果"
         }
       ],
@@ -441,22 +441,22 @@
       "uuid": "9203142536475869708b1c2d3e4f5081",
       "name": "MaintenanceWorkOrder",
       "nameZh": "维护工单",
-      "description": "A unit of corrective or preventive field work against an Asset. System of record: Maximo.",
+      "description": "针对资产的纠正性或预防性现场工作单元。记录系统：Maximo。",
       "descriptionZh": "针对资产的纠正性或预防性现场工作单元。记录系统：Maximo。",
       "type": "data",
-      "relationship_description": "MaintenanceWorkOrder targets Asset. MaintenanceWorkOrder references OutageEvent. MaintenanceWorkOrder.asset_tag references Asset. MaintenanceWorkOrder.outage_event_id references OutageEvent.",
+      "relationship_description": "【维护工单】针对【资产】。【维护工单】关联【停电事件】。",
       "primary_key": "work_order_id",
       "properties": [
         {
           "name": "work_order_id",
           "type": "String",
-          "description": "Primary key.",
+          "description": "工单编号",
           "nameZh": "工单编号"
         },
         {
           "name": "asset_tag",
           "type": "String",
-          "description": "Foreign key to Asset.",
+          "description": "资产标签",
           "nameZh": "资产标签",
           "is_foreign_key": true,
           "references": "objectType:asset"
@@ -464,7 +464,7 @@
         {
           "name": "outage_event_id",
           "type": "String",
-          "description": "Foreign key to OutageEvent (nullable, Rule R-17).",
+          "description": "停电事件编号",
           "nameZh": "停电事件编号",
           "is_foreign_key": true,
           "references": "objectType:outage-event"
@@ -472,25 +472,25 @@
         {
           "name": "priority",
           "type": "List<String>",
-          "description": "",
+          "description": "优先级",
           "nameZh": "优先级"
         },
         {
           "name": "estimated_cost",
           "type": "Float",
-          "description": "Drives Rule R-06.",
+          "description": "预估成本",
           "nameZh": "预估成本"
         },
         {
           "name": "status",
           "type": "List<String>",
-          "description": "",
+          "description": "状态",
           "nameZh": "状态"
         },
         {
           "name": "second_engineer_approval",
           "type": "Boolean",
-          "description": "Drives Rule R-05.",
+          "description": "第二工程师批准",
           "nameZh": "第二工程师批准"
         }
       ],
@@ -520,28 +520,28 @@
       "uuid": "a03142536475869708c1b2d3e4f50912",
       "name": "Crew",
       "nameZh": "作业班组",
-      "description": "A field workforce unit assigned to restore outages or execute work orders. System of record: Maximo (Workforce).",
+      "description": "被指派恢复停电或执行工单的现场作业班组单元。记录系统：Maximo（劳动力）。",
       "descriptionZh": "被指派恢复停电或执行工单的现场作业班组单元。记录系统：Maximo（劳动力）。",
       "type": "data",
-      "relationship_description": "Crew has no documented relationships to other objects.",
+      "relationship_description": "【作业班组】暂无与其他对象的关联关系。",
       "primary_key": "crew_id",
       "properties": [
         {
           "name": "crew_id",
           "type": "String",
-          "description": "Primary key.",
+          "description": "班组编号",
           "nameZh": "班组编号"
         },
         {
           "name": "qualification",
           "type": "List<String>",
-          "description": "",
+          "description": "资质",
           "nameZh": "资质"
         },
         {
           "name": "availability",
           "type": "List<String>",
-          "description": "",
+          "description": "可用状态",
           "nameZh": "可用状态"
         }
       ],
@@ -567,22 +567,22 @@
       "uuid": "b13142536475869708d1c2e3f4051923",
       "name": "OutageEvent",
       "nameZh": "停电事件",
-      "description": "A recorded loss of supply affecting one or more ServicePoints, with a detection timestamp and lifecycle state. System of record: OMS.",
+      "description": "影响一个或多个供电点的已记录供电损失，带有检测时间戳和生命周期状态。记录系统：OMS。",
       "descriptionZh": "影响一个或多个供电点的已记录供电损失，带有检测时间戳和生命周期状态。记录系统：OMS。",
       "type": "data",
-      "relationship_description": "MaintenanceWorkOrder references OutageEvent. OutageEvent affects ServicePoint. OutageEvent occurs on Feeder. RegulatoryReport files for OutageEvent. OutageEvent.feeder_id references Feeder.",
+      "relationship_description": "【维护工单】关联【停电事件】。【停电事件】影响【供电点】。【停电事件】发生于【馈线】。【监管报告】为之备案【停电事件】。",
       "primary_key": "outage_event_id",
       "properties": [
         {
           "name": "outage_event_id",
           "type": "String",
-          "description": "Primary key.",
+          "description": "停电事件编号",
           "nameZh": "停电事件编号"
         },
         {
           "name": "feeder_id",
           "type": "String",
-          "description": "Foreign key to Feeder.",
+          "description": "馈线编号",
           "nameZh": "馈线编号",
           "is_foreign_key": true,
           "references": "objectType:feeder"
@@ -590,31 +590,31 @@
         {
           "name": "detection_timestamp",
           "type": "Timestamp",
-          "description": "Starts reporting clock, Rule R-07.",
+          "description": "检测时间戳",
           "nameZh": "检测时间戳"
         },
         {
           "name": "restoration_timestamp",
           "type": "Timestamp",
-          "description": "Nullable.",
+          "description": "复电时间戳",
           "nameZh": "复电时间戳"
         },
         {
           "name": "affected_service_point_count",
           "type": "Integer",
-          "description": "Drives Rules R-07, R-09.",
+          "description": "受影响供电点数",
           "nameZh": "受影响供电点数"
         },
         {
           "name": "cause_code",
           "type": "String",
-          "description": "Required before close, Rule R-20.",
+          "description": "原因代码",
           "nameZh": "原因代码"
         },
         {
           "name": "state",
           "type": "List<String>",
-          "description": "",
+          "description": "状态",
           "nameZh": "状态"
         }
       ],
@@ -651,22 +651,22 @@
       "uuid": "c23142536475869708e1d2f3041a2934",
       "name": "RegulatoryReport",
       "nameZh": "监管报告",
-      "description": "A filing submitted to the PUC for a reportable OutageEvent. System of record: RegFiling Portal.",
+      "description": "针对可报告停电事件提交给 PUC 的备案。记录系统：RegFiling Portal。",
       "descriptionZh": "针对可报告停电事件提交给 PUC 的备案。记录系统：RegFiling Portal。",
       "type": "data",
-      "relationship_description": "RegulatoryReport files for OutageEvent. RegulatoryReport.outage_event_id references OutageEvent.",
+      "relationship_description": "【监管报告】为之备案【停电事件】。",
       "primary_key": "report_id",
       "properties": [
         {
           "name": "report_id",
           "type": "String",
-          "description": "Primary key.",
+          "description": "报告编号",
           "nameZh": "报告编号"
         },
         {
           "name": "outage_event_id",
           "type": "String",
-          "description": "Foreign key to OutageEvent.",
+          "description": "停电事件编号",
           "nameZh": "停电事件编号",
           "is_foreign_key": true,
           "references": "objectType:outage-event"
@@ -674,25 +674,25 @@
         {
           "name": "filing_deadline",
           "type": "Timestamp",
-          "description": "Computed from detection_timestamp, Rule R-07.",
+          "description": "备案截止时间",
           "nameZh": "备案截止时间"
         },
         {
           "name": "submitted_timestamp",
           "type": "Timestamp",
-          "description": "Nullable.",
+          "description": "提交时间戳",
           "nameZh": "提交时间戳"
         },
         {
           "name": "director_approval",
           "type": "Boolean",
-          "description": "Drives Rule R-09.",
+          "description": "总监批准",
           "nameZh": "总监批准"
         },
         {
           "name": "portal_confirmation_id",
           "type": "String",
-          "description": "Set on acceptance.",
+          "description": "门户确认编号",
           "nameZh": "门户确认编号"
         }
       ],
@@ -992,16 +992,16 @@
     {
       "id": "rule:transmission-inspection-interval",
       "uuid": "70143142536475869a1023142564045a",
-      "specificScenarioStage": "On inspection-interval timer or missed interval",
-      "businessLogicRuleName": "Transmission inspection within rated interval",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "输电资产须在额定间隔内完成巡检",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On inspection-interval timer or missed interval",
-      "standardizedLogicRule": "A transmission-class Asset must have a completed Inspection within its rated inspection interval, and a missed interval shall automatically raise a priority MaintenanceWorkOrder.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "输电级资产必须在其额定巡检间隔内完成巡检，间隔逾期将自动产生一份优先级维护工单。",
       "relatedEntities": [
-        "Asset (Asset)",
-        "Inspection (Inspection)",
-        "MaintenanceWorkOrder (Maintenance_Work_Order)"
+        "资产 (Asset)",
+        "巡检 (Inspection)",
+        "维护工单 (Maintenance_Work_Order)"
       ],
       "businessBackgroundReason": "Rules governing asset inspection cadence, fail handling, and in-service condition limits (POL-GRID-COMP-009 §2).",
       "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
@@ -1060,15 +1060,15 @@
     {
       "id": "rule:failed-inspection-raises-wo-24h",
       "uuid": "71243142536475869b1023142564056b",
-      "specificScenarioStage": "On Inspection result = fail",
-      "businessLogicRuleName": "Failed inspection raises corrective WO within 24h",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "巡检不通过须在24小时内开纠正工单",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On Inspection result = fail",
-      "standardizedLogicRule": "An Inspection that returns a fail result is required to generate a corrective MaintenanceWorkOrder within 24 hours of the inspection completion timestamp.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "返回不通过结果的巡检须在巡检完成时间戳后24小时内生成一份纠正性维护工单。",
       "relatedEntities": [
-        "Inspection (Inspection)",
-        "MaintenanceWorkOrder (Maintenance_Work_Order)"
+        "巡检 (Inspection)",
+        "维护工单 (Maintenance_Work_Order)"
       ],
       "businessBackgroundReason": "Rules governing asset inspection cadence, fail handling, and in-service condition limits (POL-GRID-COMP-009 §2).",
       "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
@@ -1130,14 +1130,14 @@
     {
       "id": "rule:inspection-cadence-by-class",
       "uuid": "72343142536475869c1023142564067c",
-      "specificScenarioStage": "On inspection scheduling",
-      "businessLogicRuleName": "Inspection cadence by asset class",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "按资产等级的巡检周期",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On inspection scheduling",
-      "standardizedLogicRule": "A distribution-class Asset must be inspected at least once every 36 months, and a transmission-class Asset at least once every 12 months.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "配电级资产必须至少每36个月巡检一次，输电级资产必须至少每12个月巡检一次。",
       "relatedEntities": [
-        "Asset (Asset)"
+        "资产 (Asset)"
       ],
       "businessBackgroundReason": "Rules governing asset inspection cadence, fail handling, and in-service condition limits (POL-GRID-COMP-009 §2).",
       "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
@@ -1193,15 +1193,15 @@
     {
       "id": "rule:low-condition-score-service-limit",
       "uuid": "73443142536475869d1023142564078d",
-      "specificScenarioStage": "Constraint",
-      "businessLogicRuleName": "Low condition score in-service limit",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "低状态评分的在役期限",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "asset.conditionScore >= 40 || daysInService <= 30 || hasApprovedWorkOrder",
-      "standardizedLogicRule": "An Asset whose condition score falls below 40 on the 0–100 health scale shall not remain in service beyond 30 days without an approved MaintenanceWorkOrder on file.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "在0–100健康评分中状态评分低于40的资产，若无已批准的维护工单存档，不得在役超过30天。",
       "relatedEntities": [
-        "Asset (Asset)",
-        "MaintenanceWorkOrder (Maintenance_Work_Order)"
+        "资产 (Asset)",
+        "维护工单 (Maintenance_Work_Order)"
       ],
       "businessBackgroundReason": "Rules governing asset inspection cadence, fail handling, and in-service condition limits (POL-GRID-COMP-009 §2).",
       "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
@@ -1254,15 +1254,15 @@
     {
       "id": "rule:safety-asset-second-engineer-close",
       "uuid": "74543142536475869e1023142564089e",
-      "specificScenarioStage": "On MaintenanceWorkOrder close attempt",
-      "businessLogicRuleName": "Safety-classified asset close requires second engineer",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "安全分类资产关闭须第二工程师批准",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On MaintenanceWorkOrder close attempt",
-      "standardizedLogicRule": "A MaintenanceWorkOrder against a safety-classified Asset may not be closed without a second qualified engineer's approval recorded in Maximo.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "针对安全分类资产的维护工单，未在Maximo中记录第二名合格工程师的批准，不得关闭。",
       "relatedEntities": [
-        "MaintenanceWorkOrder (Maintenance_Work_Order)",
-        "Asset (Asset)"
+        "维护工单 (Maintenance_Work_Order)",
+        "资产 (Asset)"
       ],
       "businessBackgroundReason": "Approval gates on the MaintenanceWorkOrder lifecycle (POL-GRID-COMP-009 §3).",
       "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
@@ -1324,14 +1324,14 @@
     {
       "id": "rule:high-cost-wo-asset-manager-approval",
       "uuid": "75643142536475869f102314256409af",
-      "specificScenarioStage": "Before crew assignment on approval",
-      "businessLogicRuleName": "High-cost WO requires Asset Manager approval",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "高成本工单须资产经理批准",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "Before crew assignment on approval",
-      "standardizedLogicRule": "A MaintenanceWorkOrder with an estimated cost above $250,000 is required to obtain Asset Manager approval before crew assignment.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "预估成本超过25万美元的维护工单，在派工前须取得资产经理的批准。",
       "relatedEntities": [
-        "MaintenanceWorkOrder (Maintenance_Work_Order)"
+        "维护工单 (Maintenance_Work_Order)"
       ],
       "businessBackgroundReason": "Approval gates on the MaintenanceWorkOrder lifecycle (POL-GRID-COMP-009 §3).",
       "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
@@ -1387,16 +1387,16 @@
     {
       "id": "rule:outage-reportable-threshold-1h",
       "uuid": "766431425364758601102314256410b0",
-      "specificScenarioStage": "On OutageConfirmed; starts the regulatory reporting clock",
-      "businessLogicRuleName": "Report outage over 50,000 ServicePoints within 1 hour",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "超5万供电点停电须1小时内上报",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On OutageConfirmed; starts the regulatory reporting clock",
-      "standardizedLogicRule": "An OutageEvent affecting more than 50,000 ServicePoints must be reported to the regulator within 1 hour of its detection timestamp.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "影响超过50,000个供电点的停电事件，须在其检测时间戳后1小时内向监管机构上报。",
       "relatedEntities": [
-        "OutageEvent (Outage_Event)",
-        "RegulatoryReport (Regulatory_Report)",
-        "ServicePoint (Service_Point)"
+        "停电事件 (Outage_Event)",
+        "监管报告 (Regulatory_Report)",
+        "供电点 (Service_Point)"
       ],
       "businessBackgroundReason": "PUC regulatory filing thresholds, deadlines, and approvals (POL-GRID-COMP-009 §4).",
       "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
@@ -1459,14 +1459,14 @@
     {
       "id": "rule:report-deadline-escalation",
       "uuid": "77743142536475860210231425641cd1",
-      "specificScenarioStage": "On filing deadline lapse",
-      "businessLogicRuleName": "Missed filing deadline escalates to Director",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "错过备案截止时间升级至总监",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On filing deadline lapse",
-      "standardizedLogicRule": "A RegulatoryReport that is not submitted before its computed filing deadline shall escalate automatically to the Director of Compliance.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "未在其计算出的备案截止时间前提交的监管报告，应自动升级至合规总监。",
       "relatedEntities": [
-        "RegulatoryReport (Regulatory_Report)"
+        "监管报告 (Regulatory_Report)"
       ],
       "businessBackgroundReason": "PUC regulatory filing thresholds, deadlines, and approvals (POL-GRID-COMP-009 §4).",
       "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
@@ -1523,16 +1523,16 @@
     {
       "id": "rule:major-event-director-approval",
       "uuid": "78843142536475860310231425642de2",
-      "specificScenarioStage": "On RegulatoryReport submission for major events",
-      "businessLogicRuleName": "Major event filing requires Director approval",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "重大事件备案须总监批准",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On RegulatoryReport submission for major events",
-      "standardizedLogicRule": "A RegulatoryReport for a major event affecting more than 100,000 ServicePoints may not be submitted without the Director of Compliance's recorded approval.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "影响超过100,000个供电点的重大事件的监管报告，未经合规总监记录在案的批准，不得提交。",
       "relatedEntities": [
-        "RegulatoryReport (Regulatory_Report)",
-        "OutageEvent (Outage_Event)",
-        "ServicePoint (Service_Point)"
+        "监管报告 (Regulatory_Report)",
+        "停电事件 (Outage_Event)",
+        "供电点 (Service_Point)"
       ],
       "businessBackgroundReason": "PUC regulatory filing thresholds, deadlines, and approvals (POL-GRID-COMP-009 §4).",
       "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
@@ -1595,15 +1595,15 @@
     {
       "id": "rule:long-outage-root-cause-narrative",
       "uuid": "79943142536475860410231425643ef3",
-      "specificScenarioStage": "On RegulatoryReport compilation",
-      "businessLogicRuleName": "Long outage requires root-cause narrative",
+      "specificScenarioStage": "数据校验",
+      "businessLogicRuleName": "长时间停电须含根因叙述",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On RegulatoryReport compilation",
-      "standardizedLogicRule": "An OutageEvent with a restoration duration exceeding 24 hours is required to include a root-cause narrative in its RegulatoryReport.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "复电持续时间超过24小时的停电事件，须在其监管报告中包含根因叙述。",
       "relatedEntities": [
-        "OutageEvent (Outage_Event)",
-        "RegulatoryReport (Regulatory_Report)"
+        "停电事件 (Outage_Event)",
+        "监管报告 (Regulatory_Report)"
       ],
       "businessBackgroundReason": "PUC regulatory filing thresholds, deadlines, and approvals (POL-GRID-COMP-009 §4).",
       "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
@@ -1664,15 +1664,15 @@
     {
       "id": "rule:vegetation-cycle-no-lapse-without-variance",
       "uuid": "7aa43142536475860510231425644004",
-      "specificScenarioStage": "On vegetation cycle lapse",
-      "businessLogicRuleName": "Vegetation cycle may not lapse without variance",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "植被清理周期未获变更不得逾期",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On vegetation cycle lapse",
-      "standardizedLogicRule": "Vegetation clearance on a high-voltage Feeder may not lapse beyond its assigned clearance cycle without a documented variance approved by the Asset Manager.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "高压馈线的植被清理不得超过其指定的清理周期，除非有经资产经理批准的书面变更。",
       "relatedEntities": [
-        "Feeder (Feeder)",
-        "MaintenanceWorkOrder (Maintenance_Work_Order)"
+        "馈线 (Feeder)",
+        "维护工单 (Maintenance_Work_Order)"
       ],
       "businessBackgroundReason": "Vegetation clearance cycle limits and variance handling (POL-GRID-COMP-009 §5, §8).",
       "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
@@ -1731,14 +1731,14 @@
     {
       "id": "rule:vegetation-cycle-max-months",
       "uuid": "7bb43142536475860610231425645115",
-      "specificScenarioStage": "Constraint",
-      "businessLogicRuleName": "Vegetation cycle maximum by zone",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "按区域的植被周期上限",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "(feeder.voltageClass != 'high-voltage' || feeder.vegetationCycleMonths <= 48) && (!feeder.wildfireRiskZone || feeder.vegetationCycleMonths <= 24)",
-      "standardizedLogicRule": "A high-voltage Feeder must be cleared on a cycle no longer than 48 months, and a Feeder traversing a designated wildfire-risk zone must be cleared on a cycle no longer than 24 months.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "高压馈线的清理周期不得超过48个月，穿越指定野火风险区的馈线清理周期不得超过24个月。",
       "relatedEntities": [
-        "Feeder (Feeder)"
+        "馈线 (Feeder)"
       ],
       "businessBackgroundReason": "Vegetation clearance cycle limits and variance handling (POL-GRID-COMP-009 §5, §8).",
       "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
@@ -1792,15 +1792,15 @@
     {
       "id": "rule:no-close-until-all-restored",
       "uuid": "7cc43142536475860710231425646226",
-      "specificScenarioStage": "On OutageEvent transition Restored → Closed",
-      "businessLogicRuleName": "No close until all ServicePoints AMI-confirmed",
+      "specificScenarioStage": "状态流转",
+      "businessLogicRuleName": "全部供电点AMI确认前不得关闭",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On OutageEvent transition Restored → Closed",
-      "standardizedLogicRule": "An OutageEvent may not be advanced to the Closed state until every affected ServicePoint has returned an AMI power-restored confirmation.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "在每个受影响供电点返回AMI复电确认之前，停电事件不得推进至已关闭状态。",
       "relatedEntities": [
-        "OutageEvent (Outage_Event)",
-        "ServicePoint (Service_Point)"
+        "停电事件 (Outage_Event)",
+        "供电点 (Service_Point)"
       ],
       "businessBackgroundReason": "Outage state transitions, crew dispatch SLAs, switching safety, and close preconditions (POL-GRID-COMP-009 §6).",
       "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
@@ -1857,16 +1857,16 @@
     {
       "id": "rule:critical-care-dispatch-2h",
       "uuid": "7dd43142536475860810231425647337",
-      "specificScenarioStage": "On OutageConfirmed for critical-care customers",
-      "businessLogicRuleName": "Critical-care customer dispatch within 2 hours",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "重症护理客户须2小时内派工",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On OutageConfirmed for critical-care customers",
-      "standardizedLogicRule": "A Crew must be dispatched to any confirmed OutageEvent affecting a critical-care Customer within 2 hours of the outage confirmation timestamp.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "对任何影响重症护理客户的已确认停电事件，须在停电确认时间戳后2小时内派出作业班组。",
       "relatedEntities": [
-        "OutageEvent (Outage_Event)",
-        "Crew (Crew)",
-        "Customer (Customer)"
+        "停电事件 (Outage_Event)",
+        "作业班组 (Crew)",
+        "客户 (Customer)"
       ],
       "businessBackgroundReason": "Outage state transitions, crew dispatch SLAs, switching safety, and close preconditions (POL-GRID-COMP-009 §6).",
       "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
@@ -1928,15 +1928,15 @@
     {
       "id": "rule:critical-infrastructure-highest-priority",
       "uuid": "7ee43142536475860910231425648448",
-      "specificScenarioStage": "On OutageConfirmed scoping",
-      "businessLogicRuleName": "Critical-infrastructure highest restoration priority",
+      "specificScenarioStage": "指标推导",
+      "businessLogicRuleName": "关键基础设施最高复电优先级",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On OutageConfirmed scoping",
-      "standardizedLogicRule": "An OutageEvent affecting a critical-infrastructure ServicePoint (hospital, water plant, emergency services) shall be assigned the highest restoration priority regardless of the affected ServicePoint count.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "影响关键基础设施供电点（医院、水厂、应急服务）的停电事件，无论受影响供电点数量多少，均应被赋予最高复电优先级。",
       "relatedEntities": [
-        "OutageEvent (Outage_Event)",
-        "ServicePoint (Service_Point)"
+        "停电事件 (Outage_Event)",
+        "供电点 (Service_Point)"
       ],
       "businessBackgroundReason": "Outage state transitions, crew dispatch SLAs, switching safety, and close preconditions (POL-GRID-COMP-009 §6).",
       "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
@@ -1996,16 +1996,16 @@
     {
       "id": "rule:no-switching-until-upstream-open",
       "uuid": "7ff43142536475860a10231425649559",
-      "specificScenarioStage": "Before switching during restoration; may be waived by Shift Supervisor for public safety",
-      "businessLogicRuleName": "No switching until upstream device confirmed open",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "上游设备确认断开前不得操作开关",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "Before switching during restoration; may be waived by Shift Supervisor for public safety",
-      "standardizedLogicRule": "A Crew may not perform switching on a Feeder until the upstream Substation device state is confirmed open in SCADA.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "在SCADA中确认上游变电站设备状态为断开之前，作业班组不得在馈线上进行开关操作。",
       "relatedEntities": [
-        "Crew (Crew)",
-        "Feeder (Feeder)",
-        "Substation (Substation)"
+        "作业班组 (Crew)",
+        "馈线 (Feeder)",
+        "变电站 (Substation)"
       ],
       "businessBackgroundReason": "Outage state transitions, crew dispatch SLAs, switching safety, and close preconditions (POL-GRID-COMP-009 §6).",
       "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
@@ -2063,16 +2063,16 @@
     {
       "id": "rule:emergency-wo-references-outage-and-asset",
       "uuid": "80043142536475860b1023142564a66a",
-      "specificScenarioStage": "On emergency MaintenanceWorkOrder creation during dispatch",
-      "businessLogicRuleName": "Emergency WO references outage and faulted asset",
+      "specificScenarioStage": "数据校验",
+      "businessLogicRuleName": "紧急工单须关联停电与故障资产",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On emergency MaintenanceWorkOrder creation during dispatch",
-      "standardizedLogicRule": "An emergency MaintenanceWorkOrder created from an active OutageEvent must reference both the parent OutageEvent and the faulted Asset.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "从活动停电事件创建的紧急维护工单，须同时关联父级停电事件和故障资产。",
       "relatedEntities": [
-        "MaintenanceWorkOrder (Maintenance_Work_Order)",
-        "OutageEvent (Outage_Event)",
-        "Asset (Asset)"
+        "维护工单 (Maintenance_Work_Order)",
+        "停电事件 (Outage_Event)",
+        "资产 (Asset)"
       ],
       "businessBackgroundReason": "Outage state transitions, crew dispatch SLAs, switching safety, and close preconditions (POL-GRID-COMP-009 §6).",
       "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
@@ -2132,16 +2132,16 @@
     {
       "id": "rule:servicepoint-single-feeder-single-customer",
       "uuid": "81143142536475860c1023142564b77b",
-      "specificScenarioStage": "Enforced at the GIS sync boundary",
-      "businessLogicRuleName": "ServicePoint maps to exactly one Feeder and Customer",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "供电点须精确映射一条馈线一个客户",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "Enforced at the GIS sync boundary",
-      "standardizedLogicRule": "Every ServicePoint must be mapped to exactly one Feeder and exactly one Customer in the network model.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "在网络模型中，每个供电点须精确映射到一条馈线和一个客户。",
       "relatedEntities": [
-        "ServicePoint (Service_Point)",
-        "Feeder (Feeder)",
-        "Customer (Customer)"
+        "供电点 (Service_Point)",
+        "馈线 (Feeder)",
+        "客户 (Customer)"
       ],
       "businessBackgroundReason": "Network-model cardinality and customer notification obligations (POL-GRID-COMP-009 §7).",
       "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
@@ -2199,16 +2199,16 @@
     {
       "id": "rule:life-support-planned-outage-notice-48h",
       "uuid": "82243142536475860d1023142564c88c",
-      "specificScenarioStage": "Before a planned OutageEvent affecting a life-support customer",
-      "businessLogicRuleName": "Life-support customer 48h planned outage notice",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "生命维持客户须提前48小时通知计划停电",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "Before a planned OutageEvent affecting a life-support customer",
-      "standardizedLogicRule": "A Customer flagged as life-support-dependent shall be notified of any planned OutageEvent affecting their ServicePoint at least 48 hours in advance.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "被标记为生命维持依赖的客户，须在任何影响其供电点的计划停电事件至少48小时前获得通知。",
       "relatedEntities": [
-        "Customer (Customer)",
-        "OutageEvent (Outage_Event)",
-        "ServicePoint (Service_Point)"
+        "客户 (Customer)",
+        "停电事件 (Outage_Event)",
+        "供电点 (Service_Point)"
       ],
       "businessBackgroundReason": "Network-model cardinality and customer notification obligations (POL-GRID-COMP-009 §7).",
       "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
@@ -2269,14 +2269,14 @@
     {
       "id": "rule:cause-code-before-close",
       "uuid": "83343142536475860e1023142564d99d",
-      "specificScenarioStage": "On OutageEvent transition Restored → Closed",
-      "businessLogicRuleName": "Cause code required before close",
+      "specificScenarioStage": "状态流转",
+      "businessLogicRuleName": "关闭前须记录原因代码",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On OutageEvent transition Restored → Closed",
-      "standardizedLogicRule": "An OutageEvent cause code is required to be recorded before the OutageEvent may transition from Restored to Closed.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "在停电事件可从已复电状态转换为已关闭状态之前，须先记录停电事件原因代码。",
       "relatedEntities": [
-        "OutageEvent (Outage_Event)"
+        "停电事件 (Outage_Event)"
       ],
       "businessBackgroundReason": "Outage state transitions, crew dispatch SLAs, switching safety, and close preconditions (POL-GRID-COMP-009 §6).",
       "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
@@ -2333,14 +2333,14 @@
     {
       "id": "rule:variance-max-90-days",
       "uuid": "84443142536475860f1023142564eaae",
-      "specificScenarioStage": "On documented variance under R-11",
-      "businessLogicRuleName": "Vegetation variance limited to 90 days",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "植被变更最长90天",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "On documented variance under R-11",
-      "standardizedLogicRule": "A documented variance under Rule R-11 must specify the affected Feeder, the reason, and an expiry date, and may not exceed 90 days.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "依据R-11规则的书面变更须指明受影响的馈线、原因和到期日，且不得超过90天。",
       "relatedEntities": [
-        "Feeder (Feeder)"
+        "馈线 (Feeder)"
       ],
       "businessBackgroundReason": "Vegetation clearance cycle limits and variance handling (POL-GRID-COMP-009 §5, §8).",
       "ruleSource": "Grid Operations Business Rules & Compliance Policy (POL-GRID-COMP-009 v3.1)",
@@ -2479,9 +2479,9 @@
       "uuid": "90043142536475860112314256450abc",
       "name": "DetectOutage",
       "nameZh": "检测停电",
-      "description": "Consume last-gasp meter signals and SCADA breaker-open telemetry; produce a candidate OutageEvent record in OMS with state Detected and a detectionTimestamp.",
+      "description": "消费末次喘息电表信号和SCADA断路器断开遥测；在OMS中产生状态为Detected且带检测时间戳的候选停电事件记录。",
       "descriptionZh": "消费末次喘息电表信号和SCADA断路器断开遥测；在OMS中产生状态为Detected且带检测时间戳的候选停电事件记录。",
-      "submission_criteria": "1. Event METER_LAST_GASP_RECEIVED has been received\n2. Event BREAKER_TRIPPED has been received",
+      "submission_criteria": "1. 事件 METER_LAST_GASP_RECEIVED 已送达\n2. 事件 BREAKER_TRIPPED 已送达",
       "object_type": "action",
       "category": "检测停电",
       "actor": [
@@ -2500,20 +2500,20 @@
         {
           "order": "1",
           "name": "consumeLastGaspMeterSignalsAMI",
-          "description": "Consume last-gasp meter signals (AMI) and SCADA breaker-open telemetry.",
+          "description": "消费末次喘息电表信号（AMI）和SCADA断路器断开遥测。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "createCandidateOutageEventInOMS",
-          "description": "Create candidate OutageEvent in OMS with state Detected and a detectionTimestamp.",
+          "description": "在OMS中创建状态为Detected且带检测时间戳的候选停电事件。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"DetectOutage\" action. Consume last-gasp meter signals and SCADA breaker-open telemetry; produce a candidate OutageEvent record in OMS with state Detected and a detectionTimestamp. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"DetectOutage\" using service_point, feeder. Consume last-gasp meter signals and SCADA breaker-open telemetry; produce a candidate OutageEvent record in OMS with state Detected and a detectionTimestamp. Produce outage_event and emit the appropriate events.",
+      "system_prompt": "作为负责「DetectOutage」动作的自动化系统，消费末次喘息电表信号和SCADA断路器断开遥测；在OMS中产生状态为Detected且带检测时间戳的候选停电事件记录。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（service_point、feeder）执行「DetectOutage」。消费末次喘息电表信号和SCADA断路器断开遥测；在OMS中产生状态为Detected且带检测时间戳的候选停电事件记录。 产出（outage_event）并发出相应事件。",
       "tool_use": [
         "OMS"
       ],
@@ -2652,16 +2652,17 @@
         "role": "AMI Head-End / SCADA",
         "roleZh": "AMI主站/SCADA",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:scope-outage",
       "uuid": "91143142536475860212314256451bcd",
       "name": "ScopeOutage",
       "nameZh": "确定停电范围",
-      "description": "Consume the network topology from GIS and the set of dark meters; produce the predicted upstream device and the affected ServicePoint count, then advance the OutageEvent to state Confirmed.",
+      "description": "消费GIS网络拓扑和暗表集合；产生预测的上游设备和受影响供电点数量，然后将停电事件推进至Confirmed状态。",
       "descriptionZh": "消费GIS网络拓扑和暗表集合；产生预测的上游设备和受影响供电点数量，然后将停电事件推进至Confirmed状态。",
-      "submission_criteria": "1. Event OUTAGE_DETECTED has been received\n2. Rule \"Critical-infrastructure highest restoration priority\" is satisfied",
+      "submission_criteria": "1. 事件 OUTAGE_DETECTED 已送达\n2. 规则「关键基础设施最高复电优先级」已满足",
       "object_type": "action",
       "category": "确定停电范围",
       "actor": [
@@ -2680,42 +2681,42 @@
         {
           "order": "1",
           "name": "consumeGISTopologySubstationFeederService",
-          "description": "Consume GIS topology (Substation → Feeder → ServicePoint) and the set of dark meters.",
+          "description": "消费GIS拓扑（变电站→馈线→供电点）和暗表集合。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "predictUpstreamDeviceAndComputeAffected",
-          "description": "Predict upstream device and compute affected ServicePoint count.",
+          "description": "预测上游设备并计算受影响供电点数量。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "3",
           "name": "assignHighestRestorationPriorityIfAny",
-          "description": "Assign highest restoration priority if any affected ServicePoint is critical infrastructure.",
+          "description": "若任一受影响供电点为关键基础设施，则赋予最高复电优先级。",
           "object_type": "logic",
-          "submission_criteria": "On OutageConfirmed scoping",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "critical-infrastructure-highest-priority",
-              "name": "Critical-infrastructure highest restoration priority",
-              "submission_criteria": "On OutageConfirmed scoping",
-              "description": "An OutageEvent affecting a critical-infrastructure ServicePoint (hospital, water plant, emergency services) shall be assigned the highest restoration priority regardless of the affected ServicePoint count."
+              "name": "关键基础设施最高复电优先级",
+              "submission_criteria": "",
+              "description": "影响关键基础设施供电点（医院、水厂、应急服务）的停电事件，无论受影响供电点数量多少，均应被赋予最高复电优先级。"
             }
           ]
         },
         {
           "order": "4",
           "name": "advanceTheOutageEventToState",
-          "description": "Advance the OutageEvent to state Confirmed.",
+          "description": "将停电事件推进至Confirmed状态。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"ScopeOutage\" action. Consume the network topology from GIS and the set of dark meters; produce the predicted upstream device and the affected ServicePoint count, then advance the OutageEvent to state Confirmed. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"ScopeOutage\" using outage_event, feeder, substation, service_point. Consume the network topology from GIS and the set of dark meters; produce the predicted upstream device and the affected ServicePoint count, then advance the OutageEvent to state Confirmed. Produce outage_event and emit the appropriate events.",
+      "system_prompt": "作为负责「ScopeOutage」动作的自动化人工操作员，消费GIS网络拓扑和暗表集合；产生预测的上游设备和受影响供电点数量，然后将停电事件推进至Confirmed状态。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（outage_event、feeder、substation、service_point）执行「ScopeOutage」。消费GIS网络拓扑和暗表集合；产生预测的上游设备和受影响供电点数量，然后将停电事件推进至Confirmed状态。 产出（outage_event）并发出相应事件。",
       "tool_use": [
         "OMS"
       ],
@@ -2890,16 +2891,17 @@
         "role": "DOC Operator",
         "roleZh": "配电运营中心操作员",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:evaluate-reportability",
       "uuid": "92243142536475860312314256452cde",
       "name": "EvaluateReportability",
       "nameZh": "评估可报告性",
-      "description": "Consume affectedServicePointCount and detectionTimestamp; apply the regulatory threshold (Rule R-07); produce a reportable flag and a reporting clock start time when the threshold is met.",
+      "description": "消费受影响供电点数量和检测时间戳；应用监管阈值（R-07规则）；当达到阈值时产生可报告标志和报告时钟起始时间。",
       "descriptionZh": "消费受影响供电点数量和检测时间戳；应用监管阈值（R-07规则）；当达到阈值时产生可报告标志和报告时钟起始时间。",
-      "submission_criteria": "1. Event OUTAGE_CONFIRMED has been received\n2. Rule \"Report outage over 50,000 ServicePoints within 1 hour\" is satisfied",
+      "submission_criteria": "1. 事件 OUTAGE_CONFIRMED 已送达\n2. 规则「超5万供电点停电须1小时内上报」已满足",
       "object_type": "action",
       "category": "评估可报告性",
       "actor": [
@@ -2915,35 +2917,35 @@
         {
           "order": "1",
           "name": "readAffectedServicePointCountAnd",
-          "description": "Read affectedServicePointCount and detectionTimestamp.",
+          "description": "读取受影响供电点数量和检测时间戳。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "applyTheRegulatoryThresholdRuleR",
-          "description": "Apply the regulatory threshold (Rule R-07): reportable if over 50,000 ServicePoints.",
+          "description": "应用监管阈值（R-07规则）：超过50,000个供电点即为可报告。",
           "object_type": "logic",
-          "submission_criteria": "On OutageConfirmed; starts the regulatory reporting clock",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "outage-reportable-threshold-1h",
-              "name": "Report outage over 50,000 ServicePoints within 1 hour",
-              "submission_criteria": "On OutageConfirmed; starts the regulatory reporting clock",
-              "description": "An OutageEvent affecting more than 50,000 ServicePoints must be reported to the regulator within 1 hour of its detection timestamp."
+              "name": "超5万供电点停电须1小时内上报",
+              "submission_criteria": "",
+              "description": "影响超过50,000个供电点的停电事件，须在其检测时间戳后1小时内向监管机构上报。"
             }
           ]
         },
         {
           "order": "3",
           "name": "ifReportableStartTheReportingClock",
-          "description": "If reportable, start the reporting clock from the detection timestamp.",
+          "description": "若可报告，从检测时间戳起启动报告时钟。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"EvaluateReportability\" action. Consume affectedServicePointCount and detectionTimestamp; apply the regulatory threshold (Rule R-07); produce a reportable flag and a reporting clock start time when the threshold is met. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"EvaluateReportability\" using outage_event. Consume affectedServicePointCount and detectionTimestamp; apply the regulatory threshold (Rule R-07); produce a reportable flag and a reporting clock start time when the threshold is met. Produce outage_event and emit the appropriate events.",
+      "system_prompt": "作为负责「EvaluateReportability」动作的自动化系统，消费受影响供电点数量和检测时间戳；应用监管阈值（R-07规则）；当达到阈值时产生可报告标志和报告时钟起始时间。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（outage_event）执行「EvaluateReportability」。消费受影响供电点数量和检测时间戳；应用监管阈值（R-07规则）；当达到阈值时产生可报告标志和报告时钟起始时间。 产出（outage_event）并发出相应事件。",
       "tool_use": [
         "OMS"
       ],
@@ -3077,16 +3079,17 @@
         "role": "OMS Compliance module",
         "roleZh": "OMS合规模块",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:dispatch-crew",
       "uuid": "93343142536475860412314256453def",
       "name": "DispatchCrew",
       "nameZh": "派遣班组",
-      "description": "Consume the confirmed outage scope and crew availability; produce a Crew assignment and, where field repair is needed, an emergency MaintenanceWorkOrder linked to the OutageEvent and the suspected Asset.",
+      "description": "消费已确认的停电范围和班组可用性；产生班组指派，并在需要现场维修时产生与停电事件和疑似资产关联的紧急维护工单。",
       "descriptionZh": "消费已确认的停电范围和班组可用性；产生班组指派，并在需要现场维修时产生与停电事件和疑似资产关联的紧急维护工单。",
-      "submission_criteria": "1. Event OUTAGE_CONFIRMED has been received\n2. Rule \"Critical-care customer dispatch within 2 hours\" is satisfied\n3. Rule \"Emergency WO references outage and faulted asset\" is satisfied",
+      "submission_criteria": "1. 事件 OUTAGE_CONFIRMED 已送达\n2. 规则「重症护理客户须2小时内派工」已满足\n3. 规则「紧急工单须关联停电与故障资产」已满足",
       "object_type": "action",
       "category": "派遣班组",
       "actor": [
@@ -3104,43 +3107,43 @@
         {
           "order": "1",
           "name": "readConfirmedOutageScopeAndCrew",
-          "description": "Read confirmed outage scope and crew availability.",
+          "description": "读取已确认的停电范围和班组可用性。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "dispatchCrewWithin2HoursWhen",
-          "description": "Dispatch crew within 2 hours when a critical-care Customer is affected.",
+          "description": "当影响重症护理客户时，须在2小时内派遣班组。",
           "object_type": "logic",
-          "submission_criteria": "On OutageConfirmed for critical-care customers",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "critical-care-dispatch-2h",
-              "name": "Critical-care customer dispatch within 2 hours",
-              "submission_criteria": "On OutageConfirmed for critical-care customers",
-              "description": "A Crew must be dispatched to any confirmed OutageEvent affecting a critical-care Customer within 2 hours of the outage confirmation timestamp."
+              "name": "重症护理客户须2小时内派工",
+              "submission_criteria": "",
+              "description": "对任何影响重症护理客户的已确认停电事件，须在停电确认时间戳后2小时内派出作业班组。"
             }
           ]
         },
         {
           "order": "3",
           "name": "whereFieldRepairIsNeededCreate",
-          "description": "Where field repair is needed, create an emergency MaintenanceWorkOrder referencing the OutageEvent and the suspected Asset.",
+          "description": "在需要现场维修时，创建一份关联停电事件和疑似资产的紧急维护工单。",
           "object_type": "logic",
-          "submission_criteria": "On emergency MaintenanceWorkOrder creation during dispatch",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "emergency-wo-references-outage-and-asset",
-              "name": "Emergency WO references outage and faulted asset",
-              "submission_criteria": "On emergency MaintenanceWorkOrder creation during dispatch",
-              "description": "An emergency MaintenanceWorkOrder created from an active OutageEvent must reference both the parent OutageEvent and the faulted Asset."
+              "name": "紧急工单须关联停电与故障资产",
+              "submission_criteria": "",
+              "description": "从活动停电事件创建的紧急维护工单，须同时关联父级停电事件和故障资产。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"DispatchCrew\" action. Consume the confirmed outage scope and crew availability; produce a Crew assignment and, where field repair is needed, an emergency MaintenanceWorkOrder linked to the OutageEvent and the suspected Asset. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"DispatchCrew\" using outage_event, crew. Consume the confirmed outage scope and crew availability; produce a Crew assignment and, where field repair is needed, an emergency MaintenanceWorkOrder linked to the OutageEvent and the suspected Asset. Produce crew, work_order and emit the appropriate events.",
+      "system_prompt": "作为负责「DispatchCrew」动作的自动化人工操作员，消费已确认的停电范围和班组可用性；产生班组指派，并在需要现场维修时产生与停电事件和疑似资产关联的紧急维护工单。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（outage_event、crew）执行「DispatchCrew」。消费已确认的停电范围和班组可用性；产生班组指派，并在需要现场维修时产生与停电事件和疑似资产关联的紧急维护工单。 产出（crew、work_order）并发出相应事件。",
       "tool_use": [
         "Maximo"
       ],
@@ -3312,16 +3315,17 @@
         "role": "DOC Dispatcher",
         "roleZh": "配电运营中心派工员",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:log-field-finding",
       "uuid": "94443142536475860512314256454ef0",
       "name": "LogFieldFinding",
       "nameZh": "记录现场发现",
-      "description": "Consume the crew's on-site assessment; produce an updated MaintenanceWorkOrder with diagnosed cause and the confirmed faulted Asset, and advance the OutageEvent to state RepairInProgress.",
+      "description": "消费班组现场评估；产生带诊断原因和已确认故障资产的更新维护工单，并将停电事件推进至RepairInProgress状态。",
       "descriptionZh": "消费班组现场评估；产生带诊断原因和已确认故障资产的更新维护工单，并将停电事件推进至RepairInProgress状态。",
-      "submission_criteria": "1. Event CREW_DISPATCHED has been received",
+      "submission_criteria": "1. 事件 CREW_DISPATCHED 已送达",
       "object_type": "action",
       "category": "记录现场发现",
       "actor": [
@@ -3339,27 +3343,27 @@
         {
           "order": "1",
           "name": "consumeTheCrewSOnSite",
-          "description": "Consume the crew's on-site assessment via Maximo mobile.",
+          "description": "通过Maximo移动端消费班组现场评估。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "updateTheMaintenanceWorkOrderWith",
-          "description": "Update the MaintenanceWorkOrder with diagnosed cause and confirmed faulted Asset.",
+          "description": "用诊断原因和已确认故障资产更新维护工单。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "3",
           "name": "advanceTheOutageEventToState",
-          "description": "Advance the OutageEvent to state RepairInProgress.",
+          "description": "将停电事件推进至RepairInProgress状态。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"LogFieldFinding\" action. Consume the crew's on-site assessment; produce an updated MaintenanceWorkOrder with diagnosed cause and the confirmed faulted Asset, and advance the OutageEvent to state RepairInProgress. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"LogFieldFinding\" using work_order, outage_event. Consume the crew's on-site assessment; produce an updated MaintenanceWorkOrder with diagnosed cause and the confirmed faulted Asset, and advance the OutageEvent to state RepairInProgress. Produce work_order, asset and emit the appropriate events.",
+      "system_prompt": "作为负责「LogFieldFinding」动作的自动化人工操作员，消费班组现场评估；产生带诊断原因和已确认故障资产的更新维护工单，并将停电事件推进至RepairInProgress状态。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（work_order、outage_event）执行「LogFieldFinding」。消费班组现场评估；产生带诊断原因和已确认故障资产的更新维护工单，并将停电事件推进至RepairInProgress状态。 产出（work_order、asset）并发出相应事件。",
       "tool_use": [
         "Maximo"
       ],
@@ -3526,16 +3530,17 @@
         "role": "Field Crew",
         "roleZh": "现场班组",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:restore-supply",
       "uuid": "95543142536475860612314256455f01",
       "name": "RestoreSupply",
       "nameZh": "恢复供电",
-      "description": "Consume the completed switching/repair; produce re-energization, an OutageEvent state of Restored, a restorationTimestamp, and a computed outage duration.",
+      "description": "消费已完成的开关操作/维修；产生重新带电、Restored状态的停电事件、复电时间戳和计算出的停电持续时间。",
       "descriptionZh": "消费已完成的开关操作/维修；产生重新带电、Restored状态的停电事件、复电时间戳和计算出的停电持续时间。",
-      "submission_criteria": "1. Event FIELD_FINDING_LOGGED has been received\n2. Rule \"No switching until upstream device confirmed open\" is satisfied",
+      "submission_criteria": "1. 事件 FIELD_FINDING_LOGGED 已送达\n2. 规则「上游设备确认断开前不得操作开关」已满足",
       "object_type": "action",
       "category": "恢复供电",
       "actor": [
@@ -3554,35 +3559,35 @@
         {
           "order": "1",
           "name": "confirmTheUpstreamSubstationDeviceState",
-          "description": "Confirm the upstream Substation device state is open in SCADA before switching.",
+          "description": "在操作开关前确认SCADA中上游变电站设备状态为断开。",
           "object_type": "logic",
-          "submission_criteria": "Before switching during restoration; may be waived by Shift Supervisor for public safety",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "no-switching-until-upstream-open",
-              "name": "No switching until upstream device confirmed open",
-              "submission_criteria": "Before switching during restoration; may be waived by Shift Supervisor for public safety",
-              "description": "A Crew may not perform switching on a Feeder until the upstream Substation device state is confirmed open in SCADA."
+              "name": "上游设备确认断开前不得操作开关",
+              "submission_criteria": "",
+              "description": "在SCADA中确认上游变电站设备状态为断开之前，作业班组不得在馈线上进行开关操作。"
             }
           ]
         },
         {
           "order": "2",
           "name": "executeCompletedSwitchingRepairAndRe",
-          "description": "Execute completed switching/repair and re-energize.",
+          "description": "执行已完成的开关操作/维修并重新带电。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "3",
           "name": "setOutageEventStateRestoredRecord",
-          "description": "Set OutageEvent state Restored, record restorationTimestamp, and compute outage duration.",
+          "description": "设置停电事件状态为Restored，记录复电时间戳并计算停电持续时间。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"RestoreSupply\" action. Consume the completed switching/repair; produce re-energization, an OutageEvent state of Restored, a restorationTimestamp, and a computed outage duration. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"RestoreSupply\" using outage_event, feeder, service_point. Consume the completed switching/repair; produce re-energization, an OutageEvent state of Restored, a restorationTimestamp, and a computed outage duration. Produce outage_event and emit the appropriate events.",
+      "system_prompt": "作为负责「RestoreSupply」动作的自动化人工操作员，消费已完成的开关操作/维修；产生重新带电、Restored状态的停电事件、复电时间戳和计算出的停电持续时间。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（outage_event、feeder、service_point）执行「RestoreSupply」。消费已完成的开关操作/维修；产生重新带电、Restored状态的停电事件、复电时间戳和计算出的停电持续时间。 产出（outage_event）并发出相应事件。",
       "tool_use": [
         "OMS"
       ],
@@ -3741,16 +3746,17 @@
         "role": "Field Crew",
         "roleZh": "现场班组",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:close-outage",
       "uuid": "96643142536475860712314256456012",
       "name": "CloseOutage",
       "nameZh": "关闭停电",
-      "description": "Consume AMI 'power restored' confirmations for all affected ServicePoints; produce a closed OutageEvent (state Closed) and trigger finalization of the linked MaintenanceWorkOrder.",
+      "description": "消费所有受影响供电点的AMI“已复电”确认；产生已关闭的停电事件（状态Closed）并触发关联维护工单的收尾。",
       "descriptionZh": "消费所有受影响供电点的AMI“已复电”确认；产生已关闭的停电事件（状态Closed）并触发关联维护工单的收尾。",
-      "submission_criteria": "1. Event OUTAGE_RESTORED has been received\n2. Rule \"No close until all ServicePoints AMI-confirmed\" is satisfied\n3. Rule \"Cause code required before close\" is satisfied",
+      "submission_criteria": "1. 事件 OUTAGE_RESTORED 已送达\n2. 规则「全部供电点AMI确认前不得关闭」已满足\n3. 规则「关闭前须记录原因代码」已满足",
       "object_type": "action",
       "category": "关闭停电",
       "actor": [
@@ -3767,43 +3773,43 @@
         {
           "order": "1",
           "name": "confirmEveryAffectedServicePointReturned",
-          "description": "Confirm every affected ServicePoint returned an AMI power-restored confirmation.",
+          "description": "确认每个受影响供电点都返回了AMI复电确认。",
           "object_type": "logic",
-          "submission_criteria": "On OutageEvent transition Restored → Closed",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "no-close-until-all-restored",
-              "name": "No close until all ServicePoints AMI-confirmed",
-              "submission_criteria": "On OutageEvent transition Restored → Closed",
-              "description": "An OutageEvent may not be advanced to the Closed state until every affected ServicePoint has returned an AMI power-restored confirmation."
+              "name": "全部供电点AMI确认前不得关闭",
+              "submission_criteria": "",
+              "description": "在每个受影响供电点返回AMI复电确认之前，停电事件不得推进至已关闭状态。"
             }
           ]
         },
         {
           "order": "2",
           "name": "verifyTheOutageEventCauseCode",
-          "description": "Verify the OutageEvent cause code is recorded before close.",
+          "description": "在关闭前核实已记录停电事件原因代码。",
           "object_type": "logic",
-          "submission_criteria": "On OutageEvent transition Restored → Closed",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "cause-code-before-close",
-              "name": "Cause code required before close",
-              "submission_criteria": "On OutageEvent transition Restored → Closed",
-              "description": "An OutageEvent cause code is required to be recorded before the OutageEvent may transition from Restored to Closed."
+              "name": "关闭前须记录原因代码",
+              "submission_criteria": "",
+              "description": "在停电事件可从已复电状态转换为已关闭状态之前，须先记录停电事件原因代码。"
             }
           ]
         },
         {
           "order": "3",
           "name": "setOutageEventStateClosedAnd",
-          "description": "Set OutageEvent state Closed and trigger finalization of the linked MaintenanceWorkOrder.",
+          "description": "设置停电事件状态为Closed并触发关联维护工单的收尾。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"CloseOutage\" action. Consume AMI 'power restored' confirmations for all affected ServicePoints; produce a closed OutageEvent (state Closed) and trigger finalization of the linked MaintenanceWorkOrder. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"CloseOutage\" using outage_event, service_point. Consume AMI 'power restored' confirmations for all affected ServicePoints; produce a closed OutageEvent (state Closed) and trigger finalization of the linked MaintenanceWorkOrder. Produce outage_event and emit the appropriate events.",
+      "system_prompt": "作为负责「CloseOutage」动作的自动化系统，消费所有受影响供电点的AMI“已复电”确认；产生已关闭的停电事件（状态Closed）并触发关联维护工单的收尾。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（outage_event、service_point）执行「CloseOutage」。消费所有受影响供电点的AMI“已复电”确认；产生已关闭的停电事件（状态Closed）并触发关联维护工单的收尾。 产出（outage_event）并发出相应事件。",
       "tool_use": [
         "OMS"
       ],
@@ -3948,16 +3954,17 @@
         "role": "OMS / DOC Operator",
         "roleZh": "OMS/配电运营中心操作员",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:open-regulatory-report",
       "uuid": "97743142536475860812314256457123",
       "name": "OpenRegulatoryReport",
       "nameZh": "开立监管报告",
-      "description": "Consume the reportable OutageEvent and its scope; produce a draft RegulatoryReport with the filing deadline computed from RegulatoryClockStarted (Rule R-07).",
+      "description": "消费可报告停电事件及其范围；产生草稿监管报告，其备案截止时间从RegulatoryClockStarted计算（R-07规则）。",
       "descriptionZh": "消费可报告停电事件及其范围；产生草稿监管报告，其备案截止时间从RegulatoryClockStarted计算（R-07规则）。",
-      "submission_criteria": "1. Event REGULATORY_CLOCK_STARTED has been received\n2. Rule \"Report outage over 50,000 ServicePoints within 1 hour\" is satisfied",
+      "submission_criteria": "1. 事件 REGULATORY_CLOCK_STARTED 已送达\n2. 规则「超5万供电点停电须1小时内上报」已满足",
       "object_type": "action",
       "category": "开立监管报告",
       "actor": [
@@ -3974,28 +3981,28 @@
         {
           "order": "1",
           "name": "readTheReportableOutageEventAnd",
-          "description": "Read the reportable OutageEvent and its scope.",
+          "description": "读取可报告停电事件及其范围。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "createADraftRegulatoryReportAnd",
-          "description": "Create a draft RegulatoryReport and compute the filing deadline from the regulatory clock (within 1 hour for events over 50,000 ServicePoints).",
+          "description": "创建草稿监管报告并从监管时钟计算备案截止时间（超过50,000个供电点的事件须在1小时内）。",
           "object_type": "logic",
-          "submission_criteria": "On OutageConfirmed; starts the regulatory reporting clock",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "outage-reportable-threshold-1h",
-              "name": "Report outage over 50,000 ServicePoints within 1 hour",
-              "submission_criteria": "On OutageConfirmed; starts the regulatory reporting clock",
-              "description": "An OutageEvent affecting more than 50,000 ServicePoints must be reported to the regulator within 1 hour of its detection timestamp."
+              "name": "超5万供电点停电须1小时内上报",
+              "submission_criteria": "",
+              "description": "影响超过50,000个供电点的停电事件，须在其检测时间戳后1小时内向监管机构上报。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"OpenRegulatoryReport\" action. Consume the reportable OutageEvent and its scope; produce a draft RegulatoryReport with the filing deadline computed from RegulatoryClockStarted (Rule R-07). Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"OpenRegulatoryReport\" using outage_event. Consume the reportable OutageEvent and its scope; produce a draft RegulatoryReport with the filing deadline computed from RegulatoryClockStarted (Rule R-07). Produce regulatory_report and emit the appropriate events.",
+      "system_prompt": "作为负责「OpenRegulatoryReport」动作的自动化人工操作员，消费可报告停电事件及其范围；产生草稿监管报告，其备案截止时间从RegulatoryClockStarted计算（R-07规则）。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（outage_event）执行「OpenRegulatoryReport」。消费可报告停电事件及其范围；产生草稿监管报告，其备案截止时间从RegulatoryClockStarted计算（R-07规则）。 产出（regulatory_report）并发出相应事件。",
       "tool_use": [
         "RegFiling Portal"
       ],
@@ -4113,16 +4120,17 @@
         "role": "Regulatory Analyst",
         "roleZh": "监管分析师",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:compile-regulatory-report",
       "uuid": "98843142536475860912314256458234",
       "name": "CompileRegulatoryReport",
       "nameZh": "编制监管报告",
-      "description": "Consume affected-customer counts (ServicePoint → Customer), cause code, and estimated restoration time; produce a validated RegulatoryReport ready for submission.",
+      "description": "消费受影响客户数量（供电点→客户）、原因代码和预计复电时间；产生准备好提交的已校验监管报告。",
       "descriptionZh": "消费受影响客户数量（供电点→客户）、原因代码和预计复电时间；产生准备好提交的已校验监管报告。",
-      "submission_criteria": "1. Event REGULATORY_REPORT_OPENED has been received\n2. Rule \"Long outage requires root-cause narrative\" is satisfied",
+      "submission_criteria": "1. 事件 REGULATORY_REPORT_OPENED 已送达\n2. 规则「长时间停电须含根因叙述」已满足",
       "object_type": "action",
       "category": "编制监管报告",
       "actor": [
@@ -4141,35 +4149,35 @@
         {
           "order": "1",
           "name": "deriveAffectedCustomerCountsStrictlyVia",
-          "description": "Derive affected-customer counts strictly via OutageEvent → Feeder → ServicePoint → Customer.",
+          "description": "严格通过停电事件→馈线→供电点→客户路径推导受影响客户数量。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "includeCauseCodeAndEstimatedRestoration",
-          "description": "Include cause code and estimated restoration time; add a root-cause narrative if restoration exceeded 24 hours.",
+          "description": "包含原因代码和预计复电时间；若复电超过24小时则附加根因叙述。",
           "object_type": "logic",
-          "submission_criteria": "On RegulatoryReport compilation",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "long-outage-root-cause-narrative",
-              "name": "Long outage requires root-cause narrative",
-              "submission_criteria": "On RegulatoryReport compilation",
-              "description": "An OutageEvent with a restoration duration exceeding 24 hours is required to include a root-cause narrative in its RegulatoryReport."
+              "name": "长时间停电须含根因叙述",
+              "submission_criteria": "",
+              "description": "复电持续时间超过24小时的停电事件，须在其监管报告中包含根因叙述。"
             }
           ]
         },
         {
           "order": "3",
           "name": "validateTheRegulatoryReportForSubmission",
-          "description": "Validate the RegulatoryReport for submission.",
+          "description": "校验监管报告以便提交。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"CompileRegulatoryReport\" action. Consume affected-customer counts (ServicePoint → Customer), cause code, and estimated restoration time; produce a validated RegulatoryReport ready for submission. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"CompileRegulatoryReport\" using regulatory_report, outage_event, customer, service_point. Consume affected-customer counts (ServicePoint → Customer), cause code, and estimated restoration time; produce a validated RegulatoryReport ready for submission. Produce regulatory_report and emit the appropriate events.",
+      "system_prompt": "作为负责「CompileRegulatoryReport」动作的自动化人工操作员，消费受影响客户数量（供电点→客户）、原因代码和预计复电时间；产生准备好提交的已校验监管报告。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（regulatory_report、outage_event、customer、service_point）执行「CompileRegulatoryReport」。消费受影响客户数量（供电点→客户）、原因代码和预计复电时间；产生准备好提交的已校验监管报告。 产出（regulatory_report）并发出相应事件。",
       "tool_use": [
         "RegFiling Portal"
       ],
@@ -4330,16 +4338,17 @@
         "role": "Regulatory Analyst",
         "roleZh": "监管分析师",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:submit-regulatory-report",
       "uuid": "99943142536475860a12314256459345",
       "name": "SubmitRegulatoryReport",
       "nameZh": "提交监管报告",
-      "description": "Consume the validated report; produce a submitted RegulatoryReport with a portal confirmation ID, stopping the reporting clock. Major events require Director of Compliance approval (Rule R-09).",
+      "description": "消费已校验报告；产生带门户确认编号的已提交监管报告，停止报告时钟。重大事件须经合规总监批准（R-09规则）。",
       "descriptionZh": "消费已校验报告；产生带门户确认编号的已提交监管报告，停止报告时钟。重大事件须经合规总监批准（R-09规则）。",
-      "submission_criteria": "1. Event REGULATORY_REPORT_COMPILED has been received\n2. Rule \"Major event filing requires Director approval\" is satisfied\n3. Rule \"Missed filing deadline escalates to Director\" is satisfied",
+      "submission_criteria": "1. 事件 REGULATORY_REPORT_COMPILED 已送达\n2. 规则「重大事件备案须总监批准」已满足\n3. 规则「错过备案截止时间升级至总监」已满足",
       "object_type": "action",
       "category": "提交监管报告",
       "actor": [
@@ -4356,36 +4365,36 @@
         {
           "order": "1",
           "name": "forMajorEventsAffectingOver100",
-          "description": "For major events affecting over 100,000 ServicePoints, obtain Director of Compliance approval.",
+          "description": "对影响超过100,000个供电点的重大事件，取得合规总监批准。",
           "object_type": "logic",
-          "submission_criteria": "On RegulatoryReport submission for major events",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "major-event-director-approval",
-              "name": "Major event filing requires Director approval",
-              "submission_criteria": "On RegulatoryReport submission for major events",
-              "description": "A RegulatoryReport for a major event affecting more than 100,000 ServicePoints may not be submitted without the Director of Compliance's recorded approval."
+              "name": "重大事件备案须总监批准",
+              "submission_criteria": "",
+              "description": "影响超过100,000个供电点的重大事件的监管报告，未经合规总监记录在案的批准，不得提交。"
             }
           ]
         },
         {
           "order": "2",
           "name": "submitTheValidatedReportViaThe",
-          "description": "Submit the validated report via the RegFiling Portal and record the portal confirmation ID, stopping the reporting clock.",
+          "description": "通过RegFiling门户提交已校验报告并记录门户确认编号，停止报告时钟。",
           "object_type": "logic",
-          "submission_criteria": "On filing deadline lapse",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "report-deadline-escalation",
-              "name": "Missed filing deadline escalates to Director",
-              "submission_criteria": "On filing deadline lapse",
-              "description": "A RegulatoryReport that is not submitted before its computed filing deadline shall escalate automatically to the Director of Compliance."
+              "name": "错过备案截止时间升级至总监",
+              "submission_criteria": "",
+              "description": "未在其计算出的备案截止时间前提交的监管报告，应自动升级至合规总监。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"SubmitRegulatoryReport\" action. Consume the validated report; produce a submitted RegulatoryReport with a portal confirmation ID, stopping the reporting clock. Major events require Director of Compliance approval (Rule R-09). Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"SubmitRegulatoryReport\" using regulatory_report, outage_event. Consume the validated report; produce a submitted RegulatoryReport with a portal confirmation ID, stopping the reporting clock. Major events require Director of Compliance approval (Rule R-09). Produce regulatory_report and emit the appropriate events.",
+      "system_prompt": "作为负责「SubmitRegulatoryReport」动作的自动化人工操作员，消费已校验报告；产生带门户确认编号的已提交监管报告，停止报告时钟。重大事件须经合规总监批准（R-09规则）。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（regulatory_report、outage_event）执行「SubmitRegulatoryReport」。消费已校验报告；产生带门户确认编号的已提交监管报告，停止报告时钟。重大事件须经合规总监批准（R-09规则）。 产出（regulatory_report）并发出相应事件。",
       "tool_use": [
         "RegFiling Portal",
         "Submit RegulatoryReport to PUC via RegFiling Portal"
@@ -4529,16 +4538,17 @@
         "role": "Regulatory Analyst",
         "roleZh": "监管分析师",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:schedule-inspection",
       "uuid": "a0043142536475860b1231425645a456",
       "name": "ScheduleInspection",
       "nameZh": "排定巡检",
-      "description": "Consume each Asset's rated inspection interval and last completed date; produce a scheduled Inspection record with a due date.",
+      "description": "消费每个资产的额定巡检间隔和上次完成日期；产生带到期日的已排定巡检记录。",
       "descriptionZh": "消费每个资产的额定巡检间隔和上次完成日期；产生带到期日的已排定巡检记录。",
-      "submission_criteria": "1. Event INSPECTION_INTERVAL_ELAPSED has been received\n2. Rule \"Inspection cadence by asset class\" is satisfied\n3. Rule \"Transmission inspection within rated interval\" is satisfied",
+      "submission_criteria": "1. 事件 INSPECTION_INTERVAL_ELAPSED 已送达\n2. 规则「按资产等级的巡检周期」已满足\n3. 规则「输电资产须在额定间隔内完成巡检」已满足",
       "object_type": "action",
       "category": "排定巡检",
       "actor": [
@@ -4555,28 +4565,28 @@
         {
           "order": "1",
           "name": "readTheAssetSRatedInspection",
-          "description": "Read the Asset's rated inspection interval and last completed date.",
+          "description": "读取资产的额定巡检间隔和上次完成日期。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "computeTheDueDateHonoringClass",
-          "description": "Compute the due date honoring class cadence (distribution ≤ 36 months, transmission ≤ 12 months) and create the Inspection.",
+          "description": "按等级周期（配电≤36个月，输电≤12个月）计算到期日并创建巡检。",
           "object_type": "logic",
-          "submission_criteria": "On inspection scheduling",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "inspection-cadence-by-class",
-              "name": "Inspection cadence by asset class",
-              "submission_criteria": "On inspection scheduling",
-              "description": "A distribution-class Asset must be inspected at least once every 36 months, and a transmission-class Asset at least once every 12 months."
+              "name": "按资产等级的巡检周期",
+              "submission_criteria": "",
+              "description": "配电级资产必须至少每36个月巡检一次，输电级资产必须至少每12个月巡检一次。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"ScheduleInspection\" action. Consume each Asset's rated inspection interval and last completed date; produce a scheduled Inspection record with a due date. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"ScheduleInspection\" using asset. Consume each Asset's rated inspection interval and last completed date; produce a scheduled Inspection record with a due date. Produce inspection and emit the appropriate events.",
+      "system_prompt": "作为负责「ScheduleInspection」动作的自动化系统，消费每个资产的额定巡检间隔和上次完成日期；产生带到期日的已排定巡检记录。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（asset）执行「ScheduleInspection」。消费每个资产的额定巡检间隔和上次完成日期；产生带到期日的已排定巡检记录。 产出（inspection）并发出相应事件。",
       "tool_use": [
         "Maximo"
       ],
@@ -4701,16 +4711,17 @@
         "role": "Maximo PM Scheduler",
         "roleZh": "Maximo预防性维护排程器",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:record-inspection-result",
       "uuid": "a1143142536475860c1231425645b567",
       "name": "RecordInspectionResult",
       "nameZh": "记录巡检结果",
-      "description": "Consume the inspector's condition assessment; produce a completed Inspection with a pass/fail result and a recorded completion date against the Asset.",
+      "description": "消费检查员的状态评估；产生带通过/不通过结果和已记录完成日期的已完成巡检，并记入资产。",
       "descriptionZh": "消费检查员的状态评估；产生带通过/不通过结果和已记录完成日期的已完成巡检，并记入资产。",
-      "submission_criteria": "1. Event INSPECTION_SCHEDULED has been received",
+      "submission_criteria": "1. 事件 INSPECTION_SCHEDULED 已送达",
       "object_type": "action",
       "category": "记录巡检结果",
       "actor": [
@@ -4727,20 +4738,20 @@
         {
           "order": "1",
           "name": "consumeTheInspectorSConditionAssessment",
-          "description": "Consume the inspector's condition assessment via Maximo mobile.",
+          "description": "通过Maximo移动端消费检查员的状态评估。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "recordThePassFailResultAnd",
-          "description": "Record the pass/fail result and completion date against the Asset.",
+          "description": "记录通过/不通过结果和完成日期，并记入资产。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"RecordInspectionResult\" action. Consume the inspector's condition assessment; produce a completed Inspection with a pass/fail result and a recorded completion date against the Asset. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"RecordInspectionResult\" using inspection, asset. Consume the inspector's condition assessment; produce a completed Inspection with a pass/fail result and a recorded completion date against the Asset. Produce inspection and emit the appropriate events.",
+      "system_prompt": "作为负责「RecordInspectionResult」动作的自动化人工操作员，消费检查员的状态评估；产生带通过/不通过结果和已记录完成日期的已完成巡检，并记入资产。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（inspection、asset）执行「RecordInspectionResult」。消费检查员的状态评估；产生带通过/不通过结果和已记录完成日期的已完成巡检，并记入资产。 产出（inspection）并发出相应事件。",
       "tool_use": [
         "Maximo"
       ],
@@ -4875,16 +4886,17 @@
         "role": "Inspector",
         "roleZh": "检查员",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:raise-maintenance-work-order",
       "uuid": "a2243142536475860d1231425645c678",
       "name": "RaiseMaintenanceWorkOrder",
       "nameZh": "开立维护工单",
-      "description": "Consume a failed Inspection or a missed inspection interval; produce a MaintenanceWorkOrder with a priority derived from asset class (transmission assets auto-raise priority per Rule R-01).",
+      "description": "消费不通过的巡检或逾期的巡检间隔；产生优先级由资产等级推导的维护工单（输电资产按R-01规则自动提升优先级）。",
       "descriptionZh": "消费不通过的巡检或逾期的巡检间隔；产生优先级由资产等级推导的维护工单（输电资产按R-01规则自动提升优先级）。",
-      "submission_criteria": "1. Event ASSET_DEFECT_IDENTIFIED has been received\n2. Event INSPECTION_INTERVAL_MISSED has been received\n3. Rule \"Failed inspection raises corrective WO within 24h\" is satisfied\n4. Rule \"Transmission inspection within rated interval\" is satisfied",
+      "submission_criteria": "1. 事件 ASSET_DEFECT_IDENTIFIED 已送达\n2. 事件 INSPECTION_INTERVAL_MISSED 已送达\n3. 规则「巡检不通过须在24小时内开纠正工单」已满足\n4. 规则「输电资产须在额定间隔内完成巡检」已满足",
       "object_type": "action",
       "category": "开立维护工单",
       "actor": [
@@ -4903,43 +4915,43 @@
         {
           "order": "1",
           "name": "readTheFailedInspectionOrMissed",
-          "description": "Read the failed Inspection or missed inspection interval and the Asset class.",
+          "description": "读取不通过的巡检或逾期的巡检间隔以及资产等级。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "generateTheCorrectiveMaintenanceWorkOrder",
-          "description": "Generate the corrective MaintenanceWorkOrder within 24 hours of a failed inspection.",
+          "description": "在巡检不通过后24小时内生成纠正性维护工单。",
           "object_type": "logic",
-          "submission_criteria": "On Inspection result = fail",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "failed-inspection-raises-wo-24h",
-              "name": "Failed inspection raises corrective WO within 24h",
-              "submission_criteria": "On Inspection result = fail",
-              "description": "An Inspection that returns a fail result is required to generate a corrective MaintenanceWorkOrder within 24 hours of the inspection completion timestamp."
+              "name": "巡检不通过须在24小时内开纠正工单",
+              "submission_criteria": "",
+              "description": "返回不通过结果的巡检须在巡检完成时间戳后24小时内生成一份纠正性维护工单。"
             }
           ]
         },
         {
           "order": "3",
           "name": "autoRaisePriorityForTransmissionClass",
-          "description": "Auto-raise priority for transmission-class assets.",
+          "description": "对输电级资产自动提升优先级。",
           "object_type": "logic",
-          "submission_criteria": "On inspection-interval timer or missed interval",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "transmission-inspection-interval",
-              "name": "Transmission inspection within rated interval",
-              "submission_criteria": "On inspection-interval timer or missed interval",
-              "description": "A transmission-class Asset must have a completed Inspection within its rated inspection interval, and a missed interval shall automatically raise a priority MaintenanceWorkOrder."
+              "name": "输电资产须在额定间隔内完成巡检",
+              "submission_criteria": "",
+              "description": "输电级资产必须在其额定巡检间隔内完成巡检，间隔逾期将自动产生一份优先级维护工单。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"RaiseMaintenanceWorkOrder\" action. Consume a failed Inspection or a missed inspection interval; produce a MaintenanceWorkOrder with a priority derived from asset class (transmission assets auto-raise priority per Rule R-01). Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"RaiseMaintenanceWorkOrder\" using inspection, asset. Consume a failed Inspection or a missed inspection interval; produce a MaintenanceWorkOrder with a priority derived from asset class (transmission assets auto-raise priority per Rule R-01). Produce work_order and emit the appropriate events.",
+      "system_prompt": "作为负责「RaiseMaintenanceWorkOrder」动作的自动化人工操作员，消费不通过的巡检或逾期的巡检间隔；产生优先级由资产等级推导的维护工单（输电资产按R-01规则自动提升优先级）。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（inspection、asset）执行「RaiseMaintenanceWorkOrder」。消费不通过的巡检或逾期的巡检间隔；产生优先级由资产等级推导的维护工单（输电资产按R-01规则自动提升优先级）。 产出（work_order）并发出相应事件。",
       "tool_use": [
         "Maximo"
       ],
@@ -5089,16 +5101,17 @@
         "role": "Maintenance Planner",
         "roleZh": "维护计划员",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:approve-maintenance-work-order",
       "uuid": "a3343142536475860e1231425645d789",
       "name": "ApproveMaintenanceWorkOrder",
       "nameZh": "批准维护工单",
-      "description": "Consume the raised work order; produce an approved, scheduled, and crew-assigned MaintenanceWorkOrder. Asset Manager approves high-cost or safety-classified work (Rule R-05, R-06).",
+      "description": "消费已开立工单；产生已批准、已排定且已派工的维护工单。资产经理批准高成本或安全分类工作（R-05、R-06规则）。",
       "descriptionZh": "消费已开立工单；产生已批准、已排定且已派工的维护工单。资产经理批准高成本或安全分类工作（R-05、R-06规则）。",
-      "submission_criteria": "1. Event MAINTENANCE_WORK_ORDER_RAISED has been received\n2. Rule \"High-cost WO requires Asset Manager approval\" is satisfied",
+      "submission_criteria": "1. 事件 MAINTENANCE_WORK_ORDER_RAISED 已送达\n2. 规则「高成本工单须资产经理批准」已满足",
       "object_type": "action",
       "category": "批准维护工单",
       "actor": [
@@ -5116,35 +5129,35 @@
         {
           "order": "1",
           "name": "readTheRaisedMaintenanceWorkOrder",
-          "description": "Read the raised MaintenanceWorkOrder.",
+          "description": "读取已开立的维护工单。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "obtainAssetManagerApprovalWhenEstimated",
-          "description": "Obtain Asset Manager approval when estimated cost exceeds $250,000 before crew assignment.",
+          "description": "当预估成本超过25万美元时，在派工前取得资产经理批准。",
           "object_type": "logic",
-          "submission_criteria": "Before crew assignment on approval",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "high-cost-wo-asset-manager-approval",
-              "name": "High-cost WO requires Asset Manager approval",
-              "submission_criteria": "Before crew assignment on approval",
-              "description": "A MaintenanceWorkOrder with an estimated cost above $250,000 is required to obtain Asset Manager approval before crew assignment."
+              "name": "高成本工单须资产经理批准",
+              "submission_criteria": "",
+              "description": "预估成本超过25万美元的维护工单，在派工前须取得资产经理的批准。"
             }
           ]
         },
         {
           "order": "3",
           "name": "approveScheduleAndAssignACrew",
-          "description": "Approve, schedule, and assign a crew.",
+          "description": "批准、排定并指派班组。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"ApproveMaintenanceWorkOrder\" action. Consume the raised work order; produce an approved, scheduled, and crew-assigned MaintenanceWorkOrder. Asset Manager approves high-cost or safety-classified work (Rule R-05, R-06). Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"ApproveMaintenanceWorkOrder\" using work_order, crew, asset. Consume the raised work order; produce an approved, scheduled, and crew-assigned MaintenanceWorkOrder. Asset Manager approves high-cost or safety-classified work (Rule R-05, R-06). Produce work_order and emit the appropriate events.",
+      "system_prompt": "作为负责「ApproveMaintenanceWorkOrder」动作的自动化人工操作员，消费已开立工单；产生已批准、已排定且已派工的维护工单。资产经理批准高成本或安全分类工作（R-05、R-06规则）。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（work_order、crew、asset）执行「ApproveMaintenanceWorkOrder」。消费已开立工单；产生已批准、已排定且已派工的维护工单。资产经理批准高成本或安全分类工作（R-05、R-06规则）。 产出（work_order）并发出相应事件。",
       "tool_use": [
         "Maximo"
       ],
@@ -5295,16 +5308,17 @@
         "role": "Maintenance Planner / Asset Manager",
         "roleZh": "维护计划员/资产经理",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:complete-maintenance-work-order",
       "uuid": "a4443142536475860f1231425645e89a",
       "name": "CompleteMaintenanceWorkOrder",
       "nameZh": "完成维护工单",
-      "description": "Consume the completed field repair; produce a closed MaintenanceWorkOrder, update the Asset condition record, and reset the inspection clock if the work cleared the defect.",
+      "description": "消费已完成的现场维修；产生已关闭的维护工单，更新资产状态记录，若工作清除了缺陷则重置巡检时钟。",
       "descriptionZh": "消费已完成的现场维修；产生已关闭的维护工单，更新资产状态记录，若工作清除了缺陷则重置巡检时钟。",
-      "submission_criteria": "1. Event MAINTENANCE_WORK_ORDER_APPROVED has been received\n2. Rule \"Safety-classified asset close requires second engineer\" is satisfied",
+      "submission_criteria": "1. 事件 MAINTENANCE_WORK_ORDER_APPROVED 已送达\n2. 规则「安全分类资产关闭须第二工程师批准」已满足",
       "object_type": "action",
       "category": "完成维护工单",
       "actor": [
@@ -5321,35 +5335,35 @@
         {
           "order": "1",
           "name": "consumeTheCompletedFieldRepairVia",
-          "description": "Consume the completed field repair via Maximo mobile.",
+          "description": "通过Maximo移动端消费已完成的现场维修。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "requireASecondQualifiedEngineerS",
-          "description": "Require a second qualified engineer's approval before closing work on a safety-classified Asset.",
+          "description": "对安全分类资产，关闭工作前须取得第二名合格工程师的批准。",
           "object_type": "logic",
-          "submission_criteria": "On MaintenanceWorkOrder close attempt",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "safety-asset-second-engineer-close",
-              "name": "Safety-classified asset close requires second engineer",
-              "submission_criteria": "On MaintenanceWorkOrder close attempt",
-              "description": "A MaintenanceWorkOrder against a safety-classified Asset may not be closed without a second qualified engineer's approval recorded in Maximo."
+              "name": "安全分类资产关闭须第二工程师批准",
+              "submission_criteria": "",
+              "description": "针对安全分类资产的维护工单，未在Maximo中记录第二名合格工程师的批准，不得关闭。"
             }
           ]
         },
         {
           "order": "3",
           "name": "closeTheMaintenanceWorkOrderUpdate",
-          "description": "Close the MaintenanceWorkOrder, update the Asset condition record, and reset the inspection clock if the defect was cleared.",
+          "description": "关闭维护工单，更新资产状态记录，若缺陷已清除则重置巡检时钟。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"CompleteMaintenanceWorkOrder\" action. Consume the completed field repair; produce a closed MaintenanceWorkOrder, update the Asset condition record, and reset the inspection clock if the work cleared the defect. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"CompleteMaintenanceWorkOrder\" using work_order, asset. Consume the completed field repair; produce a closed MaintenanceWorkOrder, update the Asset condition record, and reset the inspection clock if the work cleared the defect. Produce work_order and emit the appropriate events.",
+      "system_prompt": "作为负责「CompleteMaintenanceWorkOrder」动作的自动化人工操作员，消费已完成的现场维修；产生已关闭的维护工单，更新资产状态记录，若工作清除了缺陷则重置巡检时钟。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（work_order、asset）执行「CompleteMaintenanceWorkOrder」。消费已完成的现场维修；产生已关闭的维护工单，更新资产状态记录，若工作清除了缺陷则重置巡检时钟。 产出（work_order）并发出相应事件。",
       "tool_use": [
         "Maximo"
       ],
@@ -5502,16 +5516,17 @@
         "role": "Field Crew",
         "roleZh": "现场班组",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:schedule-vegetation-clearance",
       "uuid": "a5543142536475860112314256460abc",
       "name": "ScheduleVegetationClearance",
       "nameZh": "排定植被清理",
-      "description": "Consume the feeder's clearance cycle and last-completed date and produce a vegetation MaintenanceWorkOrder.",
+      "description": "消费馈线的清理周期和上次完成日期，产生一份植被维护工单。",
       "descriptionZh": "消费馈线的清理周期和上次完成日期，产生一份植被维护工单。",
-      "submission_criteria": "1. Event VEGETATION_CYCLE_LAPSED has been received\n2. Rule \"Vegetation cycle maximum by zone\" is satisfied\n3. Rule \"Vegetation cycle may not lapse without variance\" is satisfied",
+      "submission_criteria": "1. 事件 VEGETATION_CYCLE_LAPSED 已送达\n2. 规则「按区域的植被周期上限」已满足\n3. 规则「植被清理周期未获变更不得逾期」已满足",
       "object_type": "action",
       "category": "排定植被清理",
       "actor": [
@@ -5528,28 +5543,28 @@
         {
           "order": "1",
           "name": "readTheHighVoltageFeederS",
-          "description": "Read the high-voltage Feeder's clearance cycle and last-completed date.",
+          "description": "读取高压馈线的清理周期和上次完成日期。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "verifyTheCycleDoesNotExceed",
-          "description": "Verify the cycle does not exceed the zone maximum (48 months; 24 months in wildfire-risk zones) and create a vegetation MaintenanceWorkOrder.",
+          "description": "核实周期未超过区域上限（48个月；野火风险区24个月）并创建一份植被维护工单。",
           "object_type": "logic",
           "submission_criteria": "",
           "rules": [
             {
               "id": "vegetation-cycle-max-months",
-              "name": "Vegetation cycle maximum by zone",
+              "name": "按区域的植被周期上限",
               "submission_criteria": "",
-              "description": "A high-voltage Feeder must be cleared on a cycle no longer than 48 months, and a Feeder traversing a designated wildfire-risk zone must be cleared on a cycle no longer than 24 months."
+              "description": "高压馈线的清理周期不得超过48个月，穿越指定野火风险区的馈线清理周期不得超过24个月。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"ScheduleVegetationClearance\" action. Consume the feeder's clearance cycle and last-completed date and produce a vegetation MaintenanceWorkOrder. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"ScheduleVegetationClearance\" using feeder. Consume the feeder's clearance cycle and last-completed date and produce a vegetation MaintenanceWorkOrder. Produce work_order and emit the appropriate events.",
+      "system_prompt": "作为负责「ScheduleVegetationClearance」动作的自动化系统，消费馈线的清理周期和上次完成日期，产生一份植被维护工单。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（feeder）执行「ScheduleVegetationClearance」。消费馈线的清理周期和上次完成日期，产生一份植被维护工单。 产出（work_order）并发出相应事件。",
       "tool_use": [
         "Maximo"
       ],
@@ -5675,7 +5690,8 @@
         "role": "Vegetation Program",
         "roleZh": "植被管理项目",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     }
   ],
   "events": [
@@ -5684,7 +5700,7 @@
       "uuid": "b0043142536475860112314256470001",
       "name": "METER_LAST_GASP_RECEIVED",
       "nameZh": "电表末次喘息已接收",
-      "description": "AMI last-gasp signal received from a meter, indicating loss of supply at a ServicePoint.",
+      "description": "从电表接收到AMI末次喘息信号，表明某供电点失去供电。",
       "descriptionZh": "从电表接收到AMI末次喘息信号，表明某供电点失去供电。",
       "payload": {
         "source_action": "",
@@ -5744,7 +5760,7 @@
       "uuid": "b1143142536475860112314256470012",
       "name": "BREAKER_TRIPPED",
       "nameZh": "断路器已跳闸",
-      "description": "SCADA breaker-open telemetry indicating a trip on the grid.",
+      "description": "SCADA断路器断开遥测，表明电网发生跳闸。",
       "descriptionZh": "SCADA断路器断开遥测，表明电网发生跳闸。",
       "payload": {
         "source_action": "",
@@ -5803,7 +5819,7 @@
       "uuid": "b2243142536475860112314256470023",
       "name": "OUTAGE_DETECTED",
       "nameZh": "停电已检测",
-      "description": "OMS has opened a candidate OutageEvent in state Detected.",
+      "description": "OMS已开立状态为Detected的候选停电事件。",
       "descriptionZh": "OMS已开立状态为Detected的候选停电事件。",
       "payload": {
         "source_action": "detectOutage",
@@ -5865,7 +5881,7 @@
       "uuid": "b3343142536475860112314256470034",
       "name": "OUTAGE_CONFIRMED",
       "nameZh": "停电已确认",
-      "description": "OMS has confirmed the outage and computed the affected ServicePoint count.",
+      "description": "OMS已确认停电并计算出受影响供电点数量。",
       "descriptionZh": "OMS已确认停电并计算出受影响供电点数量。",
       "payload": {
         "source_action": "scopeOutage",
@@ -5927,7 +5943,7 @@
       "uuid": "b4443142536475860112314256470045",
       "name": "REPORTABILITY_DETERMINED",
       "nameZh": "可报告性已判定",
-      "description": "OMS Compliance has determined whether the outage is reportable to the regulator.",
+      "description": "OMS合规模块已判定停电是否需向监管机构上报。",
       "descriptionZh": "OMS合规模块已判定停电是否需向监管机构上报。",
       "payload": {
         "source_action": "evaluateReportability",
@@ -5986,7 +6002,7 @@
       "uuid": "b5543142536475860112314256470056",
       "name": "REGULATORY_CLOCK_STARTED",
       "nameZh": "监管时钟已启动",
-      "description": "The regulatory reporting clock has started for a reportable outage; initiates Process P2.",
+      "description": "可报告停电的监管报告时钟已启动；启动流程P2。",
       "descriptionZh": "可报告停电的监管报告时钟已启动；启动流程P2。",
       "payload": {
         "source_action": "evaluateReportability",
@@ -6047,7 +6063,7 @@
       "uuid": "b6643142536475860112314256470067",
       "name": "CREW_DISPATCHED",
       "nameZh": "班组已派遣",
-      "description": "A Crew has been dispatched to a confirmed outage.",
+      "description": "已向已确认停电派遣作业班组。",
       "descriptionZh": "已向已确认停电派遣作业班组。",
       "payload": {
         "source_action": "dispatchCrew",
@@ -6114,7 +6130,7 @@
       "uuid": "b7743142536475860112314256470078",
       "name": "FIELD_FINDING_LOGGED",
       "nameZh": "现场发现已记录",
-      "description": "A crew has logged its field finding with a diagnosed cause and faulted asset.",
+      "description": "班组已记录现场发现，含诊断原因和故障资产。",
       "descriptionZh": "班组已记录现场发现，含诊断原因和故障资产。",
       "payload": {
         "source_action": "logFieldFinding",
@@ -6181,7 +6197,7 @@
       "uuid": "b8843142536475860112314256470089",
       "name": "ASSET_DEFECT_IDENTIFIED",
       "nameZh": "资产缺陷已识别",
-      "description": "A defective asset has been identified, either during outage field work or a failed inspection.",
+      "description": "已识别出有缺陷的资产，可能来自停电现场作业或不通过的巡检。",
       "descriptionZh": "已识别出有缺陷的资产，可能来自停电现场作业或不通过的巡检。",
       "payload": {
         "source_action": "logFieldFinding",
@@ -6243,7 +6259,7 @@
       "uuid": "b9943142536475860112314256470090",
       "name": "SUPPLY_RESTORED",
       "nameZh": "供电已恢复",
-      "description": "Supply has been restored to an affected ServicePoint, confirmed via AMI.",
+      "description": "已恢复对受影响供电点的供电，经AMI确认。",
       "descriptionZh": "已恢复对受影响供电点的供电，经AMI确认。",
       "payload": {
         "source_action": "restoreSupply",
@@ -6292,7 +6308,7 @@
       "uuid": "ba043142536475860112314256470101",
       "name": "OUTAGE_RESTORED",
       "nameZh": "停电已复电",
-      "description": "The OutageEvent has been advanced to state Restored with a restorationTimestamp.",
+      "description": "停电事件已推进至Restored状态并带有复电时间戳。",
       "descriptionZh": "停电事件已推进至Restored状态并带有复电时间戳。",
       "payload": {
         "source_action": "restoreSupply",
@@ -6353,7 +6369,7 @@
       "uuid": "bb143142536475860112314256470112",
       "name": "OUTAGE_CLOSED",
       "nameZh": "停电已关闭",
-      "description": "The OutageEvent has been closed after all ServicePoints confirmed live and a cause code recorded.",
+      "description": "在所有供电点确认带电且已记录原因代码后，停电事件已关闭。",
       "descriptionZh": "在所有供电点确认带电且已记录原因代码后，停电事件已关闭。",
       "payload": {
         "source_action": "closeOutage",
@@ -6413,7 +6429,7 @@
       "uuid": "bc243142536475860112314256470123",
       "name": "REGULATORY_REPORT_OPENED",
       "nameZh": "监管报告已开立",
-      "description": "A draft RegulatoryReport has been opened with a computed filing deadline.",
+      "description": "已开立带计算备案截止时间的草稿监管报告。",
       "descriptionZh": "已开立带计算备案截止时间的草稿监管报告。",
       "payload": {
         "source_action": "openRegulatoryReport",
@@ -6467,7 +6483,7 @@
       "uuid": "bd343142536475860112314256470134",
       "name": "REGULATORY_REPORT_COMPILED",
       "nameZh": "监管报告已编制",
-      "description": "The RegulatoryReport has been compiled and validated, ready for submission.",
+      "description": "监管报告已编制并校验，准备好提交。",
       "descriptionZh": "监管报告已编制并校验，准备好提交。",
       "payload": {
         "source_action": "compileRegulatoryReport",
@@ -6521,7 +6537,7 @@
       "uuid": "be443142536475860112314256470145",
       "name": "REGULATORY_REPORT_SUBMITTED",
       "nameZh": "监管报告已提交",
-      "description": "The RegulatoryReport has been submitted to the PUC portal with a confirmation ID.",
+      "description": "监管报告已带确认编号提交至PUC门户。",
       "descriptionZh": "监管报告已带确认编号提交至PUC门户。",
       "payload": {
         "source_action": "submitRegulatoryReport",
@@ -6580,7 +6596,7 @@
       "uuid": "bf543142536475860112314256470156",
       "name": "REGULATORY_REPORT_ACCEPTED",
       "nameZh": "监管报告已受理",
-      "description": "The PUC portal has accepted the submitted RegulatoryReport.",
+      "description": "PUC门户已受理已提交的监管报告。",
       "descriptionZh": "PUC门户已受理已提交的监管报告。",
       "payload": {
         "source_action": "submitRegulatoryReport",
@@ -6632,7 +6648,7 @@
       "uuid": "c0643142536475860112314256470167",
       "name": "REGULATORY_DEADLINE_BREACHED",
       "nameZh": "监管截止时间已逾期",
-      "description": "The filing deadline passed without a submitted RegulatoryReport; escalates to the Director of Compliance.",
+      "description": "备案截止时间在监管报告提交前逾期；升级至合规总监。",
       "descriptionZh": "备案截止时间在监管报告提交前逾期；升级至合规总监。",
       "payload": {
         "source_action": "submitRegulatoryReport",
@@ -6681,7 +6697,7 @@
       "uuid": "c1743142536475860112314256470178",
       "name": "INSPECTION_INTERVAL_ELAPSED",
       "nameZh": "巡检间隔已到期",
-      "description": "An asset's rated inspection interval timer has elapsed (or asset commissioning), triggering scheduling.",
+      "description": "资产的额定巡检间隔定时器已到期（或资产投运），触发排程。",
       "descriptionZh": "资产的额定巡检间隔定时器已到期（或资产投运），触发排程。",
       "payload": {
         "source_action": "",
@@ -6730,7 +6746,7 @@
       "uuid": "c2843142536475860112314256470189",
       "name": "INSPECTION_SCHEDULED",
       "nameZh": "巡检已排定",
-      "description": "An Inspection has been scheduled with a due date.",
+      "description": "已排定带到期日的巡检。",
       "descriptionZh": "已排定带到期日的巡检。",
       "payload": {
         "source_action": "scheduleInspection",
@@ -6784,7 +6800,7 @@
       "uuid": "c3943142536475860112314256470190",
       "name": "INSPECTION_COMPLETED",
       "nameZh": "巡检已完成",
-      "description": "An Inspection has been completed with a pass/fail result.",
+      "description": "巡检已完成并带有通过/不通过结果。",
       "descriptionZh": "巡检已完成并带有通过/不通过结果。",
       "payload": {
         "source_action": "recordInspectionResult",
@@ -6844,7 +6860,7 @@
       "uuid": "c4043142536475860112314256470201",
       "name": "INSPECTION_INTERVAL_MISSED",
       "nameZh": "巡检间隔已错过",
-      "description": "A rated inspection interval was missed without a completed inspection, triggering a corrective work order.",
+      "description": "额定巡检间隔在未完成巡检的情况下被错过，触发纠正性工单。",
       "descriptionZh": "额定巡检间隔在未完成巡检的情况下被错过，触发纠正性工单。",
       "payload": {
         "source_action": "",
@@ -6893,7 +6909,7 @@
       "uuid": "c5143142536475860112314256470212",
       "name": "MAINTENANCE_WORK_ORDER_RAISED",
       "nameZh": "维护工单已开立",
-      "description": "A MaintenanceWorkOrder has been raised with a derived priority.",
+      "description": "已开立带推导优先级的维护工单。",
       "descriptionZh": "已开立带推导优先级的维护工单。",
       "payload": {
         "source_action": "raiseMaintenanceWorkOrder",
@@ -6956,7 +6972,7 @@
       "uuid": "c6243142536475860112314256470223",
       "name": "MAINTENANCE_WORK_ORDER_APPROVED",
       "nameZh": "维护工单已批准",
-      "description": "A MaintenanceWorkOrder has been approved, scheduled, and crew-assigned.",
+      "description": "维护工单已批准、排定并派工。",
       "descriptionZh": "维护工单已批准、排定并派工。",
       "payload": {
         "source_action": "approveMaintenanceWorkOrder",
@@ -7010,7 +7026,7 @@
       "uuid": "c7343142536475860112314256470234",
       "name": "MAINTENANCE_WORK_ORDER_CLOSED",
       "nameZh": "维护工单已关闭",
-      "description": "A MaintenanceWorkOrder has been closed and the asset condition record updated.",
+      "description": "维护工单已关闭，资产状态记录已更新。",
       "descriptionZh": "维护工单已关闭，资产状态记录已更新。",
       "payload": {
         "source_action": "completeMaintenanceWorkOrder",
@@ -7067,7 +7083,7 @@
       "uuid": "c8443142536475860112314256470245",
       "name": "VEGETATION_CYCLE_LAPSED",
       "nameZh": "植被周期已逾期",
-      "description": "A vegetation clearance cycle lapsed without completion or a documented variance on a high-voltage feeder.",
+      "description": "高压馈线的植被清理周期在未完成或无书面变更的情况下逾期。",
       "descriptionZh": "高压馈线的植被清理周期在未完成或无书面变更的情况下逾期。",
       "payload": {
         "source_action": "",
@@ -7120,7 +7136,7 @@
         "en": "Detect to Restore",
         "zh": "检测到复电"
       },
-      "description": "From outage detection to verified restoration and closure (SOP Process P1).",
+      "description": "检测到复电",
       "actor": [
         "System",
         "Human"
@@ -7133,49 +7149,49 @@
         {
           "order": "1",
           "name": "detectOutage",
-          "description": "Consume last-gasp meter signals and SCADA breaker-open telemetry; produce a candidate OutageEvent record in OMS with state Detected and a detectionTimestamp.",
+          "description": "消费末次喘息电表信号和SCADA断路器断开遥测；在OMS中产生状态为Detected且带检测时间戳的候选停电事件记录。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "2",
           "name": "scopeOutage",
-          "description": "Consume the network topology from GIS and the set of dark meters; produce the predicted upstream device and the affected ServicePoint count, then advance the OutageEvent to state Confirmed.",
+          "description": "消费GIS网络拓扑和暗表集合；产生预测的上游设备和受影响供电点数量，然后将停电事件推进至Confirmed状态。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "3",
           "name": "evaluateReportability",
-          "description": "Consume affectedServicePointCount and detectionTimestamp; apply the regulatory threshold (Rule R-07); produce a reportable flag and a reporting clock start time when the threshold is met.",
+          "description": "消费受影响供电点数量和检测时间戳；应用监管阈值（R-07规则）；当达到阈值时产生可报告标志和报告时钟起始时间。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "4",
           "name": "dispatchCrew",
-          "description": "Consume the confirmed outage scope and crew availability; produce a Crew assignment and, where field repair is needed, an emergency MaintenanceWorkOrder linked to the OutageEvent and the suspected Asset.",
+          "description": "消费已确认的停电范围和班组可用性；产生班组指派，并在需要现场维修时产生与停电事件和疑似资产关联的紧急维护工单。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "5",
           "name": "logFieldFinding",
-          "description": "Consume the crew's on-site assessment; produce an updated MaintenanceWorkOrder with diagnosed cause and the confirmed faulted Asset, and advance the OutageEvent to state RepairInProgress.",
+          "description": "消费班组现场评估；产生带诊断原因和已确认故障资产的更新维护工单，并将停电事件推进至RepairInProgress状态。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "6",
           "name": "restoreSupply",
-          "description": "Consume the completed switching/repair; produce re-energization, an OutageEvent state of Restored, a restorationTimestamp, and a computed outage duration.",
+          "description": "消费已完成的开关操作/维修；产生重新带电、Restored状态的停电事件、复电时间戳和计算出的停电持续时间。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "7",
           "name": "closeOutage",
-          "description": "Consume AMI 'power restored' confirmations for all affected ServicePoints; produce a closed OutageEvent (state Closed) and trigger finalization of the linked MaintenanceWorkOrder.",
+          "description": "消费所有受影响供电点的AMI“已复电”确认；产生已关闭的停电事件（状态Closed）并触发关联维护工单的收尾。",
           "type": "tool",
           "condition": ""
         }
@@ -7355,7 +7371,7 @@
         "en": "Outage Regulatory Reporting",
         "zh": "停电监管报告"
       },
-      "description": "From reportability determination to accepted PUC filing (SOP Process P2). Runs in parallel with P1 restoration.",
+      "description": "停电监管报告",
       "actor": [
         "System",
         "Human"
@@ -7367,21 +7383,21 @@
         {
           "order": "1",
           "name": "openRegulatoryReport",
-          "description": "Consume the reportable OutageEvent and its scope; produce a draft RegulatoryReport with the filing deadline computed from RegulatoryClockStarted (Rule R-07).",
+          "description": "消费可报告停电事件及其范围；产生草稿监管报告，其备案截止时间从RegulatoryClockStarted计算（R-07规则）。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "2",
           "name": "compileRegulatoryReport",
-          "description": "Consume affected-customer counts (ServicePoint → Customer), cause code, and estimated restoration time; produce a validated RegulatoryReport ready for submission.",
+          "description": "消费受影响客户数量（供电点→客户）、原因代码和预计复电时间；产生准备好提交的已校验监管报告。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "3",
           "name": "submitRegulatoryReport",
-          "description": "Consume the validated report; produce a submitted RegulatoryReport with a portal confirmation ID, stopping the reporting clock. Major events require Director of Compliance approval (Rule R-09).",
+          "description": "消费已校验报告；产生带门户确认编号的已提交监管报告，停止报告时钟。重大事件须经合规总监批准（R-09规则）。",
           "type": "manual",
           "condition": ""
         }
@@ -7487,7 +7503,7 @@
         "en": "Inspect to Maintain",
         "zh": "巡检到维护"
       },
-      "description": "From scheduled Inspection to closed MaintenanceWorkOrder (SOP Process P3).",
+      "description": "巡检到维护",
       "actor": [
         "System",
         "Human"
@@ -7499,35 +7515,35 @@
         {
           "order": "1",
           "name": "scheduleInspection",
-          "description": "Consume each Asset's rated inspection interval and last completed date; produce a scheduled Inspection record with a due date.",
+          "description": "消费每个资产的额定巡检间隔和上次完成日期；产生带到期日的已排定巡检记录。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "2",
           "name": "recordInspectionResult",
-          "description": "Consume the inspector's condition assessment; produce a completed Inspection with a pass/fail result and a recorded completion date against the Asset.",
+          "description": "消费检查员的状态评估；产生带通过/不通过结果和已记录完成日期的已完成巡检，并记入资产。",
           "type": "manual",
           "condition": "inspection.result == 'fail'"
         },
         {
           "order": "3",
           "name": "raiseMaintenanceWorkOrder",
-          "description": "Consume a failed Inspection or a missed inspection interval; produce a MaintenanceWorkOrder with a priority derived from asset class (transmission assets auto-raise priority per Rule R-01).",
+          "description": "消费不通过的巡检或逾期的巡检间隔；产生优先级由资产等级推导的维护工单（输电资产按R-01规则自动提升优先级）。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "4",
           "name": "approveMaintenanceWorkOrder",
-          "description": "Consume the raised work order; produce an approved, scheduled, and crew-assigned MaintenanceWorkOrder. Asset Manager approves high-cost or safety-classified work (Rule R-05, R-06).",
+          "description": "消费已开立工单；产生已批准、已排定且已派工的维护工单。资产经理批准高成本或安全分类工作（R-05、R-06规则）。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "5",
           "name": "completeMaintenanceWorkOrder",
-          "description": "Consume the completed field repair; produce a closed MaintenanceWorkOrder, update the Asset condition record, and reset the inspection clock if the work cleared the defect.",
+          "description": "消费已完成的现场维修；产生已关闭的维护工单，更新资产状态记录，若工作清除了缺陷则重置巡检时钟。",
           "type": "manual",
           "condition": ""
         }
@@ -7673,7 +7689,7 @@
         "en": "Vegetation Cycle Management",
         "zh": "植被周期管理"
       },
-      "description": "Scheduled clearance on high-voltage feeders, raising and completing vegetation work orders (SOP Process P4).",
+      "description": "植被周期管理",
       "actor": [
         "System",
         "Human"
@@ -7686,21 +7702,21 @@
         {
           "order": "1",
           "name": "scheduleVegetationClearance",
-          "description": "Consume the feeder's clearance cycle and last-completed date and produce a vegetation MaintenanceWorkOrder.",
+          "description": "消费馈线的清理周期和上次完成日期，产生一份植被维护工单。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "2",
           "name": "approveMaintenanceWorkOrder",
-          "description": "Consume the raised work order; produce an approved, scheduled, and crew-assigned MaintenanceWorkOrder. Asset Manager approves high-cost or safety-classified work (Rule R-05, R-06).",
+          "description": "消费已开立工单；产生已批准、已排定且已派工的维护工单。资产经理批准高成本或安全分类工作（R-05、R-06规则）。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "3",
           "name": "completeMaintenanceWorkOrder",
-          "description": "Consume the completed field repair; produce a closed MaintenanceWorkOrder, update the Asset condition record, and reset the inspection clock if the work cleared the defect.",
+          "description": "消费已完成的现场维修；产生已关闭的维护工单，更新资产状态记录，若工作清除了缺陷则重置巡检时钟。",
           "type": "manual",
           "condition": ""
         }

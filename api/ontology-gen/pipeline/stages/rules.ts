@@ -76,10 +76,18 @@ function specObjectIdOf(id: string): string {
   return words.map((w) => w[0]!.toUpperCase() + w.slice(1)).join('_') || bare;
 }
 
-/** "state_transition" -> "State Transition". */
-function titleizeKind(kind: string): string {
-  return kind.split('_').map((w) => (w ? w[0]!.toUpperCase() + w.slice(1) : w)).join(' ');
-}
+const hasCJK = (s: unknown): boolean => typeof s === 'string' && /[一-鿿]/.test(s);
+/** Keep a single-language string only if Chinese; else the Chinese fallback. */
+const cjkOr = (s: unknown, fallback: string): string => (hasCJK(s) ? (s as string).trim() : fallback);
+/** Chinese label per rule kind (the scenario fallback when no Chinese text). */
+const KIND_ZH: Record<string, string> = {
+  validation: '数据校验',
+  constraint: '业务约束',
+  derivation: '指标推导',
+  state_transition: '状态流转',
+  authorization: '权限授权',
+  temporal: '时限控制',
+};
 
 /** A numbered sentence handed to the prompt + used to recover snippets. */
 interface NumberedSentence {
@@ -297,16 +305,21 @@ function buildRule(
   const failurePolicy: 'warn' | 'block' =
     toFailurePolicy(raw.failurePolicy) ?? (severity === 'block' ? 'block' : 'warn');
 
-  // Spec-format display fields — taken from the model when present, else derived
-  // deterministically from the structural fields.
-  const objName = (oid: string): string => ctx.objects.find((o) => o.id === oid)?.name ?? oid;
-  const relatedEntities = appliesToObjectTypeIds.map((oid) => `${objName(oid)} (${specObjectIdOf(oid)})`);
-  const standardizedLogicRule = str(raw.standardizedLogicRule).trim() || en;
-  const businessLogicRuleName = str(raw.businessLogicRuleName).trim() || title;
+  // Spec-format display fields — Chinese-first: prefer the model's value, then
+  // the Chinese side of bilingual fields, then a Chinese fallback.
+  const objNameZh = (oid: string): string => {
+    const o = ctx.objects.find((x) => x.id === oid);
+    return o?.nameZh?.trim() || o?.name || oid;
+  };
+  const relatedEntities = appliesToObjectTypeIds.map((oid) => `${objNameZh(oid)} (${specObjectIdOf(oid)})`);
+  const standardizedLogicRule = str(raw.standardizedLogicRule).trim() || zh || enRaw || formal;
+  const businessLogicRuleName = str(raw.businessLogicRuleName).trim() || str(raw.titleZh).trim() || title;
   const specificScenarioStage =
-    str(raw.specificScenarioStage).trim() || trigger?.description?.trim() || titleizeKind(kind);
-  const submissionCriteria =
-    str(raw.submissionCriteria).trim() || trigger?.description?.trim() || expression?.predicate?.trim() || '';
+    cjkOr(str(raw.specificScenarioStage).trim() || trigger?.description, KIND_ZH[kind] || '业务约束');
+  const submissionCriteria = cjkOr(
+    str(raw.submissionCriteria).trim() || trigger?.description,
+    cjkOr(expression?.predicate, ''),
+  );
   const businessBackgroundReason = str(raw.businessBackgroundReason).trim();
   const ruleSource = str(raw.ruleSource).trim() || sources[0]?.documentName?.trim() || docName || '文档';
   const applicableClient = str(raw.applicableClient).trim() || '通用';

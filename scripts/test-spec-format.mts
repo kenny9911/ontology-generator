@@ -264,7 +264,7 @@ async function main(): Promise<void> {
       );
 
       b.actions.forEach((a, i) => {
-        assertKeys(a as unknown as Record<string, unknown>, ACTION_KEYS, [], `${file} actions[${i}]`);
+        assertKeys(a as unknown as Record<string, unknown>, ACTION_KEYS, ['typescript_code'], `${file} actions[${i}]`);
         a.inputs.forEach((io, j) =>
           assertKeys(io as unknown as Record<string, unknown>, INPUT_REQ, INPUT_OPT, `${file} actions[${i}].inputs[${j}]`),
         );
@@ -399,7 +399,7 @@ async function main(): Promise<void> {
     assertEq(hard.enforcementLevel, 'mandatory', 'block -> mandatory');
     assertEq(hard.failurePolicy, 'block', 'block -> block');
     assertEq(hard.executor, 'Agent', 'default executor');
-    assertEq(hard.relatedEntities[0], 'Order (Order)', 'relatedEntities');
+    assertEq(hard.relatedEntities[0], '订单 (Order)', 'relatedEntities (Chinese name)');
     assertEq(hard.ruleSource, 'SOP.md', 'ruleSource from citation');
     const soft = rules.find((r) => r.id === 'soft')!;
     assertEq(soft.enforcementLevel, 'optional', 'warn -> optional');
@@ -600,6 +600,75 @@ async function main(): Promise<void> {
         for (const ev of w.triggered_event) assert(eventSpecNames.has(ev), `${w.id}: triggered_event "${ev}" does not resolve`);
         // retained structure present
         assert(Array.isArray(w.steps) && Array.isArray(w.actors), `${w.id}: retained steps/actors`);
+      }
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  section('8. Descriptive fields are Chinese-first (no English leaks)');
+
+  const hasCJK = (s: unknown): boolean => typeof s === 'string' && /[一-鿿]/.test(s);
+  const zhOk = (s: unknown): boolean => typeof s !== 'string' || s.trim() === '' || hasCJK(s);
+
+  // Assert a node's descriptive fields are Chinese (or empty) — both on the
+  // CANONICAL ontology (JSON-editor view) and the PROJECTION (`generate spec`).
+  function assertNodeZh(label: string, fields: Record<string, unknown>): void {
+    for (const [k, v] of Object.entries(fields)) {
+      assert(zhOk(v), `${label}.${k} must be Chinese (or empty), got: ${JSON.stringify(typeof v === 'string' ? v.slice(0, 40) : v)}`);
+    }
+  }
+
+  // Property descriptions are best-effort Chinese: a property is only asserted
+  // Chinese when it HAS a Chinese source (descriptionZh or nameZh); fixtures with
+  // English-only property names legitimately have no deterministic Chinese.
+  const propZhOk = (p: { description?: string; descriptionZh?: string; nameZh?: string }): boolean =>
+    !(p.descriptionZh?.trim() || p.nameZh?.trim()) || zhOk(p.description);
+
+  for (const { file, ontology } of fixtures) {
+    await check(`${file}: canonical descriptive fields are Chinese`, () => {
+      for (const o of ontology.objects) {
+        assertNodeZh(`${o.id}`, { description: o.description, relationship_description: o.relationship_description });
+        for (const p of o.properties) assert(propZhOk(p), `${o.id}.${p.name}.description should be Chinese (has zh source), got: ${JSON.stringify(p.description)}`);
+      }
+      for (const r of ontology.rules) {
+        assertNodeZh(`${r.id}`, {
+          businessLogicRuleName: r.businessLogicRuleName,
+          standardizedLogicRule: r.standardizedLogicRule,
+          specificScenarioStage: r.specificScenarioStage,
+          submissionCriteria: r.submissionCriteria,
+        });
+        for (const e of r.relatedEntities) {
+          // relatedEntities are "中文名 (Spec_Id)" — the prefix before "(" must be CJK.
+          const namePart = e.replace(/\s*\([^()]*\)\s*$/, '');
+          assert(hasCJK(namePart), `${r.id}: relatedEntities entry "${e}" name must be Chinese`);
+        }
+      }
+      for (const a of ontology.actions) {
+        assertNodeZh(`${a.id}`, { description: a.description, submission_criteria: a.submission_criteria, category: a.category });
+        for (const s of a.action_steps) assertNodeZh(`${a.id}.step`, { description: s.description });
+      }
+      for (const e of ontology.events) assertNodeZh(`${e.id}`, { description: e.description });
+      for (const w of ontology.processes) {
+        assertNodeZh(`${w.id}`, { description: w.description });
+        for (const s of w.actions) assertNodeZh(`${w.id}.step`, { description: s.description });
+      }
+    });
+
+    await check(`${file}: projection (generate spec) descriptive fields are Chinese`, () => {
+      const b = ontologyToSpec(ontology);
+      for (const o of b.objects) {
+        assertNodeZh(`${o.id}`, { description: o.description, relationship_description: o.relationship_description });
+      }
+      for (const r of b.rules) {
+        assertNodeZh(`${r.id}`, { businessLogicRuleName: r.businessLogicRuleName, standardizedLogicRule: r.standardizedLogicRule, specificScenarioStage: r.specificScenarioStage });
+      }
+      for (const a of b.actions) {
+        assertNodeZh(`${a.id}`, { description: a.description, submission_criteria: a.submission_criteria });
+        for (const s of a.action_steps) assertNodeZh(`${a.id}.step`, { description: s.description });
+      }
+      for (const e of b.events) assertNodeZh(`${e.name}`, { description: e.description });
+      for (const w of b.workflows) {
+        for (const s of w.actions) assertNodeZh(`${w.id}.step`, { description: s.description });
       }
     });
   }

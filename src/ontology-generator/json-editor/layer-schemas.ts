@@ -163,6 +163,7 @@ const actionsSchema = layerArray('^action:', {
     action_steps: { type: 'array', items: { type: 'object', properties: { order: str, name: str, description: str, object_type: str, submission_criteria: str }, additionalProperties: true } },
     system_prompt: str,
     user_prompt: str,
+    typescript_code: str,
     tool_use: strArray,
     side_effects: { type: 'object', additionalProperties: true },
     triggered_event: strArray,

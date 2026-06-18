@@ -170,6 +170,7 @@ export interface SpecAction {
   action_steps: SpecActionStep[];
   system_prompt: string;
   user_prompt: string;
+  typescript_code?: string;
   tool_use: string[];
   side_effects: SpecSideEffects;
   triggered_event: string[];

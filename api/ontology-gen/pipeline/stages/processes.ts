@@ -303,13 +303,16 @@ function attachWorkflowSpecFields(p: Process, ctx: StageContext): void {
       return [];
     }),
   );
+  // Workflow description is Chinese-first: prefer Chinese prose, else the zh name.
+  const hasCJK = (s: string | undefined): boolean => typeof s === 'string' && /[一-鿿]/.test(s);
+  p.description = hasCJK(p.description) ? p.description : p.name?.zh?.trim() || p.description;
   p.actions = (p.steps ?? []).map((s) => {
     const a = actionById.get(s.actionTypeId);
     const edge = s.next?.[0];
     return {
       order: String(s.order),
       name: a ? camelName(a.name) : s.actionTypeId.replace(/^action:/, ''),
-      description: a?.description?.trim() || '',
+      description: a?.descriptionZh?.trim() || a?.description?.trim() || '',
       type: workflowStepType(a),
       condition: edge?.condition?.trim() || edge?.label?.en?.trim() || '',
     };

@@ -157,7 +157,8 @@ export async function extractEvents(ctx: StageContext): Promise<{ events: EventT
       uuid: makeUuid(),
       name,
       nameZh: enr?.nameZh && enr.nameZh.trim().length > 0 ? enr.nameZh : name,
-      description: enr?.description,
+      // Spec-format is Chinese-first: prefer the Chinese description.
+      description: enr?.descriptionZh?.trim() || enr?.description,
       descriptionZh: enr?.descriptionZh,
       payload,
       payloadFields,

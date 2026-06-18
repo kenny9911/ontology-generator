@@ -631,11 +631,12 @@ function capActorKind(kind: string | undefined): SpecActor {
   if (kind === 'system') return 'System';
   return 'Agent';
 }
-function actorLabel(kind: string | undefined): string {
-  if (kind === 'human') return 'human operator';
-  if (kind === 'system') return 'system';
-  return 'agent';
+function actorLabelZh(kind: string | undefined): string {
+  if (kind === 'human') return '人工操作员';
+  if (kind === 'system') return '系统';
+  return '智能体';
 }
+const hasCJK = (s: unknown): boolean => typeof s === 'string' && /[一-鿿]/.test(s);
 function humanize(s: string): string {
   return s
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
@@ -684,13 +685,13 @@ function attachActionSpecFields(a: ActionType, ctx: StageContext): void {
   }
   for (const se of a.sideEffects ?? []) addTarget(se.objectTypeId);
 
-  // submission_criteria: triggering events + precondition rules.
+  // submission_criteria: triggering events + precondition rules (Chinese).
   const lines: string[] = [];
   let n = 1;
-  for (const eid of a.triggeredByEventIds) lines.push(`${n++}. Event ${eventSpecName(eid)} has been received`);
+  for (const eid of a.triggeredByEventIds) lines.push(`${n++}. 事件 ${eventSpecName(eid)} 已送达`);
   for (const pc of a.preconditions) {
     const r = ruleById.get(pc.ruleId);
-    if (r) lines.push(`${n++}. Rule "${r.businessLogicRuleName || r.title || pc.ruleId}" is satisfied`);
+    if (r) lines.push(`${n++}. 规则「${r.businessLogicRuleName || r.title || pc.ruleId}」已满足`);
   }
 
   // action_steps + side_effects.
@@ -698,19 +699,19 @@ function attachActionSpecFields(a: ActionType, ctx: StageContext): void {
     const out: SpecActionStep = {
       order: String(s.order),
       name: specStepName(s),
-      description: s.text?.en?.trim() || s.text?.zh?.trim() || '',
+      description: s.text?.zh?.trim() || s.text?.en?.trim() || '',
       object_type: 'logic',
       submission_criteria: '',
     };
     if (s.guardRuleId && ruleById.has(s.guardRuleId)) {
       const r = ruleById.get(s.guardRuleId)!;
-      out.submission_criteria = r.trigger?.description?.trim() || '';
+      out.submission_criteria = hasCJK(r.trigger?.description) ? r.trigger!.description.trim() : '';
       out.rules = [
         {
           id: r.id.replace(/^rule:/, ''),
-          name: r.businessLogicRuleName || r.title || r.id.replace(/^rule:/, ''),
-          submission_criteria: r.trigger?.description?.trim() || '',
-          description: r.standardizedLogicRule || r.statement?.en?.trim() || r.formal?.trim() || '',
+          name: r.businessLogicRuleName || r.titleZh || r.title || r.id.replace(/^rule:/, ''),
+          submission_criteria: hasCJK(r.trigger?.description) ? r.trigger!.description.trim() : '',
+          description: r.standardizedLogicRule || r.statement?.zh?.trim() || r.statement?.en?.trim() || r.formal?.trim() || '',
         },
       ];
     }
@@ -747,8 +748,11 @@ function attachActionSpecFields(a: ActionType, ctx: StageContext): void {
     if (se.kind === 'external_call' && se.description) toolUse.push(se.description.trim());
   }
 
-  const inputNames = a.inputs.map((i) => i.name).join(', ') || 'the provided inputs';
-  const outputNames = a.outputs.map((o) => o.name).join(', ') || 'the resulting records';
+  const inputNames = a.inputs.map((i) => i.name).join('、') || '所提供的输入';
+  const outputNames = a.outputs.map((o) => o.name).join('、') || '相应记录';
+
+  // Prefer the Chinese description for the spec-format shape.
+  if (a.descriptionZh?.trim()) a.description = a.descriptionZh.trim();
 
   a.submission_criteria = lines.join('\n');
   a.object_type = 'action';
@@ -758,11 +762,12 @@ function attachActionSpecFields(a: ActionType, ctx: StageContext): void {
   a.target_objects = uniqStr(targets);
   a.action_steps = actionSteps;
   a.system_prompt =
-    `You are an automated ${actorLabel(a.actorRef?.kind)} responsible for the "${a.name}" action. ` +
-    `${a.description ?? ''} Read the required objects from the ontology, honor every precondition, and perform the steps in order.`;
+    `作为负责「${a.name}」动作的自动化${actorLabelZh(a.actorRef?.kind)}，` +
+    `${a.description ?? ''} 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。`;
   a.user_prompt =
-    `Execute "${a.name}" using ${inputNames}. ${a.description ?? ''} Produce ${outputNames} and emit the appropriate events.`;
+    `根据输入（${inputNames}）执行「${a.name}」。${a.description ?? ''} 产出（${outputNames}）并发出相应事件。`;
   a.tool_use = uniqStr(toolUse);
   a.side_effects = sideEffects;
   a.triggered_event = uniqStr(a.emitsEvents.map((e) => eventSpecName(e.eventTypeId)));
+  if (typeof a.typescript_code !== 'string') a.typescript_code = '';
 }

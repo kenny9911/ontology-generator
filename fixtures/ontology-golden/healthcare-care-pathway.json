@@ -39,36 +39,36 @@
       "uuid": "20000000000000000000000000000001",
       "name": "Patient",
       "nameZh": "患者",
-      "description": "A person who receives or is scheduled to receive care; the canonical patient identifier is the MRN. Mastered in Epic EHR.",
+      "description": "接受或计划接受诊疗的人；以病案号（MRN）作为唯一标识，主数据存于 Epic 电子病历系统。",
       "descriptionZh": "接受或计划接受诊疗的人；以病案号（MRN）作为唯一标识，主数据存于 Epic 电子病历系统。",
       "type": "data",
-      "relationship_description": "Patient has Encounter. Patient has Coverage.",
+      "relationship_description": "【患者】拥有【就诊】。【患者】拥有【保险覆盖】。",
       "primary_key": "mrn",
       "properties": [
         {
           "name": "mrn",
           "type": "String",
-          "description": "Medical Record Number; the canonical patient identifier."
+          "description": "Mrn"
         },
         {
           "name": "last_name",
           "type": "String",
-          "description": "Legal last name."
+          "description": "Last Name"
         },
         {
           "name": "first_name",
           "type": "String",
-          "description": "Legal first name."
+          "description": "First Name"
         },
         {
           "name": "date_of_birth",
           "type": "Date",
-          "description": "Used with name for identity matching."
+          "description": "Date Of Birth"
         },
         {
           "name": "enterprise_id",
           "type": "String",
-          "description": "Cross-facility master-patient-index key."
+          "description": "Enterprise Id"
         }
       ],
       "relationshipIds": [
@@ -104,48 +104,48 @@
       "uuid": "20000000000000000000000000000002",
       "name": "Encounter",
       "nameZh": "就诊",
-      "description": "A single contact between a Patient and the health system, the spine of both the clinical and revenue-cycle pathways; identified by EncounterID.",
+      "description": "患者与医疗系统之间的一次接触，是临床路径与收入周期的主线；以 EncounterID 标识。",
       "descriptionZh": "患者与医疗系统之间的一次接触，是临床路径与收入周期的主线；以 EncounterID 标识。",
       "type": "data",
-      "relationship_description": "Patient has Encounter. Encounter contains Order. Encounter contains Procedure. Encounter contains Diagnosis. Encounter accrues Charge. Encounter billed as Claim. Encounter.mrn references Patient.",
+      "relationship_description": "【患者】拥有【就诊】。【就诊】包含【医嘱】。【就诊】包含【诊疗操作】。【就诊】包含【诊断】。【就诊】产生【费用项】。【就诊】以…计费【理赔单】。",
       "primary_key": "encounter_id",
       "properties": [
         {
           "name": "encounter_id",
           "type": "Integer",
-          "description": "Primary key (bigint) in Epic EHR."
+          "description": "Encounter Id"
         },
         {
           "name": "mrn",
           "type": "String",
-          "description": "Owning patient.",
+          "description": "Mrn",
           "is_foreign_key": true,
           "references": "objectType:patient"
         },
         {
           "name": "encounter_class",
           "type": "List<String>",
-          "description": ""
+          "description": "Encounter Class"
         },
         {
           "name": "emergency_flag",
           "type": "Boolean",
-          "description": "Drives the R-02 / R-04 EMTALA exception."
+          "description": "Emergency Flag"
         },
         {
           "name": "triage_timestamp",
           "type": "Timestamp",
-          "description": "Anchor for the sepsis clock (R-08)."
+          "description": "Triage Timestamp"
         },
         {
           "name": "discharge_date",
           "type": "Date",
-          "description": "Anchor for R-03, R-10, R-12 deadlines."
+          "description": "Discharge Date"
         },
         {
           "name": "status",
           "type": "List<String>",
-          "description": ""
+          "description": "Status"
         }
       ],
       "relationshipIds": [
@@ -192,43 +192,43 @@
       "uuid": "20000000000000000000000000000003",
       "name": "Coverage",
       "nameZh": "保险覆盖",
-      "description": "An active insurance benefit linking a Patient to a payer plan; its status is set by eligibility verification (271).",
+      "description": "将患者与付款方计划关联的有效保险权益；其状态由资格核验（271 应答）设定。",
       "descriptionZh": "将患者与付款方计划关联的有效保险权益；其状态由资格核验（271 应答）设定。",
       "type": "data",
-      "relationship_description": "Patient has Coverage. Claim billed to Coverage. Coverage.mrn references Patient.",
+      "relationship_description": "【患者】拥有【保险覆盖】。【理赔单】计费至【保险覆盖】。",
       "primary_key": "coverage_id",
       "properties": [
         {
           "name": "coverage_id",
           "type": "Integer",
-          "description": ""
+          "description": "Coverage Id"
         },
         {
           "name": "mrn",
           "type": "String",
-          "description": "Owning patient.",
+          "description": "Mrn",
           "is_foreign_key": true,
           "references": "objectType:patient"
         },
         {
           "name": "payer_id",
           "type": "String",
-          "description": "Payer/plan identifier."
+          "description": "Payer Id"
         },
         {
           "name": "member_id",
           "type": "String",
-          "description": "Subscriber's member number."
+          "description": "Member Id"
         },
         {
           "name": "status",
           "type": "List<String>",
-          "description": "Set by VerifyEligibility (271)."
+          "description": "Status"
         },
         {
           "name": "eligibility_checked_at",
           "type": "Timestamp",
-          "description": "Supports R-02."
+          "description": "Eligibility Checked At"
         }
       ],
       "relationshipIds": [
@@ -264,45 +264,45 @@
       "uuid": "20000000000000000000000000000004",
       "name": "Order",
       "nameZh": "医嘱",
-      "description": "A clinician instruction for a Procedure, medication, or test, each referencing a catalog Procedure; identified by OrderID.",
+      "description": "医师下达的诊疗、用药或检查指令，每条引用目录中的诊疗操作；以 OrderID 标识。",
       "descriptionZh": "医师下达的诊疗、用药或检查指令，每条引用目录中的诊疗操作；以 OrderID 标识。",
       "type": "data",
-      "relationship_description": "Encounter contains Order. Order references Procedure. Order.encounter_id references Encounter. Order.procedure_id references Procedure.",
+      "relationship_description": "【就诊】包含【医嘱】。【医嘱】引用【诊疗操作】。",
       "primary_key": "order_id",
       "properties": [
         {
           "name": "order_id",
           "type": "Integer",
-          "description": ""
+          "description": "Order Id"
         },
         {
           "name": "encounter_id",
           "type": "String",
-          "description": "",
+          "description": "Encounter Id",
           "is_foreign_key": true,
           "references": "objectType:encounter"
         },
         {
           "name": "procedure_id",
           "type": "String",
-          "description": "Catalog procedure ordered.",
+          "description": "Procedure Id",
           "is_foreign_key": true,
           "references": "objectType:procedure"
         },
         {
           "name": "ordering_provider_npi",
           "type": "String",
-          "description": "Ordering provider NPI."
+          "description": "Ordering Provider Npi"
         },
         {
           "name": "placed_at",
           "type": "Timestamp",
-          "description": "Start of the R-06 24-hour authorization SLA."
+          "description": "Placed At"
         },
         {
           "name": "status",
           "type": "List<String>",
-          "description": ""
+          "description": "Status"
         }
       ],
       "relationshipIds": [
@@ -338,48 +338,48 @@
       "uuid": "20000000000000000000000000000005",
       "name": "Procedure",
       "nameZh": "诊疗操作",
-      "description": "A billable clinical service coded with CPT/HCPCS; a high-cost designated Procedure may require Prior Authorization; identified by ProcedureID.",
+      "description": "以 CPT/HCPCS 编码的可计费临床服务；高费用指定操作可能需要事前授权；以 ProcedureID 标识。",
       "descriptionZh": "以 CPT/HCPCS 编码的可计费临床服务；高费用指定操作可能需要事前授权；以 ProcedureID 标识。",
       "type": "data",
-      "relationship_description": "Encounter contains Procedure. Order references Procedure. Diagnosis supports Procedure. PriorAuthorization authorizes Procedure. Charge generated from Procedure. Procedure.encounter_id references Encounter.",
+      "relationship_description": "【就诊】包含【诊疗操作】。【医嘱】引用【诊疗操作】。【诊断】支持【诊疗操作】。【事前授权】授权【诊疗操作】。【费用项】生成自【诊疗操作】。",
       "primary_key": "procedure_id",
       "properties": [
         {
           "name": "procedure_id",
           "type": "Integer",
-          "description": ""
+          "description": "Procedure Id"
         },
         {
           "name": "encounter_id",
           "type": "String",
-          "description": "",
+          "description": "Encounter Id",
           "is_foreign_key": true,
           "references": "objectType:encounter"
         },
         {
           "name": "cpt_code",
           "type": "String",
-          "description": "CPT/HCPCS code."
+          "description": "Cpt Code"
         },
         {
           "name": "billed_amount",
           "type": "Float",
-          "description": "Drives the R-04 $1,500 authorization threshold."
+          "description": "Billed Amount"
         },
         {
           "name": "requires_auth",
           "type": "Boolean",
-          "description": "Designated-procedure flag."
+          "description": "Requires Auth"
         },
         {
           "name": "start_time",
           "type": "Timestamp",
-          "description": "Documented service start."
+          "description": "Start Time"
         },
         {
           "name": "stop_time",
           "type": "Timestamp",
-          "description": "Documented service stop."
+          "description": "Stop Time"
         }
       ],
       "relationshipIds": [
@@ -425,38 +425,38 @@
       "uuid": "20000000000000000000000000000006",
       "name": "Diagnosis",
       "nameZh": "诊断",
-      "description": "A coded condition (ICD-10-CM) documented for an Encounter and linked to supporting Procedures for medical necessity; identified by DiagnosisID.",
+      "description": "针对一次就诊记录的 ICD-10-CM 编码病情，与支持性诊疗操作关联以证明医疗必要性；以 DiagnosisID 标识。",
       "descriptionZh": "针对一次就诊记录的 ICD-10-CM 编码病情，与支持性诊疗操作关联以证明医疗必要性；以 DiagnosisID 标识。",
       "type": "data",
-      "relationship_description": "Encounter contains Diagnosis. Diagnosis supports Procedure. Diagnosis.encounter_id references Encounter. Diagnosis.linked_procedure_id references Procedure.",
+      "relationship_description": "【就诊】包含【诊断】。【诊断】支持【诊疗操作】。",
       "primary_key": "diagnosis_id",
       "properties": [
         {
           "name": "diagnosis_id",
           "type": "Integer",
-          "description": ""
+          "description": "Diagnosis Id"
         },
         {
           "name": "encounter_id",
           "type": "String",
-          "description": "",
+          "description": "Encounter Id",
           "is_foreign_key": true,
           "references": "objectType:encounter"
         },
         {
           "name": "icd10_code",
           "type": "String",
-          "description": "ICD-10-CM code."
+          "description": "Icd10 Code"
         },
         {
           "name": "is_primary",
           "type": "Boolean",
-          "description": "Principal diagnosis flag."
+          "description": "Is Primary"
         },
         {
           "name": "linked_procedure_id",
           "type": "String",
-          "description": "Supports R-09 / R-13 linkage.",
+          "description": "Linked Procedure Id",
           "is_foreign_key": true,
           "references": "objectType:procedure"
         }
@@ -494,55 +494,55 @@
       "uuid": "20000000000000000000000000000007",
       "name": "PriorAuthorization",
       "nameZh": "事前授权",
-      "description": "A payer approval required before delivering a designated Procedure, valid for approved units within an approval window; identified by AuthID.",
+      "description": "在实施指定诊疗操作前所需的付款方批准，在批准窗口内对批准单位数有效；以 AuthID 标识。",
       "descriptionZh": "在实施指定诊疗操作前所需的付款方批准，在批准窗口内对批准单位数有效；以 AuthID 标识。",
       "type": "data",
-      "relationship_description": "PriorAuthorization authorizes Procedure. PriorAuthorization.encounter_id references Encounter. PriorAuthorization.procedure_id references Procedure.",
+      "relationship_description": "【事前授权】授权【诊疗操作】。",
       "primary_key": "auth_id",
       "properties": [
         {
           "name": "auth_id",
           "type": "Integer",
-          "description": ""
+          "description": "Auth Id"
         },
         {
           "name": "encounter_id",
           "type": "String",
-          "description": "",
+          "description": "Encounter Id",
           "is_foreign_key": true,
           "references": "objectType:encounter"
         },
         {
           "name": "procedure_id",
           "type": "String",
-          "description": "",
+          "description": "Procedure Id",
           "is_foreign_key": true,
           "references": "objectType:procedure"
         },
         {
           "name": "payer_id",
           "type": "String",
-          "description": ""
+          "description": "Payer Id"
         },
         {
           "name": "approval_number",
           "type": "String",
-          "description": "Returned on the 278 approval."
+          "description": "Approval Number"
         },
         {
           "name": "approved_units",
           "type": "Integer",
-          "description": "Constrains R-07."
+          "description": "Approved Units"
         },
         {
           "name": "expiration_date",
           "type": "Date",
-          "description": "Date-of-service check (R-07)."
+          "description": "Expiration Date"
         },
         {
           "name": "status",
           "type": "List<String>",
-          "description": ""
+          "description": "Status"
         }
       ],
       "relationshipIds": [
@@ -577,45 +577,45 @@
       "uuid": "20000000000000000000000000000008",
       "name": "Charge",
       "nameZh": "费用项",
-      "description": "A financial line item generated from a documented Procedure, mapped to an active Charge Description Master line; identified by ChargeID.",
+      "description": "由已记录的诊疗操作生成的财务明细行，映射到有效的收费主数据（CDM）行；以 ChargeID 标识。",
       "descriptionZh": "由已记录的诊疗操作生成的财务明细行，映射到有效的收费主数据（CDM）行；以 ChargeID 标识。",
       "type": "data",
-      "relationship_description": "Charge generated from Procedure. Encounter accrues Charge. Claim includes Charge. Charge.encounter_id references Encounter. Charge.procedure_id references Procedure.",
+      "relationship_description": "【费用项】生成自【诊疗操作】。【就诊】产生【费用项】。【理赔单】包含【费用项】。",
       "primary_key": "charge_id",
       "properties": [
         {
           "name": "charge_id",
           "type": "Integer",
-          "description": ""
+          "description": "Charge Id"
         },
         {
           "name": "encounter_id",
           "type": "String",
-          "description": "",
+          "description": "Encounter Id",
           "is_foreign_key": true,
           "references": "objectType:encounter"
         },
         {
           "name": "procedure_id",
           "type": "String",
-          "description": "",
+          "description": "Procedure Id",
           "is_foreign_key": true,
           "references": "objectType:procedure"
         },
         {
           "name": "cdm_code",
           "type": "String",
-          "description": "Charge Description Master code; the CDM is an external master (not a modeled ObjectType) and the line must be active on the date of service (R-11)."
+          "description": "Cdm Code"
         },
         {
           "name": "amount",
           "type": "Float",
-          "description": "Charge amount."
+          "description": "Amount"
         },
         {
           "name": "posted_at",
           "type": "Timestamp",
-          "description": "Late-charge window anchor (R-12)."
+          "description": "Posted At"
         }
       ],
       "relationshipIds": [
@@ -652,50 +652,50 @@
       "uuid": "20000000000000000000000000000009",
       "name": "Claim",
       "nameZh": "理赔单",
-      "description": "A billing submission to a payer covering one Encounter's Charges, scrubbed and submitted as an EDI 837; identified by ClaimID.",
+      "description": "向付款方提交、覆盖一次就诊全部费用项的账单，经清洗后以 EDI 837 提交；以 ClaimID 标识。",
       "descriptionZh": "向付款方提交、覆盖一次就诊全部费用项的账单，经清洗后以 EDI 837 提交；以 ClaimID 标识。",
       "type": "data",
-      "relationship_description": "Encounter billed as Claim. Claim billed to Coverage. Claim includes Charge. Claim incurs Denial. Claim.encounter_id references Encounter. Claim.coverage_id references Coverage.",
+      "relationship_description": "【就诊】以…计费【理赔单】。【理赔单】计费至【保险覆盖】。【理赔单】包含【费用项】。【理赔单】产生【拒付】。",
       "primary_key": "claim_id",
       "properties": [
         {
           "name": "claim_id",
           "type": "Integer",
-          "description": ""
+          "description": "Claim Id"
         },
         {
           "name": "encounter_id",
           "type": "String",
-          "description": "",
+          "description": "Encounter Id",
           "is_foreign_key": true,
           "references": "objectType:encounter"
         },
         {
           "name": "coverage_id",
           "type": "String",
-          "description": "",
+          "description": "Coverage Id",
           "is_foreign_key": true,
           "references": "objectType:coverage"
         },
         {
           "name": "total_billed",
           "type": "Float",
-          "description": "Sum of linked Charges."
+          "description": "Total Billed"
         },
         {
           "name": "frequency_code",
           "type": "List<String>",
-          "description": "7 = replacement claim (R-16)."
+          "description": "Frequency Code"
         },
         {
           "name": "submitted_at",
           "type": "Timestamp",
-          "description": "Timely-filing check (R-03)."
+          "description": "Submitted At"
         },
         {
           "name": "status",
           "type": "List<String>",
-          "description": ""
+          "description": "Status"
         }
       ],
       "relationshipIds": [
@@ -733,48 +733,48 @@
       "uuid": "2000000000000000000000000000000a",
       "name": "Denial",
       "nameZh": "拒付",
-      "description": "A payer rejection of a Claim or line carrying a CARC/RARC reason, triaged and worked toward appeal or write-off; identified by DenialID.",
+      "description": "付款方对理赔单或行项的拒付，携带 CARC/RARC 原因码，经分诊后进入申诉或核销；以 DenialID 标识。",
       "descriptionZh": "付款方对理赔单或行项的拒付，携带 CARC/RARC 原因码，经分诊后进入申诉或核销；以 DenialID 标识。",
       "type": "data",
-      "relationship_description": "Claim incurs Denial. Denial.claim_id references Claim.",
+      "relationship_description": "【理赔单】产生【拒付】。",
       "primary_key": "denial_id",
       "properties": [
         {
           "name": "denial_id",
           "type": "Integer",
-          "description": ""
+          "description": "Denial Id"
         },
         {
           "name": "claim_id",
           "type": "String",
-          "description": "",
+          "description": "Claim Id",
           "is_foreign_key": true,
           "references": "objectType:claim"
         },
         {
           "name": "carc_code",
           "type": "String",
-          "description": "Claim Adjustment Reason Code."
+          "description": "Carc Code"
         },
         {
           "name": "rarc_code",
           "type": "String",
-          "description": "Remittance Advice Remark Code."
+          "description": "Rarc Code"
         },
         {
           "name": "denied_amount",
           "type": "Float",
-          "description": "Write-off authority thresholds (R-19)."
+          "description": "Denied Amount"
         },
         {
           "name": "category",
           "type": "List<String>",
-          "description": ""
+          "description": "Category"
         },
         {
           "name": "routed_at",
           "type": "Timestamp",
-          "description": "2-business-day routing SLA (R-17)."
+          "description": "Routed At"
         }
       ],
       "relationshipIds": [
@@ -1201,15 +1201,15 @@
     {
       "id": "rule:r01-encounter-single-mrn",
       "uuid": "40000000000000000000000000000001",
-      "specificScenarioStage": "on Encounter registration",
-      "businessLogicRuleName": "Encounter resolves to one MRN",
+      "specificScenarioStage": "数据校验",
+      "businessLogicRuleName": "就诊解析到唯一 MRN",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "on Encounter registration",
-      "standardizedLogicRule": "Every Encounter must resolve to exactly one Patient identified by a single active MRN.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "每次就诊必须解析到由单一有效 MRN 标识的恰好一位患者。",
       "relatedEntities": [
-        "Encounter (Encounter)",
-        "Patient (Patient)"
+        "就诊 (Encounter)",
+        "患者 (Patient)"
       ],
       "businessBackgroundReason": "§2 rules establishing single-MRN patient identity and active-coverage verification before non-emergency service.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1270,16 +1270,16 @@
     {
       "id": "rule:r02-verify-coverage-before-service",
       "uuid": "40000000000000000000000000000002",
-      "specificScenarioStage": "before non-emergency service delivery",
-      "businessLogicRuleName": "Verify active coverage before non-emergency service",
+      "specificScenarioStage": "数据校验",
+      "businessLogicRuleName": "非急诊服务前核验有效保险",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "before non-emergency service delivery",
-      "standardizedLogicRule": "A Patient's Coverage must be verified as active before any non-emergency Procedure is performed, unless the Encounter is flagged Emergency.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "在实施任何非急诊诊疗操作前，必须核验患者保险覆盖为有效状态；就诊被标记为急诊的除外。",
       "relatedEntities": [
-        "Coverage (Coverage)",
-        "Encounter (Encounter)",
-        "Procedure (Procedure)"
+        "保险覆盖 (Coverage)",
+        "就诊 (Encounter)",
+        "诊疗操作 (Procedure)"
       ],
       "businessBackgroundReason": "§2 rules establishing single-MRN patient identity and active-coverage verification before non-emergency service.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1342,15 +1342,15 @@
     {
       "id": "rule:r03-timely-filing",
       "uuid": "40000000000000000000000000000003",
-      "specificScenarioStage": "on claim submission",
-      "businessLogicRuleName": "Claim timely-filing deadline",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "理赔及时提交时限",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "on claim submission",
-      "standardizedLogicRule": "A Claim shall be submitted within 90 calendar days of the Encounter discharge date for commercial payers, and within 365 calendar days for Medicare, except where a payer contract sets a shorter timely-filing limit.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "理赔单应在就诊出院日起 90 个日历日内向商业付款方提交、365 个日历日内向 Medicare 提交；付款方合同约定更短时限的除外。",
       "relatedEntities": [
-        "Claim (Claim)",
-        "Encounter (Encounter)"
+        "理赔单 (Claim)",
+        "就诊 (Encounter)"
       ],
       "businessBackgroundReason": "§6 rules on timely filing, scrub-clean gating, and no-resubmit-of-accepted-claims.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1412,16 +1412,16 @@
     {
       "id": "rule:r04-imaging-requires-auth",
       "uuid": "40000000000000000000000000000004",
-      "specificScenarioStage": "before scheduling a designated procedure",
-      "businessLogicRuleName": "High-cost imaging requires approved authorization",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "高费用影像需已批准授权",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "before scheduling a designated procedure",
-      "standardizedLogicRule": "A high-cost imaging Procedure with a billed amount of $1,500 or more must have an approved PriorAuthorization before scheduling, unless the Encounter is flagged Emergency.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "账单金额达 1,500 美元或以上的高费用影像诊疗操作在排程前必须取得已批准的事前授权；就诊被标记为急诊的除外。",
       "relatedEntities": [
-        "Procedure (Procedure)",
-        "PriorAuthorization (Prior_Authorization)",
-        "Encounter (Encounter)"
+        "诊疗操作 (Procedure)",
+        "事前授权 (Prior_Authorization)",
+        "就诊 (Encounter)"
       ],
       "businessBackgroundReason": "§3 rules governing when an authorization is required, must be linked, its SLA, and its date-of-service validity.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1488,17 +1488,17 @@
     {
       "id": "rule:r05-claim-requires-linked-auth",
       "uuid": "40000000000000000000000000000005",
-      "specificScenarioStage": "on claim assembly / submission",
-      "businessLogicRuleName": "Claim requires linked approved authorization",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "理赔需关联已批准授权",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "on claim assembly / submission",
-      "standardizedLogicRule": "A Claim may not be submitted for a Procedure that required PriorAuthorization unless an approved PriorAuthorization is linked to the Encounter.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "对于需要事前授权的诊疗操作，除非就诊已关联已批准的事前授权，否则不得提交理赔。",
       "relatedEntities": [
-        "Claim (Claim)",
-        "Procedure (Procedure)",
-        "PriorAuthorization (Prior_Authorization)",
-        "Encounter (Encounter)"
+        "理赔单 (Claim)",
+        "诊疗操作 (Procedure)",
+        "事前授权 (Prior_Authorization)",
+        "就诊 (Encounter)"
       ],
       "businessBackgroundReason": "§3 rules governing when an authorization is required, must be linked, its SLA, and its date-of-service validity.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1562,15 +1562,15 @@
     {
       "id": "rule:r06-urgent-auth-sla-24h",
       "uuid": "40000000000000000000000000000006",
-      "specificScenarioStage": "after an urgent Order is placed",
-      "businessLogicRuleName": "Urgent authorization request within 24 hours",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "紧急授权 24 小时内提交",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "after an urgent Order is placed",
-      "standardizedLogicRule": "A UM Coordinator is required to submit an urgent PriorAuthorization request to the payer within 24 hours of the Order being placed.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "授权管理协调员须在医嘱下达后 24 小时内向付款方提交紧急事前授权请求。",
       "relatedEntities": [
-        "PriorAuthorization (Prior_Authorization)",
-        "Order (Order)"
+        "事前授权 (Prior_Authorization)",
+        "医嘱 (Order)"
       ],
       "businessBackgroundReason": "§3 rules governing when an authorization is required, must be linked, its SLA, and its date-of-service validity.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1617,15 +1617,15 @@
     {
       "id": "rule:r07-auth-valid-on-dos",
       "uuid": "40000000000000000000000000000007",
-      "specificScenarioStage": "on service delivery against an authorization",
-      "businessLogicRuleName": "Authorization valid on date of service",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "授权在服务日有效",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "on service delivery against an authorization",
-      "standardizedLogicRule": "A PriorAuthorization is valid only for the approved units within its approval window, and the date of service must fall on or before the PriorAuthorization expiration date.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "事前授权仅在其批准窗口内、对已批准单位数有效，且服务日期必须不晚于事前授权失效日期。",
       "relatedEntities": [
-        "PriorAuthorization (Prior_Authorization)",
-        "Procedure (Procedure)"
+        "事前授权 (Prior_Authorization)",
+        "诊疗操作 (Procedure)"
       ],
       "businessBackgroundReason": "§3 rules governing when an authorization is required, must be linked, its SLA, and its date-of-service validity.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1686,15 +1686,15 @@
     {
       "id": "rule:r08-sepsis-lactate-3h",
       "uuid": "40000000000000000000000000000008",
-      "specificScenarioStage": "sepsis bundle clock starts at the triage timestamp",
-      "businessLogicRuleName": "Sepsis bundle lactate within 3 hours of triage",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "脓毒症集束在分诊后 3 小时内出乳酸结果",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "sepsis bundle clock starts at the triage timestamp",
-      "standardizedLogicRule": "A sepsis bundle must record a lactate result within 3 hours of the triage timestamp.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "脓毒症集束治疗必须在分诊时间戳后 3 小时内记录乳酸检测结果。",
       "relatedEntities": [
-        "Encounter (Encounter)",
-        "Procedure (Procedure)"
+        "就诊 (Encounter)",
+        "诊疗操作 (Procedure)"
       ],
       "businessBackgroundReason": "§4 rules on the sepsis bundle clock, diagnosis-procedure linkage, and coding-complete timeliness.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1751,15 +1751,15 @@
     {
       "id": "rule:r09-procedure-linked-diagnosis",
       "uuid": "40000000000000000000000000000009",
-      "specificScenarioStage": "on procedure documentation / coding",
-      "businessLogicRuleName": "Billable Procedure links to documented Diagnosis",
+      "specificScenarioStage": "数据校验",
+      "businessLogicRuleName": "可计费操作关联已记录诊断",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "on procedure documentation / coding",
-      "standardizedLogicRule": "Every billable Procedure on an Encounter is required to link to at least one documented Diagnosis with a supporting ICD-10-CM code.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "就诊上的每项可计费诊疗操作必须关联至少一个带有支持性 ICD-10-CM 编码的已记录诊断。",
       "relatedEntities": [
-        "Procedure (Procedure)",
-        "Diagnosis (Diagnosis)"
+        "诊疗操作 (Procedure)",
+        "诊断 (Diagnosis)"
       ],
       "businessBackgroundReason": "§4 rules on the sepsis bundle clock, diagnosis-procedure linkage, and coding-complete timeliness.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1821,14 +1821,14 @@
     {
       "id": "rule:r10-coding-complete-4d",
       "uuid": "4000000000000000000000000000000a",
-      "specificScenarioStage": "on discharge, into the coding work queue",
-      "businessLogicRuleName": "Coding complete within 4 days of discharge",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "出院后 4 日内完成编码",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "on discharge, into the coding work queue",
-      "standardizedLogicRule": "An Encounter must be coding-complete within 4 calendar days of its discharge date, except for Encounters held for clinical query, which may extend to 10 calendar days.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "就诊必须在出院日起 4 个日历日内完成编码；因临床质询暂挂的就诊可延长至 10 个日历日。",
       "relatedEntities": [
-        "Encounter (Encounter)"
+        "就诊 (Encounter)"
       ],
       "businessBackgroundReason": "§4 rules on the sepsis bundle clock, diagnosis-procedure linkage, and coding-complete timeliness.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1875,14 +1875,14 @@
     {
       "id": "rule:r11-charge-active-cdm",
       "uuid": "4000000000000000000000000000000b",
-      "specificScenarioStage": "on charge generation",
-      "businessLogicRuleName": "Charge maps to active CDM line",
+      "specificScenarioStage": "数据校验",
+      "businessLogicRuleName": "费用项映射到有效 CDM 行",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "on charge generation",
-      "standardizedLogicRule": "Every Charge must map to an active line in the Charge Description Master on the date of service.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "每个费用项必须在服务日映射到收费主数据（CDM）中的有效行。",
       "relatedEntities": [
-        "Charge (Charge)"
+        "费用项 (Charge)"
       ],
       "businessBackgroundReason": "§5 rules on CDM mapping, late-charge windows, medical necessity, and NCCI unbundling edits.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1938,15 +1938,15 @@
     {
       "id": "rule:r12-late-charge-window",
       "uuid": "4000000000000000000000000000000c",
-      "specificScenarioStage": "on late-charge posting",
-      "businessLogicRuleName": "Late charge beyond 7 days needs supervisor approval",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "逾 7 日的迟到费用需主管批准",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "on late-charge posting",
-      "standardizedLogicRule": "A late Charge may not be added to an Encounter more than 7 calendar days after the discharge date without supervisor approval.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "未经主管批准，迟到费用不得在出院日起 7 个日历日后追加到就诊。",
       "relatedEntities": [
-        "Charge (Charge)",
-        "Encounter (Encounter)"
+        "费用项 (Charge)",
+        "就诊 (Encounter)"
       ],
       "businessBackgroundReason": "§5 rules on CDM mapping, late-charge windows, medical necessity, and NCCI unbundling edits.",
       "ruleSource": "02-business-rules-policy.md",
@@ -1993,16 +1993,16 @@
     {
       "id": "rule:r13-medical-necessity",
       "uuid": "4000000000000000000000000000000d",
-      "specificScenarioStage": "during coding / code validation",
-      "businessLogicRuleName": "Medical-necessity (LCD/NCD) linkage required",
+      "specificScenarioStage": "数据校验",
+      "businessLogicRuleName": "须满足医疗必要性（LCD/NCD）",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "during coding / code validation",
-      "standardizedLogicRule": "A Procedure with a Diagnosis pairing that fails the applicable medical-necessity policy (LCD/NCD) may not be billed to the payer and must be flagged for review.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "诊疗操作与诊断的配对若未通过适用的医疗必要性政策（LCD/NCD），不得向付款方计费，并必须标记复核。",
       "relatedEntities": [
-        "Procedure (Procedure)",
-        "Diagnosis (Diagnosis)",
-        "Charge (Charge)"
+        "诊疗操作 (Procedure)",
+        "诊断 (Diagnosis)",
+        "费用项 (Charge)"
       ],
       "businessBackgroundReason": "§5 rules on CDM mapping, late-charge windows, medical necessity, and NCCI unbundling edits.",
       "ruleSource": "02-business-rules-policy.md",
@@ -2051,15 +2051,15 @@
     {
       "id": "rule:r14-ncci-no-unbundling",
       "uuid": "4000000000000000000000000000000e",
-      "specificScenarioStage": "during coding / claim assembly",
-      "businessLogicRuleName": "NCCI edit prohibits unbundling without modifier",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "NCCI 编辑禁止无修饰符拆分计费",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "during coding / claim assembly",
-      "standardizedLogicRule": "Two Procedures that violate an NCCI Procedure-to-Procedure edit may not be billed on the same Claim unless a valid modifier is documented.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "违反 NCCI 操作对操作编辑的两项诊疗操作不得在同一理赔单上计费，除非已记录有效修饰符。",
       "relatedEntities": [
-        "Procedure (Procedure)",
-        "Claim (Claim)"
+        "诊疗操作 (Procedure)",
+        "理赔单 (Claim)"
       ],
       "businessBackgroundReason": "§5 rules on CDM mapping, late-charge windows, medical necessity, and NCCI unbundling edits.",
       "ruleSource": "02-business-rules-policy.md",
@@ -2106,14 +2106,14 @@
     {
       "id": "rule:r15-scrub-clean-before-submit",
       "uuid": "4000000000000000000000000000000f",
-      "specificScenarioStage": "on transition to Submitted",
-      "businessLogicRuleName": "Claim must be scrub-clean (Ready) before submission",
+      "specificScenarioStage": "状态流转",
+      "businessLogicRuleName": "提交前理赔必须清洗通过（Ready）",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "on transition to Submitted",
-      "standardizedLogicRule": "A Claim must pass all scrubber edits and reach status Ready before it may be submitted to a payer.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "理赔单必须通过全部清洗编辑并达到 Ready 状态，方可向付款方提交。",
       "relatedEntities": [
-        "Claim (Claim)"
+        "理赔单 (Claim)"
       ],
       "businessBackgroundReason": "§6 rules on timely filing, scrub-clean gating, and no-resubmit-of-accepted-claims.",
       "ruleSource": "02-business-rules-policy.md",
@@ -2169,14 +2169,14 @@
     {
       "id": "rule:r16-no-resubmit-accepted",
       "uuid": "40000000000000000000000000000010",
-      "specificScenarioStage": "on resubmission of an accepted claim",
-      "businessLogicRuleName": "No resubmission of an accepted Claim as original",
+      "specificScenarioStage": "状态流转",
+      "businessLogicRuleName": "已受理理赔不得作为原始件重提",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "on resubmission of an accepted claim",
-      "standardizedLogicRule": "A Claim that has already been accepted by the payer may not be resubmitted as an original; corrections shall be submitted only as a replacement Claim with frequency code 7.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "已被付款方受理的理赔单不得作为原始件重新提交；更正只能以频次码 7 的替换理赔单提交。",
       "relatedEntities": [
-        "Claim (Claim)"
+        "理赔单 (Claim)"
       ],
       "businessBackgroundReason": "§6 rules on timely filing, scrub-clean gating, and no-resubmit-of-accepted-claims.",
       "ruleSource": "02-business-rules-policy.md",
@@ -2233,14 +2233,14 @@
     {
       "id": "rule:r17-denial-routing-sla-2d",
       "uuid": "40000000000000000000000000000011",
-      "specificScenarioStage": "after remittance posting",
-      "businessLogicRuleName": "Denial routed to analyst within 2 business days",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "拒付 2 个工作日内派单至分析师",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "after remittance posting",
-      "standardizedLogicRule": "A Denial must be routed to a Denials Analyst work queue within 2 business days of the remittance posting date.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "拒付必须在汇款入账日起 2 个工作日内派单至拒付处理专员的工作队列。",
       "relatedEntities": [
-        "Denial (Denial)"
+        "拒付 (Denial)"
       ],
       "businessBackgroundReason": "§7 rules on denial routing SLA, appeal deadlines, write-off approval authority, and the no-balance-bill protection.",
       "ruleSource": "02-business-rules-policy.md",
@@ -2286,15 +2286,15 @@
     {
       "id": "rule:r18-appeal-deadline-60d",
       "uuid": "40000000000000000000000000000012",
-      "specificScenarioStage": "on appeal submission",
-      "businessLogicRuleName": "Appeal within payer deadline (≤ 60 days)",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "申诉在付款方时限内（≤ 60 日）",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "on appeal submission",
-      "standardizedLogicRule": "An appeal for a denied Claim shall be submitted within the payer's appeal deadline, which may not exceed 60 calendar days from the Denial date unless the payer contract grants a longer window.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "对被拒理赔的申诉应在付款方申诉时限内提交；自拒付日起不得超过 60 个日历日，付款方合同另行授予更长窗口的除外。",
       "relatedEntities": [
-        "Denial (Denial)",
-        "Claim (Claim)"
+        "拒付 (Denial)",
+        "理赔单 (Claim)"
       ],
       "businessBackgroundReason": "§7 rules on denial routing SLA, appeal deadlines, write-off approval authority, and the no-balance-bill protection.",
       "ruleSource": "02-business-rules-policy.md",
@@ -2341,14 +2341,14 @@
     {
       "id": "rule:r19-writeoff-approval-authority",
       "uuid": "40000000000000000000000000000013",
-      "specificScenarioStage": "on write-off of a denied balance",
-      "businessLogicRuleName": "Write-off approval authority thresholds",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "核销审批权限阈值",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "on write-off of a denied balance",
-      "standardizedLogicRule": "A write-off of a denied balance of $5,000 or more is required to have Director-level approval, and a write-off of $25,000 or more is required to have CFO approval.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "拒付余额核销达 5,000 美元或以上须经总监级批准；达 25,000 美元或以上须经 CFO 批准。",
       "relatedEntities": [
-        "Denial (Denial)"
+        "拒付 (Denial)"
       ],
       "businessBackgroundReason": "§7 rules on denial routing SLA, appeal deadlines, write-off approval authority, and the no-balance-bill protection.",
       "ruleSource": "02-business-rules-policy.md",
@@ -2403,15 +2403,15 @@
     {
       "id": "rule:r20-no-balance-bill-provider-error",
       "uuid": "40000000000000000000000000000014",
-      "specificScenarioStage": "on patient balance billing after denial",
-      "businessLogicRuleName": "No balance-bill for provider coding/auth error",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "因院方编码/授权错误不得向患者结余计费",
       "applicableClient": "通用",
       "applicableDepartment": "N/A",
-      "submissionCriteria": "on patient balance billing after denial",
-      "standardizedLogicRule": "A Patient may not be balance-billed for any amount denied as a provider coding or authorization error.",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "因院方编码或授权错误而被拒付的任何金额，不得向患者收取结余账单。",
       "relatedEntities": [
-        "Denial (Denial)",
-        "Patient (Patient)"
+        "拒付 (Denial)",
+        "患者 (Patient)"
       ],
       "businessBackgroundReason": "§7 rules on denial routing SLA, appeal deadlines, write-off approval authority, and the no-balance-bill protection.",
       "ruleSource": "02-business-rules-policy.md",
@@ -2553,9 +2553,9 @@
       "uuid": "50000000000000000000000000000001",
       "name": "RegisterEncounter",
       "nameZh": "登记就诊",
-      "description": "Consumes patient demographics and scheduling data and produces a new Encounter record linked to the Patient via MRN.",
+      "description": "录入患者人口学与排程数据，生成与患者（MRN）关联的新就诊记录。",
       "descriptionZh": "录入患者人口学与排程数据，生成与患者（MRN）关联的新就诊记录。",
-      "submission_criteria": "1. Event PATIENT_ARRIVED has been received\n2. Rule \"Encounter resolves to one MRN\" is satisfied",
+      "submission_criteria": "1. 事件 PATIENT_ARRIVED 已送达\n2. 规则「就诊解析到唯一 MRN」已满足",
       "object_type": "action",
       "category": "登记就诊",
       "actor": [
@@ -2572,28 +2572,28 @@
         {
           "order": "1",
           "name": "resolveThePatientToASingle",
-          "description": "Resolve the patient to a single active MRN in Epic EHR.",
+          "description": "在 Epic EHR 中将患者解析到单一有效 MRN。",
           "object_type": "logic",
-          "submission_criteria": "on Encounter registration",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "r01-encounter-single-mrn",
-              "name": "Encounter resolves to one MRN",
-              "submission_criteria": "on Encounter registration",
-              "description": "Every Encounter must resolve to exactly one Patient identified by a single active MRN."
+              "name": "就诊解析到唯一 MRN",
+              "submission_criteria": "",
+              "description": "每次就诊必须解析到由单一有效 MRN 标识的恰好一位患者。"
             }
           ]
         },
         {
           "order": "2",
           "name": "createANewEncounterRecordLinked",
-          "description": "Create a new Encounter record linked to the Patient and set status Open.",
+          "description": "创建与患者关联的新就诊记录，状态设为 Open。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"RegisterEncounter\" action. Consumes patient demographics and scheduling data and produces a new Encounter record linked to the Patient via MRN. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"RegisterEncounter\" using patient. Consumes patient demographics and scheduling data and produces a new Encounter record linked to the Patient via MRN. Produce encounter and emit the appropriate events.",
+      "system_prompt": "作为负责「RegisterEncounter」动作的自动化人工操作员，录入患者人口学与排程数据，生成与患者（MRN）关联的新就诊记录。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（patient）执行「RegisterEncounter」。录入患者人口学与排程数据，生成与患者（MRN）关联的新就诊记录。 产出（encounter）并发出相应事件。",
       "tool_use": [
         "Epic EHR"
       ],
@@ -2716,16 +2716,17 @@
         "role": "Patient Access Representative",
         "roleZh": "接诊登记员",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:verify-eligibility",
       "uuid": "50000000000000000000000000000002",
       "name": "VerifyEligibility",
       "nameZh": "核验资格",
-      "description": "Consumes the Coverage on file, sends an EDI 270 eligibility inquiry, and stamps Coverage.status from the 271 response.",
+      "description": "读取在档保险覆盖，发送 EDI 270 资格查询，并依据 271 应答更新 Coverage.status。",
       "descriptionZh": "读取在档保险覆盖，发送 EDI 270 资格查询，并依据 271 应答更新 Coverage.status。",
-      "submission_criteria": "1. Event ENCOUNTER_CREATED has been received\n2. Rule \"Verify active coverage before non-emergency service\" is satisfied",
+      "submission_criteria": "1. 事件 ENCOUNTER_CREATED 已送达\n2. 规则「非急诊服务前核验有效保险」已满足",
       "object_type": "action",
       "category": "核验资格",
       "actor": [
@@ -2742,28 +2743,28 @@
         {
           "order": "1",
           "name": "sendAnEDI270EligibilityInquiry",
-          "description": "Send an EDI 270 eligibility inquiry to the payer via the Clearinghouse.",
+          "description": "通过清算网关向付款方发送 EDI 270 资格查询。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "parseThe271ResponseAndStamp",
-          "description": "Parse the 271 response and stamp Coverage.status and eligibility_checked_at.",
+          "description": "解析 271 应答并更新 Coverage.status 与 eligibility_checked_at。",
           "object_type": "logic",
-          "submission_criteria": "before non-emergency service delivery",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "r02-verify-coverage-before-service",
-              "name": "Verify active coverage before non-emergency service",
-              "submission_criteria": "before non-emergency service delivery",
-              "description": "A Patient's Coverage must be verified as active before any non-emergency Procedure is performed, unless the Encounter is flagged Emergency."
+              "name": "非急诊服务前核验有效保险",
+              "submission_criteria": "",
+              "description": "在实施任何非急诊诊疗操作前，必须核验患者保险覆盖为有效状态；就诊被标记为急诊的除外。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated agent responsible for the \"VerifyEligibility\" action. Consumes the Coverage on file, sends an EDI 270 eligibility inquiry, and stamps Coverage.status from the 271 response. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"VerifyEligibility\" using coverage, encounter. Consumes the Coverage on file, sends an EDI 270 eligibility inquiry, and stamps Coverage.status from the 271 response. Produce coverage and emit the appropriate events.",
+      "system_prompt": "作为负责「VerifyEligibility」动作的自动化智能体，读取在档保险覆盖，发送 EDI 270 资格查询，并依据 271 应答更新 Coverage.status。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（coverage、encounter）执行「VerifyEligibility」。读取在档保险覆盖，发送 EDI 270 资格查询，并依据 271 应答更新 Coverage.status。 产出（coverage）并发出相应事件。",
       "tool_use": [
         "Clearinghouse (Waystar)",
         "EDI 270/271 eligibility exchange via the Clearinghouse."
@@ -2907,16 +2908,17 @@
         "role": "Patient Access Representative",
         "roleZh": "接诊登记员",
         "kind": "agent"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:record-triage",
       "uuid": "50000000000000000000000000000003",
       "name": "RecordTriage",
       "nameZh": "记录分诊",
-      "description": "Consumes vitals and chief complaint and produces a triage timestamp, an acuity level, and (when criteria met) sets Encounter.emergencyFlag.",
+      "description": "录入生命体征与主诉，生成分诊时间戳与急性度等级，必要时置 Encounter.emergencyFlag。",
       "descriptionZh": "录入生命体征与主诉，生成分诊时间戳与急性度等级，必要时置 Encounter.emergencyFlag。",
-      "submission_criteria": "1. Event PATIENT_ARRIVED has been received",
+      "submission_criteria": "1. 事件 PATIENT_ARRIVED 已送达",
       "object_type": "action",
       "category": "记录分诊",
       "actor": [
@@ -2932,28 +2934,28 @@
         {
           "order": "1",
           "name": "captureVitalsAndChiefComplaintAnd",
-          "description": "Capture vitals and chief complaint and compute acuity.",
+          "description": "录入生命体征与主诉并计算急性度。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "stampEncounterTriageTimestampStartsThe",
-          "description": "Stamp Encounter.triage_timestamp (starts the sepsis clock) and set emergency_flag when criteria are met.",
+          "description": "写入 Encounter.triage_timestamp（启动脓毒症计时），符合条件时置 emergency_flag。",
           "object_type": "logic",
-          "submission_criteria": "sepsis bundle clock starts at the triage timestamp",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "r08-sepsis-lactate-3h",
-              "name": "Sepsis bundle lactate within 3 hours of triage",
-              "submission_criteria": "sepsis bundle clock starts at the triage timestamp",
-              "description": "A sepsis bundle must record a lactate result within 3 hours of the triage timestamp."
+              "name": "脓毒症集束在分诊后 3 小时内出乳酸结果",
+              "submission_criteria": "",
+              "description": "脓毒症集束治疗必须在分诊时间戳后 3 小时内记录乳酸检测结果。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"RecordTriage\" action. Consumes vitals and chief complaint and produces a triage timestamp, an acuity level, and (when criteria met) sets Encounter.emergencyFlag. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"RecordTriage\" using encounter, vitals. Consumes vitals and chief complaint and produces a triage timestamp, an acuity level, and (when criteria met) sets Encounter.emergencyFlag. Produce encounter and emit the appropriate events.",
+      "system_prompt": "作为负责「RecordTriage」动作的自动化人工操作员，录入生命体征与主诉，生成分诊时间戳与急性度等级，必要时置 Encounter.emergencyFlag。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（encounter、vitals）执行「RecordTriage」。录入生命体征与主诉，生成分诊时间戳与急性度等级，必要时置 Encounter.emergencyFlag。 产出（encounter）并发出相应事件。",
       "tool_use": [
         "Epic EHR"
       ],
@@ -3086,16 +3088,17 @@
         "role": "Triage Nurse",
         "roleZh": "分诊护士",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:place-order",
       "uuid": "50000000000000000000000000000004",
       "name": "PlaceOrder",
       "nameZh": "下达医嘱",
-      "description": "Consumes the clinician's selection and produces one or more Order records, each referencing a catalog Procedure; routes designated high-cost imaging to Prior Authorization.",
+      "description": "录入医师选择，生成一条或多条引用目录诊疗操作的医嘱记录；将指定高费用影像路由至事前授权流程。",
       "descriptionZh": "录入医师选择，生成一条或多条引用目录诊疗操作的医嘱记录；将指定高费用影像路由至事前授权流程。",
-      "submission_criteria": "1. Event TRIAGE_COMPLETED has been received\n2. Rule \"High-cost imaging requires approved authorization\" is satisfied",
+      "submission_criteria": "1. 事件 TRIAGE_COMPLETED 已送达\n2. 规则「高费用影像需已批准授权」已满足",
       "object_type": "action",
       "category": "下达医嘱",
       "actor": [
@@ -3114,28 +3117,28 @@
         {
           "order": "1",
           "name": "createOneOrMoreOrderRecords",
-          "description": "Create one or more Order records referencing the selected Procedure.",
+          "description": "创建一条或多条引用所选诊疗操作的医嘱记录。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "forADesignatedHighCostImaging",
-          "description": "For a designated high-cost imaging Procedure, check for an approved PriorAuthorization and route to Process C if none exists.",
+          "description": "对指定高费用影像操作，检查是否存在已批准的事前授权，若无则路由至流程 C。",
           "object_type": "logic",
-          "submission_criteria": "before scheduling a designated procedure",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "r04-imaging-requires-auth",
-              "name": "High-cost imaging requires approved authorization",
-              "submission_criteria": "before scheduling a designated procedure",
-              "description": "A high-cost imaging Procedure with a billed amount of $1,500 or more must have an approved PriorAuthorization before scheduling, unless the Encounter is flagged Emergency."
+              "name": "高费用影像需已批准授权",
+              "submission_criteria": "",
+              "description": "账单金额达 1,500 美元或以上的高费用影像诊疗操作在排程前必须取得已批准的事前授权；就诊被标记为急诊的除外。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"PlaceOrder\" action. Consumes the clinician's selection and produces one or more Order records, each referencing a catalog Procedure; routes designated high-cost imaging to Prior Authorization. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"PlaceOrder\" using encounter, procedure. Consumes the clinician's selection and produces one or more Order records, each referencing a catalog Procedure; routes designated high-cost imaging to Prior Authorization. Produce order and emit the appropriate events.",
+      "system_prompt": "作为负责「PlaceOrder」动作的自动化人工操作员，录入医师选择，生成一条或多条引用目录诊疗操作的医嘱记录；将指定高费用影像路由至事前授权流程。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（encounter、procedure）执行「PlaceOrder」。录入医师选择，生成一条或多条引用目录诊疗操作的医嘱记录；将指定高费用影像路由至事前授权流程。 产出（order）并发出相应事件。",
       "tool_use": [
         "Epic EHR"
       ],
@@ -3278,16 +3281,17 @@
         "role": "Ordering Clinician",
         "roleZh": "开单医师",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:request-authorization",
       "uuid": "50000000000000000000000000000005",
       "name": "RequestAuthorization",
       "nameZh": "申请事前授权",
-      "description": "Consumes the ordered Procedure, the Coverage, and supporting documentation and produces a PriorAuthorization in Requested state, transmitting an EDI 278 to the payer.",
+      "description": "读取已下达的诊疗操作、保险覆盖与支持性文档，生成处于 Requested 状态的事前授权，并向付款方发送 EDI 278 请求。",
       "descriptionZh": "读取已下达的诊疗操作、保险覆盖与支持性文档，生成处于 Requested 状态的事前授权，并向付款方发送 EDI 278 请求。",
-      "submission_criteria": "1. Event AUTHORIZATION_REQUIRED has been received\n2. Rule \"Urgent authorization request within 24 hours\" is satisfied",
+      "submission_criteria": "1. 事件 AUTHORIZATION_REQUIRED 已送达\n2. 规则「紧急授权 24 小时内提交」已满足",
       "object_type": "action",
       "category": "申请事前授权",
       "actor": [
@@ -3306,28 +3310,28 @@
         {
           "order": "1",
           "name": "assembleTheRequestFromTheProcedure",
-          "description": "Assemble the request from the Procedure, Coverage, and supporting clinical documentation.",
+          "description": "依据诊疗操作、保险覆盖与支持性临床文档组装请求。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "createAPriorAuthorizationInRequested",
-          "description": "Create a PriorAuthorization in Requested state and transmit an EDI 278 via the Clearinghouse.",
+          "description": "创建处于 Requested 状态的事前授权并通过清算网关发送 EDI 278。",
           "object_type": "logic",
-          "submission_criteria": "after an urgent Order is placed",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "r06-urgent-auth-sla-24h",
-              "name": "Urgent authorization request within 24 hours",
-              "submission_criteria": "after an urgent Order is placed",
-              "description": "A UM Coordinator is required to submit an urgent PriorAuthorization request to the payer within 24 hours of the Order being placed."
+              "name": "紧急授权 24 小时内提交",
+              "submission_criteria": "",
+              "description": "授权管理协调员须在医嘱下达后 24 小时内向付款方提交紧急事前授权请求。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated agent responsible for the \"RequestAuthorization\" action. Consumes the ordered Procedure, the Coverage, and supporting documentation and produces a PriorAuthorization in Requested state, transmitting an EDI 278 to the payer. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"RequestAuthorization\" using procedure, coverage, encounter. Consumes the ordered Procedure, the Coverage, and supporting documentation and produces a PriorAuthorization in Requested state, transmitting an EDI 278 to the payer. Produce prior_authorization and emit the appropriate events.",
+      "system_prompt": "作为负责「RequestAuthorization」动作的自动化智能体，读取已下达的诊疗操作、保险覆盖与支持性文档，生成处于 Requested 状态的事前授权，并向付款方发送 EDI 278 请求。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（procedure、coverage、encounter）执行「RequestAuthorization」。读取已下达的诊疗操作、保险覆盖与支持性文档，生成处于 Requested 状态的事前授权，并向付款方发送 EDI 278 请求。 产出（prior_authorization）并发出相应事件。",
       "tool_use": [
         "Clearinghouse (Waystar)",
         "EDI 278 authorization request via the Clearinghouse."
@@ -3478,16 +3482,17 @@
         "role": "UM Coordinator",
         "roleZh": "授权管理协调员",
         "kind": "agent"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:post-authorization-response",
       "uuid": "50000000000000000000000000000006",
       "name": "PostAuthorizationResponse",
       "nameZh": "回写授权应答",
-      "description": "Consumes the payer's 278 response and updates the PriorAuthorization to Approved, Denied, or Pended, recording approval number, approved units, and validity window.",
+      "description": "读取付款方 278 应答，将事前授权更新为 Approved/Denied/Pended，并记录批准号、批准单位数与有效窗口。",
       "descriptionZh": "读取付款方 278 应答，将事前授权更新为 Approved/Denied/Pended，并记录批准号、批准单位数与有效窗口。",
-      "submission_criteria": "1. Event AUTHORIZATION_REQUESTED has been received\n2. Rule \"Authorization valid on date of service\" is satisfied",
+      "submission_criteria": "1. 事件 AUTHORIZATION_REQUESTED 已送达\n2. 规则「授权在服务日有效」已满足",
       "object_type": "action",
       "category": "回写授权应答",
       "actor": [
@@ -3503,28 +3508,28 @@
         {
           "order": "1",
           "name": "parseThePayer278Response",
-          "description": "Parse the payer 278 response.",
+          "description": "解析付款方 278 应答。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "updatePriorAuthorizationStatusAndRecord",
-          "description": "Update PriorAuthorization status and record approval number, approved units, and expiration date.",
+          "description": "更新事前授权状态并记录批准号、批准单位数与失效日期。",
           "object_type": "logic",
-          "submission_criteria": "on service delivery against an authorization",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "r07-auth-valid-on-dos",
-              "name": "Authorization valid on date of service",
-              "submission_criteria": "on service delivery against an authorization",
-              "description": "A PriorAuthorization is valid only for the approved units within its approval window, and the date of service must fall on or before the PriorAuthorization expiration date."
+              "name": "授权在服务日有效",
+              "submission_criteria": "",
+              "description": "事前授权仅在其批准窗口内、对已批准单位数有效，且服务日期必须不晚于事前授权失效日期。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated agent responsible for the \"PostAuthorizationResponse\" action. Consumes the payer's 278 response and updates the PriorAuthorization to Approved, Denied, or Pended, recording approval number, approved units, and validity window. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"PostAuthorizationResponse\" using prior_authorization, response. Consumes the payer's 278 response and updates the PriorAuthorization to Approved, Denied, or Pended, recording approval number, approved units, and validity window. Produce prior_authorization and emit the appropriate events.",
+      "system_prompt": "作为负责「PostAuthorizationResponse」动作的自动化智能体，读取付款方 278 应答，将事前授权更新为 Approved/Denied/Pended，并记录批准号、批准单位数与有效窗口。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（prior_authorization、response）执行「PostAuthorizationResponse」。读取付款方 278 应答，将事前授权更新为 Approved/Denied/Pended，并记录批准号、批准单位数与有效窗口。 产出（prior_authorization）并发出相应事件。",
       "tool_use": [
         "Clearinghouse (Waystar)"
       ],
@@ -3661,16 +3666,17 @@
         "role": "UM Coordinator",
         "roleZh": "授权管理协调员",
         "kind": "agent"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:document-procedure",
       "uuid": "50000000000000000000000000000007",
       "name": "DocumentProcedure",
       "nameZh": "记录诊疗操作",
-      "description": "Consumes the completed clinical work and produces a documented Procedure with start/stop times, links it to at least one supporting Diagnosis, and signs the clinical note.",
+      "description": "录入已完成的临床工作，生成带起止时间的已记录诊疗操作，关联至少一个支持性诊断并签署病历。",
       "descriptionZh": "录入已完成的临床工作，生成带起止时间的已记录诊疗操作，关联至少一个支持性诊断并签署病历。",
-      "submission_criteria": "1. Event ORDER_PLACED has been received\n2. Rule \"Billable Procedure links to documented Diagnosis\" is satisfied",
+      "submission_criteria": "1. 事件 ORDER_PLACED 已送达\n2. 规则「可计费操作关联已记录诊断」已满足",
       "object_type": "action",
       "category": "记录诊疗操作",
       "actor": [
@@ -3687,28 +3693,28 @@
         {
           "order": "1",
           "name": "recordStartStopTimesForThe",
-          "description": "Record start/stop times for the completed Procedure.",
+          "description": "记录已完成诊疗操作的起止时间。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "linkTheProcedureToAtLeast",
-          "description": "Link the Procedure to at least one supporting Diagnosis and sign the clinical note.",
+          "description": "将诊疗操作关联至少一个支持性诊断并签署病历。",
           "object_type": "logic",
-          "submission_criteria": "on procedure documentation / coding",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "r09-procedure-linked-diagnosis",
-              "name": "Billable Procedure links to documented Diagnosis",
-              "submission_criteria": "on procedure documentation / coding",
-              "description": "Every billable Procedure on an Encounter is required to link to at least one documented Diagnosis with a supporting ICD-10-CM code."
+              "name": "可计费操作关联已记录诊断",
+              "submission_criteria": "",
+              "description": "就诊上的每项可计费诊疗操作必须关联至少一个带有支持性 ICD-10-CM 编码的已记录诊断。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"DocumentProcedure\" action. Consumes the completed clinical work and produces a documented Procedure with start/stop times, links it to at least one supporting Diagnosis, and signs the clinical note. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"DocumentProcedure\" using procedure, diagnosis. Consumes the completed clinical work and produces a documented Procedure with start/stop times, links it to at least one supporting Diagnosis, and signs the clinical note. Produce procedure and emit the appropriate events.",
+      "system_prompt": "作为负责「DocumentProcedure」动作的自动化人工操作员，录入已完成的临床工作，生成带起止时间的已记录诊疗操作，关联至少一个支持性诊断并签署病历。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（procedure、diagnosis）执行「DocumentProcedure」。录入已完成的临床工作，生成带起止时间的已记录诊疗操作，关联至少一个支持性诊断并签署病历。 产出（procedure）并发出相应事件。",
       "tool_use": [
         "Epic EHR"
       ],
@@ -3850,16 +3856,17 @@
         "role": "Ordering Clinician",
         "roleZh": "开单医师",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:discharge-encounter",
       "uuid": "50000000000000000000000000000008",
       "name": "DischargeEncounter",
       "nameZh": "出院结束就诊",
-      "description": "Consumes the discharge order and final documentation and produces a closed Encounter (status Discharged) with a discharge timestamp; this opens Process B.",
+      "description": "读取出院医嘱与最终文档，生成已关闭的就诊（status = Discharged）及出院时间戳；此举开启流程 B。",
       "descriptionZh": "读取出院医嘱与最终文档，生成已关闭的就诊（status = Discharged）及出院时间戳；此举开启流程 B。",
-      "submission_criteria": "1. Event PROCEDURE_DOCUMENTED has been received\n2. Rule \"Coding complete within 4 days of discharge\" is satisfied",
+      "submission_criteria": "1. 事件 PROCEDURE_DOCUMENTED 已送达\n2. 规则「出院后 4 日内完成编码」已满足",
       "object_type": "action",
       "category": "出院结束就诊",
       "actor": [
@@ -3875,28 +3882,28 @@
         {
           "order": "1",
           "name": "verifyTheDischargeOrderIsSigned",
-          "description": "Verify the discharge order is signed and final documentation is present.",
+          "description": "确认出院医嘱已签署且最终文档齐备。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "setEncounterStatusDischargedAndStamp",
-          "description": "Set Encounter.status = Discharged and stamp the discharge date.",
+          "description": "将 Encounter.status 置为 Discharged 并写入出院日期。",
           "object_type": "logic",
-          "submission_criteria": "on discharge, into the coding work queue",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "r10-coding-complete-4d",
-              "name": "Coding complete within 4 days of discharge",
-              "submission_criteria": "on discharge, into the coding work queue",
-              "description": "An Encounter must be coding-complete within 4 calendar days of its discharge date, except for Encounters held for clinical query, which may extend to 10 calendar days."
+              "name": "出院后 4 日内完成编码",
+              "submission_criteria": "",
+              "description": "就诊必须在出院日起 4 个日历日内完成编码；因临床质询暂挂的就诊可延长至 10 个日历日。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated human operator responsible for the \"DischargeEncounter\" action. Consumes the discharge order and final documentation and produces a closed Encounter (status Discharged) with a discharge timestamp; this opens Process B. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"DischargeEncounter\" using encounter. Consumes the discharge order and final documentation and produces a closed Encounter (status Discharged) with a discharge timestamp; this opens Process B. Produce encounter and emit the appropriate events.",
+      "system_prompt": "作为负责「DischargeEncounter」动作的自动化人工操作员，读取出院医嘱与最终文档，生成已关闭的就诊（status = Discharged）及出院时间戳；此举开启流程 B。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（encounter）执行「DischargeEncounter」。读取出院医嘱与最终文档，生成已关闭的就诊（status = Discharged）及出院时间戳；此举开启流程 B。 产出（encounter）并发出相应事件。",
       "tool_use": [
         "Epic EHR"
       ],
@@ -4017,16 +4024,17 @@
         "role": "Ordering Clinician",
         "roleZh": "开单医师",
         "kind": "human"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:generate-charge",
       "uuid": "50000000000000000000000000000009",
       "name": "GenerateCharge",
       "nameZh": "生成费用",
-      "description": "Consumes each ProcedureDocumented event, looks up the matching CDM line, and produces one Charge per billable Procedure with price, revenue code, and units.",
+      "description": "消费每个 ProcedureDocumented 事件，查找匹配的 CDM 行，为每项可计费诊疗操作生成带价格、收入代码与单位数的费用项。",
       "descriptionZh": "消费每个 ProcedureDocumented 事件，查找匹配的 CDM 行，为每项可计费诊疗操作生成带价格、收入代码与单位数的费用项。",
-      "submission_criteria": "1. Event PROCEDURE_DOCUMENTED has been received\n2. Rule \"Charge maps to active CDM line\" is satisfied",
+      "submission_criteria": "1. 事件 PROCEDURE_DOCUMENTED 已送达\n2. 规则「费用项映射到有效 CDM 行」已满足",
       "object_type": "action",
       "category": "生成费用",
       "actor": [
@@ -4043,28 +4051,28 @@
         {
           "order": "1",
           "name": "lookUpTheMatchingActiveCDM",
-          "description": "Look up the matching active CDM line for the documented Procedure.",
+          "description": "为已记录诊疗操作查找匹配的有效 CDM 行。",
           "object_type": "logic",
-          "submission_criteria": "on charge generation",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "r11-charge-active-cdm",
-              "name": "Charge maps to active CDM line",
-              "submission_criteria": "on charge generation",
-              "description": "Every Charge must map to an active line in the Charge Description Master on the date of service."
+              "name": "费用项映射到有效 CDM 行",
+              "submission_criteria": "",
+              "description": "每个费用项必须在服务日映射到收费主数据（CDM）中的有效行。"
             }
           ]
         },
         {
           "order": "2",
           "name": "createOneChargeWithPriceRevenue",
-          "description": "Create one Charge with price, revenue code, and units.",
+          "description": "创建一个带价格、收入代码与单位数的费用项。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"GenerateCharge\" action. Consumes each ProcedureDocumented event, looks up the matching CDM line, and produces one Charge per billable Procedure with price, revenue code, and units. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"GenerateCharge\" using procedure. Consumes each ProcedureDocumented event, looks up the matching CDM line, and produces one Charge per billable Procedure with price, revenue code, and units. Produce charge and emit the appropriate events.",
+      "system_prompt": "作为负责「GenerateCharge」动作的自动化系统，消费每个 ProcedureDocumented 事件，查找匹配的 CDM 行，为每项可计费诊疗操作生成带价格、收入代码与单位数的费用项。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（procedure）执行「GenerateCharge」。消费每个 ProcedureDocumented 事件，查找匹配的 CDM 行，为每项可计费诊疗操作生成带价格、收入代码与单位数的费用项。 产出（charge）并发出相应事件。",
       "tool_use": [
         "Revenue Cycle System (Resolute)"
       ],
@@ -4192,16 +4200,17 @@
         "role": "RCS Charge Router",
         "roleZh": "收入周期系统费用路由",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:assign-codes",
       "uuid": "5000000000000000000000000000000a",
       "name": "AssignCodes",
       "nameZh": "分配编码",
-      "description": "Consumes the clinical documentation and produces final ICD-10-CM and CPT/HCPCS codes, running the NCCI edit set and medical-necessity (LCD/NCD) checks against the Diagnosis–Procedure pairing.",
+      "description": "读取临床文档，产出最终 ICD-10-CM 与 CPT/HCPCS 编码，并对诊断—操作配对运行 NCCI 编辑集与医疗必要性（LCD/NCD）检查。",
       "descriptionZh": "读取临床文档，产出最终 ICD-10-CM 与 CPT/HCPCS 编码，并对诊断—操作配对运行 NCCI 编辑集与医疗必要性（LCD/NCD）检查。",
-      "submission_criteria": "1. Event ENCOUNTER_DISCHARGED has been received\n2. Rule \"Billable Procedure links to documented Diagnosis\" is satisfied\n3. Rule \"Medical-necessity (LCD/NCD) linkage required\" is satisfied\n4. Rule \"NCCI edit prohibits unbundling without modifier\" is satisfied",
+      "submission_criteria": "1. 事件 ENCOUNTER_DISCHARGED 已送达\n2. 规则「可计费操作关联已记录诊断」已满足\n3. 规则「须满足医疗必要性（LCD/NCD）」已满足\n4. 规则「NCCI 编辑禁止无修饰符拆分计费」已满足",
       "object_type": "action",
       "category": "分配编码",
       "actor": [
@@ -4219,43 +4228,43 @@
         {
           "order": "1",
           "name": "assignFinalICD10CMAnd",
-          "description": "Assign final ICD-10-CM and CPT/HCPCS codes.",
+          "description": "分配最终 ICD-10-CM 与 CPT/HCPCS 编码。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "runNCCIEditsAndLCDNCD",
-          "description": "Run NCCI edits and LCD/NCD medical-necessity checks on each Diagnosis–Procedure pairing.",
+          "description": "对每个诊断—操作配对运行 NCCI 编辑与 LCD/NCD 医疗必要性检查。",
           "object_type": "logic",
-          "submission_criteria": "during coding / code validation",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "r13-medical-necessity",
-              "name": "Medical-necessity (LCD/NCD) linkage required",
-              "submission_criteria": "during coding / code validation",
-              "description": "A Procedure with a Diagnosis pairing that fails the applicable medical-necessity policy (LCD/NCD) may not be billed to the payer and must be flagged for review."
+              "name": "须满足医疗必要性（LCD/NCD）",
+              "submission_criteria": "",
+              "description": "诊疗操作与诊断的配对若未通过适用的医疗必要性政策（LCD/NCD），不得向付款方计费，并必须标记复核。"
             }
           ]
         },
         {
           "order": "3",
           "name": "flagNCCIUnbundlingViolationsLackingA",
-          "description": "Flag NCCI unbundling violations lacking a valid modifier.",
+          "description": "标记缺少有效修饰符的 NCCI 拆分计费违规。",
           "object_type": "logic",
-          "submission_criteria": "during coding / claim assembly",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "r14-ncci-no-unbundling",
-              "name": "NCCI edit prohibits unbundling without modifier",
-              "submission_criteria": "during coding / claim assembly",
-              "description": "Two Procedures that violate an NCCI Procedure-to-Procedure edit may not be billed on the same Claim unless a valid modifier is documented."
+              "name": "NCCI 编辑禁止无修饰符拆分计费",
+              "submission_criteria": "",
+              "description": "违反 NCCI 操作对操作编辑的两项诊疗操作不得在同一理赔单上计费，除非已记录有效修饰符。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated agent responsible for the \"AssignCodes\" action. Consumes the clinical documentation and produces final ICD-10-CM and CPT/HCPCS codes, running the NCCI edit set and medical-necessity (LCD/NCD) checks against the Diagnosis–Procedure pairing. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"AssignCodes\" using encounter, diagnosis, procedure. Consumes the clinical documentation and produces final ICD-10-CM and CPT/HCPCS codes, running the NCCI edit set and medical-necessity (LCD/NCD) checks against the Diagnosis–Procedure pairing. Produce encounter and emit the appropriate events.",
+      "system_prompt": "作为负责「AssignCodes」动作的自动化智能体，读取临床文档，产出最终 ICD-10-CM 与 CPT/HCPCS 编码，并对诊断—操作配对运行 NCCI 编辑集与医疗必要性（LCD/NCD）检查。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（encounter、diagnosis、procedure）执行「AssignCodes」。读取临床文档，产出最终 ICD-10-CM 与 CPT/HCPCS 编码，并对诊断—操作配对运行 NCCI 编辑集与医疗必要性（LCD/NCD）检查。 产出（encounter）并发出相应事件。",
       "tool_use": [
         "Revenue Cycle System (Resolute)"
       ],
@@ -4434,16 +4443,17 @@
         "role": "Coding Specialist",
         "roleZh": "编码专员",
         "kind": "agent"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:assemble-claim",
       "uuid": "5000000000000000000000000000000b",
       "name": "AssembleClaim",
       "nameZh": "组装理赔",
-      "description": "Consumes all captured Charges and completed coding for the Encounter, produces a draft Claim, runs the scrubber (eligibility re-check, auth presence, field completeness), and sets Claim.status Ready or Held.",
+      "description": "汇总就诊的全部已生成费用与已完成编码，生成草稿理赔单，运行清洗器（资格复核、授权存在性、字段完整性），并将 Claim.status 置为 Ready 或 Held。",
       "descriptionZh": "汇总就诊的全部已生成费用与已完成编码，生成草稿理赔单，运行清洗器（资格复核、授权存在性、字段完整性），并将 Claim.status 置为 Ready 或 Held。",
-      "submission_criteria": "1. Event CODING_COMPLETED has been received\n2. Rule \"Claim requires linked approved authorization\" is satisfied\n3. Rule \"Claim must be scrub-clean (Ready) before submission\" is satisfied",
+      "submission_criteria": "1. 事件 CODING_COMPLETED 已送达\n2. 规则「理赔需关联已批准授权」已满足\n3. 规则「提交前理赔必须清洗通过（Ready）」已满足",
       "object_type": "action",
       "category": "组装理赔",
       "actor": [
@@ -4463,43 +4473,43 @@
         {
           "order": "1",
           "name": "aggregateTheEncounterSCapturedCharges",
-          "description": "Aggregate the Encounter's captured Charges and completed coding into a draft Claim.",
+          "description": "将就诊的已生成费用与已完成编码汇总为草稿理赔单。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "runTheScrubberEligibilityReCheck",
-          "description": "Run the scrubber: eligibility re-check, authorization presence, and field completeness.",
+          "description": "运行清洗器：资格复核、授权存在性与字段完整性。",
           "object_type": "logic",
-          "submission_criteria": "on claim assembly / submission",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "r05-claim-requires-linked-auth",
-              "name": "Claim requires linked approved authorization",
-              "submission_criteria": "on claim assembly / submission",
-              "description": "A Claim may not be submitted for a Procedure that required PriorAuthorization unless an approved PriorAuthorization is linked to the Encounter."
+              "name": "理赔需关联已批准授权",
+              "submission_criteria": "",
+              "description": "对于需要事前授权的诊疗操作，除非就诊已关联已批准的事前授权，否则不得提交理赔。"
             }
           ]
         },
         {
           "order": "3",
           "name": "setClaimStatusReadyWhenScrub",
-          "description": "Set Claim.status = Ready when scrub-clean, else Held.",
+          "description": "清洗通过则将 Claim.status 置为 Ready，否则置为 Held。",
           "object_type": "logic",
-          "submission_criteria": "on transition to Submitted",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "r15-scrub-clean-before-submit",
-              "name": "Claim must be scrub-clean (Ready) before submission",
-              "submission_criteria": "on transition to Submitted",
-              "description": "A Claim must pass all scrubber edits and reach status Ready before it may be submitted to a payer."
+              "name": "提交前理赔必须清洗通过（Ready）",
+              "submission_criteria": "",
+              "description": "理赔单必须通过全部清洗编辑并达到 Ready 状态，方可向付款方提交。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated agent responsible for the \"AssembleClaim\" action. Consumes all captured Charges and completed coding for the Encounter, produces a draft Claim, runs the scrubber (eligibility re-check, auth presence, field completeness), and sets Claim.status Ready or Held. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"AssembleClaim\" using encounter, charge, coverage. Consumes all captured Charges and completed coding for the Encounter, produces a draft Claim, runs the scrubber (eligibility re-check, auth presence, field completeness), and sets Claim.status Ready or Held. Produce claim and emit the appropriate events.",
+      "system_prompt": "作为负责「AssembleClaim」动作的自动化智能体，汇总就诊的全部已生成费用与已完成编码，生成草稿理赔单，运行清洗器（资格复核、授权存在性、字段完整性），并将 Claim.status 置为 Ready 或 Held。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（encounter、charge、coverage）执行「AssembleClaim」。汇总就诊的全部已生成费用与已完成编码，生成草稿理赔单，运行清洗器（资格复核、授权存在性、字段完整性），并将 Claim.status 置为 Ready 或 Held。 产出（claim）并发出相应事件。",
       "tool_use": [
         "Revenue Cycle System (Resolute)"
       ],
@@ -4674,16 +4684,17 @@
         "role": "Billing Specialist",
         "roleZh": "计费专员",
         "kind": "agent"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:submit-claim",
       "uuid": "5000000000000000000000000000000c",
       "name": "SubmitClaim",
       "nameZh": "提交理赔",
-      "description": "Consumes a Ready Claim and produces an EDI 837 transaction, transitioning Claim.status to Submitted.",
+      "description": "消费处于 Ready 状态的理赔单，生成 EDI 837 交易，并将 Claim.status 置为 Submitted。",
       "descriptionZh": "消费处于 Ready 状态的理赔单，生成 EDI 837 交易，并将 Claim.status 置为 Submitted。",
-      "submission_criteria": "1. Event CLAIM_ASSEMBLED has been received\n2. Rule \"Claim timely-filing deadline\" is satisfied\n3. Rule \"Claim must be scrub-clean (Ready) before submission\" is satisfied\n4. Rule \"No resubmission of an accepted Claim as original\" is satisfied",
+      "submission_criteria": "1. 事件 CLAIM_ASSEMBLED 已送达\n2. 规则「理赔及时提交时限」已满足\n3. 规则「提交前理赔必须清洗通过（Ready）」已满足\n4. 规则「已受理理赔不得作为原始件重提」已满足",
       "object_type": "action",
       "category": "提交理赔",
       "actor": [
@@ -4699,36 +4710,36 @@
         {
           "order": "1",
           "name": "generateTheEDI837TransactionFor",
-          "description": "Generate the EDI 837 transaction for the Ready Claim.",
+          "description": "为处于 Ready 状态的理赔单生成 EDI 837 交易。",
           "object_type": "logic",
-          "submission_criteria": "on transition to Submitted",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "r15-scrub-clean-before-submit",
-              "name": "Claim must be scrub-clean (Ready) before submission",
-              "submission_criteria": "on transition to Submitted",
-              "description": "A Claim must pass all scrubber edits and reach status Ready before it may be submitted to a payer."
+              "name": "提交前理赔必须清洗通过（Ready）",
+              "submission_criteria": "",
+              "description": "理赔单必须通过全部清洗编辑并达到 Ready 状态，方可向付款方提交。"
             }
           ]
         },
         {
           "order": "2",
           "name": "transmitViaTheClearinghouseAndSet",
-          "description": "Transmit via the Clearinghouse and set Claim.status = Submitted.",
+          "description": "通过清算网关发送并将 Claim.status 置为 Submitted。",
           "object_type": "logic",
-          "submission_criteria": "on resubmission of an accepted claim",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "r16-no-resubmit-accepted",
-              "name": "No resubmission of an accepted Claim as original",
-              "submission_criteria": "on resubmission of an accepted claim",
-              "description": "A Claim that has already been accepted by the payer may not be resubmitted as an original; corrections shall be submitted only as a replacement Claim with frequency code 7."
+              "name": "已受理理赔不得作为原始件重提",
+              "submission_criteria": "",
+              "description": "已被付款方受理的理赔单不得作为原始件重新提交；更正只能以频次码 7 的替换理赔单提交。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"SubmitClaim\" action. Consumes a Ready Claim and produces an EDI 837 transaction, transitioning Claim.status to Submitted. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"SubmitClaim\" using claim. Consumes a Ready Claim and produces an EDI 837 transaction, transitioning Claim.status to Submitted. Produce claim and emit the appropriate events.",
+      "system_prompt": "作为负责「SubmitClaim」动作的自动化系统，消费处于 Ready 状态的理赔单，生成 EDI 837 交易，并将 Claim.status 置为 Submitted。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（claim）执行「SubmitClaim」。消费处于 Ready 状态的理赔单，生成 EDI 837 交易，并将 Claim.status 置为 Submitted。 产出（claim）并发出相应事件。",
       "tool_use": [
         "Clearinghouse (Waystar)",
         "EDI 837 claim submission via the Clearinghouse."
@@ -4877,16 +4888,17 @@
         "role": "RCS Claim Engine",
         "roleZh": "收入周期系统理赔引擎",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:post-remittance",
       "uuid": "5000000000000000000000000000000d",
       "name": "PostRemittance",
       "nameZh": "入账汇款",
-      "description": "Consumes the payer's EDI 835 remittance and produces posted payments and adjustments at the Charge level; for any denied line, creates a Denial with its CARC/RARC code.",
+      "description": "消费付款方 EDI 835 汇款，在费用项层面入账付款与调整；对任何被拒行项，创建带 CARC/RARC 码的拒付记录。",
       "descriptionZh": "消费付款方 EDI 835 汇款，在费用项层面入账付款与调整；对任何被拒行项，创建带 CARC/RARC 码的拒付记录。",
-      "submission_criteria": "1. Event REMITTANCE_RECEIVED has been received",
+      "submission_criteria": "1. 事件 REMITTANCE_RECEIVED 已送达",
       "object_type": "action",
       "category": "入账汇款",
       "actor": [
@@ -4904,20 +4916,20 @@
         {
           "order": "1",
           "name": "postPaymentsAndAdjustmentsAtThe",
-          "description": "Post payments and adjustments at the Charge level from the 835.",
+          "description": "依据 835 在费用项层面入账付款与调整。",
           "object_type": "logic",
           "submission_criteria": ""
         },
         {
           "order": "2",
           "name": "forAnyDeniedLineCreateA",
-          "description": "For any denied line, create a Denial carrying its CARC/RARC code.",
+          "description": "对任何被拒行项，创建携带其 CARC/RARC 码的拒付记录。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated system responsible for the \"PostRemittance\" action. Consumes the payer's EDI 835 remittance and produces posted payments and adjustments at the Charge level; for any denied line, creates a Denial with its CARC/RARC code. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"PostRemittance\" using claim, remittance. Consumes the payer's EDI 835 remittance and produces posted payments and adjustments at the Charge level; for any denied line, creates a Denial with its CARC/RARC code. Produce payment, denial and emit the appropriate events.",
+      "system_prompt": "作为负责「PostRemittance」动作的自动化系统，消费付款方 EDI 835 汇款，在费用项层面入账付款与调整；对任何被拒行项，创建带 CARC/RARC 码的拒付记录。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（claim、remittance）执行「PostRemittance」。消费付款方 EDI 835 汇款，在费用项层面入账付款与调整；对任何被拒行项，创建带 CARC/RARC 码的拒付记录。 产出（payment、denial）并发出相应事件。",
       "tool_use": [
         "Revenue Cycle System (Resolute)"
       ],
@@ -5071,16 +5083,17 @@
         "role": "RCS",
         "roleZh": "收入周期系统",
         "kind": "system"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:triage-denial",
       "uuid": "5000000000000000000000000000000e",
       "name": "TriageDenial",
       "nameZh": "分诊拒付",
-      "description": "Consumes a new Denial, classifies it (clinical, coding, authorization, eligibility, technical), and routes it to rework or write-off.",
+      "description": "消费新的拒付，按（临床、编码、授权、资格、技术）分类，并路由至返工或核销。",
       "descriptionZh": "消费新的拒付，按（临床、编码、授权、资格、技术）分类，并路由至返工或核销。",
-      "submission_criteria": "1. Event CLAIM_DENIED has been received\n2. Rule \"Denial routed to analyst within 2 business days\" is satisfied\n3. Rule \"Write-off approval authority thresholds\" is satisfied",
+      "submission_criteria": "1. 事件 CLAIM_DENIED 已送达\n2. 规则「拒付 2 个工作日内派单至分析师」已满足\n3. 规则「核销审批权限阈值」已满足",
       "object_type": "action",
       "category": "分诊拒付",
       "actor": [
@@ -5096,28 +5109,28 @@
         {
           "order": "1",
           "name": "classifyTheDenialIntoACategory",
-          "description": "Classify the Denial into a category from its CARC/RARC code.",
+          "description": "依据 CARC/RARC 码将拒付归入某一类别。",
           "object_type": "logic",
-          "submission_criteria": "after remittance posting",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "r17-denial-routing-sla-2d",
-              "name": "Denial routed to analyst within 2 business days",
-              "submission_criteria": "after remittance posting",
-              "description": "A Denial must be routed to a Denials Analyst work queue within 2 business days of the remittance posting date."
+              "name": "拒付 2 个工作日内派单至分析师",
+              "submission_criteria": "",
+              "description": "拒付必须在汇款入账日起 2 个工作日内派单至拒付处理专员的工作队列。"
             }
           ]
         },
         {
           "order": "2",
           "name": "routeTheDenialToARework",
-          "description": "Route the Denial to a rework (appeal) or write-off disposition.",
+          "description": "将拒付路由至返工（申诉）或核销处置。",
           "object_type": "logic",
           "submission_criteria": ""
         }
       ],
-      "system_prompt": "You are an automated agent responsible for the \"TriageDenial\" action. Consumes a new Denial, classifies it (clinical, coding, authorization, eligibility, technical), and routes it to rework or write-off. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"TriageDenial\" using denial. Consumes a new Denial, classifies it (clinical, coding, authorization, eligibility, technical), and routes it to rework or write-off. Produce denial and emit the appropriate events.",
+      "system_prompt": "作为负责「TriageDenial」动作的自动化智能体，消费新的拒付，按（临床、编码、授权、资格、技术）分类，并路由至返工或核销。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（denial）执行「TriageDenial」。消费新的拒付，按（临床、编码、授权、资格、技术）分类，并路由至返工或核销。 产出（denial）并发出相应事件。",
       "tool_use": [
         "Revenue Cycle System (Resolute)"
       ],
@@ -5244,16 +5257,17 @@
         "role": "Denials Analyst",
         "roleZh": "拒付处理专员",
         "kind": "agent"
-      }
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:submit-appeal",
       "uuid": "5000000000000000000000000000000f",
       "name": "SubmitAppeal",
       "nameZh": "提交申诉",
-      "description": "Consumes the corrected documentation/codes and produces a corrected Claim (frequency code 7) or a formal appeal packet, resubmitting via the Clearinghouse and re-entering the remittance loop.",
+      "description": "读取已更正的文档/编码，生成更正理赔单（频次码 7）或正式申诉包，通过清算网关重新提交并重回汇款循环。",
       "descriptionZh": "读取已更正的文档/编码，生成更正理赔单（频次码 7）或正式申诉包，通过清算网关重新提交并重回汇款循环。",
-      "submission_criteria": "1. Event DENIAL_ASSIGNED has been received\n2. Rule \"No resubmission of an accepted Claim as original\" is satisfied\n3. Rule \"Appeal within payer deadline (≤ 60 days)\" is satisfied\n4. Rule \"No balance-bill for provider coding/auth error\" is satisfied",
+      "submission_criteria": "1. 事件 DENIAL_ASSIGNED 已送达\n2. 规则「已受理理赔不得作为原始件重提」已满足\n3. 规则「申诉在付款方时限内（≤ 60 日）」已满足\n4. 规则「因院方编码/授权错误不得向患者结余计费」已满足",
       "object_type": "action",
       "category": "提交申诉",
       "actor": [
@@ -5270,36 +5284,36 @@
         {
           "order": "1",
           "name": "compileTheCorrectedDocumentationCodesOr",
-          "description": "Compile the corrected documentation/codes or a formal appeal packet.",
+          "description": "汇编已更正的文档/编码或正式申诉包。",
           "object_type": "logic",
-          "submission_criteria": "on appeal submission",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "r18-appeal-deadline-60d",
-              "name": "Appeal within payer deadline (≤ 60 days)",
-              "submission_criteria": "on appeal submission",
-              "description": "An appeal for a denied Claim shall be submitted within the payer's appeal deadline, which may not exceed 60 calendar days from the Denial date unless the payer contract grants a longer window."
+              "name": "申诉在付款方时限内（≤ 60 日）",
+              "submission_criteria": "",
+              "description": "对被拒理赔的申诉应在付款方申诉时限内提交；自拒付日起不得超过 60 个日历日，付款方合同另行授予更长窗口的除外。"
             }
           ]
         },
         {
           "order": "2",
           "name": "produceAReplacementClaimWithFrequency",
-          "description": "Produce a replacement Claim with frequency code 7 and resubmit via the Clearinghouse.",
+          "description": "生成频次码 7 的替换理赔单并通过清算网关重新提交。",
           "object_type": "logic",
-          "submission_criteria": "on resubmission of an accepted claim",
+          "submission_criteria": "",
           "rules": [
             {
               "id": "r16-no-resubmit-accepted",
-              "name": "No resubmission of an accepted Claim as original",
-              "submission_criteria": "on resubmission of an accepted claim",
-              "description": "A Claim that has already been accepted by the payer may not be resubmitted as an original; corrections shall be submitted only as a replacement Claim with frequency code 7."
+              "name": "已受理理赔不得作为原始件重提",
+              "submission_criteria": "",
+              "description": "已被付款方受理的理赔单不得作为原始件重新提交；更正只能以频次码 7 的替换理赔单提交。"
             }
           ]
         }
       ],
-      "system_prompt": "You are an automated agent responsible for the \"SubmitAppeal\" action. Consumes the corrected documentation/codes and produces a corrected Claim (frequency code 7) or a formal appeal packet, resubmitting via the Clearinghouse and re-entering the remittance loop. Read the required objects from the ontology, honor every precondition, and perform the steps in order.",
-      "user_prompt": "Execute \"SubmitAppeal\" using denial, claim. Consumes the corrected documentation/codes and produces a corrected Claim (frequency code 7) or a formal appeal packet, resubmitting via the Clearinghouse and re-entering the remittance loop. Produce claim and emit the appropriate events.",
+      "system_prompt": "作为负责「SubmitAppeal」动作的自动化智能体，读取已更正的文档/编码，生成更正理赔单（频次码 7）或正式申诉包，通过清算网关重新提交并重回汇款循环。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（denial、claim）执行「SubmitAppeal」。读取已更正的文档/编码，生成更正理赔单（频次码 7）或正式申诉包，通过清算网关重新提交并重回汇款循环。 产出（claim）并发出相应事件。",
       "tool_use": [
         "Clearinghouse (Waystar)",
         "Resubmits a replacement claim / appeal packet via the Clearinghouse."
@@ -5446,7 +5460,8 @@
         "role": "Denials Analyst",
         "roleZh": "拒付处理专员",
         "kind": "agent"
-      }
+      },
+      "typescript_code": ""
     }
   ],
   "events": [
@@ -5455,7 +5470,7 @@
       "uuid": "60000000000000000000000000000001",
       "name": "PATIENT_ARRIVED",
       "nameZh": "患者到达",
-      "description": "A patient checks in at a kiosk or a scheduled arrival signal fires, opening Process A.",
+      "description": "患者在自助机签到或触发预约到达信号，开启流程 A。",
       "descriptionZh": "患者在自助机签到或触发预约到达信号，开启流程 A。",
       "payload": {
         "source_action": "",
@@ -5503,7 +5518,7 @@
       "uuid": "60000000000000000000000000000002",
       "name": "ENCOUNTER_CREATED",
       "nameZh": "就诊已创建",
-      "description": "A new Encounter has been created and broadcast to RCS and Clarity.",
+      "description": "新就诊已创建并广播至收入周期系统与数据仓库。",
       "descriptionZh": "新就诊已创建并广播至收入周期系统与数据仓库。",
       "payload": {
         "source_action": "registerEncounter",
@@ -5573,7 +5588,7 @@
       "uuid": "60000000000000000000000000000003",
       "name": "ELIGIBILITY_VERIFIED",
       "nameZh": "资格已核验",
-      "description": "Eligibility has been verified; Coverage.status was stamped from the 271 response.",
+      "description": "资格已核验；依据 271 应答更新了 Coverage.status。",
       "descriptionZh": "资格已核验；依据 271 应答更新了 Coverage.status。",
       "payload": {
         "source_action": "verifyEligibility",
@@ -5641,7 +5656,7 @@
       "uuid": "60000000000000000000000000000004",
       "name": "ELIGIBILITY_FAILED",
       "nameZh": "资格核验失败",
-      "description": "Eligibility verification failed; coverage is inactive or termed.",
+      "description": "资格核验失败；保险覆盖为非有效或已终止。",
       "descriptionZh": "资格核验失败；保险覆盖为非有效或已终止。",
       "payload": {
         "source_action": "verifyEligibility",
@@ -5693,7 +5708,7 @@
       "uuid": "60000000000000000000000000000005",
       "name": "TRIAGE_COMPLETED",
       "nameZh": "分诊已完成",
-      "description": "Triage is complete with an acuity level and triage timestamp recorded.",
+      "description": "分诊已完成，记录了急性度等级与分诊时间戳。",
       "descriptionZh": "分诊已完成，记录了急性度等级与分诊时间戳。",
       "payload": {
         "source_action": "recordTriage",
@@ -5745,7 +5760,7 @@
       "uuid": "60000000000000000000000000000006",
       "name": "SEPSIS_SUSPECTED",
       "nameZh": "疑似脓毒症",
-      "description": "SIRS criteria fired during triage; the sepsis bundle clock starts at the triage timestamp.",
+      "description": "分诊期间触发 SIRS 标准；脓毒症集束计时自分诊时间戳起算。",
       "descriptionZh": "分诊期间触发 SIRS 标准；脓毒症集束计时自分诊时间戳起算。",
       "payload": {
         "source_action": "recordTriage",
@@ -5815,7 +5830,7 @@
       "uuid": "60000000000000000000000000000007",
       "name": "ORDER_PLACED",
       "nameZh": "医嘱已下达",
-      "description": "One or more Orders have been placed referencing a catalog Procedure.",
+      "description": "已下达一条或多条引用目录诊疗操作的医嘱。",
       "descriptionZh": "已下达一条或多条引用目录诊疗操作的医嘱。",
       "payload": {
         "source_action": "placeOrder",
@@ -5878,7 +5893,7 @@
       "uuid": "60000000000000000000000000000008",
       "name": "AUTHORIZATION_REQUIRED",
       "nameZh": "需要授权",
-      "description": "A designated high-cost Procedure was ordered without an approved authorization, opening Process C.",
+      "description": "下达了无已批准授权的指定高费用诊疗操作，开启流程 C。",
       "descriptionZh": "下达了无已批准授权的指定高费用诊疗操作，开启流程 C。",
       "payload": {
         "source_action": "placeOrder",
@@ -5947,7 +5962,7 @@
       "uuid": "60000000000000000000000000000009",
       "name": "AUTHORIZATION_REQUESTED",
       "nameZh": "授权已申请",
-      "description": "A prior-authorization request (EDI 278) has been transmitted to the payer.",
+      "description": "已向付款方发送事前授权请求（EDI 278）。",
       "descriptionZh": "已向付款方发送事前授权请求（EDI 278）。",
       "payload": {
         "source_action": "requestAuthorization",
@@ -6016,7 +6031,7 @@
       "uuid": "6000000000000000000000000000000a",
       "name": "AUTHORIZATION_APPROVED",
       "nameZh": "授权已批准",
-      "description": "The payer approved the authorization; the Order is released for scheduling.",
+      "description": "付款方批准了授权；医嘱获释放以供排程。",
       "descriptionZh": "付款方批准了授权；医嘱获释放以供排程。",
       "payload": {
         "source_action": "postAuthorizationResponse",
@@ -6092,7 +6107,7 @@
       "uuid": "6000000000000000000000000000000b",
       "name": "AUTHORIZATION_DENIED",
       "nameZh": "授权被拒",
-      "description": "The payer denied the authorization; the Order is returned to the clinician.",
+      "description": "付款方拒绝了授权；医嘱退回临床医师。",
       "descriptionZh": "付款方拒绝了授权；医嘱退回临床医师。",
       "payload": {
         "source_action": "postAuthorizationResponse",
@@ -6144,7 +6159,7 @@
       "uuid": "6000000000000000000000000000000c",
       "name": "PROCEDURE_DOCUMENTED",
       "nameZh": "操作已记录",
-      "description": "A Procedure has been documented with start/stop times and linked to a supporting Diagnosis; opens charge capture.",
+      "description": "诊疗操作已记录起止时间并关联支持性诊断；开启费用生成。",
       "descriptionZh": "诊疗操作已记录起止时间并关联支持性诊断；开启费用生成。",
       "payload": {
         "source_action": "documentProcedure",
@@ -6214,7 +6229,7 @@
       "uuid": "6000000000000000000000000000000d",
       "name": "ENCOUNTER_DISCHARGED",
       "nameZh": "就诊已出院",
-      "description": "The Encounter has been discharged; this trigger opens Process B coding.",
+      "description": "就诊已出院；该触发开启流程 B 的编码工作。",
       "descriptionZh": "就诊已出院；该触发开启流程 B 的编码工作。",
       "payload": {
         "source_action": "dischargeEncounter",
@@ -6275,7 +6290,7 @@
       "uuid": "6000000000000000000000000000000e",
       "name": "CHARGE_CAPTURED",
       "nameZh": "费用已生成",
-      "description": "A Charge has been generated from a documented Procedure and mapped to an active CDM line.",
+      "description": "已由已记录诊疗操作生成费用并映射到有效 CDM 行。",
       "descriptionZh": "已由已记录诊疗操作生成费用并映射到有效 CDM 行。",
       "payload": {
         "source_action": "generateCharge",
@@ -6351,7 +6366,7 @@
       "uuid": "6000000000000000000000000000000f",
       "name": "CHARGE_ROUTER_ERROR",
       "nameZh": "费用路由错误",
-      "description": "Charge generation failed because no active CDM line matched the documented Procedure.",
+      "description": "费用生成失败，因未找到与已记录诊疗操作匹配的有效 CDM 行。",
       "descriptionZh": "费用生成失败，因未找到与已记录诊疗操作匹配的有效 CDM 行。",
       "payload": {
         "source_action": "generateCharge",
@@ -6403,7 +6418,7 @@
       "uuid": "60000000000000000000000000000010",
       "name": "CODING_COMPLETED",
       "nameZh": "编码已完成",
-      "description": "Final ICD-10/CPT codes were assigned and edits passed for the Encounter.",
+      "description": "就诊已分配最终 ICD-10/CPT 编码且编辑检查通过。",
       "descriptionZh": "就诊已分配最终 ICD-10/CPT 编码且编辑检查通过。",
       "payload": {
         "source_action": "assignCodes",
@@ -6472,7 +6487,7 @@
       "uuid": "60000000000000000000000000000011",
       "name": "CODING_EDIT_FAILED",
       "nameZh": "编码编辑失败",
-      "description": "Coding failed an NCCI or medical-necessity edit and is routed for review.",
+      "description": "编码未通过 NCCI 或医疗必要性编辑，路由复核。",
       "descriptionZh": "编码未通过 NCCI 或医疗必要性编辑，路由复核。",
       "payload": {
         "source_action": "assignCodes",
@@ -6524,7 +6539,7 @@
       "uuid": "60000000000000000000000000000012",
       "name": "CLAIM_ASSEMBLED",
       "nameZh": "理赔已组装",
-      "description": "A draft Claim was assembled and scrubbed; status is Ready or Held.",
+      "description": "草稿理赔单已组装并清洗；状态为 Ready 或 Held。",
       "descriptionZh": "草稿理赔单已组装并清洗；状态为 Ready 或 Held。",
       "payload": {
         "source_action": "assembleClaim",
@@ -6585,7 +6600,7 @@
       "uuid": "60000000000000000000000000000013",
       "name": "CLAIM_SCRUB_FAILED",
       "nameZh": "理赔清洗失败",
-      "description": "The Claim failed one or more scrubber edits and is routed to the billing edit work queue.",
+      "description": "理赔单未通过一项或多项清洗编辑，路由至计费编辑工作队列。",
       "descriptionZh": "理赔单未通过一项或多项清洗编辑，路由至计费编辑工作队列。",
       "payload": {
         "source_action": "assembleClaim",
@@ -6637,7 +6652,7 @@
       "uuid": "60000000000000000000000000000014",
       "name": "CLAIM_SUBMITTED",
       "nameZh": "理赔已提交",
-      "description": "A Ready Claim was submitted to the payer as an EDI 837 transaction.",
+      "description": "处于 Ready 状态的理赔单已作为 EDI 837 交易提交给付款方。",
       "descriptionZh": "处于 Ready 状态的理赔单已作为 EDI 837 交易提交给付款方。",
       "payload": {
         "source_action": "submitClaim",
@@ -6704,7 +6719,7 @@
       "uuid": "60000000000000000000000000000015",
       "name": "CLAIM_ACCEPTED",
       "nameZh": "理赔已受理",
-      "description": "The Clearinghouse returned a 277CA acknowledgment accepting the Claim.",
+      "description": "清算网关返回 277CA 确认，受理该理赔单。",
       "descriptionZh": "清算网关返回 277CA 确认，受理该理赔单。",
       "payload": {
         "source_action": "submitClaim",
@@ -6771,7 +6786,7 @@
       "uuid": "60000000000000000000000000000016",
       "name": "CLAIM_REJECTED",
       "nameZh": "理赔被退回",
-      "description": "The Clearinghouse 999/277CA acknowledgment rejected the Claim before payer adjudication.",
+      "description": "清算网关 999/277CA 确认在付款方裁定前退回了理赔单。",
       "descriptionZh": "清算网关 999/277CA 确认在付款方裁定前退回了理赔单。",
       "payload": {
         "source_action": "submitClaim",
@@ -6823,7 +6838,7 @@
       "uuid": "60000000000000000000000000000017",
       "name": "REMITTANCE_RECEIVED",
       "nameZh": "汇款已收到",
-      "description": "A payer EDI 835 remittance file has landed for posting.",
+      "description": "付款方 EDI 835 汇款文件已到达，待入账。",
       "descriptionZh": "付款方 EDI 835 汇款文件已到达，待入账。",
       "payload": {
         "source_action": "",
@@ -6893,7 +6908,7 @@
       "uuid": "60000000000000000000000000000018",
       "name": "PAYMENT_POSTED",
       "nameZh": "付款已入账",
-      "description": "Payments and adjustments were posted at the Charge level from the 835.",
+      "description": "已依据 835 在费用项层面入账付款与调整。",
       "descriptionZh": "已依据 835 在费用项层面入账付款与调整。",
       "payload": {
         "source_action": "postRemittance",
@@ -6975,7 +6990,7 @@
       "uuid": "60000000000000000000000000000019",
       "name": "CLAIM_DENIED",
       "nameZh": "理赔被拒",
-      "description": "One or more lines were denied; a Denial was created carrying its CARC/RARC code.",
+      "description": "一行或多行被拒；已创建携带 CARC/RARC 码的拒付记录。",
       "descriptionZh": "一行或多行被拒；已创建携带 CARC/RARC 码的拒付记录。",
       "payload": {
         "source_action": "postRemittance",
@@ -7048,7 +7063,7 @@
       "uuid": "6000000000000000000000000000001a",
       "name": "DENIAL_ASSIGNED",
       "nameZh": "拒付已派单",
-      "description": "A Denial was classified and routed to a Denials Analyst for rework or write-off.",
+      "description": "拒付已分类并派单至拒付处理专员进行返工或核销。",
       "descriptionZh": "拒付已分类并派单至拒付处理专员进行返工或核销。",
       "payload": {
         "source_action": "triageDenial",
@@ -7109,7 +7124,7 @@
       "uuid": "6000000000000000000000000000001b",
       "name": "APPEAL_SUBMITTED",
       "nameZh": "申诉已提交",
-      "description": "A corrected/replacement Claim or appeal packet was resubmitted, re-entering the remittance loop.",
+      "description": "已重新提交更正/替换理赔单或申诉包，重回汇款循环。",
       "descriptionZh": "已重新提交更正/替换理赔单或申诉包，重回汇款循环。",
       "payload": {
         "source_action": "submitAppeal",
@@ -7162,7 +7177,7 @@
         "en": "Admission to Discharge",
         "zh": "入院到出院"
       },
-      "description": "Process A: the clinical pathway from registration through eligibility verification, triage, order placement, procedure documentation, and discharge.",
+      "description": "入院到出院",
       "actor": [
         "Human"
       ],
@@ -7173,42 +7188,42 @@
         {
           "order": "1",
           "name": "registerEncounter",
-          "description": "Consumes patient demographics and scheduling data and produces a new Encounter record linked to the Patient via MRN.",
+          "description": "录入患者人口学与排程数据，生成与患者（MRN）关联的新就诊记录。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "2",
           "name": "verifyEligibility",
-          "description": "Consumes the Coverage on file, sends an EDI 270 eligibility inquiry, and stamps Coverage.status from the 271 response.",
+          "description": "读取在档保险覆盖，发送 EDI 270 资格查询，并依据 271 应答更新 Coverage.status。",
           "type": "tool",
           "condition": "Eligibility verified"
         },
         {
           "order": "3",
           "name": "recordTriage",
-          "description": "Consumes vitals and chief complaint and produces a triage timestamp, an acuity level, and (when criteria met) sets Encounter.emergencyFlag.",
+          "description": "录入生命体征与主诉，生成分诊时间戳与急性度等级，必要时置 Encounter.emergencyFlag。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "4",
           "name": "placeOrder",
-          "description": "Consumes the clinician's selection and produces one or more Order records, each referencing a catalog Procedure; routes designated high-cost imaging to Prior Authorization.",
+          "description": "录入医师选择，生成一条或多条引用目录诊疗操作的医嘱记录；将指定高费用影像路由至事前授权流程。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "5",
           "name": "documentProcedure",
-          "description": "Consumes the completed clinical work and produces a documented Procedure with start/stop times, links it to at least one supporting Diagnosis, and signs the clinical note.",
+          "description": "录入已完成的临床工作，生成带起止时间的已记录诊疗操作，关联至少一个支持性诊断并签署病历。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "6",
           "name": "dischargeEncounter",
-          "description": "Consumes the discharge order and final documentation and produces a closed Encounter (status Discharged) with a discharge timestamp; this opens Process B.",
+          "description": "读取出院医嘱与最终文档，生成已关闭的就诊（status = Discharged）及出院时间戳；此举开启流程 B。",
           "type": "manual",
           "condition": ""
         }
@@ -7367,7 +7382,7 @@
         "en": "Prior Authorization",
         "zh": "事前授权"
       },
-      "description": "Process C: obtaining payer approval for designated services via EDI 278, from request assembly through adjudication and posting.",
+      "description": "事前授权",
       "actor": [
         "Agent",
         "System"
@@ -7379,14 +7394,14 @@
         {
           "order": "1",
           "name": "requestAuthorization",
-          "description": "Consumes the ordered Procedure, the Coverage, and supporting documentation and produces a PriorAuthorization in Requested state, transmitting an EDI 278 to the payer.",
+          "description": "读取已下达的诊疗操作、保险覆盖与支持性文档，生成处于 Requested 状态的事前授权，并向付款方发送 EDI 278 请求。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "2",
           "name": "postAuthorizationResponse",
-          "description": "Consumes the payer's 278 response and updates the PriorAuthorization to Approved, Denied, or Pended, recording approval number, approved units, and validity window.",
+          "description": "读取付款方 278 应答，将事前授权更新为 Approved/Denied/Pended，并记录批准号、批准单位数与有效窗口。",
           "type": "tool",
           "condition": "auth.status == 'Pended'"
         }
@@ -7490,7 +7505,7 @@
         "en": "Charge Capture to Claim",
         "zh": "计费到理赔提交"
       },
-      "description": "Process B: the financial pathway from charge generation through coding, claim assembly, scrubbing, submission, and remittance posting.",
+      "description": "计费到理赔提交",
       "actor": [
         "System",
         "Agent"
@@ -7503,35 +7518,35 @@
         {
           "order": "1",
           "name": "generateCharge",
-          "description": "Consumes each ProcedureDocumented event, looks up the matching CDM line, and produces one Charge per billable Procedure with price, revenue code, and units.",
+          "description": "消费每个 ProcedureDocumented 事件，查找匹配的 CDM 行，为每项可计费诊疗操作生成带价格、收入代码与单位数的费用项。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "2",
           "name": "assignCodes",
-          "description": "Consumes the clinical documentation and produces final ICD-10-CM and CPT/HCPCS codes, running the NCCI edit set and medical-necessity (LCD/NCD) checks against the Diagnosis–Procedure pairing.",
+          "description": "读取临床文档，产出最终 ICD-10-CM 与 CPT/HCPCS 编码，并对诊断—操作配对运行 NCCI 编辑集与医疗必要性（LCD/NCD）检查。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "3",
           "name": "assembleClaim",
-          "description": "Consumes all captured Charges and completed coding for the Encounter, produces a draft Claim, runs the scrubber (eligibility re-check, auth presence, field completeness), and sets Claim.status Ready or Held.",
+          "description": "汇总就诊的全部已生成费用与已完成编码，生成草稿理赔单，运行清洗器（资格复核、授权存在性、字段完整性），并将 Claim.status 置为 Ready 或 Held。",
           "type": "tool",
           "condition": "claim.status == 'Ready'"
         },
         {
           "order": "4",
           "name": "submitClaim",
-          "description": "Consumes a Ready Claim and produces an EDI 837 transaction, transitioning Claim.status to Submitted.",
+          "description": "消费处于 Ready 状态的理赔单，生成 EDI 837 交易，并将 Claim.status 置为 Submitted。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "5",
           "name": "postRemittance",
-          "description": "Consumes the payer's EDI 835 remittance and produces posted payments and adjustments at the Charge level; for any denied line, creates a Denial with its CARC/RARC code.",
+          "description": "消费付款方 EDI 835 汇款，在费用项层面入账付款与调整；对任何被拒行项，创建带 CARC/RARC 码的拒付记录。",
           "type": "tool",
           "condition": "denied_lines == 0"
         }
@@ -7711,7 +7726,7 @@
         "en": "Denial Management & Appeal",
         "zh": "拒付管理与申诉"
       },
-      "description": "Process D: reworking and appealing rejected claims, from denial triage through appeal submission back into the remittance loop.",
+      "description": "拒付管理与申诉",
       "actor": [
         "Agent",
         "System"
@@ -7723,14 +7738,14 @@
         {
           "order": "1",
           "name": "triageDenial",
-          "description": "Consumes a new Denial, classifies it (clinical, coding, authorization, eligibility, technical), and routes it to rework or write-off.",
+          "description": "消费新的拒付，按（临床、编码、授权、资格、技术）分类，并路由至返工或核销。",
           "type": "tool",
           "condition": "disposition == 'appeal'"
         },
         {
           "order": "2",
           "name": "submitAppeal",
-          "description": "Consumes the corrected documentation/codes and produces a corrected Claim (frequency code 7) or a formal appeal packet, resubmitting via the Clearinghouse and re-entering the remittance loop.",
+          "description": "读取已更正的文档/编码，生成更正理赔单（频次码 7）或正式申诉包，通过清算网关重新提交并重回汇款循环。",
           "type": "tool",
           "condition": ""
         }
@@ -7827,7 +7842,7 @@
         "en": "Care Pathway & Revenue Cycle (End-to-End)",
         "zh": "诊疗路径与收入周期（端到端）"
       },
-      "description": "Inferred end-to-end orchestration chaining Processes A→C→B→D: from patient arrival and care delivery through prior authorization, charge-to-claim, and denial management to final payment.",
+      "description": "诊疗路径与收入周期（端到端）",
       "actor": [
         "Human",
         "Agent",
@@ -7840,63 +7855,63 @@
         {
           "order": "1",
           "name": "registerEncounter",
-          "description": "Consumes patient demographics and scheduling data and produces a new Encounter record linked to the Patient via MRN.",
+          "description": "录入患者人口学与排程数据，生成与患者（MRN）关联的新就诊记录。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "2",
           "name": "placeOrder",
-          "description": "Consumes the clinician's selection and produces one or more Order records, each referencing a catalog Procedure; routes designated high-cost imaging to Prior Authorization.",
+          "description": "录入医师选择，生成一条或多条引用目录诊疗操作的医嘱记录；将指定高费用影像路由至事前授权流程。",
           "type": "manual",
           "condition": "procedure.requires_auth == true"
         },
         {
           "order": "3",
           "name": "requestAuthorization",
-          "description": "Consumes the ordered Procedure, the Coverage, and supporting documentation and produces a PriorAuthorization in Requested state, transmitting an EDI 278 to the payer.",
+          "description": "读取已下达的诊疗操作、保险覆盖与支持性文档，生成处于 Requested 状态的事前授权，并向付款方发送 EDI 278 请求。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "4",
           "name": "documentProcedure",
-          "description": "Consumes the completed clinical work and produces a documented Procedure with start/stop times, links it to at least one supporting Diagnosis, and signs the clinical note.",
+          "description": "录入已完成的临床工作，生成带起止时间的已记录诊疗操作，关联至少一个支持性诊断并签署病历。",
           "type": "manual",
           "condition": ""
         },
         {
           "order": "5",
           "name": "generateCharge",
-          "description": "Consumes each ProcedureDocumented event, looks up the matching CDM line, and produces one Charge per billable Procedure with price, revenue code, and units.",
+          "description": "消费每个 ProcedureDocumented 事件，查找匹配的 CDM 行，为每项可计费诊疗操作生成带价格、收入代码与单位数的费用项。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "6",
           "name": "assembleClaim",
-          "description": "Consumes all captured Charges and completed coding for the Encounter, produces a draft Claim, runs the scrubber (eligibility re-check, auth presence, field completeness), and sets Claim.status Ready or Held.",
+          "description": "汇总就诊的全部已生成费用与已完成编码，生成草稿理赔单，运行清洗器（资格复核、授权存在性、字段完整性），并将 Claim.status 置为 Ready 或 Held。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "7",
           "name": "submitClaim",
-          "description": "Consumes a Ready Claim and produces an EDI 837 transaction, transitioning Claim.status to Submitted.",
+          "description": "消费处于 Ready 状态的理赔单，生成 EDI 837 交易，并将 Claim.status 置为 Submitted。",
           "type": "tool",
           "condition": ""
         },
         {
           "order": "8",
           "name": "postRemittance",
-          "description": "Consumes the payer's EDI 835 remittance and produces posted payments and adjustments at the Charge level; for any denied line, creates a Denial with its CARC/RARC code.",
+          "description": "消费付款方 EDI 835 汇款，在费用项层面入账付款与调整；对任何被拒行项，创建带 CARC/RARC 码的拒付记录。",
           "type": "tool",
           "condition": "denied_lines > 0"
         },
         {
           "order": "9",
           "name": "triageDenial",
-          "description": "Consumes a new Denial, classifies it (clinical, coding, authorization, eligibility, technical), and routes it to rework or write-off.",
+          "description": "消费新的拒付，按（临床、编码、授权、资格、技术）分类，并路由至返工或核销。",
           "type": "tool",
           "condition": ""
         }

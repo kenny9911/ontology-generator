@@ -45,13 +45,17 @@ covering the JSON Editor's pure logic (auto-repair / string-aware adversarial
 cases / parseLayer / extract-serialize-merge round-trips / id+bilingual coercion
 / schema suggestions / candidate assembly / validateOntology integration /
 layer-schema drift) — + `npm run test:spec` (`scripts/test-spec-format.mts`) — a
-deterministic, no-LLM suite (36 checks) covering the **spec-format output
+deterministic, no-LLM suite (108 checks) covering the **spec-format output
 projection** (`api/ontology-gen/spec-format/`): it anchors the contract
 validators to the hand-authored reference samples in `fixtures/spec-samples/`,
 then asserts the projection of every golden ontology passes
-`validateSpecBundle`, carries EXACTLY the spec field keys per node, and derives
+`validateSpecBundle`, carries EXACTLY the spec field keys per node, derives
 `primary_key` / FK `references` / rule `executor`/`enforcementLevel`/
-`failurePolicy` / data-vs-system class correctly. `fixtures/ontology-golden/`
+`failurePolicy` / data-vs-system class correctly, every canonical layer carries
+its spec fields, and the **descriptive fields are Chinese-first** (object
+`description`/`relationship_description`, rule scenario/criteria, action
+description/criteria/steps, event/workflow descriptions — both canonical AND the
+`generate spec` projection, no English leaks). `fixtures/ontology-golden/`
 holds reference ontologies consumed by all three scripts. When you finish a
 backend change, run `npm run typecheck:api`, `npm run test:hyper`, and
 `npm run test:spec`; for a frontend change, run `npm run build` (and
