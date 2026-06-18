@@ -20,6 +20,8 @@ import type {
   ReviewStatus,
 } from '@/ontology/schema/types';
 import { PROPERTY_TYPES } from '@/ontology/schema/types';
+import CleanNodeCard from './CleanNodeCard';
+import { toCleanNodes } from './json-editor/clean';
 
 interface ObjectsScreenProps {
   t: Strings;
@@ -86,6 +88,12 @@ export default function ObjectsScreen({ t, lang, ctrl }: ObjectsScreenProps) {
   const [mergeOpen, setMergeOpen] = useState(false);
 
   const sel = objects.find((o) => o.id === selectedId);
+  // The clean sample-shaped projection of the selected object (id English, name
+  // Chinese, sample fields only) — what the JSON editor / export also show.
+  const cleanSel = useMemo(
+    () => (sel && ctrl.ontology ? (toCleanNodes('objects', [sel], ctrl.ontology)[0] as Record<string, unknown>) : undefined),
+    [sel, ctrl.ontology],
+  );
 
   // id -> display name lookup, resolved against the objects layer.
   const nameOf = (id: string | undefined): string => {
@@ -99,13 +107,6 @@ export default function ObjectsScreen({ t, lang, ctrl }: ObjectsScreenProps) {
   const pendingCount = objects.filter(
     (o) => o.reviewState !== 'accepted' && o.reviewState !== 'rejected',
   ).length;
-
-  // Relationships incident to the selected object (either endpoint).
-  const selRels = sel
-    ? relationships.filter(
-        (r) => r.sourceObjectTypeId === sel.id || r.targetObjectTypeId === sel.id,
-      )
-    : [];
 
   // Object-level + attribute-level citations for the right rail.
   const selCitations: { cite: SourceRef; from: string }[] = useMemo(() => {
@@ -513,16 +514,11 @@ export default function ObjectsScreen({ t, lang, ctrl }: ObjectsScreenProps) {
             </div>
           </div>
 
-          {/* ---------------------- Relationship description ------------------ */}
-          {!editing && (
-            <section>
-              <div className="mono-cap" style={{ marginBottom: 'var(--s-3)' }}>
-                {t.relationshipDescription}
-              </div>
-              <p style={{ margin: 0, fontSize: 13, color: 'var(--fg-2)', lineHeight: 1.6, maxWidth: 720 }}>
-                {sel.relationship_description || (lang === 'zh' ? '（暂无关系描述）' : '(no relationship description)')}
-              </p>
-            </section>
+          {/* ---- Clean sample-shaped view: description + relationship_description
+                  + receipts. id/name/type/primary_key are in the header above;
+                  `properties` is the read table below; sources are the right column. */}
+          {!editing && cleanSel && (
+            <CleanNodeCard node={cleanSel} lang={lang} skip={['id', 'name', 'type', 'primary_key', 'properties', 'sources']} />
           )}
 
           {/* ----------------------------- Properties ------------------------- */}
@@ -673,49 +669,8 @@ export default function ObjectsScreen({ t, lang, ctrl }: ObjectsScreenProps) {
             )}
           </section>
 
-          {/* ---------------------------- Relationships ----------------------- */}
-          <section>
-            <div className="mono-cap" style={{ marginBottom: 'var(--s-3)' }}>
-              {t.relations}
-            </div>
-            {selRels.length === 0 ? (
-              <div className="mono-cap">{lang === 'zh' ? '暂无关联' : 'No relationships'}</div>
-            ) : (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {selRels.map((r) => {
-                  const outbound = r.sourceObjectTypeId === sel.id;
-                  const other = outbound ? r.targetObjectTypeId : r.sourceObjectTypeId;
-                  const verb = lang === 'zh' && r.label?.zh ? r.label.zh : r.name;
-                  return (
-                    <div
-                      key={r.id}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        padding: '8px 12px',
-                        background: 'var(--bg-1)',
-                        border: '1px solid var(--line)',
-                        borderRadius: 999,
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: 12,
-                      }}
-                      title={r.cardinality}
-                    >
-                      {!outbound && <span style={{ color: 'var(--accent)' }}>{nameOf(other)}</span>}
-                      <span style={{ color: 'var(--fg-3)' }}>{verb}</span>
-                      <span style={{ color: 'var(--accent)' }}>→</span>
-                      {outbound ? (
-                        <span style={{ color: 'var(--accent)', fontWeight: 500 }}>{nameOf(other)}</span>
-                      ) : (
-                        <span style={{ color: 'var(--accent)', fontWeight: 500 }}>{sel.name}</span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </section>
+          {/* Structured relationships are NOT part of the clean sample shape —
+              `relationship_description` (prose, shown above) is the clean form. */}
         </div>
       )}
 
