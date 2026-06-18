@@ -236,6 +236,9 @@ export function fromCleanNodes(layer: EditorLayer, clean: unknown[], ontology: O
           : origList;
       merged.inputs = mergeIO(c.inputs, o.inputs);
       merged.outputs = mergeIO(c.outputs, o.outputs);
+      // the clean `description` is Chinese-first (reads descriptionZh) — write the
+      // edit to descriptionZh too so it survives the round-trip (cf. mergeObject).
+      merged.descriptionZh = str(c.description) ?? o.descriptionZh;
     }
     if (layer === 'processes') merged.description = str(c.description) ?? (orig as unknown as Process).description;
     return merged;

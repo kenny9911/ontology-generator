@@ -825,6 +825,22 @@ function sectionCleanEditor(goldens: { name: string; o: Ontology }[]): void {
       const evBack = fromCleanNodes('events', toCleanNodes('events', extractLayer(o, 'events'), o), o) as Record<string, unknown>[];
       if (evBack[0]) assert('payloadFields' in evBack[0] && 'id' in evBack[0], '18 event keeps structure + id');
     });
+
+    // The inline review-screen editor flow: a reviewer edits a clean scalar, the
+    // host maps it back via fromCleanNodes, and re-projecting shows the new value.
+    check(`18.e ${name}: editing a clean scalar round-trips (inline-editor flow)`, () => {
+      const tryEdit = (layer: EditorLayer, field: string, val: string): void => {
+        const clean = toCleanNodes(layer, extractLayer(o, layer), o) as Record<string, unknown>[];
+        if (!clean[0] || !(field in clean[0])) return;
+        const edited = { ...clean[0], [field]: val };
+        const back = fromCleanNodes(layer, [edited], o);
+        const reclean = toCleanNodes(layer, back, o) as Record<string, unknown>[];
+        assert(reclean[0][field] === val, `18 ${layer}.${field} edit round-trips (got ${JSON.stringify(reclean[0][field])})`);
+      };
+      tryEdit('rules', 'businessLogicRuleName', '改后的规则名X');
+      tryEdit('objects', 'description', '改后的对象描述X');
+      tryEdit('actions', 'description', '改后的动作描述X');
+    });
   }
 }
 

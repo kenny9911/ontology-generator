@@ -25,7 +25,8 @@ import type { Lang } from './data';
 import type { Strings } from './i18n';
 import type { OntologyRunController } from './useOntologyRun';
 import CleanNodeCard from './CleanNodeCard';
-import { toCleanNodes } from './json-editor/clean';
+import CleanNodeEditor from './CleanNodeEditor';
+import { toCleanNodes, fromCleanNodes } from './json-editor/clean';
 
 interface ActionsScreenProps {
   t: Strings;
@@ -65,6 +66,14 @@ export default function ActionsScreen({ t, lang, ctrl }: ActionsScreenProps) {
     () => (sel && ontology ? (toCleanNodes('actions', [sel], ontology)[0] as Record<string, unknown>) : undefined),
     [sel, ontology],
   );
+
+  const [editing, setEditing] = useState(false);
+  const saveClean = (edited: Record<string, unknown>): void => {
+    if (!ontology || !sel) return;
+    const merged = fromCleanNodes('actions', [edited], ontology)[0] as Record<string, unknown>;
+    ctrl.editEntity('action', sel.id, merged);
+    setEditing(false);
+  };
 
   const actionName = (a: ActionType): string => (lang === 'zh' ? a.nameZh || a.name : a.name);
   const actionDesc = (a: ActionType): string | undefined =>
@@ -173,13 +182,16 @@ export default function ActionsScreen({ t, lang, ctrl }: ActionsScreenProps) {
       {/* ---- Center: selected action detail ------------------------------ */}
       {sel && (
         <div className="scroll" style={{ padding: 'var(--s-6)', display: 'flex', flexDirection: 'column', gap: 'var(--s-5)' }}>
-          <ActionHeader action={sel} title={actionName(sel)} description={actionDesc(sel)} t={t} lang={lang} ctrl={ctrl} />
+          <ActionHeader action={sel} title={actionName(sel)} description={actionDesc(sel)} t={t} lang={lang} ctrl={ctrl} editing={editing} onEdit={() => setEditing(true)} />
 
-          {/* Clean sample-shaped action view: category / submission_criteria /
-              target_objects / trigger / inputs / outputs / action_steps /
-              prompts / tool_use / side_effects / triggered_event + receipts.
+          {/* Clean sample-shaped action view (read) or inline editor (edit).
               name is in the header; sources are the right citations column. */}
-          {cleanSel && <CleanNodeCard node={cleanSel} lang={lang} skip={['name', 'sources']} />}
+          {cleanSel &&
+            (editing ? (
+              <CleanNodeEditor node={cleanSel} lang={lang} onSave={saveClean} onCancel={() => setEditing(false)} />
+            ) : (
+              <CleanNodeCard node={cleanSel} lang={lang} skip={['name', 'sources']} />
+            ))}
         </div>
       )}
 
@@ -206,6 +218,8 @@ function ActionHeader({
   t,
   lang,
   ctrl,
+  editing,
+  onEdit,
 }: {
   action: ActionType;
   title: string;
@@ -213,16 +227,11 @@ function ActionHeader({
   t: Strings;
   lang: Lang;
   ctrl: OntologyRunController;
+  editing: boolean;
+  onEdit: () => void;
 }) {
   const tag = reviewTag(action.reviewState, t);
   const accepted = action.reviewState === 'accepted';
-
-  const onEditName = () => {
-    const next = window.prompt(t.actionsTitle, action.name);
-    if (next != null && next.trim() && next.trim() !== action.name) {
-      ctrl.editEntity('action', action.id, { name: next.trim() });
-    }
-  };
 
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--s-3)', flexWrap: 'wrap' }}>
@@ -252,13 +261,15 @@ function ActionHeader({
           {t.actor}: {actorLabel(action, lang)}
         </div>
       </div>
-      <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
-        <button className="btn ghost" onClick={() => void ctrl.reviewOne('action', action.id, 'rejected')}>{t.reject}</button>
-        <button className="btn ghost" onClick={onEditName}>{t.edit}</button>
-        <button className={accepted ? 'btn' : 'btn primary'} onClick={() => void ctrl.reviewOne('action', action.id, accepted ? 'pending' : 'accepted')}>
-          {accepted ? '✓ ' + t.accepted : t.accept}
-        </button>
-      </div>
+      {!editing && (
+        <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
+          <button className="btn ghost" onClick={() => void ctrl.reviewOne('action', action.id, 'rejected')}>{t.reject}</button>
+          <button className="btn ghost" onClick={onEdit}>{t.edit}</button>
+          <button className={accepted ? 'btn' : 'btn primary'} onClick={() => void ctrl.reviewOne('action', action.id, accepted ? 'pending' : 'accepted')}>
+            {accepted ? '✓ ' + t.accepted : t.accept}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

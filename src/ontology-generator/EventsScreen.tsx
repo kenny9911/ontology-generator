@@ -20,7 +20,8 @@ import type { Lang } from './data';
 import type { Strings } from './i18n';
 import type { OntologyRunController } from './useOntologyRun';
 import CleanNodeCard from './CleanNodeCard';
-import { toCleanNodes } from './json-editor/clean';
+import CleanNodeEditor from './CleanNodeEditor';
+import { toCleanNodes, fromCleanNodes } from './json-editor/clean';
 
 interface EventsScreenProps {
   t: Strings;
@@ -60,6 +61,13 @@ export default function EventsScreen({ t, lang, ctrl }: EventsScreenProps) {
     () => (sel && ctrl.ontology ? (toCleanNodes('events', [sel], ctrl.ontology)[0] as Record<string, unknown>) : undefined),
     [sel, ctrl.ontology],
   );
+  const [editing, setEditing] = useState(false);
+  const saveClean = (edited: Record<string, unknown>): void => {
+    if (!ctrl.ontology || !sel) return;
+    const merged = fromCleanNodes('events', [edited], ctrl.ontology)[0] as Record<string, unknown>;
+    ctrl.editEntity('event', sel.id, merged);
+    setEditing(false);
+  };
 
   // ---- id → display-name resolvers (against the working ontology layers) ----
   const eventName = (e: EventType): string =>
@@ -235,11 +243,18 @@ export default function EventsScreen({ t, lang, ctrl }: EventsScreenProps) {
             t={t}
             lang={lang}
             ctrl={ctrl}
+            editing={editing}
+            onEdit={() => setEditing(true)}
           />
 
-          {/* Clean sample-shaped view: description + payload (spec) + receipts.
-              name is in the header; sources are the right citations column. */}
-          {cleanSel && <CleanNodeCard node={cleanSel} lang={lang} skip={['name', 'sources']} />}
+          {/* Clean sample-shaped view (read) or inline editor (edit). name is the
+              event key (read-only); sources are the right citations column. */}
+          {cleanSel &&
+            (editing ? (
+              <CleanNodeEditor node={cleanSel} lang={lang} readOnly={['name']} onSave={saveClean} onCancel={() => setEditing(false)} />
+            ) : (
+              <CleanNodeCard node={cleanSel} lang={lang} skip={['name', 'sources']} />
+            ))}
         </div>
       )}
 
@@ -260,6 +275,8 @@ function EventHeader({
   t,
   lang,
   ctrl,
+  editing,
+  onEdit,
 }: {
   event: EventType;
   title: string;
@@ -267,16 +284,11 @@ function EventHeader({
   t: Strings;
   lang: Lang;
   ctrl: OntologyRunController;
+  editing: boolean;
+  onEdit: () => void;
 }) {
   const tag = reviewTag(event.reviewState, t);
   const accepted = event.reviewState === 'accepted';
-
-  const onEditName = () => {
-    const next = window.prompt(t.eventsTitle, event.name);
-    if (next != null && next.trim() && next.trim() !== event.name) {
-      ctrl.editEntity('event', event.id, { name: next.trim() });
-    }
-  };
 
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--s-3)', flexWrap: 'wrap' }}>
@@ -334,23 +346,25 @@ function EventHeader({
           {event.sources.length} {t.sources.toLowerCase()}
         </div>
       </div>
-      <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
-        <button
-          className="btn ghost"
-          onClick={() => void ctrl.reviewOne('event', event.id, 'rejected')}
-        >
-          {t.reject}
-        </button>
-        <button className="btn ghost" onClick={onEditName}>
-          {t.edit}
-        </button>
-        <button
-          className={accepted ? 'btn' : 'btn primary'}
-          onClick={() => void ctrl.reviewOne('event', event.id, accepted ? 'pending' : 'accepted')}
-        >
-          {accepted ? '✓ ' + t.accepted : t.accept}
-        </button>
-      </div>
+      {!editing && (
+        <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
+          <button
+            className="btn ghost"
+            onClick={() => void ctrl.reviewOne('event', event.id, 'rejected')}
+          >
+            {t.reject}
+          </button>
+          <button className="btn ghost" onClick={onEdit}>
+            {t.edit}
+          </button>
+          <button
+            className={accepted ? 'btn' : 'btn primary'}
+            onClick={() => void ctrl.reviewOne('event', event.id, accepted ? 'pending' : 'accepted')}
+          >
+            {accepted ? '✓ ' + t.accepted : t.accept}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

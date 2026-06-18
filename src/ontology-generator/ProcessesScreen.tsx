@@ -16,7 +16,8 @@ import type {
   ReviewStatus,
 } from '@/ontology/schema/types';
 import CleanNodeCard from './CleanNodeCard';
-import { toCleanNodes } from './json-editor/clean';
+import CleanNodeEditor from './CleanNodeEditor';
+import { toCleanNodes, fromCleanNodes } from './json-editor/clean';
 
 interface ProcessesScreenProps {
   t: Strings;
@@ -85,6 +86,13 @@ export default function ProcessesScreen({ t, lang, ctrl }: ProcessesScreenProps)
     () => (sel && ontology ? (toCleanNodes('processes', [sel], ontology)[0] as Record<string, unknown>) : undefined),
     [sel, ontology],
   );
+  const [editing, setEditing] = useState(false);
+  const saveClean = (edited: Record<string, unknown>): void => {
+    if (!ontology || !sel) return;
+    const merged = fromCleanNodes('processes', [edited], ontology)[0] as Record<string, unknown>;
+    ctrl.editEntity('process', sel.id, merged);
+    setEditing(false);
+  };
 
   // ---- empty state -----------------------------------------------------------
   if (!ontology || processes.length === 0) {
@@ -264,35 +272,40 @@ export default function ProcessesScreen({ t, lang, ctrl }: ProcessesScreenProps)
                   ))}
                 </div>
               </div>
-              {/* Review controls — wired to ctrl */}
-              <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
-                <button
-                  className="btn ghost"
-                  onClick={() => void ctrl.reviewOne('process', sel.id, 'rejected')}
-                >
-                  {t.reject}
-                </button>
-                <button
-                  className="btn ghost"
-                  disabled={ctrl.running || ctrl.mode === 'demo'}
-                  onClick={() => void ctrl.reRunStage('processes')}
-                  title={t.reRunStage}
-                >
-                  {t.reRun}
-                </button>
-                <button
-                  className={sel.reviewState === 'accepted' ? 'btn' : 'btn primary'}
-                  onClick={() =>
-                    void ctrl.reviewOne(
-                      'process',
-                      sel.id,
-                      sel.reviewState === 'accepted' ? 'pending' : 'accepted',
-                    )
-                  }
-                >
-                  {sel.reviewState === 'accepted' ? '✓ ' + t.accepted : t.accept}
-                </button>
-              </div>
+              {/* Review controls — wired to ctrl (editor carries its own Save/Cancel) */}
+              {!editing && (
+                <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
+                  <button
+                    className="btn ghost"
+                    onClick={() => void ctrl.reviewOne('process', sel.id, 'rejected')}
+                  >
+                    {t.reject}
+                  </button>
+                  <button className="btn ghost" onClick={() => setEditing(true)}>
+                    {t.edit}
+                  </button>
+                  <button
+                    className="btn ghost"
+                    disabled={ctrl.running || ctrl.mode === 'demo'}
+                    onClick={() => void ctrl.reRunStage('processes')}
+                    title={t.reRunStage}
+                  >
+                    {t.reRun}
+                  </button>
+                  <button
+                    className={sel.reviewState === 'accepted' ? 'btn' : 'btn primary'}
+                    onClick={() =>
+                      void ctrl.reviewOne(
+                        'process',
+                        sel.id,
+                        sel.reviewState === 'accepted' ? 'pending' : 'accepted',
+                      )
+                    }
+                  >
+                    {sel.reviewState === 'accepted' ? '✓ ' + t.accepted : t.accept}
+                  </button>
+                </div>
+              )}
             </div>
 
           </div>
@@ -303,7 +316,12 @@ export default function ProcessesScreen({ t, lang, ctrl }: ProcessesScreenProps)
               actors/object/trigger meta, orchestration, and step DAG are dropped
               (not part of the clean sample shape). */}
           <div className="scroll" style={{ flex: 1, padding: 'var(--s-6) var(--s-7)' }}>
-            {cleanSel && <CleanNodeCard node={cleanSel} lang={lang} skip={['id', 'name', 'actor', 'trigger', 'triggered_event', 'sources']} />}
+            {cleanSel &&
+              (editing ? (
+                <CleanNodeEditor node={cleanSel} lang={lang} onSave={saveClean} onCancel={() => setEditing(false)} />
+              ) : (
+                <CleanNodeCard node={cleanSel} lang={lang} skip={['id', 'name', 'actor', 'trigger', 'triggered_event', 'sources']} />
+              ))}
           </div>
         </div>
       )}

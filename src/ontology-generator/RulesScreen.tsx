@@ -14,7 +14,8 @@ import type {
   SourceRef,
 } from '@/ontology/schema/types';
 import CleanNodeCard from './CleanNodeCard';
-import { toCleanNodes } from './json-editor/clean';
+import CleanNodeEditor from './CleanNodeEditor';
+import { toCleanNodes, fromCleanNodes } from './json-editor/clean';
 
 interface RulesScreenProps {
   t: Strings;
@@ -243,22 +244,16 @@ interface RuleCardProps {
 
 function RuleCard({ t, lang, ctrl, rule, clean, index, open, sev, onToggle }: RuleCardProps) {
   const [editing, setEditing] = useState(false);
-  const [draftEn, setDraftEn] = useState(rule.statement.en);
-  const [draftZh, setDraftZh] = useState(rule.statement.zh);
 
   const accepted = rule.reviewState === 'accepted';
   const rejected = rule.reviewState === 'rejected';
 
-  function beginEdit() {
-    setDraftEn(rule.statement.en);
-    setDraftZh(rule.statement.zh);
-    setEditing(true);
-  }
-
-  function commitEdit() {
-    ctrl.editEntity('rule', rule.id, {
-      statement: { en: draftEn, zh: draftZh },
-    });
+  // Persist an inline clean-shape edit: map the edited clean rule back to the
+  // internal Rule (fromCleanNodes) and patch it through the controller.
+  function saveClean(edited: Record<string, unknown>) {
+    if (!ctrl.ontology) return;
+    const merged = fromCleanNodes('rules', [edited], ctrl.ontology)[0] as Record<string, unknown>;
+    ctrl.editEntity('rule', rule.id, merged);
     setEditing(false);
   }
 
@@ -385,12 +380,16 @@ function RuleCard({ t, lang, ctrl, rule, clean, index, open, sev, onToggle }: Ru
             </div>
           )}
 
-          {/* Clean sample-shaped rule view: the 13 spec fields + receipts.
+          {/* Clean sample-shaped rule view (read) or inline editor (edit).
               statement/severity/kind/appliesTo/formal are NOT part of the clean
               rule shape; sources are skipped (shown as Evidence below). */}
           {clean && (
             <div style={{ padding: 'var(--s-5)', borderBottom: '1px solid var(--line)' }}>
-              <CleanNodeCard node={clean} lang={lang} skip={['sources']} />
+              {editing ? (
+                <CleanNodeEditor node={clean} lang={lang} onSave={saveClean} onCancel={() => setEditing(false)} />
+              ) : (
+                <CleanNodeCard node={clean} lang={lang} skip={['sources']} />
+              )}
             </div>
           )}
 
@@ -411,97 +410,43 @@ function RuleCard({ t, lang, ctrl, rule, clean, index, open, sev, onToggle }: Ru
             </div>
           </div>
 
-          {/* Edit area + review actions */}
-          {editing && (
+          {/* Review actions (the inline editor carries its own Save/Cancel). */}
+          {!editing && (
             <div
               style={{
                 borderTop: '1px solid var(--line)',
-                padding: 'var(--s-5)',
+                padding: 'var(--s-4) var(--s-5)',
                 display: 'flex',
-                flexDirection: 'column',
-                gap: 'var(--s-3)',
+                gap: 8,
+                justifyContent: 'flex-end',
+                flexWrap: 'wrap',
               }}
             >
-              <label className="mono-cap" style={{ color: 'var(--fg-4)' }}>
-                {t.rulePlain} · EN
-              </label>
-              <textarea
-                value={draftEn}
-                onChange={(e) => setDraftEn(e.target.value)}
-                rows={2}
-                style={editFieldStyle}
-              />
-              <label className="mono-cap" style={{ color: 'var(--fg-4)' }}>
-                {t.rulePlain} · 中文
-              </label>
-              <textarea
-                value={draftZh}
-                onChange={(e) => setDraftZh(e.target.value)}
-                rows={2}
-                style={editFieldStyle}
-              />
+              <button
+                className="btn ghost"
+                onClick={() => void ctrl.reviewOne('rule', rule.id, 'rejected')}
+              >
+                {t.reject}
+              </button>
+              <button className="btn ghost" onClick={() => setEditing(true)}>
+                {t.edit}
+              </button>
+              <button
+                className={accepted ? 'btn' : 'btn primary'}
+                onClick={() =>
+                  void ctrl.reviewOne('rule', rule.id, accepted ? 'pending' : 'accepted')
+                }
+              >
+                {accepted ? '✓ ' + t.accepted : t.accept}
+              </button>
             </div>
           )}
-
-          <div
-            style={{
-              borderTop: '1px solid var(--line)',
-              padding: 'var(--s-4) var(--s-5)',
-              display: 'flex',
-              gap: 8,
-              justifyContent: 'flex-end',
-              flexWrap: 'wrap',
-            }}
-          >
-            {editing ? (
-              <>
-                <button className="btn ghost" onClick={() => setEditing(false)}>
-                  {t.cancelEdit}
-                </button>
-                <button className="btn primary" onClick={commitEdit}>
-                  {t.saveEdit}
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  className="btn ghost"
-                  onClick={() => void ctrl.reviewOne('rule', rule.id, 'rejected')}
-                >
-                  {t.reject}
-                </button>
-                <button className="btn ghost" onClick={beginEdit}>
-                  {t.edit}
-                </button>
-                <button
-                  className={accepted ? 'btn' : 'btn primary'}
-                  onClick={() =>
-                    void ctrl.reviewOne('rule', rule.id, accepted ? 'pending' : 'accepted')
-                  }
-                >
-                  {accepted ? '✓ ' + t.accepted : t.accept}
-                </button>
-              </>
-            )}
-          </div>
         </div>
       )}
     </div>
   );
 }
 
-const editFieldStyle: React.CSSProperties = {
-  width: '100%',
-  resize: 'vertical',
-  background: 'var(--bg)',
-  border: '1px solid var(--line)',
-  borderRadius: 'var(--r-2)',
-  padding: 'var(--s-3)',
-  color: 'var(--fg)',
-  fontSize: 13,
-  lineHeight: 1.5,
-  fontFamily: 'inherit',
-};
 
 // ---------------------------------------------------------------------------
 // One sentence-level citation: doc name · section/page, the snippet, and the
