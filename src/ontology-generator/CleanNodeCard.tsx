@@ -59,6 +59,19 @@ function label(key: string, lang: Lang): string {
   return l ? l[lang === 'zh' ? 1 : 0] : key;
 }
 
+/** Map a provenance value → bilingual origin label (源文档 / 常识补充 / 联网搜索). */
+const ORIGIN: Record<string, [string, string]> = {
+  extracted: ['From document', '源文档'],
+  inferred: ['Common-sense', '常识补充'],
+  web_search: ['Web search', '联网搜索'],
+  merged: ['Merged', '合并'],
+  human: ['Human', '人工'],
+};
+export function originText(p: unknown, lang: Lang): string {
+  const o = typeof p === 'string' ? ORIGIN[p] : undefined;
+  return o ? o[lang === 'zh' ? 1 : 0] : String(p ?? '');
+}
+
 const FG3 = 'var(--fg-3)';
 const FG2 = 'var(--fg-2)';
 const MONO = 'var(--font-mono)';
@@ -197,7 +210,7 @@ function Receipts({ node, lang, showSources }: { node: Dict; lang: Lang; showSou
   return (
     <div style={{ display: 'grid', gap: 8, borderTop: '1px dashed var(--line)', paddingTop: 'var(--s-3)' }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-        {node.provenance ? <span className="tag">{lang === 'zh' ? '来源类型' : 'provenance'}: {String(node.provenance)}</span> : null}
+        {node.provenance ? <span className="tag">{lang === 'zh' ? '来源' : 'origin'}: {originText(node.provenance, lang)}</span> : null}
         {node.reviewState ? <span className="tag">{lang === 'zh' ? '审阅状态' : 'reviewState'}: {String(node.reviewState)}</span> : null}
         {conf !== undefined ? <span className="mono-cap" style={{ color: 'var(--accent-2)' }}>{lang === 'zh' ? '置信度' : 'confidence'} {(conf * 100).toFixed(0)}%</span> : null}
       </div>

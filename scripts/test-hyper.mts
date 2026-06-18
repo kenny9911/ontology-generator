@@ -54,6 +54,9 @@ import { findingsToGaps } from '../api/ontology-gen/pipeline/hyper/remediate.js'
 import { preserve } from '../api/ontology-gen/pipeline/swarm/deepen.js';
 import { getStore, resetStore, InMemoryOntologyStore } from '../api/ontology-gen/store.js';
 import type { StageContext } from '../api/ontology-gen/pipeline/context.js';
+import { renderWebAugment } from '../api/ontology-gen/pipeline/web-augment.js';
+import { resolveTavilyKey, tavilyAvailable } from '../api/ontology-gen/tavily.js';
+import type { WebAugmentation } from '../api/_shared/ontology-schema.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -839,10 +842,10 @@ async function sectionRegistry(): Promise<void> {
     );
   });
 
-  await check('AGENT_REGISTRY has exactly 14 entries with unique ids', () => {
-    assertEq(AGENT_REGISTRY.length, 14, 'registry size');
+  await check('AGENT_REGISTRY has exactly 15 entries with unique ids', () => {
+    assertEq(AGENT_REGISTRY.length, 15, 'registry size');
     const ids = new Set(AGENT_REGISTRY.map((a) => a.id));
-    assertEq(ids.size, 14, 'unique ids');
+    assertEq(ids.size, 15, 'unique ids');
   });
 
   await check('every registry entry has non-empty bilingual labels (en + zh)', () => {
@@ -983,6 +986,53 @@ async function sectionUseCases(): Promise<void> {
 // Runner
 // ===========================================================================
 
+async function sectionWebAugment(): Promise<void> {
+  section('8. Web-search augmentation (Tavily) — pure render + key resolution');
+
+  await check('renderWebAugment(undefined) is undefined (no-web behavior)', () => {
+    assertEq(renderWebAugment(undefined), undefined, 'undefined input');
+  });
+
+  await check('renderWebAugment with blank text is undefined', () => {
+    const aug: WebAugmentation = { industry: 'x', scenario: 'y', queries: ['q'], text: '   ', sources: [], at: '2026-01-01' };
+    assertEq(renderWebAugment(aug), undefined, 'blank text renders nothing');
+  });
+
+  await check('renderWebAugment block carries header, industry, web_search reminder, sources', () => {
+    const aug: WebAugmentation = {
+      industry: 'recruitment',
+      scenario: 'candidate onboarding',
+      queries: ['recruitment data model'],
+      text: '- Candidate: id, status\n- Requisition: id',
+      sources: [{ title: 'HR Data Models', url: 'https://example.com/hr' }],
+      at: '2026-01-01',
+    };
+    const block = renderWebAugment(aug);
+    assert(typeof block === 'string', 'returns a string');
+    const s = block as string;
+    assert(s.includes('WEB-SEARCH SUPPLEMENT'), 'has the header');
+    assert(s.includes('recruitment'), 'names the industry');
+    assert(s.includes('web_search'), 'reminds to tag web_search provenance');
+    assert(s.includes('https://example.com/hr'), 'lists the source url');
+    assert(s.includes('- Candidate: id, status'), 'embeds the supplement text');
+  });
+
+  await check('resolveTavilyKey: env TAVILY_API_KEY wins over settings', () => {
+    withEnv({ TAVILY_API_KEY: 'tvly-env' }, () => {
+      assertEq(resolveTavilyKey({ overrides: {}, tavilyApiKey: 'tvly-settings' }), 'tvly-env', 'env precedence');
+    });
+  });
+
+  await check('resolveTavilyKey / tavilyAvailable: settings fallback + absence', () => {
+    withEnv({ TAVILY_API_KEY: undefined }, () => {
+      assertEq(resolveTavilyKey({ overrides: {}, tavilyApiKey: 'tvly-settings' }), 'tvly-settings', 'settings fallback');
+      assertEq(tavilyAvailable({ overrides: {}, tavilyApiKey: 'tvly-settings' }), true, 'available via settings');
+      assertEq(tavilyAvailable({ overrides: {} }), false, 'unavailable with no key');
+      assertEq(tavilyAvailable(null), false, 'unavailable with null settings');
+    });
+  });
+}
+
 async function main(): Promise<void> {
   console.log('test-hyper — deterministic verification suite (design §6.2)');
 
@@ -994,6 +1044,7 @@ async function main(): Promise<void> {
   await sectionSettings();
   await sectionRegistry();
   await sectionUseCases();
+  await sectionWebAugment();
 
   console.log('\n== Summary ==');
   let pass = 0;

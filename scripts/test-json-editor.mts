@@ -841,6 +841,21 @@ function sectionCleanEditor(goldens: { name: string; o: Ontology }[]): void {
       tryEdit('objects', 'description', '改后的对象描述X');
       tryEdit('actions', 'description', '改后的动作描述X');
     });
+
+    // Per-property origin (源文档/常识补充/联网搜索) survives the clean ⇄ internal seam.
+    check(`18.p ${name}: property provenance round-trips through clean`, () => {
+      const objs = extractLayer(o, 'objects') as Record<string, unknown>[];
+      const obj0 = objs[0];
+      const props = obj0 && Array.isArray(obj0.properties) ? (obj0.properties as Record<string, unknown>[]) : [];
+      if (!props[0]) return;
+      const injected = { ...obj0, properties: [{ ...props[0], provenance: 'web_search' }, ...props.slice(1)] };
+      const clean = toCleanNodes('objects', [injected], o) as Record<string, unknown>[];
+      const cleanProps = clean[0].properties as Record<string, unknown>[];
+      assert(cleanProps[0]!.provenance === 'web_search', '18.p clean property carries provenance');
+      const back = fromCleanNodes('objects', clean, o) as Record<string, unknown>[];
+      const backProps = (back[0].properties ?? []) as Record<string, unknown>[];
+      assert(backProps[0]!.provenance === 'web_search', '18.p fromCleanNodes preserves property provenance');
+    });
   }
 }
 

@@ -31,6 +31,7 @@ import type {
   ObjectProperty,
   ObjectType,
   PropertyType,
+  Provenance,
   Relationship,
   SourceRef,
 } from '../../../_shared/ontology-schema.js';
@@ -40,6 +41,7 @@ import { executeLLMWithTracking } from '../../llm.js';
 import type { ExecuteLLMOptions } from '../../llm.js';
 import { buildObjectsPrompt } from '../../prompts.js';
 import { ctxAgentLlm } from '../../llm-router.js';
+import { stageSystem } from '../context.js';
 import type { StageContext } from '../context.js';
 
 // ---------------------------------------------------------------------------
@@ -63,6 +65,7 @@ interface RawProperty {
   descriptionZh?: unknown;
   is_foreign_key?: unknown;
   references?: unknown;
+  provenance?: unknown;
   // legacy shapes accepted as a fallback:
   keyRole?: unknown;
   refObjectTypeId?: unknown;
@@ -88,6 +91,7 @@ interface RawObject {
   display?: { emoji?: unknown; color?: unknown };
   sources?: unknown;
   confidence?: unknown;
+  provenance?: unknown;
 }
 
 interface RawRelationship {
@@ -101,6 +105,7 @@ interface RawRelationship {
   description?: unknown;
   sources?: unknown;
   confidence?: unknown;
+  provenance?: unknown;
 }
 
 interface RawObjectsPayload {
@@ -176,6 +181,13 @@ function toPropertyType(v: unknown): PropertyType {
 function toCardinality(v: unknown): Cardinality {
   const s = typeof v === 'string' ? v.toLowerCase() : '';
   return CARDINALITIES.has(s as Cardinality) ? (s as Cardinality) : 'many_to_many';
+}
+
+const PROVENANCE_SET = new Set<Provenance>(['extracted', 'inferred', 'web_search', 'merged', 'human']);
+/** Coerce a model-emitted provenance token; default 'extracted' (from the document). */
+function toProvenance(v: unknown): Provenance {
+  const s = typeof v === 'string' ? v.trim().toLowerCase() : '';
+  return PROVENANCE_SET.has(s as Provenance) ? (s as Provenance) : 'extracted';
 }
 
 /** Coerce the object classification ('data' | 'system'); undefined when unknown. */
@@ -288,6 +300,11 @@ function mapProperties(rawProps: unknown): ObjectProperty[] {
       type: toPropertyType(a?.type),
       description: str(a?.description).trim(),
     };
+    // Per-property origin (源文档 / 常识补充 / 联网搜索). Only stamped when the model
+    // marked it, so document properties stay lean (undefined ⇒ treated as extracted).
+    if (typeof a?.provenance === 'string' && a.provenance.trim()) {
+      prop.provenance = toProvenance(a.provenance);
+    }
     const nameZh = optStr(a?.nameZh);
     if (nameZh) prop.nameZh = nameZh;
     const descriptionZh = optStr(a?.descriptionZh);
@@ -347,7 +364,7 @@ export async function extractObjects(
         model: llm.model,
         provider: llm.provider as ExecuteLLMOptions['provider'],
         messages: [
-          { role: 'system', content: ctx.briefSeed ? `${system}\n\n${ctx.briefSeed}` : system },
+          { role: 'system', content: stageSystem(ctx, system) },
           { role: 'user', content: user },
         ],
         temperature: 0.1,
@@ -375,6 +392,7 @@ export async function extractObjects(
       const key = name.toLowerCase();
       const sources = mapSources(ro?.sources, documentId, documentName);
       const confidence = rawConfidence(ro?.confidence);
+      const provenance = toProvenance(ro?.provenance);
       const properties = mapProperties(ro?.properties ?? ro?.attributes);
       const modelId = str(ro?.id).trim();
       // relationship prose, Chinese-first: a bilingual relationshipNote {en,zh}
@@ -393,6 +411,8 @@ export async function extractObjects(
         // and remember this chunk's model id maps to the canonical id.
         existing.sources.push(...sources);
         if (confidence > existing.confidence) existing.confidence = confidence;
+        // Document evidence in ANY chunk beats a common-sense / web-search guess.
+        if (provenance === 'extracted') existing.provenance = 'extracted';
         if (properties.length > 0 && existing.properties.length === 0) {
           existing.properties = properties;
         }
@@ -420,7 +440,7 @@ export async function extractObjects(
         properties,
         sources,
         confidence,
-        provenance: 'extracted',
+        provenance,
         reviewState: 'pending',
       };
       const descriptionZh = optStr(ro?.descriptionZh);
@@ -465,11 +485,13 @@ export async function extractObjects(
       const relKey = `${sourceObjectTypeId}|${verb.toLowerCase()}|${targetObjectTypeId}`;
       const sources = mapSources(rr?.sources, documentId, documentName);
       const confidence = rawConfidence(rr?.confidence);
+      const provenance = toProvenance(rr?.provenance);
 
       const existing = relByName.get(relKey);
       if (existing) {
         existing.sources.push(...sources);
         if (confidence > existing.confidence) existing.confidence = confidence;
+        if (provenance === 'extracted') existing.provenance = 'extracted';
         continue;
       }
 
@@ -483,7 +505,7 @@ export async function extractObjects(
         cardinality: toCardinality(rr?.cardinality),
         sources,
         confidence,
-        provenance: 'extracted',
+        provenance,
         reviewState: 'pending',
       };
       const nameZh = optStr(rr?.nameZh);

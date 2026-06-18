@@ -26,6 +26,7 @@ import type { LLMProvider } from '../../llm.js';
 import { makeId } from '../../../_shared/ids.js';
 import { buildRulesPrompt } from '../../prompts.js';
 import { ctxAgentLlm } from '../../llm-router.js';
+import { stageSystem } from '../context.js';
 import type { StageContext } from '../context.js';
 import type {
   Rule,
@@ -138,7 +139,7 @@ export async function extractRules(
   let raw: string;
   try {
     const messages: ChatMessage[] = [
-      { role: 'system', content: ctx.briefSeed ? `${system}\n\n${ctx.briefSeed}` : system },
+      { role: 'system', content: stageSystem(ctx, system) },
       { role: 'user', content: user },
     ];
     const llm = ctxAgentLlm(ctx, 'rules_extractor', {

@@ -47,7 +47,7 @@ const ACTOR_ENUM = ['Human', 'Agent', 'System'] as const;
 const ENFORCEMENT_ENUM = ['mandatory', 'optional'] as const;
 const FAILURE_POLICY_ENUM = ['warn', 'block'] as const;
 const WF_STEP_TYPE_ENUM = ['manual', 'tool', 'logic'] as const;
-const PROVENANCE_ENUM = ['extracted', 'inferred', 'merged', 'human'] as const;
+const PROVENANCE_ENUM = ['extracted', 'inferred', 'web_search', 'merged', 'human'] as const;
 const REVIEW_ENUM = ['pending', 'accepted', 'edited', 'merged', 'rejected'] as const;
 const RULE_KIND_ENUM = [
   'validation', 'constraint', 'derivation', 'state_transition', 'authorization', 'temporal',
@@ -106,6 +106,7 @@ const objectsSchema = layerArray('^objectType:', {
           description: str,
           is_foreign_key: bool,
           references: str,
+          provenance: enumOf(PROVENANCE_ENUM),
         },
         additionalProperties: true,
       },

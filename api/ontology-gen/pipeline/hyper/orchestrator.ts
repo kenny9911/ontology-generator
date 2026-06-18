@@ -198,6 +198,7 @@ function buildAndCarry(ctx: StageContext, prev: Ontology): Ontology {
     createdAt: prev.metadata?.createdAt ?? next.metadata.createdAt,
     createdBy: prev.metadata?.createdBy ?? next.metadata.createdBy,
     history: prev.metadata?.history ?? next.metadata.history,
+    webAugmentation: prev.metadata?.webAugmentation ?? next.metadata.webAugmentation,
   };
   return next;
 }

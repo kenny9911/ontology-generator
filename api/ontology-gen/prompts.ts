@@ -221,8 +221,27 @@ COMMONLY MISSED — sweep for ALL of these explicitly (extractors systematically
   consented") => "Boolean"; enumerated value sets or any multi-value field => "List<String>";
   identifiers, codes, names, and free text => "String".
 
+COMMON-SENSE SUPPLEMENTATION (beyond the document — REQUIRED)
+- After sweeping the document, ALSO add the objects and properties a domain EXPERT knows
+  this kind of business always has even when the document is silent — standard master /
+  reference data, the common parties, and the obvious id / status / created_at / owner fields.
+  This fills the gaps in thin or partial documents so downstream agents are not blind.
+- Mark every such common-sense item provenance:"inferred" and give it NO "sources" (it is
+  not in the document — never fabricate a citation for it).
+- If a "WEB-SEARCH SUPPLEMENT" block appears AFTER these instructions, you MAY also add
+  objects/properties it evidences that fit THIS document's industry; mark THOSE
+  provenance:"web_search" with NO "sources". Ignore anything off-industry.
+
+PROVENANCE (REQUIRED on every object AND every property)
+- "extracted" — stated in the DOCUMENT; MUST carry >=1 "sources" entry with a verbatim
+  "snippet" (ungrounded "extracted" items are DROPPED).
+- "inferred" — your common-sense supplement, NOT in the document; NO "sources".
+- "web_search" — from the WEB-SEARCH SUPPLEMENT block, NOT in the document; NO "sources".
+- A property has its OWN provenance: an "extracted" object may carry "inferred" properties,
+  and an "inferred" object may still carry a property the document mentions in passing.
+
 PROPERTY RULES (the "properties" array)
-- Each property MUST have "name" (snake_case), "type", and a generic "description".
+- Each property MUST have "name" (snake_case), "type", "description", and "provenance".
 - "type" is ONE of: String | Integer | Float | Boolean | Date | Timestamp | List<String>.
 - A property that points at ANOTHER object is a foreign key: set "is_foreign_key": true and
   "references" to the target object's id (e.g. "objectType:customer").
@@ -249,16 +268,31 @@ OUTPUT CONTRACT — return EXACTLY this shape (one JSON object):
       "relationship_description": "A Customer places one or more Orders and holds exactly one CreditProfile.",
       "primary_key": "customer_id",
       "properties": [
-        { "name": "customer_id", "nameZh": "客户编号", "type": "String", "description": "Unique identity of the customer." },
-        { "name": "tier", "type": "List<String>", "description": "Customer tier — one of Standard, Premium, Enterprise." },
+        { "name": "customer_id", "nameZh": "客户编号", "type": "String", "description": "Unique identity of the customer.", "provenance": "extracted" },
+        { "name": "tier", "type": "List<String>", "description": "Customer tier — one of Standard, Premium, Enterprise.", "provenance": "extracted" },
+        { "name": "created_at", "type": "Timestamp", "description": "When the customer record was created (standard audit field).", "provenance": "inferred" },
         { "name": "account_id", "nameZh": "账户编号", "type": "String", "is_foreign_key": true,
-          "references": "objectType:account", "description": "The CRM account this customer maps to." }
+          "references": "objectType:account", "description": "The CRM account this customer maps to.", "provenance": "extracted" }
       ],
       "sources": [
         { "documentId": "", "documentName": "${docName}", "section": "§3.2",
           "snippet": "Each customer is assigned a tier of Standard, Premium, or Enterprise." }
       ],
       "confidence": 0.95, "provenance": "extracted", "reviewState": "pending"
+    },
+    {
+      "id": "objectType:audit_log",
+      "name": "AuditLog", "nameZh": "审计日志",
+      "description": "Standard record of who changed what and when.",
+      "descriptionZh": "记录谁在何时变更了什么的标准审计记录。",
+      "type": "data", "relationship_description": "An AuditLog references the user who made a change.",
+      "primary_key": "audit_log_id",
+      "properties": [
+        { "name": "audit_log_id", "type": "String", "description": "Identifier.", "provenance": "inferred" },
+        { "name": "changed_at", "type": "Timestamp", "description": "When the change happened.", "provenance": "inferred" }
+      ],
+      "sources": [],
+      "confidence": 0.6, "provenance": "inferred", "reviewState": "pending"
     }
   ],
   "relationships": [
@@ -285,14 +319,21 @@ ${SELF_CHECK}
 - [ ] Every object has "type", "primary_key", and "relationship_description" filled in.
 - [ ] Every foreign-key property sets "is_foreign_key" + "references" to a real object id.
 - [ ] Every party, document-as-entity, lookup table, and line item in the text was either
-      emitted or consciously rejected as a non-entity.`;
+      emitted or consciously rejected as a non-entity.
+- [ ] Every object AND every property carries "provenance"; "extracted" items have a verbatim
+      citation while "inferred"/"web_search" items carry NO "sources".
+- [ ] You ADDED the common-sense objects/properties a domain expert expects but the document
+      omitted, each tagged "inferred".`;
 
   const user = `DOCUMENT NAME: ${docName}
 
 ${fence('DOCUMENT (extract objects + relationships from THIS text only)', chunkText)}
 
 Extract ALL Object Types and the Relationships among them per the OUTPUT CONTRACT —
-sweep every section; completeness and verbatim citations are both mandatory.
+sweep every section. Completeness is mandatory; verbatim citations are mandatory for
+"extracted" items, while common-sense ("inferred") and web-search ("web_search") additions
+carry NO citation. Then ADD the common-sense objects/properties this industry always has
+but the document omitted.
 Return ONLY the JSON object.`;
 
   return { system, user };

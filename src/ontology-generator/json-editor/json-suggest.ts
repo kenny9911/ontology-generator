@@ -30,7 +30,7 @@ const KEY_ROLES = ['pk', 'fk', 'none'] as const;
 const PROPERTY_TYPES = [
   'String', 'Integer', 'Float', 'Boolean', 'Date', 'Timestamp', 'List<String>',
 ] as const;
-const PROVENANCE = ['extracted', 'inferred', 'merged', 'human'] as const;
+const PROVENANCE = ['extracted', 'inferred', 'web_search', 'merged', 'human'] as const;
 const REVIEW_STATUS = ['pending', 'accepted', 'edited', 'merged', 'rejected'] as const;
 const RULE_KINDS = [
   'validation', 'constraint', 'derivation', 'state_transition', 'authorization', 'temporal',

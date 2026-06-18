@@ -75,6 +75,7 @@ function cleanObject(o: ObjectType, specIdByInternal: Map<string, string>): Reco
         out.is_foreign_key = true;
         out.references = specIdByInternal.get(p.references) ?? specObjectId(p.references);
       }
+      if (p.provenance) out.provenance = p.provenance; // origin: 源文档/常识补充/联网搜索
       return out;
     }),
   };
@@ -166,6 +167,8 @@ function mergeObject(orig: ObjectType, c: Record<string, unknown>, internalBySpe
           type: (str(cp.type) ?? origProp?.type ?? 'String') as ObjectType['properties'][number]['type'],
           description: str(cp.description) ?? origProp?.description ?? '',
         } as ObjectType['properties'][number];
+        const cprov = typeof cp.provenance === 'string' ? cp.provenance.trim() : '';
+        if (cprov) (next as unknown as Record<string, unknown>).provenance = cprov;
         if (cp.is_foreign_key === true && refSpec) {
           next.is_foreign_key = true;
           next.references = internalBySpecId.get(refSpec) ?? refSpec;

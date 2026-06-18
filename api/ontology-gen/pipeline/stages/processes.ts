@@ -41,6 +41,7 @@ import { makeId } from '../../../_shared/ids.js';
 import { buildProcessesPrompt } from '../../prompts.js';
 import { executeLLMWithTracking, type ChatMessage } from '../../llm.js';
 import { ctxAgentLlm } from '../../llm-router.js';
+import { stageSystem } from '../context.js';
 import type { StageContext } from '../context.js';
 
 /** Strategy values allowed by OrchestrationSpec.strategy. */
@@ -103,7 +104,7 @@ export async function extractProcesses(
   });
 
   const messages: ChatMessage[] = [
-    { role: 'system', content: ctx.briefSeed ? `${system}\n\n${ctx.briefSeed}` : system },
+    { role: 'system', content: stageSystem(ctx, system) },
     { role: 'user', content: user },
   ];
 

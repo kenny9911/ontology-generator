@@ -79,7 +79,7 @@ export type KeyRole = 'pk' | 'fk' | 'none';
 export type Cardinality = 'one_to_one' | 'one_to_many' | 'many_to_one' | 'many_to_many';
 
 /** How a node entered the ontology. `inferred` nodes may have empty `sources`. */
-export type Provenance = 'extracted' | 'inferred' | 'merged' | 'human';
+export type Provenance = 'extracted' | 'inferred' | 'web_search' | 'merged' | 'human';
 
 /** Human-in-the-loop review status; gates what gets published. */
 export type ReviewStatus = 'pending' | 'accepted' | 'edited' | 'merged' | 'rejected';
@@ -239,6 +239,8 @@ export interface ObjectProperty {
   /** Property-level citation when available. */
   sources?: SourceRef[];
   confidence?: Confidence;
+  /** Origin of THIS property: extracted (document) | inferred (common-sense) | web_search. */
+  provenance?: Provenance;
 }
 
 export interface ObjectType extends NodeProvenance {
@@ -746,6 +748,27 @@ export interface VersionEntry {
   delta?: { added: number; changed: number; removed: number };
 }
 
+/**
+ * Web-search (Tavily) supplement appended to extraction context when the user
+ * enables live web search. Computed ONCE per run, cached on metadata, and
+ * injected into every stage prompt. Objects/properties derived solely from it
+ * are tagged `provenance: 'web_search'`.
+ */
+export interface WebAugmentation {
+  /** The industry/domain the planner identified from the corpus. */
+  industry: string;
+  /** The business scenario the planner identified. */
+  scenario: string;
+  /** The search queries actually run against Tavily. */
+  queries: string[];
+  /** The synthesized, density-filtered supplement text (capped). */
+  text: string;
+  /** Result provenance the user can audit (title + url). */
+  sources: { title: string; url: string }[];
+  /** ISO-8601 timestamp the augmentation was computed. */
+  at: string;
+}
+
 export interface OntologyMetadata {
   createdAt: string; // ISO-8601
   updatedAt: string; // ISO-8601
@@ -766,6 +789,9 @@ export interface OntologyMetadata {
   danglingRefs?: { from: string; field: string; missingId: string }[];
   /** Review-trail: per-stage critique notes from the extraction pass. */
   stageCritiques?: Partial<Record<Stage, string>>;
+  /** Live web-search (Tavily) supplement that augmented extraction, when enabled.
+   *  Set for any mode whose run requested web search; absent otherwise. */
+  webAugmentation?: WebAugmentation;
 
   // ---- Deep-swarm artifacts (optional; only set by the opt-in swarm mode) ----
   /** Web-augmented SME business-understanding brief that framed extraction. */
@@ -895,6 +921,10 @@ export interface OntologyRun {
    * `run.start` for uploaded corpora; cleared after the one-shot upgrade.
    */
   autoName?: boolean;
+
+  /** The user enabled live web-search augmentation (Tavily) for this run. The
+   *  pipeline computes the supplement once, then caches it on metadata. */
+  webSearch?: boolean;
 
   // ---- Deep-swarm / hyper mode (optional; absent on the fast single-pass path) ----
   /** Extraction mode. Absent or `'fast'` = the classic single-pass pipeline. */
@@ -1245,6 +1275,8 @@ export interface LlmSettings {
   defaultModel?: string;
   /** Smart per-agent router on/off. Default true. */
   routerEnabled?: boolean;
+  /** Tavily API key for live web-search augmentation. env TAVILY_API_KEY wins. */
+  tavilyApiKey?: string;
   updatedAt?: string;
 }
 

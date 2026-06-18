@@ -331,6 +331,8 @@ function sanitizeSettings(raw: unknown): LlmSettings {
   const defaultModel = cleanStr(r.defaultModel);
   if (defaultModel) out.defaultModel = defaultModel;
   if (typeof r.routerEnabled === 'boolean') out.routerEnabled = r.routerEnabled;
+  const tavilyApiKey = cleanStr(r.tavilyApiKey);
+  if (tavilyApiKey) out.tavilyApiKey = tavilyApiKey;
   const updatedAt = cleanStr(r.updatedAt);
   if (updatedAt) out.updatedAt = updatedAt;
   return out;

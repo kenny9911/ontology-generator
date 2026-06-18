@@ -15,12 +15,13 @@ import type {
   ObjectType,
   ObjectProperty,
   PropertyType,
+  Provenance,
   Relationship,
   SourceRef,
   ReviewStatus,
 } from '@/ontology/schema/types';
 import { PROPERTY_TYPES } from '@/ontology/schema/types';
-import CleanNodeCard from './CleanNodeCard';
+import CleanNodeCard, { originText } from './CleanNodeCard';
 import { toCleanNodes } from './json-editor/clean';
 
 interface ObjectsScreenProps {
@@ -160,6 +161,7 @@ export default function ObjectsScreen({ t, lang, ctrl }: ObjectsScreenProps) {
           out.references = p.references;
         }
         if (p.sources) out.sources = p.sources;
+        if (p.provenance) out.provenance = p.provenance;
         return out;
       })
       .filter((p) => p.name.length > 0);
@@ -381,8 +383,8 @@ export default function ObjectsScreen({ t, lang, ctrl }: ObjectsScreenProps) {
                       {reviewLabel(t, sel.reviewState)}
                     </span>
                     {sel.provenance !== 'human' && (
-                      <span className="tag ai" style={{ whiteSpace: 'nowrap' }}>
-                        {t.autoDetected}
+                      <span className="tag ai" style={{ whiteSpace: 'nowrap' }} title={t.autoDetected}>
+                        {originText(sel.provenance, lang)}
                       </span>
                     )}
                     <span
@@ -594,6 +596,19 @@ export default function ObjectsScreen({ t, lang, ctrl }: ObjectsScreenProps) {
                             ))}
                         </select>
                       )}
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--fg-3)' }}>
+                        {t.originLabel}
+                        <select
+                          className="ctl"
+                          style={{ borderRadius: 'var(--r-2)', padding: '6px 10px' }}
+                          value={p.provenance ?? 'extracted'}
+                          onChange={(e) => updateProp(i, { provenance: e.target.value as Provenance })}
+                        >
+                          <option value="extracted">{t.originSource}</option>
+                          <option value="inferred">{t.originCommonSense}</option>
+                          <option value="web_search">{t.originWeb}</option>
+                        </select>
+                      </label>
                     </div>
                   </div>
                 ))}
@@ -607,7 +622,7 @@ export default function ObjectsScreen({ t, lang, ctrl }: ObjectsScreenProps) {
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: '1.4fr 130px 2fr',
+                    gridTemplateColumns: '1.4fr 110px 96px 2fr',
                     padding: '10px var(--s-4)',
                     fontSize: 11,
                     fontFamily: 'var(--font-mono)',
@@ -620,6 +635,7 @@ export default function ObjectsScreen({ t, lang, ctrl }: ObjectsScreenProps) {
                 >
                   <span>name</span>
                   <span>{t.type}</span>
+                  <span>{t.originLabel}</span>
                   <span>{t.description}</span>
                 </div>
                 {sel.properties.map((p: ObjectProperty, i) => (
@@ -627,7 +643,7 @@ export default function ObjectsScreen({ t, lang, ctrl }: ObjectsScreenProps) {
                     key={p.name + i}
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: '1.4fr 130px 2fr',
+                      gridTemplateColumns: '1.4fr 110px 96px 2fr',
                       padding: '10px var(--s-4)',
                       alignItems: 'start',
                       fontSize: 13,
@@ -651,6 +667,10 @@ export default function ObjectsScreen({ t, lang, ctrl }: ObjectsScreenProps) {
                       {p.is_foreign_key && p.references && (
                         <span style={{ color: 'var(--accent)', display: 'block' }}>{`→ ${nameOf(p.references)}`}</span>
                       )}
+                    </span>
+                    {/* origin (源文档 / 常识补充 / 联网搜索) */}
+                    <span style={{ fontSize: 11, color: 'var(--fg-3)', minWidth: 0 }}>
+                      {originText(p.provenance ?? 'extracted', lang)}
                     </span>
                     {/* description */}
                     <span style={{ color: 'var(--fg-2)', fontSize: 12, lineHeight: 1.5, minWidth: 0 }}>
