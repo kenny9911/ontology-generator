@@ -135,29 +135,31 @@ async function loadSample(name: string): Promise<Record<string, unknown>> {
 // Field-key contracts (the canonical spec shape).
 // ---------------------------------------------------------------------------
 
-const OBJECT_KEYS = ['id', 'name', 'description', 'type', 'relationship_description', 'primary_key', 'properties'];
+// The ONLY non-sample keys allowed on a clean node (the four receipts).
+const RECEIPT_KEYS = ['confidence', 'provenance', 'reviewState', 'sources'];
+const OBJECT_KEYS = ['id', 'name', 'description', 'type', 'relationship_description', 'primary_key', 'properties', ...RECEIPT_KEYS];
 const PROPERTY_REQ = ['name', 'type', 'description'];
 const PROPERTY_OPT = ['is_foreign_key', 'references'];
 const RULE_KEYS = [
   'id', 'specificScenarioStage', 'businessLogicRuleName', 'applicableClient', 'applicableDepartment',
   'submissionCriteria', 'standardizedLogicRule', 'relatedEntities', 'businessBackgroundReason',
-  'ruleSource', 'executor', 'enforcementLevel', 'failurePolicy',
+  'ruleSource', 'executor', 'enforcementLevel', 'failurePolicy', ...RECEIPT_KEYS,
 ];
 const ACTION_KEYS = [
   'id', 'name', 'description', 'submission_criteria', 'object_type', 'category', 'actor', 'trigger',
   'target_objects', 'inputs', 'outputs', 'action_steps', 'system_prompt', 'user_prompt', 'tool_use',
-  'side_effects', 'triggered_event',
+  'side_effects', 'triggered_event', ...RECEIPT_KEYS,
 ];
 const INPUT_REQ = ['name', 'type', 'description', 'required'];
 const INPUT_OPT = ['source_object'];
 const OUTPUT_REQ = ['name', 'type', 'description'];
 const STEP_REQ = ['order', 'name', 'description', 'object_type', 'submission_criteria'];
 const STEP_OPT = ['rules'];
-const EVENT_KEYS = ['name', 'description', 'payload'];
+const EVENT_KEYS = ['name', 'description', 'payload', ...RECEIPT_KEYS];
 const PAYLOAD_KEYS = ['source_action', 'event_data', 'state_mutations'];
 const EVENT_DATA_KEYS = ['name', 'type', 'target_object'];
 const STATE_MUT_KEYS = ['target_object', 'mutation_type', 'impacted_properties'];
-const WORKFLOW_KEYS = ['id', 'name', 'description', 'actor', 'trigger', 'actions', 'triggered_event'];
+const WORKFLOW_KEYS = ['id', 'name', 'description', 'actor', 'trigger', 'actions', 'triggered_event', ...RECEIPT_KEYS];
 const WF_STEP_KEYS = ['order', 'name', 'description', 'type', 'condition'];
 
 // ===========================================================================
@@ -669,6 +671,35 @@ async function main(): Promise<void> {
       for (const e of b.events) assertNodeZh(`${e.name}`, { description: e.description });
       for (const w of b.workflows) {
         for (const s of w.actions) assertNodeZh(`${w.id}.step`, { description: s.description });
+      }
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  section('9. Clean shape: English id, Chinese object name, 4 receipts, no internals');
+
+  for (const { file, ontology } of fixtures) {
+    await check(`${file}: clean projection carries receipts + drops internals`, () => {
+      const b = ontologyToSpec(ontology);
+      for (const o of b.objects) {
+        assert(!o.id.includes(':') && /^[A-Za-z]/.test(o.id), `${o.id}: object id must be an English key (no "objectType:" prefix)`);
+        assert(hasCJK(o.name) || o.name === o.id, `${o.id}: object name should be Chinese, got "${o.name}"`);
+      }
+      const all: Array<Record<string, unknown>> = [
+        ...(b.objects as unknown as Record<string, unknown>[]),
+        ...(b.rules as unknown as Record<string, unknown>[]),
+        ...(b.actions as unknown as Record<string, unknown>[]),
+        ...(b.events as unknown as Record<string, unknown>[]),
+        ...(b.workflows as unknown as Record<string, unknown>[]),
+      ];
+      for (const node of all) {
+        assert(typeof node.confidence === 'number', 'confidence receipt present');
+        assert(typeof node.provenance === 'string', 'provenance receipt present');
+        assert(typeof node.reviewState === 'string', 'reviewState receipt present');
+        assert(Array.isArray(node.sources), 'sources receipt present');
+        for (const k of ['uuid', 'nameZh', 'descriptionZh', 'appliesToObjectTypeIds', 'emitsEvents', 'triggeredByEventIds', 'payloadFields', 'actorRef', 'steps', 'orchestration', 'agent']) {
+          assert(!(k in node), `clean node must NOT carry internal field "${k}"`);
+        }
       }
     });
   }

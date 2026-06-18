@@ -65,6 +65,34 @@ export const SPEC_DATA_CHANGE_ACTIONS = ['CREATE', 'MODIFY', 'DELETE'] as const;
 export type SpecDataChangeAction = (typeof SPEC_DATA_CHANGE_ACTIONS)[number];
 
 // ---------------------------------------------------------------------------
+// Receipts — the ONLY non-sample fields kept on the clean JSON (per the product
+// decision): confidence + provenance + reviewState + sources. A verbatim source
+// citation, mirroring the internal SourceRef.
+// ---------------------------------------------------------------------------
+
+export interface SpecSourceRef {
+  documentId: string;
+  documentName: string;
+  snippet: string;
+  page?: number;
+  line?: number;
+  section?: string;
+  charStart?: number;
+  charEnd?: number;
+  sentenceRefs?: number[];
+  quoteVerified?: boolean;
+  confidence?: number;
+}
+
+/** The four receipts retained on every clean node. */
+export interface SpecReceipts {
+  confidence: number;
+  provenance: string;
+  reviewState: string;
+  sources: SpecSourceRef[];
+}
+
+// ---------------------------------------------------------------------------
 // Objects.
 // ---------------------------------------------------------------------------
 
@@ -76,8 +104,10 @@ export interface SpecObjectProperty {
   references?: string;
 }
 
-export interface SpecObject {
+export interface SpecObject extends SpecReceipts {
+  /** English canonical key, e.g. "Candidate". */
   id: string;
+  /** Display name in Chinese, e.g. "候选人". */
   name: string;
   description: string;
   type: SpecObjectClass;
@@ -90,7 +120,7 @@ export interface SpecObject {
 // Rules.
 // ---------------------------------------------------------------------------
 
-export interface SpecRule {
+export interface SpecRule extends SpecReceipts {
   id: string;
   specificScenarioStage: string;
   businessLogicRuleName: string;
@@ -155,7 +185,7 @@ export interface SpecSideEffects {
   notifications: SpecNotification[];
 }
 
-export interface SpecAction {
+export interface SpecAction extends SpecReceipts {
   id: string;
   name: string;
   description: string;
@@ -198,7 +228,7 @@ export interface SpecEventPayload {
   state_mutations: SpecStateMutation[];
 }
 
-export interface SpecEvent {
+export interface SpecEvent extends SpecReceipts {
   name: string;
   description: string;
   payload: SpecEventPayload;
@@ -216,7 +246,7 @@ export interface SpecWorkflowStep {
   condition: string;
 }
 
-export interface SpecWorkflow {
+export interface SpecWorkflow extends SpecReceipts {
   id: string;
   name: string;
   description: string;

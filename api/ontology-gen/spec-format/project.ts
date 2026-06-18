@@ -54,12 +54,24 @@ import type {
   SpecRulesFile,
   SpecWorkflowsFile,
   SpecObjectClass,
+  SpecReceipts,
   SpecRule,
+  SpecSourceRef,
   SpecStateMutation,
   SpecWorkflow,
   SpecWorkflowStep,
   SpecWorkflowStepType,
 } from './types.js';
+
+/** Extract the four receipts kept on every clean node. */
+function receipts(n: { confidence?: number; provenance?: string; reviewState?: string; sources?: unknown[] }): SpecReceipts {
+  return {
+    confidence: typeof n.confidence === 'number' ? n.confidence : 0,
+    provenance: n.provenance ?? 'extracted',
+    reviewState: n.reviewState ?? 'pending',
+    sources: (n.sources ?? []) as SpecSourceRef[],
+  };
+}
 
 // ===========================================================================
 // Pure string helpers (exported subset is unit-tested).
@@ -301,8 +313,9 @@ function projectObject(o: ObjectType, ctx: SpecCtx): SpecObject {
   const specId = ctx.objSpecId.get(o.id) ?? specObjectId(o.id);
   const relDesc = o.relationship_description?.trim();
   return {
+    ...receipts(o),
     id: specId,
-    name: o.name || specId,
+    name: o.nameZh?.trim() || o.name || specId,
     description: o.descriptionZh?.trim() || o.description?.trim() || '',
     type: o.type ?? heuristicObjectClass(o),
     relationship_description: hasCJK(relDesc) ? relDesc! : synthesizeRelationshipDescription(o, ctx),
@@ -362,6 +375,7 @@ function projectRule(r: Rule, ctx: SpecCtx): SpecRule {
     : undefined;
 
   return {
+    ...receipts(r),
     id: stripPrefix(r.id),
     specificScenarioStage: nonEmpty(r.specificScenarioStage)
       ? r.specificScenarioStage
@@ -520,6 +534,7 @@ function projectAction(a: ActionType, ctx: SpecCtx): SpecAction {
   const has = (v: unknown[] | undefined): boolean => Array.isArray(v) && v.length > 0;
 
   return {
+    ...receipts(a),
     id: stripPrefix(a.id),
     name: ctx.actionName.get(a.id) ?? camel(a.name),
     description: a.description?.trim() || '',
@@ -591,6 +606,7 @@ function projectEvent(e: EventType, ctx: SpecCtx): SpecEvent {
   const sourceActionId = (e.producedByActionIds ?? []).find((aid) => ctx.actionName.has(aid));
 
   return {
+    ...receipts(e),
     name: ctx.eventName.get(e.id) ?? eventSpecName(e.name || e.id),
     description: nonEmpty(e.descriptionZh) ? e.descriptionZh : e.description?.trim() || '',
     payload: {
@@ -653,6 +669,7 @@ function projectWorkflow(p: Process, ctx: SpecCtx): SpecWorkflow {
   );
 
   return {
+    ...receipts(p),
     id: stripPrefix(p.id),
     name: camel(p.name?.en || '') || stripPrefix(p.id),
     description: cjkOr(p.description, p.name?.zh?.trim() || p.name?.en?.trim() || ''),
