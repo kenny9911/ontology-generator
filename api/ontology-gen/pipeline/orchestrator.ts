@@ -566,6 +566,31 @@ function parseCritiqueJson(raw: string): CritiquePayload | null {
  * Pure + synchronous: it computes `confidence` (weighted mean) and
  * `metadata.stats`, and stamps `generation` provenance from the run's model.
  */
+/**
+ * buildOntology + carry forward the run's stable identity (uuid/name/nameZh/
+ * version/status) and the run-level metadata that must persist across the
+ * client-paced swarm/hyper steps: createdAt/createdBy/history AND the web-search
+ * supplement (`webAugmentation`, computed once then reused every step). SHARED by
+ * the swarm AND hyper orchestrators so the carried-field list can never drift
+ * between them.
+ */
+export function buildAndCarry(ctx: StageContext, prev: Ontology): Ontology {
+  const next = buildOntology(ctx);
+  next.uuid = prev.uuid;
+  next.name = prev.name || next.name;
+  next.nameZh = prev.nameZh ?? next.nameZh;
+  next.version = prev.version || next.version;
+  next.status = prev.status;
+  next.metadata = {
+    ...next.metadata,
+    createdAt: prev.metadata?.createdAt ?? next.metadata.createdAt,
+    createdBy: prev.metadata?.createdBy ?? next.metadata.createdBy,
+    history: prev.metadata?.history ?? next.metadata.history,
+    webAugmentation: prev.metadata?.webAugmentation ?? next.metadata.webAugmentation,
+  };
+  return next;
+}
+
 export function buildOntology(ctx: StageContext): Ontology {
   const name = deriveName(ctx);
 

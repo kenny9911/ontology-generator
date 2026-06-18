@@ -58,6 +58,7 @@ import { renderWebAugment } from '../api/ontology-gen/pipeline/web-augment.js';
 import { resolveTavilyKey, tavilyAvailable } from '../api/ontology-gen/tavily.js';
 import type { WebAugmentation } from '../api/_shared/ontology-schema.js';
 import { stampParts, formatLlm } from '../api/ontology-gen/logger.js';
+import { buildAndCarry } from '../api/ontology-gen/pipeline/orchestrator.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -1033,6 +1034,31 @@ async function sectionWebAugment(): Promise<void> {
       assertEq(tavilyAvailable({ overrides: {} }), false, 'unavailable with no key');
       assertEq(tavilyAvailable(null), false, 'unavailable with null settings');
     });
+  });
+
+  // The carry is what makes web search reach the OBJECTS step in swarm AND hyper:
+  // the supplement is computed once (step 0) then buildAndCarry preserves
+  // metadata.webAugmentation across every later client-paced step rebuild.
+  await check('buildAndCarry carries webAugmentation + run identity (shared by swarm & hyper)', () => {
+    const ctx = {
+      ontologyId: 'ontology:carry', domain: 'generic',
+      sources: [], parsed: [], taken: new Set<string>(),
+      objects: [], relationships: [], rules: [], ruleGroups: [], actions: [], events: [], processes: [],
+      model: 'm', provider: 'openrouter', userInfo: null, log: () => {},
+    } as unknown as StageContext;
+    const aug: WebAugmentation = { industry: 'i', scenario: 's', queries: ['q'], text: 'SUPPLEMENT', sources: [], at: '2020' };
+    const prev = {
+      uuid: 'UUID-prev', name: 'Prev', nameZh: '上一个', version: 3, status: 'published',
+      metadata: { createdAt: '2020-01-01T00:00:00Z', webAugmentation: aug },
+    } as unknown as Ontology;
+    const next = buildAndCarry(ctx, prev);
+    assertEq(next.uuid, 'UUID-prev', 'carries uuid');
+    assertEq(next.version, 3, 'carries version');
+    assertEq(next.status, 'published', 'carries status');
+    assertEq(next.metadata.createdAt, '2020-01-01T00:00:00Z', 'carries createdAt');
+    assert(next.metadata.webAugmentation?.text === 'SUPPLEMENT', 'carries webAugmentation across the step rebuild');
+    const fresh = buildAndCarry(ctx, { ...prev, metadata: { createdAt: 'x' } } as unknown as Ontology);
+    assert(fresh.metadata.webAugmentation === undefined, 'no webAugmentation leakage when prev had none');
   });
 }
 
