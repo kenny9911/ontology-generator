@@ -209,7 +209,11 @@ export async function runWebAugment(ctx: StageContext, settings: LlmSettings | n
   const at = new Date().toISOString();
   const apiKey = resolveTavilyKey(settings);
   const empty: WebAugmentation = { industry: '', scenario: '', queries: [], text: '', sources: [], at };
-  if (!apiKey) return empty;
+  if (!apiKey) {
+    ctx.log('[web-search] no Tavily key — cannot search');
+    return empty;
+  }
+  ctx.log(`[web-search] Tavily key present (source: ${process.env.TAVILY_API_KEY ? 'env TAVILY_API_KEY' : 'settings'})`);
 
   ctx.log('[web-search] planning industry/scenario queries');
   const p = await plan(ctx);
@@ -217,23 +221,38 @@ export async function runWebAugment(ctx: StageContext, settings: LlmSettings | n
     ctx.log('[web-search] no queries planned — skipping augmentation');
     return { ...empty, industry: p.industry, scenario: p.scenario };
   }
-  ctx.log(`[web-search] industry="${p.industry}" · ${p.queries.length} queries`);
+  ctx.log(`[web-search] industry="${p.industry}" · scenario="${p.scenario}" · ${p.queries.length} queries`);
 
   const seen = new Set<string>();
   const results: TavilyResult[] = [];
-  for (const q of p.queries) {
-    const hits = await tavilySearch(apiKey, q, { maxResults: MAX_RESULTS_PER_QUERY, includeRaw: true });
+  for (let i = 0; i < p.queries.length; i++) {
+    const q = p.queries[i]!;
+    ctx.log(`[web-search] query ${i + 1}/${p.queries.length}: "${q}"`);
+    const hits = await tavilySearch(apiKey, q, {
+      maxResults: MAX_RESULTS_PER_QUERY,
+      includeRaw: false, // use Tavily's relevance snippets — fast + avoids timeouts
+      log: (m) => ctx.log(`[web-search]   ${m}`),
+    });
+    let fresh = 0;
     for (const h of hits) {
       if (seen.has(h.url)) continue;
       seen.add(h.url);
       results.push(h);
+      fresh++;
+      ctx.log(`[web-search]   • ${h.title} — ${h.url}`);
     }
+    ctx.log(`[web-search] query ${i + 1} → ${hits.length} hit(s), ${fresh} new`);
   }
   ctx.log(`[web-search] ${results.length} unique results across ${p.queries.length} queries`);
-  if (results.length === 0) return { ...empty, industry: p.industry, scenario: p.scenario, queries: p.queries };
+  if (results.length === 0) {
+    ctx.log('[web-search] NO results — supplement will be empty, objects cannot be tagged web_search (check the Tavily HTTP lines above)');
+    return { ...empty, industry: p.industry, scenario: p.scenario, queries: p.queries };
+  }
 
   const { text, sources } = await distill(ctx, p, results);
-  ctx.log(`[web-search] distilled supplement: ${text.length} chars, ${sources.length} sources`);
+  ctx.log(`[web-search] distilled supplement: ${text.length} chars, ${sources.length} source(s) kept`);
+  for (const s of sources) ctx.log(`[web-search]   source: ${s.title} — ${s.url}`);
+  if (!text.trim()) ctx.log('[web-search] distiller returned EMPTY text (results were off-industry) — no web_search tagging this run');
   return { industry: p.industry, scenario: p.scenario, queries: p.queries, text, sources, at };
 }
 

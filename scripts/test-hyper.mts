@@ -55,7 +55,7 @@ import { preserve } from '../api/ontology-gen/pipeline/swarm/deepen.js';
 import { getStore, resetStore, InMemoryOntologyStore } from '../api/ontology-gen/store.js';
 import type { StageContext } from '../api/ontology-gen/pipeline/context.js';
 import { renderWebAugment } from '../api/ontology-gen/pipeline/web-augment.js';
-import { resolveTavilyKey, tavilyAvailable } from '../api/ontology-gen/tavily.js';
+import { resolveTavilyKey, tavilyAvailable, tavilySearch } from '../api/ontology-gen/tavily.js';
 import type { WebAugmentation } from '../api/_shared/ontology-schema.js';
 import { stampParts, formatLlm } from '../api/ontology-gen/logger.js';
 import { buildAndCarry } from '../api/ontology-gen/pipeline/orchestrator.js';
@@ -1034,6 +1034,16 @@ async function sectionWebAugment(): Promise<void> {
       assertEq(tavilyAvailable({ overrides: {} }), false, 'unavailable with no key');
       assertEq(tavilyAvailable(null), false, 'unavailable with null settings');
     });
+  });
+
+  // tavilySearch short-circuits (no network) on missing key/query and says why.
+  await check('tavilySearch returns [] without a network call for empty key/query', async () => {
+    const msgs: string[] = [];
+    const a = await tavilySearch('', 'recruitment', { log: (m) => msgs.push(m) });
+    const b = await tavilySearch('tvly-x', '   ', { log: (m) => msgs.push(m) });
+    assertEq(a.length, 0, 'empty key ⇒ []');
+    assertEq(b.length, 0, 'empty query ⇒ []');
+    assert(msgs.some((m) => m.includes('skipped')), 'logs a skip reason');
   });
 
   // The carry is what makes web search reach the OBJECTS step in swarm AND hyper:
