@@ -1013,7 +1013,9 @@ async function sectionWebAugment(): Promise<void> {
     const s = block as string;
     assert(s.includes('WEB-SEARCH SUPPLEMENT'), 'has the header');
     assert(s.includes('recruitment'), 'names the industry');
-    assert(s.includes('web_search'), 'reminds to tag web_search provenance');
+    assert(s.includes('CANDIDATE to ADD'), 'frames entries as candidates to add');
+    assert(s.includes('"provenance": "web_search"'), 'shows a concrete web_search example');
+    assert(s.includes('NEVER "inferred"'), 'routes block items to web_search, not inferred');
     assert(s.includes('https://example.com/hr'), 'lists the source url');
     assert(s.includes('- Candidate: id, status'), 'embeds the supplement text');
   });

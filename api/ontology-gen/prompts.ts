@@ -228,17 +228,21 @@ COMMON-SENSE SUPPLEMENTATION (beyond the document — REQUIRED)
   This fills the gaps in thin or partial documents so downstream agents are not blind.
 - Mark every such common-sense item provenance:"inferred" and give it NO "sources" (it is
   not in the document — never fabricate a citation for it).
-- If a "WEB-SEARCH SUPPLEMENT" block appears AFTER these instructions, you MAY also add
-  objects/properties it evidences that fit THIS document's industry; mark THOSE
-  provenance:"web_search" with NO "sources". Ignore anything off-industry.
+- If a "WEB-SEARCH SUPPLEMENT" block appears AFTER these instructions, ADD the
+  objects/properties it lists that fit THIS industry and are missing from the document, and
+  tag EACH of them provenance:"web_search" (NO "sources"). Items taken from that block are
+  "web_search", NOT "inferred" — do not relabel them. Ignore anything off-industry.
 
-PROVENANCE (REQUIRED on every object AND every property)
+PROVENANCE (REQUIRED on every object AND every property) — route by WHERE it came from:
 - "extracted" — stated in the DOCUMENT; MUST carry >=1 "sources" entry with a verbatim
   "snippet" (ungrounded "extracted" items are DROPPED).
-- "inferred" — your common-sense supplement, NOT in the document; NO "sources".
-- "web_search" — from the WEB-SEARCH SUPPLEMENT block, NOT in the document; NO "sources".
-- A property has its OWN provenance: an "extracted" object may carry "inferred" properties,
-  and an "inferred" object may still carry a property the document mentions in passing.
+- "web_search" — taken from the WEB-SEARCH SUPPLEMENT block (when one is present), not in
+  the document; NO "sources". If an item appears in that block, it is "web_search", NEVER
+  "inferred".
+- "inferred" — YOUR OWN general knowledge, NOT in the document AND NOT in any web-search
+  block; NO "sources".
+- A property has its OWN provenance: an "extracted" object may carry "inferred"/"web_search"
+  properties, and an added object may still carry a property the document mentions.
 
 PROPERTY RULES (the "properties" array)
 - Each property MUST have "name" (snake_case), "type", "description", and "provenance".
