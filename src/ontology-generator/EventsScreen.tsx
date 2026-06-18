@@ -14,17 +14,13 @@
 // local selection state; all mutation flows through the controller.
 import { useMemo, useState } from 'react';
 
-import type {
-  ActionType,
-  EventField,
-  EventType,
-  ObjectType,
-  ReviewStatus,
-} from '@/ontology/schema/types';
+import type { EventType, ReviewStatus } from '@/ontology/schema/types';
 
 import type { Lang } from './data';
 import type { Strings } from './i18n';
 import type { OntologyRunController } from './useOntologyRun';
+import CleanNodeCard from './CleanNodeCard';
+import { toCleanNodes } from './json-editor/clean';
 
 interface EventsScreenProps {
   t: Strings;
@@ -60,32 +56,12 @@ export default function EventsScreen({ t, lang, ctrl }: EventsScreenProps) {
 
   // Resolve to a still-present event (selection can dangle after a re-run/merge).
   const sel = events.find((e) => e.id === selectedId) ?? events[0];
+  const cleanSel = useMemo(
+    () => (sel && ctrl.ontology ? (toCleanNodes('events', [sel], ctrl.ontology)[0] as Record<string, unknown>) : undefined),
+    [sel, ctrl.ontology],
+  );
 
   // ---- id → display-name resolvers (against the working ontology layers) ----
-  const objectsById = useMemo(() => {
-    const m = new Map<string, ObjectType>();
-    for (const o of ontology?.objects ?? []) m.set(o.id, o);
-    return m;
-  }, [ontology]);
-
-  const actionsById = useMemo(() => {
-    const m = new Map<string, ActionType>();
-    for (const a of ontology?.actions ?? []) m.set(a.id, a);
-    return m;
-  }, [ontology]);
-
-  const objectName = (id: string): string => {
-    const o = objectsById.get(id);
-    if (!o) return id;
-    return lang === 'zh' ? o.nameZh || o.name : o.name;
-  };
-
-  const actionName = (id: string): string => {
-    const a = actionsById.get(id);
-    if (!a) return id;
-    return lang === 'zh' ? a.nameZh || a.name : a.name;
-  };
-
   const eventName = (e: EventType): string =>
     lang === 'zh' ? e.nameZh || e.name : e.name;
 
@@ -261,19 +237,9 @@ export default function EventsScreen({ t, lang, ctrl }: EventsScreenProps) {
             ctrl={ctrl}
           />
 
-          <PayloadSection
-            fields={sel.payloadFields}
-            t={t}
-            lang={lang}
-            objectName={objectName}
-          />
-
-          <WiringSection
-            event={sel}
-            t={t}
-            lang={lang}
-            actionName={actionName}
-          />
+          {/* Clean sample-shaped view: description + payload (spec) + receipts.
+              name is in the header; sources are the right citations column. */}
+          {cleanSel && <CleanNodeCard node={cleanSel} lang={lang} skip={['name', 'sources']} />}
         </div>
       )}
 
@@ -385,224 +351,6 @@ function EventHeader({
           {accepted ? '✓ ' + t.accepted : t.accept}
         </button>
       </div>
-    </div>
-  );
-}
-
-// ===========================================================================
-// Payload — typed field table; object-typed fields are clickable chips.
-// ===========================================================================
-
-function PayloadSection({
-  fields,
-  t,
-  lang,
-  objectName,
-}: {
-  fields: EventField[];
-  t: Strings;
-  lang: Lang;
-  objectName: (id: string) => string;
-}) {
-  return (
-    <section>
-      <div className="mono-cap" style={{ marginBottom: 'var(--s-3)' }}>
-        {t.payload}
-      </div>
-      {fields.length === 0 ? (
-        <div className="mono-cap" style={{ color: 'var(--fg-4)' }}>
-          {lang === 'zh' ? '无载荷字段' : 'No payload fields'}
-        </div>
-      ) : (
-        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1.4fr 1.6fr 110px',
-              padding: '10px var(--s-4)',
-              fontSize: 11,
-              fontFamily: 'var(--font-mono)',
-              color: 'var(--fg-4)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              background: 'var(--bg-2)',
-              borderBottom: '1px solid var(--line)',
-            }}
-          >
-            <span>name</span>
-            <span>{t.type}</span>
-            <span>{t.required.toLowerCase()}</span>
-          </div>
-          {fields.map((f, i) => {
-            const isRef = !!f.objectTypeId;
-            return (
-              <div
-                key={f.name + i}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1.4fr 1.6fr 110px',
-                  padding: '10px var(--s-4)',
-                  alignItems: 'center',
-                  fontSize: 13,
-                  borderBottom: i < fields.length - 1 ? '1px solid var(--line-soft)' : 'none',
-                }}
-              >
-                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 500 }}>
-                  {isRef && <span style={{ color: 'var(--accent)', marginRight: 6 }}>◇</span>}
-                  {f.name}
-                </span>
-                <span>
-                  {isRef && f.objectTypeId ? (
-                    <span
-                      title={f.objectTypeId}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        padding: '3px 10px',
-                        background: 'color-mix(in oklab, var(--accent) 12%, transparent)',
-                        border: '1px solid color-mix(in oklab, var(--accent) 30%, transparent)',
-                        borderRadius: 999,
-                        color: 'var(--accent)',
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: 12,
-                      }}
-                    >
-                      {objectName(f.objectTypeId)}
-                    </span>
-                  ) : (
-                    <span
-                      style={{ fontFamily: 'var(--font-mono)', color: 'var(--fg-3)', fontSize: 12 }}
-                    >
-                      {f.type ?? 'json'}
-                    </span>
-                  )}
-                </span>
-                <span
-                  style={{
-                    color: f.required ? 'var(--warn)' : 'var(--fg-4)',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 11,
-                  }}
-                >
-                  {f.required ? 'REQUIRED' : 'optional'}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </section>
-  );
-}
-
-// ===========================================================================
-// Wiring — producedBy / consumedBy chips, with an orphan warning.
-// ===========================================================================
-
-function WiringSection({
-  event,
-  t,
-  lang,
-  actionName,
-}: {
-  event: EventType;
-  t: Strings;
-  lang: Lang;
-  actionName: (id: string) => string;
-}) {
-  const orphan =
-    event.producedByActionIds.length === 0 && event.consumedByActionIds.length === 0;
-
-  return (
-    <section style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-4)' }}>
-      {orphan && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--s-3)',
-            padding: 'var(--s-3) var(--s-4)',
-            background: 'color-mix(in oklab, var(--warn) 12%, transparent)',
-            border: '1px solid color-mix(in oklab, var(--warn) 36%, transparent)',
-            borderRadius: 'var(--r-2)',
-            color: 'var(--warn)',
-            fontSize: 13,
-          }}
-        >
-          <span style={{ fontSize: 16 }}>⚠</span>
-          <span>{t.orphanEvent}</span>
-        </div>
-      )}
-
-      <WiringRow
-        label={t.producedBy}
-        ids={event.producedByActionIds}
-        actionName={actionName}
-        arrow="↑"
-        accent="var(--accent-3)"
-        emptyLabel={lang === 'zh' ? '无生产者' : 'No producer'}
-      />
-      <WiringRow
-        label={t.consumedBy}
-        ids={event.consumedByActionIds}
-        actionName={actionName}
-        arrow="↓"
-        accent="var(--accent)"
-        emptyLabel={lang === 'zh' ? '无消费者' : 'No consumer'}
-      />
-    </section>
-  );
-}
-
-function WiringRow({
-  label,
-  ids,
-  actionName,
-  arrow,
-  accent,
-  emptyLabel,
-}: {
-  label: string;
-  ids: string[];
-  actionName: (id: string) => string;
-  arrow: string;
-  accent: string;
-  emptyLabel: string;
-}) {
-  return (
-    <div>
-      <div className="mono-cap" style={{ marginBottom: 'var(--s-2)' }}>
-        {label}
-      </div>
-      {ids.length === 0 ? (
-        <span className="mono-cap" style={{ color: 'var(--fg-4)' }}>
-          {emptyLabel}
-        </span>
-      ) : (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {ids.map((id) => (
-            <span
-              key={id}
-              title={id}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '6px 12px',
-                background: 'var(--bg-1)',
-                border: '1px solid var(--line)',
-                borderRadius: 999,
-                fontFamily: 'var(--font-mono)',
-                fontSize: 12,
-              }}
-            >
-              <span style={{ color: accent }}>{arrow}</span>
-              <span style={{ color: 'var(--fg-2)', fontWeight: 500 }}>{actionName(id)}</span>
-            </span>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
