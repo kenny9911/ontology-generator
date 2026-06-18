@@ -5,22 +5,18 @@
 // triggers, and the orchestration spec. The original flow-diagram aesthetic
 // (numbered step cards + dashed connector arrows, '.ontogen' classes,
 // CSS-var styling, EN/中文) is preserved — only the data source changed.
-import { useMemo, useState, Fragment } from 'react';
+import { useMemo, useState } from 'react';
 import type { Lang } from './data';
 import type { Strings } from './i18n';
 import type { OntologyRunController } from './useOntologyRun';
 import type {
   Ontology,
   Process,
-  WorkflowStep,
-  ProcessEdge,
-  ActionType,
-  EventType,
-  ObjectType,
   ActorRef,
-  ProcessTrigger,
   ReviewStatus,
 } from '@/ontology/schema/types';
+import CleanNodeCard from './CleanNodeCard';
+import { toCleanNodes } from './json-editor/clean';
 
 interface ProcessesScreenProps {
   t: Strings;
@@ -68,46 +64,6 @@ function statusLabel(t: Strings, status: ReviewStatus): string {
   }
 }
 
-function orchStrategyLabel(strategy: Process['orchestration']['strategy'], lang: Lang): string {
-  switch (strategy) {
-    case 'event_driven':
-      return lang === 'zh' ? '事件驱动' : 'Event-driven';
-    case 'state_machine':
-      return lang === 'zh' ? '状态机' : 'State machine';
-    case 'sequential':
-    default:
-      return lang === 'zh' ? '顺序执行' : 'Sequential';
-  }
-}
-
-function onFailureLabel(of: NonNullable<Process['orchestration']['onFailure']>, lang: Lang): string {
-  switch (of) {
-    case 'compensate':
-      return lang === 'zh' ? '补偿回滚' : 'Compensate';
-    case 'escalate':
-      return lang === 'zh' ? '升级处理' : 'Escalate';
-    case 'halt':
-    default:
-      return lang === 'zh' ? '中止' : 'Halt';
-  }
-}
-
-function triggerLabel(tr: ProcessTrigger, lang: Lang, evName: (id: string) => string): string {
-  switch (tr.kind) {
-    case 'event':
-      return tr.eventTypeId
-        ? `${lang === 'zh' ? '事件' : 'Event'} · ${evName(tr.eventTypeId)}`
-        : lang === 'zh'
-          ? '事件'
-          : 'Event';
-    case 'schedule':
-      return `${lang === 'zh' ? '定时' : 'Schedule'}${tr.schedule ? ` · ${tr.schedule}` : ''}`;
-    case 'manual':
-    default:
-      return lang === 'zh' ? '手动' : 'Manual';
-  }
-}
-
 export default function ProcessesScreen({ t, lang, ctrl }: ProcessesScreenProps) {
   const ontology: Ontology | null = ctrl.ontology;
   const processes: Process[] = ontology?.processes ?? [];
@@ -121,47 +77,14 @@ export default function ProcessesScreen({ t, lang, ctrl }: ProcessesScreenProps)
   const sel: Process | undefined =
     processes.find((p) => p.id === selectedId) ?? processes[0];
 
-  // ---- id -> name resolvers against the earlier ontology layers --------------
-  const actionById = useMemo(() => {
-    const m = new Map<string, ActionType>();
-    for (const a of ontology?.actions ?? []) m.set(a.id, a);
-    return m;
-  }, [ontology]);
-
-  const eventById = useMemo(() => {
-    const m = new Map<string, EventType>();
-    for (const e of ontology?.events ?? []) m.set(e.id, e);
-    return m;
-  }, [ontology]);
-
-  const objectById = useMemo(() => {
-    const m = new Map<string, ObjectType>();
-    for (const o of ontology?.objects ?? []) m.set(o.id, o);
-    return m;
-  }, [ontology]);
-
-  const stepById = useMemo(() => {
-    const m = new Map<string, WorkflowStep>();
-    for (const s of sel?.steps ?? []) m.set(s.id, s);
-    return m;
-  }, [sel]);
-
-  const actionName = (id: string): string => {
-    const a = actionById.get(id);
-    return a ? loc(a.name, a.nameZh, lang) : id;
-  };
-  const eventName = (id: string): string => {
-    const e = eventById.get(id);
-    return e ? loc(e.name, e.nameZh, lang) : id;
-  };
-  const objectName = (id: string): string => {
-    const o = objectById.get(id);
-    return o ? loc(o.name, o.nameZh, lang) : id;
-  };
-  const stepName = (id: string): string => {
-    const s = stepById.get(id);
-    return s ? actionName(s.actionTypeId) : id;
-  };
+  // The clean sample-shaped projection of the selected workflow (description +
+  // `actions` steps + receipts) — exactly what the JSON editor / `generate spec`
+  // show. id/name/actor/trigger/triggered_event are in the header; sources, the
+  // structural step graph, actor/object/trigger meta + orchestration are dropped.
+  const cleanSel = useMemo(
+    () => (sel && ontology ? (toCleanNodes('processes', [sel], ontology)[0] as Record<string, unknown>) : undefined),
+    [sel, ontology],
+  );
 
   // ---- empty state -----------------------------------------------------------
   if (!ontology || processes.length === 0) {
@@ -318,19 +241,6 @@ export default function ProcessesScreen({ t, lang, ctrl }: ProcessesScreenProps)
                 >
                   {biq(sel.name, lang)}
                 </h2>
-                {sel.description && (
-                  <div
-                    style={{
-                      marginTop: 6,
-                      fontSize: 13,
-                      lineHeight: 1.55,
-                      color: 'var(--fg-3)',
-                      maxWidth: 620,
-                    }}
-                  >
-                    {sel.description}
-                  </div>
-                )}
                 <div className="mono-cap" style={{ marginTop: 8 }}>
                   <span style={{ color: STATUS_COLOR[sel.reviewState] }}>
                     {statusLabel(t, sel.reviewState)}
@@ -385,354 +295,15 @@ export default function ProcessesScreen({ t, lang, ctrl }: ProcessesScreenProps)
               </div>
             </div>
 
-            {/* Meta row: actors · objects · triggers */}
-            <div
-              style={{
-                marginTop: 'var(--s-4)',
-                display: 'flex',
-                gap: 'var(--s-6)',
-                flexWrap: 'wrap',
-              }}
-            >
-              <div>
-                <div className="mono-cap">{t.procActors}</div>
-                <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
-                  {sel.actors.map((a, i) => (
-                    <span key={`${a.role}-${i}`} className="tag">
-                      {actorLabel(a, lang)}
-                      <span style={{ color: 'var(--fg-4)', marginLeft: 6, fontSize: 10 }}>
-                        {a.kind}
-                      </span>
-                    </span>
-                  ))}
-                  {sel.actors.length === 0 && <span className="mono-cap">—</span>}
-                </div>
-              </div>
-
-              <div>
-                <div className="mono-cap">{t.procObjects}</div>
-                <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
-                  {sel.objectTypeIds.map((oid) => (
-                    <span
-                      key={oid}
-                      className="tag"
-                      style={{
-                        background: 'color-mix(in oklab, var(--accent-3) 14%, transparent)',
-                        color: 'var(--accent-3)',
-                        borderColor: 'color-mix(in oklab, var(--accent-3) 30%, transparent)',
-                      }}
-                    >
-                      {objectName(oid)}
-                    </span>
-                  ))}
-                  {sel.objectTypeIds.length === 0 && <span className="mono-cap">—</span>}
-                </div>
-              </div>
-
-              <div>
-                <div className="mono-cap">{t.triggers}</div>
-                <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
-                  {sel.triggers.map((tr, i) => (
-                    <span
-                      key={i}
-                      className="tag"
-                      style={{
-                        background: 'color-mix(in oklab, var(--accent) 12%, transparent)',
-                        color: 'var(--accent)',
-                        borderColor: 'color-mix(in oklab, var(--accent) 28%, transparent)',
-                      }}
-                    >
-                      {triggerLabel(tr, lang, eventName)}
-                    </span>
-                  ))}
-                  {sel.triggers.length === 0 && <span className="mono-cap">—</span>}
-                </div>
-              </div>
-            </div>
-
-            {/* Orchestration spec */}
-            <div
-              className="card"
-              style={{
-                marginTop: 'var(--s-4)',
-                padding: 'var(--s-3) var(--s-4)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--s-5)',
-                flexWrap: 'wrap',
-              }}
-            >
-              <div className="mono-cap" style={{ color: 'var(--fg-3)' }}>
-                {t.orchestration}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span className="mono-cap">{t.orchStrategy}</span>
-                <span className="tag">{orchStrategyLabel(sel.orchestration.strategy, lang)}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span className="mono-cap">{t.agentOrchestrated}</span>
-                <span
-                  className="tag"
-                  style={
-                    sel.orchestration.agentOrchestrated
-                      ? {
-                          background: 'color-mix(in oklab, var(--accent-3) 14%, transparent)',
-                          color: 'var(--accent-3)',
-                          borderColor: 'color-mix(in oklab, var(--accent-3) 30%, transparent)',
-                        }
-                      : undefined
-                  }
-                >
-                  {sel.orchestration.agentOrchestrated ? (lang === 'zh' ? '是' : 'Yes') : lang === 'zh' ? '否' : 'No'}
-                </span>
-              </div>
-              {sel.orchestration.onFailure && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span className="mono-cap">{lang === 'zh' ? '失败时' : 'On failure'}</span>
-                  <span
-                    className="tag"
-                    style={{
-                      background: 'color-mix(in oklab, var(--warn) 14%, transparent)',
-                      color: 'var(--warn)',
-                      borderColor: 'color-mix(in oklab, var(--warn) 30%, transparent)',
-                    }}
-                  >
-                    {onFailureLabel(sel.orchestration.onFailure, lang)}
-                  </span>
-                </div>
-              )}
-            </div>
           </div>
 
-          {/* Flow diagram — driven by the WorkflowStep graph */}
-          <div className="scroll grid-bg" style={{ flex: 1, padding: 'var(--s-6) var(--s-7)' }}>
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 0,
-                maxWidth: 820,
-                margin: '0 auto',
-              }}
-            >
-              {sel.steps.map((s, i) => {
-                const act = actionById.get(s.actionTypeId);
-                // Linear "fall-through" edge to the next step in display order —
-                // suppressed when the step already names that step in `next`.
-                const nextInOrder = sel.steps[i + 1];
-                const edges: ProcessEdge[] = s.next;
-                const hasExplicitToNext =
-                  nextInOrder != null && edges.some((e) => e.toStepId === nextInOrder.id);
-                const isTerminal = edges.length === 0;
-
-                return (
-                  <Fragment key={s.id}>
-                    {/* Step card */}
-                    <div
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'auto 1fr auto',
-                        alignItems: 'center',
-                        gap: 'var(--s-4)',
-                        padding: 'var(--s-4) var(--s-5)',
-                        background: 'var(--bg-1)',
-                        border: '1px solid var(--line)',
-                        borderRadius: 'var(--r-3)',
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: 8,
-                          background: 'var(--bg-3)',
-                          border: '1px solid var(--line)',
-                          display: 'grid',
-                          placeItems: 'center',
-                          fontFamily: 'var(--font-mono)',
-                          fontSize: 12,
-                          color: 'var(--accent)',
-                        }}
-                      >
-                        {String(s.order ?? i + 1).padStart(2, '0')}
-                      </div>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 14, color: 'var(--fg)', fontWeight: 500 }}>
-                          {actionName(s.actionTypeId)}
-                        </div>
-                        <div
-                          className="mono-cap"
-                          style={{ marginTop: 2, display: 'flex', gap: 8, flexWrap: 'wrap' }}
-                        >
-                          <span style={{ color: 'var(--fg-4)' }}>{s.actionTypeId}</span>
-                          {s.actorRole && (
-                            <span style={{ color: 'var(--fg-3)' }}>· {s.actorRole}</span>
-                          )}
-                          {act?.agent?.toolName && (
-                            <span style={{ color: 'var(--accent-2)' }}>
-                              · {act.agent.toolName}()
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      {isTerminal ? (
-                        <span
-                          className="tag"
-                          style={{
-                            background: 'color-mix(in oklab, var(--fg-3) 12%, transparent)',
-                            color: 'var(--fg-3)',
-                            borderColor: 'color-mix(in oklab, var(--fg-3) 26%, transparent)',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {lang === 'zh' ? '终止' : 'End'}
-                        </span>
-                      ) : (
-                        <span
-                          className="tag"
-                          style={{
-                            background: 'color-mix(in oklab, var(--accent) 14%, transparent)',
-                            color: 'var(--accent)',
-                            borderColor: 'color-mix(in oklab, var(--accent) 30%, transparent)',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {edges.length} {t.next.toLowerCase()}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Branch edges that DON'T just fall through to the next step:
-                        render them as labeled jump rows so conditions /
-                        onEventTypeId / target are explicit. */}
-                    {edges
-                      .filter((e) => !(nextInOrder && e.toStepId === nextInOrder.id))
-                      .map((e, ei) => (
-                        <div
-                          key={`${s.id}-edge-${ei}`}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 'var(--s-3)',
-                            margin: '6px 0 6px var(--s-6)',
-                            padding: '6px 10px',
-                            background: 'var(--bg-1)',
-                            border: '1px dashed var(--line-strong)',
-                            borderRadius: 'var(--r-2)',
-                            fontSize: 12,
-                          }}
-                        >
-                          <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
-                            <path
-                              d="M0 6 H11 M8 3 L12 6 L8 9"
-                              stroke="var(--accent)"
-                              strokeWidth="1.4"
-                              fill="none"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                          <span style={{ color: 'var(--fg-3)' }}>
-                            {lang === 'zh' ? '跳转至' : 'to'}
-                          </span>
-                          <span style={{ color: 'var(--accent)', fontWeight: 500 }}>
-                            {stepName(e.toStepId)}
-                          </span>
-                          {e.onEventTypeId && (
-                            <span
-                              className="mono-cap"
-                              style={{
-                                padding: '2px 6px',
-                                borderRadius: 3,
-                                background: 'color-mix(in oklab, var(--accent-2) 14%, transparent)',
-                                color: 'var(--accent-2)',
-                              }}
-                            >
-                              {t.onEvent}: {eventName(e.onEventTypeId)}
-                            </span>
-                          )}
-                          {e.condition && (
-                            <span
-                              style={{
-                                fontFamily: 'var(--font-mono)',
-                                fontSize: 11,
-                                color: 'var(--warn)',
-                              }}
-                            >
-                              {e.condition}
-                            </span>
-                          )}
-                          {e.label && (
-                            <span style={{ color: 'var(--fg-4)' }}>{biq(e.label, lang)}</span>
-                          )}
-                        </div>
-                      ))}
-
-                    {/* Connector arrow to the next step in display order. Annotated
-                        when an explicit edge targets it with a condition / event. */}
-                    {nextInOrder && (
-                      <div
-                        style={{
-                          minHeight: 28,
-                          display: 'flex',
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                          gap: 'var(--s-3)',
-                          flexWrap: 'wrap',
-                          padding: '4px 0',
-                        }}
-                      >
-                        <svg width="18" height="28" viewBox="0 0 18 28" fill="none">
-                          <line
-                            x1="9"
-                            y1="0"
-                            x2="9"
-                            y2="22"
-                            stroke="var(--line-strong)"
-                            strokeWidth="1"
-                            strokeDasharray="2 3"
-                          />
-                          <path
-                            d="M5 20 L9 24 L13 20"
-                            stroke="var(--accent)"
-                            strokeWidth="1.4"
-                            fill="none"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                        {hasExplicitToNext &&
-                          edges
-                            .filter((e) => e.toStepId === nextInOrder.id)
-                            .map((e, ei) =>
-                              e.condition || e.onEventTypeId || e.label ? (
-                                <span
-                                  key={`fall-${ei}`}
-                                  className="mono-cap"
-                                  style={{
-                                    padding: '2px 8px',
-                                    borderRadius: 3,
-                                    background: 'var(--bg-2)',
-                                    border: '1px solid var(--line)',
-                                    color: 'var(--fg-3)',
-                                  }}
-                                >
-                                  {e.onEventTypeId
-                                    ? `${t.onEvent}: ${eventName(e.onEventTypeId)}`
-                                    : e.condition
-                                      ? e.condition
-                                      : e.label
-                                        ? biq(e.label, lang)
-                                        : ''}
-                                </span>
-                              ) : null,
-                            )}
-                      </div>
-                    )}
-                  </Fragment>
-                );
-              })}
-            </div>
+          {/* Clean sample-shaped workflow view: description + `actions` (the
+              clean workflow steps) + receipts. id/name/actor/trigger/
+              triggered_event are in the header + spec strip above; the structural
+              actors/object/trigger meta, orchestration, and step DAG are dropped
+              (not part of the clean sample shape). */}
+          <div className="scroll" style={{ flex: 1, padding: 'var(--s-6) var(--s-7)' }}>
+            {cleanSel && <CleanNodeCard node={cleanSel} lang={lang} skip={['id', 'name', 'actor', 'trigger', 'triggered_event', 'sources']} />}
           </div>
         </div>
       )}
