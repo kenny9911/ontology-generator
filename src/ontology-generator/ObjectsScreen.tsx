@@ -80,7 +80,6 @@ export default function ObjectsScreen({ t, lang, ctrl }: ObjectsScreenProps) {
   const [editName, setEditName] = useState('');
   const [editNameZh, setEditNameZh] = useState('');
   const [editDesc, setEditDesc] = useState('');
-  const [editDescZh, setEditDescZh] = useState('');
   const [editType, setEditType] = useState<'data' | 'system'>('data');
   const [editRelDesc, setEditRelDesc] = useState('');
   const [editPk, setEditPk] = useState('');
@@ -123,8 +122,8 @@ export default function ObjectsScreen({ t, lang, ctrl }: ObjectsScreenProps) {
     if (!sel) return;
     setEditName(sel.name);
     setEditNameZh(sel.nameZh);
-    setEditDesc(sel.description);
-    setEditDescZh(sel.descriptionZh ?? '');
+    // Single description, Chinese-first — exactly what the clean view shows.
+    setEditDesc(sel.descriptionZh?.trim() || sel.description);
     setEditType(sel.type);
     setEditRelDesc(sel.relationship_description ?? '');
     setEditPk(sel.primary_key ?? '');
@@ -167,8 +166,9 @@ export default function ObjectsScreen({ t, lang, ctrl }: ObjectsScreenProps) {
     ctrl.editEntity('object', sel.id, {
       name: editName,
       nameZh: editNameZh,
+      // One edited value writes both fields (the clean projection is Chinese-first).
       description: editDesc,
-      descriptionZh: editDescZh,
+      descriptionZh: editDesc,
       type: editType,
       relationship_description: editRelDesc,
       primary_key: editPk.trim() || `${sel.id.replace(/^objectType:/, '').replace(/[^a-z0-9]+/gi, '_').toLowerCase()}_id`,
@@ -336,14 +336,7 @@ export default function ObjectsScreen({ t, lang, ctrl }: ObjectsScreenProps) {
                     style={{ borderRadius: 'var(--r-2)', padding: '8px 12px', minHeight: 48, resize: 'vertical', fontFamily: 'var(--font-body)' }}
                     value={editDesc}
                     onChange={(e) => setEditDesc(e.target.value)}
-                    placeholder={`${t.description} (EN)`}
-                  />
-                  <textarea
-                    className="ctl"
-                    style={{ borderRadius: 'var(--r-2)', padding: '8px 12px', minHeight: 48, resize: 'vertical', fontFamily: 'var(--font-body)' }}
-                    value={editDescZh}
-                    onChange={(e) => setEditDescZh(e.target.value)}
-                    placeholder={`${t.description} (中文)`}
+                    placeholder={t.description}
                   />
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     <label className="mono-cap" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
