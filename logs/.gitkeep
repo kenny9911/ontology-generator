@@ -1,0 +1,5 @@
+# Runtime log directory. The API writes <YYYY-MM-DD>.log here (one file per
+# local date) — pipeline steps, action dispatches, and LLM calls (task + tokens).
+# The .log files are gitignored (see .gitignore "*.log"); this .gitkeep keeps the
+# directory in the repo. Disable logging with ONTOLOGY_GEN_LOG=0, or relocate
+# with ONTOLOGY_GEN_LOG_DIR.

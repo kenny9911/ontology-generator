@@ -57,6 +57,7 @@ import type { StageContext } from '../api/ontology-gen/pipeline/context.js';
 import { renderWebAugment } from '../api/ontology-gen/pipeline/web-augment.js';
 import { resolveTavilyKey, tavilyAvailable } from '../api/ontology-gen/tavily.js';
 import type { WebAugmentation } from '../api/_shared/ontology-schema.js';
+import { stampParts, formatLlm } from '../api/ontology-gen/logger.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -1033,6 +1034,37 @@ async function sectionWebAugment(): Promise<void> {
   });
 }
 
+async function sectionLogger(): Promise<void> {
+  section('9. File logger — local-tz stamp + LLM line formatting');
+
+  await check('stampParts: local date + YYYY-MM-DD HH:mm:ss.SSS ±HHMM stamp', () => {
+    const { date, stamp } = stampParts(new Date(2026, 5, 18, 9, 5, 3, 7));
+    assert(/^\d{4}-\d{2}-\d{2}$/.test(date), `date format: ${date}`);
+    assert(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} [+-]\d{4}$/.test(stamp), `stamp format: ${stamp}`);
+    assert(stamp.startsWith(date + ' '), 'stamp embeds the file date');
+  });
+
+  await check('formatLlm: ok line carries task, model, token usage, duration', () => {
+    const line = formatLlm({
+      actionName: 'ontology_extract_objects', module: 'ontology_generator',
+      provider: 'openrouter', model: 'google/gemini-2.5-flash',
+      promptTokens: 5234, completionTokens: 1203, totalTokens: 6437, durationMs: 5800, ok: true,
+    });
+    assert(line.includes('task=ontology_extract_objects'), 'has task name');
+    assert(line.includes('model=google/gemini-2.5-flash'), 'has model');
+    assert(line.includes('tokens(prompt=5234, completion=1203, total=6437)'), 'has token usage');
+    assert(line.includes('5800ms'), 'has duration');
+    assert(line.trim().endsWith('ok'), 'ends ok');
+  });
+
+  await check('formatLlm: error line carries ERROR, collapses newlines, keeps note', () => {
+    const line = formatLlm({ actionName: 't', provider: 'openai', model: 'gpt-5', ok: false, error: 'boom\nstack', note: 'will retry' });
+    assert(line.includes('ERROR: boom stack'), 'error message inlined');
+    assert(line.includes('[will retry]'), 'note present');
+    assert(!line.includes('\n'), 'single line');
+  });
+}
+
 async function main(): Promise<void> {
   console.log('test-hyper — deterministic verification suite (design §6.2)');
 
@@ -1045,6 +1077,7 @@ async function main(): Promise<void> {
   await sectionRegistry();
   await sectionUseCases();
   await sectionWebAugment();
+  await sectionLogger();
 
   console.log('\n== Summary ==');
   let pass = 0;

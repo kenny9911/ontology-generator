@@ -9,12 +9,15 @@
 // Differences from the monorepo original:
 //   - API keys are read directly from environment variables (no Supabase
 //     settings table).
-//   - Token-usage logging is a no-op (the monorepo logged to Supabase).
+//   - Token-usage logging goes to the local file logger (logger.ts) — the
+//     monorepo logged to Supabase. Each call records task name + tokens + timing.
 //
 // Providers: `openrouter` (default) plus the OpenAI-compatible `openai`,
 // `deepseek`, `qwen`, `moonshot`. Note: `google` has no dedicated branch and
 // falls through to the OpenRouter path (so it needs OPENROUTER_API_KEY).
 // =============================================================================
+
+import { logLlm } from './logger.js';
 
 export type LLMProvider =
   | 'openrouter'
@@ -226,17 +229,42 @@ function isConfigError(err: unknown): boolean {
 
 export async function executeLLMWithTracking(options: ExecuteLLMOptions): Promise<string> {
   const { provider = 'openrouter', model, messages, maxTokens, temperature, signal, title, web } = options;
+  const { actionName, module } = options;
+  const started = Date.now();
   try {
     const result = await callLLM({ provider, model, messages, maxTokens, temperature, signal, title, web });
+    logLlm({
+      actionName, module, provider, model,
+      promptTokens: result.usage.prompt_tokens,
+      completionTokens: result.usage.completion_tokens,
+      totalTokens: result.usage.total_tokens,
+      durationMs: Date.now() - started,
+      ok: true,
+    });
     return result.content;
   } catch (err) {
     // ONE retry on transient transport/provider failures (streams 'terminated'
     // mid-flight, resets, 5xx). A lost extraction call silently empties a whole
     // pipeline stage, so a single retry is cheap insurance; config errors
     // (bad key/model) rethrow immediately.
-    if (isConfigError(err) || options.signal?.aborted) throw err;
+    const errMsg = err instanceof Error ? err.message : String(err);
+    if (isConfigError(err) || options.signal?.aborted) {
+      logLlm({ actionName, module, provider, model, durationMs: Date.now() - started, ok: false, error: errMsg });
+      throw err;
+    }
+    logLlm({ actionName, module, provider, model, durationMs: Date.now() - started, ok: false, error: errMsg, note: 'will retry' });
     await new Promise((resolve) => setTimeout(resolve, 2000));
+    const retryStarted = Date.now();
     const result = await callLLM({ provider, model, messages, maxTokens, temperature, signal, title, web });
+    logLlm({
+      actionName, module, provider, model,
+      promptTokens: result.usage.prompt_tokens,
+      completionTokens: result.usage.completion_tokens,
+      totalTokens: result.usage.total_tokens,
+      durationMs: Date.now() - retryStarted,
+      ok: true,
+      note: 'retry',
+    });
     return result.content;
   }
 }

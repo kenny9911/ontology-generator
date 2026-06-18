@@ -71,6 +71,7 @@ import {
 import { AGENT_REGISTRY } from './agents.js';
 import { executeLLMWithTracking } from './llm.js';
 import type { ChatMessage, ExecuteLLMOptions } from './llm.js';
+import { logEvent, logStep } from './logger.js';
 import { extractJson } from './pipeline/swarm/llm-json.js';
 import { generate } from './generators/index.js';
 import type { GeneratorTarget } from './generators/index.js';
@@ -1172,7 +1173,7 @@ async function actionStage(
   const options = (body.options as { model?: string; temperature?: number } | undefined) ?? {};
 
   const logLines: string[] = [];
-  const log = (text: string) => { logLines.push(text); };
+  const log = (text: string) => { logLines.push(text); logEvent('step', text); };
 
   const ctx = await contextFromOntology(store, draft, parsedRefs, userInfo, log, { model: options.model });
 
@@ -1483,6 +1484,7 @@ const nowIso = (): string => new Date().toISOString();
 
 function appendLog(run: OntologyRun, text: string): void {
   run.log.push({ at: nowIso(), text });
+  logStep(`run=${run.id}`, text); // mirror every run-log line to the file logger
 }
 
 function collectDangling(issues: ValidationIssue[]): { from: string; field: string; missingId: string }[] {
@@ -1589,6 +1591,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   }
 
   try {
+    logEvent('action', `${action} ${req.method ?? ''} user=${userInfo.userId}`);
     // Stage re-run actions.
     const maybeStage = STAGE_ACTIONS[action];
     if (maybeStage) {
@@ -1669,6 +1672,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     }
   } catch (err) {
     if (err instanceof HttpError) {
+      logEvent('error', `action=${action} ${err.code ?? ''} ${err.message}`);
       fail(res, err.status, err.message, err.code);
       return;
     }
@@ -1676,6 +1680,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     // on missing Supabase/Neo4j env (those paths fall back before reaching here).
     const msg = errText(err);
     const status = msg.includes('NOT_FOUND') ? 404 : 400;
+    logEvent('error', `action=${action} ${msg}`);
     fail(res, status, msg, 'HANDLER_ERROR');
   }
 }
