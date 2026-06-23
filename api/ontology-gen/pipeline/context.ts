@@ -83,10 +83,32 @@ export interface StageContext {
    */
   briefSeed?: string;
 
+  /**
+   * OPTIONAL pre-rendered web-search supplement block (any mode, when the user
+   * enabled live web search). When present, each extraction stage appends it to
+   * its system prompt as EXTERNAL reference material; the objects stage tags
+   * nodes derived solely from it `provenance: 'web_search'`. Undefined on a
+   * no-web run. Built by `pipeline/web-augment.ts#renderWebAugment`.
+   */
+  webAugment?: string;
+
   /** Per-agent LLM resolution (hyper-automation router; see api/ontology-gen/llm-router.ts).
    *  When absent, callers fall back to ctx.model/ctx.provider — behavior is then
    *  byte-identical to the pre-router pipeline. */
   agentLlm?: (agentId: string, opts?: { inputChars?: number; needsWeb?: boolean }) => { provider: string; model: string };
+}
+
+/**
+ * Compose a stage's system prompt with the OPTIONAL recall-raising seeds: the
+ * swarm/hyper domain-brief seed and the web-search supplement. Both are absent
+ * on a plain fast run with no web search, so the result is byte-identical to the
+ * bare `system` prompt — the single-pass pipeline behaves unchanged.
+ */
+export function stageSystem(ctx: StageContext, system: string): string {
+  const parts = [system];
+  if (ctx.briefSeed) parts.push(ctx.briefSeed);
+  if (ctx.webAugment) parts.push(ctx.webAugment);
+  return parts.join('\n\n');
 }
 
 /**

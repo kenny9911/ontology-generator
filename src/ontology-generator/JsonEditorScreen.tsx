@@ -36,9 +36,11 @@ import {
 import {
   extractLayer,
   serializeLayer,
+  serializeLayerDoc,
   parseLayer,
   type EditorLayer,
 } from './json-editor/layers';
+import { toCleanNodes, fromCleanNodes } from './json-editor/clean';
 import { layerUri } from './json-editor/layer-schemas';
 import { repairJson } from './json-editor/json-repair';
 import { suggestFixes, applySuggestion, type SchemaSuggestion } from './json-editor/json-suggest';
@@ -94,19 +96,6 @@ function ownerToTab(owner: OwnerLayer): EditorLayer {
 }
 
 /** Build a Diagnostic from a json-suggest suggestion (so it joins the summary). */
-function suggestionToDiag(layer: EditorLayer, s: SchemaSuggestion): Diagnostic {
-  return {
-    key: `schema:${layer}:${s.nodeId}:${s.field}:${s.kind}`,
-    source: 'schema',
-    severity: s.level,
-    layer,
-    nodeId: s.nodeId,
-    field: s.field,
-    kind: 'json_schema',
-    message: s.message,
-  };
-}
-
 export default function JsonEditorScreen({ t, lang, ctrl }: JsonEditorScreenProps) {
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<Monaco | null>(null);
@@ -194,14 +183,21 @@ export default function JsonEditorScreen({ t, lang, ctrl }: JsonEditorScreenProp
           });
         }
       }
-      for (const s of suggestFixes(nodes, layer)) {
-        items.push({ diag: suggestionToDiag(layer, s), layer, suggestion: s });
-      }
+      // suggestFixes assumes the INTERNAL shape (id prefixes, bilingual, enum
+      // vocab); it would misfire on the clean sample shape, so it is not run
+      // here. Cross-tab semantics are validated against the merged internal
+      // ontology below.
     }
 
     // Tier 2 — canonical cross-tab semantics, only when everything parses.
+    // The editor shows the CLEAN shape; merge edits back to the internal shape
+    // so the canonical validator runs against the real structured ontology.
     if (allParsed && ontology) {
-      const candidate = buildCandidateOntology(ontology, parsedLayers);
+      const internalLayers: Partial<Record<EditorLayer, unknown[]>> = {};
+      for (const { layer } of TABS) {
+        if (parsedLayers[layer]) internalLayers[layer] = fromCleanNodes(layer, parsedLayers[layer]!, ontology);
+      }
+      const candidate = buildCandidateOntology(ontology, internalLayers);
       for (const issue of validateOntology(candidate)) {
         const diag = issueToDiagnostic(issue);
         items.push({ diag, layer: ownerToTab(mapIdToLayer(issue.from)) });
@@ -224,7 +220,9 @@ export default function JsonEditorScreen({ t, lang, ctrl }: JsonEditorScreenProp
       for (const ts of modelsRef.current.values()) ts.model.dispose();
       modelsRef.current.clear();
       for (const { layer } of TABS) {
-        const text = ontology ? serializeLayer(extractLayer(ontology, layer)) : '[]';
+        const text = ontology
+          ? serializeLayerDoc(layer, toCleanNodes(layer, extractLayer(ontology, layer), ontology), ontology)
+          : '[]';
         const uri = m.Uri.parse(layerUri(layer));
         const existing = m.editor.getModel(uri);
         if (existing) existing.dispose();
@@ -292,7 +290,7 @@ export default function JsonEditorScreen({ t, lang, ctrl }: JsonEditorScreenProp
     for (const { layer } of TABS) {
       const ts = modelsRef.current.get(layer);
       if (!ts || dirtyRef.current[layer]) continue;
-      const text = serializeLayer(extractLayer(ontology, layer));
+      const text = serializeLayerDoc(layer, toCleanNodes(layer, extractLayer(ontology, layer), ontology), ontology);
       ts.baseline = text;
       if (ts.model.getValue() !== text) ts.model.setValue(text);
       setDirtyLayer(layer, false);
@@ -374,7 +372,7 @@ export default function JsonEditorScreen({ t, lang, ctrl }: JsonEditorScreenProp
           (s) => s.index === sug.index && s.field === sug.field && s.kind === sug.kind,
         ) ?? sug;
       const next = applySuggestion(pr.nodes, fresh);
-      const text = serializeLayer(next);
+      const text = ontology ? serializeLayerDoc(item.layer, next, ontology) : serializeLayer(next);
       if (item.layer !== active) switchTab(item.layer);
       ts.model.setValue(text);
       scheduleRecompute();
@@ -388,18 +386,8 @@ export default function JsonEditorScreen({ t, lang, ctrl }: JsonEditorScreenProp
     // 1. syntactic repair
     const repaired = repairJson(ts.model.getValue());
     let text = repaired.ok ? repaired.text : ts.model.getValue();
-    // 2. apply every fixable schema suggestion on the active layer
-    const pr = parseLayer(text);
-    if (pr.ok && pr.nodes) {
-      let nodes = pr.nodes;
-      // re-derive suggestions after each application so indices stay valid
-      for (let guard = 0; guard < 200; guard++) {
-        const fixable = suggestFixes(nodes, active).filter((s) => s.fixable);
-        if (fixable.length === 0) break;
-        nodes = applySuggestion(nodes, fixable[0]!);
-      }
-      text = serializeLayer(nodes);
-    }
+    // Schema-suggestion auto-fixing assumes the INTERNAL shape and would corrupt
+    // the clean sample shape shown here, so only syntactic repair runs.
     if (text !== ts.model.getValue()) {
       const editor = editorRef.current;
       if (editor) {
@@ -422,7 +410,9 @@ export default function JsonEditorScreen({ t, lang, ctrl }: JsonEditorScreenProp
       if (!ts) continue;
       const pr = parseLayer(ts.model.getValue());
       if (!pr.ok) return; // gated by `saveable`, but stay defensive
-      edits[layer] = pr.nodes ?? [];
+      // The editor shows the CLEAN sample shape; merge the edits back onto the
+      // original internal nodes so the structural fields are preserved.
+      edits[layer] = fromCleanNodes(layer, pr.nodes ?? [], ontology);
     }
     // The editor's trust boundary: user-edited JSON is `unknown[]`; the canonical
     // validator (run on save / in the panel) is defensive about partial shapes.

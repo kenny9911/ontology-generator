@@ -165,7 +165,7 @@ function flattenStep(
   }
 
   // Actor role: the step's own role wins, falling back to the action's actor.
-  const actorRole = step.actorRole ?? action?.actor?.role;
+  const actorRole = step.actorRole ?? action?.actorRef?.role;
 
   const node: ManifestNode = {
     id: step.id,
@@ -258,7 +258,7 @@ function buildManifestWithWarnings(
       tools.push(entry);
     }
 
-    const role = step.actorRole ?? action.actor?.role;
+    const role = step.actorRole ?? action.actorRef?.role;
     if (role) {
       if (!roleToTools.has(role)) {
         roleToTools.set(role, []);

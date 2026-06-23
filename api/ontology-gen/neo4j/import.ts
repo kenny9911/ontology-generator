@@ -29,7 +29,7 @@
 import type {
   ActionType,
   EventType,
-  ObjectAttribute,
+  ObjectProperty,
   ObjectType,
   Ontology,
   Process,
@@ -196,19 +196,18 @@ function buildNodeOps(o: Ontology, ontologyId: string, version: number): Op[] {
   // --- :Attribute (id = "<objId>#<name>") ---
   const attrRows: Record<string, unknown>[] = [];
   for (const obj of o.objects) {
-    for (const a of obj.attributes ?? ([] as ObjectAttribute[])) {
-      const id = attrId(obj.id, a.name);
+    for (const p of obj.properties ?? ([] as ObjectProperty[])) {
+      const id = attrId(obj.id, p.name);
       attrRows.push({
         key: nodeKey(ontologyId, version, id),
         ontologyId,
         ontologyVersion: version,
         id,
-        name: a.name,
-        type: a.type,
-        required: a.required,
-        keyRole: a.keyRole,
-        // Neo4j has no nested maps on properties; store enum values as a string[].
-        enumValues: a.enumValues ?? null,
+        name: p.name,
+        type: p.type,
+        isForeignKey: p.is_foreign_key === true,
+        references: p.references ?? null,
+        isPrimaryKey: p.name === obj.primary_key,
       });
     }
   }
@@ -218,8 +217,8 @@ function buildNodeOps(o: Ontology, ontologyId: string, version: number): Op[] {
       'UNWIND $rows AS r ' +
       'MERGE (n:Attribute { key: r.key }) ' +
       'SET n.ontologyId = r.ontologyId, n.ontologyVersion = r.ontologyVersion, ' +
-      'n.id = r.id, n.name = r.name, n.type = r.type, n.required = r.required, ' +
-      'n.keyRole = r.keyRole, n.enumValues = r.enumValues',
+      'n.id = r.id, n.name = r.name, n.type = r.type, ' +
+      'n.isForeignKey = r.isForeignKey, n.references = r.references, n.isPrimaryKey = r.isPrimaryKey',
     rows: attrRows,
   });
 
@@ -284,7 +283,7 @@ function buildNodeOps(o: Ontology, ontologyId: string, version: number): Op[] {
       name: act.name,
       nameZh: act.nameZh ?? null,
       toolName: act.agent?.toolName ?? null,
-      actor: act.actor?.role ?? null,
+      actor: act.actorRef?.role ?? null,
       confidence: act.confidence,
     })),
   });
@@ -348,8 +347,8 @@ function buildRelOps(o: Ontology, ontologyId: string, version: number): Op[] {
   // --- HAS_ATTRIBUTE: ObjectType → Attribute ---
   const hasAttr: Record<string, unknown>[] = [];
   for (const obj of o.objects) {
-    for (const a of obj.attributes ?? []) {
-      hasAttr.push({ from: key(obj.id), to: key(attrId(obj.id, a.name)) });
+    for (const p of obj.properties ?? []) {
+      hasAttr.push({ from: key(obj.id), to: key(attrId(obj.id, p.name)) });
     }
   }
   ops.push(

@@ -49,6 +49,7 @@ import { STAGE_ORDER } from '@/ontology/schema/types';
 
 import { DATASETS } from './data';
 import { datasetToOntology } from './adapters';
+import { normalizeOntologyObjects } from './normalize-objects';
 import * as api from './api';
 import type { RunStartInput, SampleCorpus, OntologySummary } from './api';
 
@@ -82,12 +83,12 @@ export interface OntologyRunController {
 
   // ---- setup (InputScreen) ----
   startDemo: () => void;
-  startUpload: (files: File[]) => Promise<void>;
-  startSample: (domain: DomainKey) => Promise<void>;
+  startUpload: (files: File[], opts?: { webSearch?: boolean }) => Promise<void>;
+  startSample: (domain: DomainKey, opts?: { webSearch?: boolean }) => Promise<void>;
   /** Deep-swarm: start a multi-agent run from uploaded files OR a sample corpus. */
-  startSwarm: (input: { files?: File[]; sample?: DomainKey }) => Promise<void>;
+  startSwarm: (input: { files?: File[]; sample?: DomainKey; webSearch?: boolean }) => Promise<void>;
   /** Hyper-automation: start a full-coverage run from uploaded files OR a sample corpus. */
-  startHyper: (input: { files?: File[]; sample?: DomainKey }) => Promise<void>;
+  startHyper: (input: { files?: File[]; sample?: DomainKey; webSearch?: boolean }) => Promise<void>;
   listSamples: () => Promise<{ domain: DomainKey; title: string; docCount: number }[]>;
 
   // ---- discover ----
@@ -296,8 +297,12 @@ export function useOntologyRun(): OntologyRunController {
   // so `save`/`publish`/`reRunStage`/`acceptAll` always read the freshest model.
   const ontologyRef = useRef<Ontology | null>(null);
   const commitOntology = useCallback((next: Ontology | null) => {
-    ontologyRef.current = next;
-    setOntology(next);
+    // Normalize legacy `attributes`-shaped objects to the spec `properties` shape
+    // on the way in (idempotent), so every screen + the JSON editor see one shape
+    // even when an OLD stored ontology is reopened.
+    const normalized = next ? normalizeOntologyObjects(next) : null;
+    ontologyRef.current = normalized;
+    setOntology(normalized);
   }, []);
 
   // ---- setup ---------------------------------------------------------------
@@ -310,7 +315,7 @@ export function useOntologyRun(): OntologyRunController {
     commitOntology(datasetToOntology(DATASETS.commerce));
   }, []);
 
-  const startUpload = useCallback(async (files: File[]) => {
+  const startUpload = useCallback(async (files: File[], opts?: { webSearch?: boolean }) => {
     setError(null);
     setRunning(true);
     setGenerated(null);
@@ -323,6 +328,7 @@ export function useOntologyRun(): OntologyRunController {
         name: deriveCorpusName(files),
         sourceIds,
         autoName: true,
+        webSearch: opts?.webSearch,
       };
       const { ontology: o, run: r } = await api.runStart(input);
       setMode('live');
@@ -336,7 +342,7 @@ export function useOntologyRun(): OntologyRunController {
     }
   }, []);
 
-  const startSample = useCallback(async (domain: DomainKey) => {
+  const startSample = useCallback(async (domain: DomainKey, opts?: { webSearch?: boolean }) => {
     setError(null);
     setRunning(true);
     setGenerated(null);
@@ -350,6 +356,7 @@ export function useOntologyRun(): OntologyRunController {
       const input: RunStartInput = {
         name: { en: match.label.en, zh: match.label.zh },
         sampleId: match.id,
+        webSearch: opts?.webSearch,
       };
       const { ontology: o, run: r } = await api.runStart(input);
       setMode('live');
@@ -363,7 +370,7 @@ export function useOntologyRun(): OntologyRunController {
     }
   }, []);
 
-  const startSwarm = useCallback(async (input: { files?: File[]; sample?: DomainKey }) => {
+  const startSwarm = useCallback(async (input: { files?: File[]; sample?: DomainKey; webSearch?: boolean }) => {
     setError(null);
     setRunning(true);
     setGenerated(null);
@@ -378,12 +385,12 @@ export function useOntologyRun(): OntologyRunController {
       if (input.files && input.files.length > 0) {
         const { sources, parsedRefs } = await api.uploadDocs(input.files);
         const sourceIds = parsedRefs.length > 0 ? parsedRefs : sources.map((s) => s.parsedRef).filter((r): r is string => !!r);
-        runInput = { name: deriveCorpusName(input.files), sourceIds, autoName: true };
+        runInput = { name: deriveCorpusName(input.files), sourceIds, autoName: true, webSearch: input.webSearch };
       } else if (input.sample) {
         const samples = await api.listSamples();
         const match: SampleCorpus | undefined = samples.find((s) => s.domain === input.sample) ?? samples[0];
         if (!match) throw new Error('No sample corpus available for the requested domain.');
-        runInput = { name: { en: match.label.en, zh: match.label.zh }, sampleId: match.id };
+        runInput = { name: { en: match.label.en, zh: match.label.zh }, sampleId: match.id, webSearch: input.webSearch };
       } else {
         throw new Error('startSwarm requires files or a sample.');
       }
@@ -399,7 +406,7 @@ export function useOntologyRun(): OntologyRunController {
     }
   }, []);
 
-  const startHyper = useCallback(async (input: { files?: File[]; sample?: DomainKey }) => {
+  const startHyper = useCallback(async (input: { files?: File[]; sample?: DomainKey; webSearch?: boolean }) => {
     setError(null);
     setRunning(true);
     setGenerated(null);
@@ -414,12 +421,12 @@ export function useOntologyRun(): OntologyRunController {
       if (input.files && input.files.length > 0) {
         const { sources, parsedRefs } = await api.uploadDocs(input.files);
         const sourceIds = parsedRefs.length > 0 ? parsedRefs : sources.map((s) => s.parsedRef).filter((r): r is string => !!r);
-        runInput = { name: deriveCorpusName(input.files), sourceIds, autoName: true };
+        runInput = { name: deriveCorpusName(input.files), sourceIds, autoName: true, webSearch: input.webSearch };
       } else if (input.sample) {
         const samples = await api.listSamples();
         const match: SampleCorpus | undefined = samples.find((s) => s.domain === input.sample) ?? samples[0];
         if (!match) throw new Error('No sample corpus available for the requested domain.');
-        runInput = { name: { en: match.label.en, zh: match.label.zh }, sampleId: match.id };
+        runInput = { name: { en: match.label.en, zh: match.label.zh }, sampleId: match.id, webSearch: input.webSearch };
       } else {
         throw new Error('startHyper requires files or a sample.');
       }

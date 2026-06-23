@@ -51,6 +51,8 @@ function sanitizeSettings(s: LlmSettings): LlmSettings {
   if (defaultModel) result.defaultModel = defaultModel;
   if (defaultProvider) result.defaultProvider = defaultProvider;
   if (s.routerEnabled !== undefined) result.routerEnabled = s.routerEnabled;
+  const tavilyApiKey = s.tavilyApiKey?.trim();
+  if (tavilyApiKey) result.tavilyApiKey = tavilyApiKey;
   return result;
 }
 
@@ -120,7 +122,7 @@ export default function LLMSettingsScreen({ t, lang }: { t: Strings; lang: Lang;
     });
   }, []);
 
-  const setGlobal = useCallback((field: 'defaultModel' | 'defaultProvider', value: string) => {
+  const setGlobal = useCallback((field: 'defaultModel' | 'defaultProvider' | 'tavilyApiKey', value: string) => {
     setDraft((prev) => {
       if (!prev) return prev;
       const next = cloneSettings(prev);
@@ -239,6 +241,16 @@ export default function LLMSettingsScreen({ t, lang }: { t: Strings; lang: Lang;
             </label>
             <span className="llm-hint">{ls.routerHint}</span>
           </div>
+          <label className="llm-field">
+            <span className="mono-cap">{ls.tavilyLabel}</span>
+            <input
+              className="llm-input"
+              value={draft.tavilyApiKey ?? ''}
+              placeholder={ls.tavilyPlaceholder}
+              onChange={(e) => setGlobal('tavilyApiKey', e.target.value)}
+            />
+            <span className="llm-hint">{ls.tavilyHint}</span>
+          </label>
         </div>
       </div>
 

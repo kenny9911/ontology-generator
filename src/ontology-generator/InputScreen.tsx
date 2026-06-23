@@ -91,6 +91,8 @@ export default function InputScreen({ t, lang, ctrl }: InputScreenProps) {
   // Track which start path is in flight (so the right pill / button shows a spinner).
   const [pending, setPending] = useState<'upload' | 'demo' | DomainKey | null>(null);
   const [extractMode, setExtractMode] = useState<'fast' | 'swarm' | 'hyper'>('fast');
+  // Live web-search augmentation (Tavily). Off by default; applies to every mode.
+  const [webSearch, setWebSearch] = useState(false);
 
   const running = ctrl.running;
 
@@ -154,32 +156,32 @@ export default function InputScreen({ t, lang, ctrl }: InputScreenProps) {
     if (files.length === 0 || running) return;
     setPending('upload');
     try {
-      if (extractMode === 'hyper') await ctrl.startHyper({ files });
-      else if (extractMode === 'swarm') await ctrl.startSwarm({ files });
-      else await ctrl.startUpload(files);
+      if (extractMode === 'hyper') await ctrl.startHyper({ files, webSearch });
+      else if (extractMode === 'swarm') await ctrl.startSwarm({ files, webSearch });
+      else await ctrl.startUpload(files, { webSearch });
       // On success the container advances to `discover`; nothing else to do.
     } catch {
       // ctrl.error already carries the message; surface it inline below.
     } finally {
       setPending(null);
     }
-  }, [files, running, ctrl, extractMode]);
+  }, [files, running, ctrl, extractMode, webSearch]);
 
   const startSample = useCallback(
     async (domain: DomainKey) => {
       if (running) return;
       setPending(domain);
       try {
-        if (extractMode === 'hyper') await ctrl.startHyper({ sample: domain });
-        else if (extractMode === 'swarm') await ctrl.startSwarm({ sample: domain });
-        else await ctrl.startSample(domain);
+        if (extractMode === 'hyper') await ctrl.startHyper({ sample: domain, webSearch });
+        else if (extractMode === 'swarm') await ctrl.startSwarm({ sample: domain, webSearch });
+        else await ctrl.startSample(domain, { webSearch });
       } catch {
         /* ctrl.error surfaced inline */
       } finally {
         setPending(null);
       }
     },
-    [running, ctrl, extractMode],
+    [running, ctrl, extractMode, webSearch],
   );
 
   const startDemo = useCallback(() => {
@@ -520,6 +522,26 @@ export default function InputScreen({ t, lang, ctrl }: InputScreenProps) {
               <span className="mono-cap">{t.modeHyperHint}</span>
             </button>
           </div>
+          {/* Live web-search augmentation (Tavily) — applies to every mode. */}
+          <label
+            style={{
+              display: 'flex', alignItems: 'flex-start', gap: 8,
+              marginBottom: 'var(--s-3)', cursor: 'pointer',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={webSearch}
+              onChange={(e) => setWebSearch(e.target.checked)}
+              style={{ marginTop: 2, accentColor: 'var(--accent)', flexShrink: 0 }}
+            />
+            <span style={{ minWidth: 0 }}>
+              <span style={{ fontSize: 13, fontWeight: 500 }}>{t.webSearch}</span>
+              <span style={{ display: 'block', fontSize: 11, color: 'var(--fg-4)', marginTop: 2, lineHeight: 1.45 }}>
+                {t.webSearchHint}
+              </span>
+            </span>
+          </label>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 'var(--s-3)' }}>
             <span className="mono-cap">{t.estimatedTime}</span>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 16, color: 'var(--accent-3)' }}>

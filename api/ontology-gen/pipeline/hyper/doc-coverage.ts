@@ -107,7 +107,7 @@ function allNodeRefs(o: Ontology): { nodeId: string; refs: SourceRef[] }[] {
   const out: { nodeId: string; refs: SourceRef[] }[] = [];
   for (const n of o.objects) {
     const refs = [...n.sources];
-    for (const a of n.attributes) if (a.sources) refs.push(...a.sources);
+    for (const p of n.properties ?? []) if (p.sources) refs.push(...p.sources);
     out.push({ nodeId: n.id, refs });
   }
   for (const n of o.rules) out.push({ nodeId: n.id, refs: n.sources });
@@ -209,7 +209,7 @@ function truncate(s: string, max: number): string {
 function ontologyDigest(o: Ontology): string {
   const lines: string[] = [];
   for (const n of o.objects) {
-    const attrs = n.attributes.slice(0, 30).map((a) => a.name).join(',');
+    const attrs = (n.properties ?? []).slice(0, 30).map((p) => p.name).join(',');
     lines.push(truncate(`${n.id} | object | ${n.name} / ${n.nameZh} | attrs: ${attrs}`, 240));
   }
   for (const n of o.relationships) {

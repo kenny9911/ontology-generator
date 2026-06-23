@@ -390,7 +390,7 @@ function candidatesOf(o: Ontology): Candidate[] {
   const out: Candidate[] = [];
   for (const n of o.objects) {
     out.push({ id: n.id, key: norm(n.name) });
-    for (const a of n.attributes) out.push({ id: n.id, key: norm(a.name) });
+    for (const p of n.properties ?? []) out.push({ id: n.id, key: norm(p.name) });
   }
   for (const n of o.rules) out.push({ id: n.id, key: norm(n.title) });
   for (const n of o.actions) out.push({ id: n.id, key: norm(n.name) });

@@ -44,8 +44,7 @@ import type {
   TerminologyExtraction,
   DocumentCoverageEval,
 } from '../../../_shared/ontology-schema.js';
-import type { StageContext } from '../context.js';
-import { runStage, buildOntology } from '../orchestrator.js';
+import { runStage, buildAndCarry } from '../orchestrator.js';
 import type { AdvanceInput } from '../swarm/orchestrator.js';
 import { runBusinessUnderstanding, renderBriefSeed } from '../swarm/business-understanding.js';
 import { runBaReview } from '../swarm/ba-review.js';
@@ -182,24 +181,6 @@ function updateStage(run: OntologyRun, stage: Stage, status: RunStatus, count: n
   row.status = status;
   row.count = count;
   if (error) row.error = error;
-}
-
-/** buildOntology + carry forward the run's stable identity (uuid/name/version/history).
- *  (Replicated from the swarm orchestrator, where it is private.) */
-function buildAndCarry(ctx: StageContext, prev: Ontology): Ontology {
-  const next = buildOntology(ctx);
-  next.uuid = prev.uuid;
-  next.name = prev.name || next.name;
-  next.nameZh = prev.nameZh ?? next.nameZh;
-  next.version = prev.version || next.version;
-  next.status = prev.status;
-  next.metadata = {
-    ...next.metadata,
-    createdAt: prev.metadata?.createdAt ?? next.metadata.createdAt,
-    createdBy: prev.metadata?.createdBy ?? next.metadata.createdBy,
-    history: prev.metadata?.history ?? next.metadata.history,
-  };
-  return next;
 }
 
 interface MetaAcc {

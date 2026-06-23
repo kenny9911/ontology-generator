@@ -14,26 +14,19 @@
 // Same three-column `.screen` grid + visual language as ObjectsScreen/EventsScreen;
 // all mutation flows through the controller. Compiles under strict /
 // noUnusedLocals / noUnusedParameters. No `any`.
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState } from 'react';
 
 import type {
-  ActionIO,
-  ActionStep,
   ActionType,
-  AgentBinding,
-  EmitSpec,
-  EventType,
-  ObjectType,
-  PreconditionRef,
-  Rule,
   ReviewStatus,
-  Severity,
-  SideEffect,
 } from '@/ontology/schema/types';
 
 import type { Lang } from './data';
 import type { Strings } from './i18n';
 import type { OntologyRunController } from './useOntologyRun';
+import CleanNodeCard from './CleanNodeCard';
+import CleanNodeEditor from './CleanNodeEditor';
+import { toCleanNodes, fromCleanNodes } from './json-editor/clean';
 
 interface ActionsScreenProps {
   t: Strings;
@@ -58,19 +51,6 @@ function reviewTag(status: ReviewStatus, t: Strings): { cls: string; label: stri
   }
 }
 
-/** Severity → color + localized label (block is the most blocking). */
-function severityMeta(sev: Severity | undefined, t: Strings): { color: string; label: string } {
-  switch (sev) {
-    case 'block':
-      return { color: 'var(--danger)', label: t.sevBlock };
-    case 'warn':
-      return { color: 'var(--warn)', label: t.sevWarn };
-    case 'info':
-    default:
-      return { color: 'var(--accent-2)', label: t.sevInfo };
-  }
-}
-
 export default function ActionsScreen({ t, lang, ctrl }: ActionsScreenProps) {
   const ontology = ctrl.ontology;
   const actions: ActionType[] = useMemo(() => ontology?.actions ?? [], [ontology]);
@@ -78,39 +58,21 @@ export default function ActionsScreen({ t, lang, ctrl }: ActionsScreenProps) {
   const [selectedId, setSelectedId] = useState<string | undefined>(actions[0]?.id);
   const sel = actions.find((a) => a.id === selectedId) ?? actions[0];
 
-  // ---- id → display-name resolvers (against the working ontology layers) ----
-  const objectsById = useMemo(() => {
-    const m = new Map<string, ObjectType>();
-    for (const o of ontology?.objects ?? []) m.set(o.id, o);
-    return m;
-  }, [ontology]);
-  const rulesById = useMemo(() => {
-    const m = new Map<string, Rule>();
-    for (const r of ontology?.rules ?? []) m.set(r.id, r);
-    return m;
-  }, [ontology]);
-  const eventsById = useMemo(() => {
-    const m = new Map<string, EventType>();
-    for (const e of ontology?.events ?? []) m.set(e.id, e);
-    return m;
-  }, [ontology]);
+  // The clean sample-shaped projection of the selected action (inputs/outputs,
+  // action_steps, trigger, triggered_event, target_objects, category,
+  // submission_criteria, prompts, tool_use, side_effects + receipts) — exactly
+  // what the JSON editor / `generate spec` show. name + sources live elsewhere.
+  const cleanSel = useMemo(
+    () => (sel && ontology ? (toCleanNodes('actions', [sel], ontology)[0] as Record<string, unknown>) : undefined),
+    [sel, ontology],
+  );
 
-  const objectName = (id: string): string => {
-    const o = objectsById.get(id);
-    if (!o) return id;
-    return lang === 'zh' ? o.nameZh || o.name : o.name;
-  };
-  const ruleTitle = (id: string): string => {
-    const r = rulesById.get(id);
-    if (!r) return id;
-    return (lang === 'zh' ? r.titleZh || r.title : r.title) || id;
-  };
-  const ruleSeverity = (id: string): Severity | undefined => rulesById.get(id)?.severity;
-  const eventKnown = (id: string): boolean => eventsById.has(id);
-  const eventName = (id: string): string => {
-    const e = eventsById.get(id);
-    if (!e) return id;
-    return lang === 'zh' ? e.nameZh || e.name : e.name;
+  const [editing, setEditing] = useState(false);
+  const saveClean = (edited: Record<string, unknown>): void => {
+    if (!ontology || !sel) return;
+    const merged = fromCleanNodes('actions', [edited], ontology)[0] as Record<string, unknown>;
+    ctrl.editEntity('action', sel.id, merged);
+    setEditing(false);
   };
 
   const actionName = (a: ActionType): string => (lang === 'zh' ? a.nameZh || a.name : a.name);
@@ -220,68 +182,16 @@ export default function ActionsScreen({ t, lang, ctrl }: ActionsScreenProps) {
       {/* ---- Center: selected action detail ------------------------------ */}
       {sel && (
         <div className="scroll" style={{ padding: 'var(--s-6)', display: 'flex', flexDirection: 'column', gap: 'var(--s-5)' }}>
-          <ActionHeader action={sel} title={actionName(sel)} description={actionDesc(sel)} t={t} lang={lang} ctrl={ctrl} />
+          <ActionHeader action={sel} title={actionName(sel)} description={actionDesc(sel)} t={t} lang={lang} ctrl={ctrl} editing={editing} onEdit={() => setEditing(true)} />
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s-5)' }}>
-            <IOSection title={t.inputs} io={sel.inputs} t={t} objectName={objectName} />
-            <IOSection title={t.outputs} io={sel.outputs} t={t} objectName={objectName} />
-          </div>
-
-          <StepsSection steps={sel.steps} t={t} lang={lang} objectName={objectName} ruleTitle={ruleTitle} />
-
-          {sel.preconditions.length > 0 && (
-            <ChipSection title={t.preconditions}>
-              {sel.preconditions.map((p: PreconditionRef) => {
-                const meta = severityMeta(p.severity ?? ruleSeverity(p.ruleId), t);
-                return (
-                  <span
-                    key={p.ruleId}
-                    title={p.ruleId}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'var(--bg-1)', border: `1px solid ${meta.color}`, borderRadius: 999, fontSize: 12, color: meta.color }}
-                  >
-                    <span style={{ width: 6, height: 6, borderRadius: 999, background: meta.color }} />
-                    {ruleTitle(p.ruleId)}
-                    <span className="mono-cap" style={{ color: meta.color }}>{meta.label}</span>
-                  </span>
-                );
-              })}
-            </ChipSection>
-          )}
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s-5)' }}>
-            <ChipSection title={t.triggeredBy}>
-              {sel.triggeredByEventIds.length === 0 ? (
-                <span className="mono-cap" style={{ color: 'var(--fg-4)' }}>—</span>
-              ) : (
-                sel.triggeredByEventIds.map((id) => <EventChip key={id} label={eventName(id)} known={eventKnown(id)} t={t} arrow="←" accent="var(--accent)" />)
-              )}
-            </ChipSection>
-            <ChipSection title={t.emits}>
-              {sel.emitsEvents.length === 0 ? (
-                <span className="mono-cap" style={{ color: 'var(--fg-4)' }}>—</span>
-              ) : (
-                sel.emitsEvents.map((e: EmitSpec, i) => (
-                  <EventChip key={e.eventTypeId + i} label={eventName(e.eventTypeId)} known={eventKnown(e.eventTypeId)} t={t} arrow="→" accent="var(--accent-3)" on={e.on} />
-                ))
-              )}
-            </ChipSection>
-          </div>
-
-          {sel.sideEffects && sel.sideEffects.length > 0 && (
-            <section>
-              <div className="mono-cap" style={{ marginBottom: 'var(--s-3)' }}>{t.sideEffects}</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {sel.sideEffects.map((s: SideEffect, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-3)', fontSize: 13, color: 'var(--fg-2)' }}>
-                    <span className="tag warn" style={{ flexShrink: 0 }}>{s.kind}</span>
-                    <span>{s.description}{s.objectTypeId ? ` · ${objectName(s.objectTypeId)}` : ''}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          <AgentBindingSection agent={sel.agent} actorLabel={actorLabel(sel, lang)} t={t} />
+          {/* Clean sample-shaped action view (read) or inline editor (edit).
+              name is in the header; sources are the right citations column. */}
+          {cleanSel &&
+            (editing ? (
+              <CleanNodeEditor node={cleanSel} lang={lang} onSave={saveClean} onCancel={() => setEditing(false)} />
+            ) : (
+              <CleanNodeCard node={cleanSel} lang={lang} skip={['name', 'sources']} />
+            ))}
         </div>
       )}
 
@@ -292,8 +202,9 @@ export default function ActionsScreen({ t, lang, ctrl }: ActionsScreenProps) {
 }
 
 function actorLabel(a: ActionType, lang: Lang): string {
-  const role = (lang === 'zh' ? a.actor.roleZh || a.actor.role : a.actor.role) || a.actor.role;
-  return `${role} · ${a.actor.kind}`;
+  const ref = a.actorRef;
+  const role = (lang === 'zh' ? ref?.roleZh || ref?.role : ref?.role) || ref?.role || (a.actor?.[0] ?? '');
+  return `${role} · ${ref?.kind ?? a.actor?.[0] ?? ''}`;
 }
 
 // ===========================================================================
@@ -307,6 +218,8 @@ function ActionHeader({
   t,
   lang,
   ctrl,
+  editing,
+  onEdit,
 }: {
   action: ActionType;
   title: string;
@@ -314,16 +227,11 @@ function ActionHeader({
   t: Strings;
   lang: Lang;
   ctrl: OntologyRunController;
+  editing: boolean;
+  onEdit: () => void;
 }) {
   const tag = reviewTag(action.reviewState, t);
   const accepted = action.reviewState === 'accepted';
-
-  const onEditName = () => {
-    const next = window.prompt(t.actionsTitle, action.name);
-    if (next != null && next.trim() && next.trim() !== action.name) {
-      ctrl.editEntity('action', action.id, { name: next.trim() });
-    }
-  };
 
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--s-3)', flexWrap: 'wrap' }}>
@@ -336,7 +244,7 @@ function ActionHeader({
           {lang === 'zh' && action.nameZh && action.nameZh !== title && (
             <span style={{ color: 'var(--fg-3)', fontSize: 16 }}>{action.nameZh}</span>
           )}
-          <span className="tag ai" style={{ whiteSpace: 'nowrap' }}>{action.actor.kind}</span>
+          <span className="tag ai" style={{ whiteSpace: 'nowrap' }}>{action.actorRef?.kind ?? action.actor?.[0]}</span>
           <span className={tag.cls} style={{ whiteSpace: 'nowrap' }}>{tag.label}</span>
         </div>
         <div className="mono-cap" style={{ marginTop: 4, fontSize: 11, color: 'var(--accent)' }}>
@@ -353,166 +261,16 @@ function ActionHeader({
           {t.actor}: {actorLabel(action, lang)}
         </div>
       </div>
-      <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
-        <button className="btn ghost" onClick={() => void ctrl.reviewOne('action', action.id, 'rejected')}>{t.reject}</button>
-        <button className="btn ghost" onClick={onEditName}>{t.edit}</button>
-        <button className={accepted ? 'btn' : 'btn primary'} onClick={() => void ctrl.reviewOne('action', action.id, accepted ? 'pending' : 'accepted')}>
-          {accepted ? '✓ ' + t.accepted : t.accept}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ===========================================================================
-// Inputs / Outputs — typed IO chips (object-typed resolve to the ObjectType).
-// ===========================================================================
-
-function IOSection({
-  title,
-  io,
-  t,
-  objectName,
-}: {
-  title: string;
-  io: ActionIO[];
-  t: Strings;
-  objectName: (id: string) => string;
-}) {
-  return (
-    <section>
-      <div className="mono-cap" style={{ marginBottom: 'var(--s-3)' }}>{title}</div>
-      {io.length === 0 ? (
-        <span className="mono-cap" style={{ color: 'var(--fg-4)' }}>—</span>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {io.map((p, i) => {
-            const isObj = !!p.objectTypeId;
-            return (
-              <div key={p.name + i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-                <span style={{ color: 'var(--fg-2)', fontWeight: 500 }}>{p.name}</span>
-                <span style={{ color: 'var(--fg-4)' }}>:</span>
-                <span
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    padding: '2px 8px',
-                    borderRadius: 999,
-                    background: isObj ? 'color-mix(in oklab, var(--accent) 12%, transparent)' : 'var(--bg-2)',
-                    border: `1px solid ${isObj ? 'color-mix(in oklab, var(--accent) 30%, transparent)' : 'var(--line)'}`,
-                    color: isObj ? 'var(--accent)' : 'var(--fg-3)',
-                  }}
-                >
-                  {isObj && p.objectTypeId ? objectName(p.objectTypeId) : p.type ?? 'json'}
-                  {p.isArray || p.cardinality === 'many' ? '[]' : ''}
-                </span>
-                {p.required && <span className="mono-cap" style={{ color: 'var(--warn)' }}>{t.required.toLowerCase()}</span>}
-              </div>
-            );
-          })}
+      {!editing && (
+        <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
+          <button className="btn ghost" onClick={() => void ctrl.reviewOne('action', action.id, 'rejected')}>{t.reject}</button>
+          <button className="btn ghost" onClick={onEdit}>{t.edit}</button>
+          <button className={accepted ? 'btn' : 'btn primary'} onClick={() => void ctrl.reviewOne('action', action.id, accepted ? 'pending' : 'accepted')}>
+            {accepted ? '✓ ' + t.accepted : t.accept}
+          </button>
         </div>
       )}
-    </section>
-  );
-}
-
-// ===========================================================================
-// Steps — ordered execution plan; guard + read/write object chips.
-// ===========================================================================
-
-function StepsSection({
-  steps,
-  t,
-  lang,
-  objectName,
-  ruleTitle,
-}: {
-  steps: ActionStep[];
-  t: Strings;
-  lang: Lang;
-  objectName: (id: string) => string;
-  ruleTitle: (id: string) => string;
-}) {
-  if (steps.length === 0) return null;
-  const ordered = [...steps].sort((a, b) => a.order - b.order);
-  return (
-    <section>
-      <div className="mono-cap" style={{ marginBottom: 'var(--s-3)' }}>{t.actionSteps}</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-2)' }}>
-        {ordered.map((s, i) => (
-          <div key={i} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 'var(--s-3)', alignItems: 'start', padding: 'var(--s-3) var(--s-4)', background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 'var(--r-2)' }}>
-            <div style={{ width: 28, height: 28, borderRadius: 8, background: 'var(--bg-3)', border: '1px solid var(--line)', display: 'grid', placeItems: 'center', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--accent)' }}>
-              {String(s.order).padStart(2, '0')}
-            </div>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 13, color: 'var(--fg)' }}>{s.text[lang]}</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
-                {s.guardRuleId && <span className="tag warn" title={s.guardRuleId}>{t.guard}: {ruleTitle(s.guardRuleId)}</span>}
-                {(s.readsObjectTypeIds ?? []).map((id) => <span key={'r' + id} className="tag" title={t.reads}>↓ {objectName(id)}</span>)}
-                {(s.writesObjectTypeIds ?? []).map((id) => <span key={'w' + id} className="tag ok" title={t.writes}>↑ {objectName(id)}</span>)}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-// ===========================================================================
-// Small shared layout helpers.
-// ===========================================================================
-
-function ChipSection({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section>
-      <div className="mono-cap" style={{ marginBottom: 'var(--s-3)' }}>{title}</div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>{children}</div>
-    </section>
-  );
-}
-
-function EventChip({ label, known, t, arrow, accent, on }: { label: string; known: boolean; t: Strings; arrow: string; accent: string; on?: EmitSpec['on'] }) {
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'var(--bg-1)', border: `1px solid ${known ? 'var(--line)' : 'color-mix(in oklab, var(--accent-2) 40%, transparent)'}`, borderRadius: 999, fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-      <span style={{ color: accent }}>{arrow}</span>
-      <span style={{ color: 'var(--fg-2)', fontWeight: 500 }}>{label}</span>
-      {on && <span className="mono-cap" style={{ color: 'var(--fg-4)' }}>{on}</span>}
-      {!known && <span className="tag ai" style={{ padding: '0 6px' }}>{t.new}</span>}
-    </span>
-  );
-}
-
-// ===========================================================================
-// AgentBinding — the callable tool contract (what makes the ontology agentic).
-// ===========================================================================
-
-function AgentBindingSection({ agent, actorLabel: actorText, t }: { agent: AgentBinding; actorLabel: string; t: Strings }) {
-  const params = agent.parameterSchema?.properties ?? {};
-  const paramNames = Object.keys(params);
-  return (
-    <section>
-      <div className="mono-cap" style={{ marginBottom: 'var(--s-3)' }}>{t.toolBinding}</div>
-      <div className="card" style={{ padding: 'var(--s-4)', display: 'flex', flexDirection: 'column', gap: 'var(--s-3)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-3)', flexWrap: 'wrap' }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--accent)', fontWeight: 600 }}>{agent.toolName}()</span>
-          <span className="tag">{t.execution}: {agent.execution}</span>
-          {agent.integration && <span className="tag ai">{agent.integration}</span>}
-          <span className="mono-cap" style={{ color: 'var(--fg-4)' }}>{t.actor}: {actorText}</span>
-        </div>
-        {agent.toolDescription && (
-          <div style={{ fontSize: 13, color: 'var(--fg-2)', lineHeight: 1.5 }}>{agent.toolDescription}</div>
-        )}
-        <div>
-          <div className="mono-cap" style={{ marginBottom: 6 }}>{t.parameterSchema}</div>
-          <pre style={{ margin: 0, padding: 'var(--s-3)', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 'var(--r-2)', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent-3)', overflowX: 'auto', lineHeight: 1.5 }}>
-            {paramNames.length === 0
-              ? '{}'
-              : `{\n${paramNames.map((k) => `  "${k}": "${params[k]?.type ?? 'object'}"${params[k]?.$objectTypeId ? `  // ${params[k]?.$objectTypeId}` : ''}`).join(',\n')}\n}`}
-          </pre>
-        </div>
-      </div>
-    </section>
+    </div>
   );
 }
 

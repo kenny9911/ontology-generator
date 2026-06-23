@@ -54,6 +54,11 @@ import { findingsToGaps } from '../api/ontology-gen/pipeline/hyper/remediate.js'
 import { preserve } from '../api/ontology-gen/pipeline/swarm/deepen.js';
 import { getStore, resetStore, InMemoryOntologyStore } from '../api/ontology-gen/store.js';
 import type { StageContext } from '../api/ontology-gen/pipeline/context.js';
+import { renderWebAugment } from '../api/ontology-gen/pipeline/web-augment.js';
+import { resolveTavilyKey, tavilyAvailable, tavilySearch } from '../api/ontology-gen/tavily.js';
+import type { WebAugmentation } from '../api/_shared/ontology-schema.js';
+import { stampParts, formatLlm } from '../api/ontology-gen/logger.js';
+import { buildAndCarry } from '../api/ontology-gen/pipeline/orchestrator.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -166,11 +171,11 @@ function nodeIdSet(o: Ontology): Set<string> {
   return ids;
 }
 
-/** All valid attribute pseudo-ids '<objectId>.<attrName>' of a fixture. */
+/** All valid property pseudo-ids '<objectId>.<propName>' of a fixture. */
 function attrIdSet(o: Ontology): Set<string> {
   const ids = new Set<string>();
   for (const obj of o.objects) {
-    for (const attr of obj.attributes) ids.add(`${obj.id}.${attr.name}`);
+    for (const prop of obj.properties ?? []) ids.add(`${obj.id}.${prop.name}`);
   }
   return ids;
 }
@@ -839,10 +844,10 @@ async function sectionRegistry(): Promise<void> {
     );
   });
 
-  await check('AGENT_REGISTRY has exactly 14 entries with unique ids', () => {
-    assertEq(AGENT_REGISTRY.length, 14, 'registry size');
+  await check('AGENT_REGISTRY has exactly 15 entries with unique ids', () => {
+    assertEq(AGENT_REGISTRY.length, 15, 'registry size');
     const ids = new Set(AGENT_REGISTRY.map((a) => a.id));
-    assertEq(ids.size, 14, 'unique ids');
+    assertEq(ids.size, 15, 'unique ids');
   });
 
   await check('every registry entry has non-empty bilingual labels (en + zh)', () => {
@@ -983,6 +988,121 @@ async function sectionUseCases(): Promise<void> {
 // Runner
 // ===========================================================================
 
+async function sectionWebAugment(): Promise<void> {
+  section('8. Web-search augmentation (Tavily) — pure render + key resolution');
+
+  await check('renderWebAugment(undefined) is undefined (no-web behavior)', () => {
+    assertEq(renderWebAugment(undefined), undefined, 'undefined input');
+  });
+
+  await check('renderWebAugment with blank text is undefined', () => {
+    const aug: WebAugmentation = { industry: 'x', scenario: 'y', queries: ['q'], text: '   ', sources: [], at: '2026-01-01' };
+    assertEq(renderWebAugment(aug), undefined, 'blank text renders nothing');
+  });
+
+  await check('renderWebAugment block carries header, industry, web_search reminder, sources', () => {
+    const aug: WebAugmentation = {
+      industry: 'recruitment',
+      scenario: 'candidate onboarding',
+      queries: ['recruitment data model'],
+      text: '- Candidate: id, status\n- Requisition: id',
+      sources: [{ title: 'HR Data Models', url: 'https://example.com/hr' }],
+      at: '2026-01-01',
+    };
+    const block = renderWebAugment(aug);
+    assert(typeof block === 'string', 'returns a string');
+    const s = block as string;
+    assert(s.includes('WEB-SEARCH SUPPLEMENT'), 'has the header');
+    assert(s.includes('recruitment'), 'names the industry');
+    assert(s.includes('CANDIDATE to ADD'), 'frames entries as candidates to add');
+    assert(s.includes('"provenance": "web_search"'), 'shows a concrete web_search example');
+    assert(s.includes('NEVER "inferred"'), 'routes block items to web_search, not inferred');
+    assert(s.includes('https://example.com/hr'), 'lists the source url');
+    assert(s.includes('- Candidate: id, status'), 'embeds the supplement text');
+  });
+
+  await check('resolveTavilyKey: env TAVILY_API_KEY wins over settings', () => {
+    withEnv({ TAVILY_API_KEY: 'tvly-env' }, () => {
+      assertEq(resolveTavilyKey({ overrides: {}, tavilyApiKey: 'tvly-settings' }), 'tvly-env', 'env precedence');
+    });
+  });
+
+  await check('resolveTavilyKey / tavilyAvailable: settings fallback + absence', () => {
+    withEnv({ TAVILY_API_KEY: undefined }, () => {
+      assertEq(resolveTavilyKey({ overrides: {}, tavilyApiKey: 'tvly-settings' }), 'tvly-settings', 'settings fallback');
+      assertEq(tavilyAvailable({ overrides: {}, tavilyApiKey: 'tvly-settings' }), true, 'available via settings');
+      assertEq(tavilyAvailable({ overrides: {} }), false, 'unavailable with no key');
+      assertEq(tavilyAvailable(null), false, 'unavailable with null settings');
+    });
+  });
+
+  // tavilySearch short-circuits (no network) on missing key/query and says why.
+  await check('tavilySearch returns [] without a network call for empty key/query', async () => {
+    const msgs: string[] = [];
+    const a = await tavilySearch('', 'recruitment', { log: (m) => msgs.push(m) });
+    const b = await tavilySearch('tvly-x', '   ', { log: (m) => msgs.push(m) });
+    assertEq(a.length, 0, 'empty key ⇒ []');
+    assertEq(b.length, 0, 'empty query ⇒ []');
+    assert(msgs.some((m) => m.includes('skipped')), 'logs a skip reason');
+  });
+
+  // The carry is what makes web search reach the OBJECTS step in swarm AND hyper:
+  // the supplement is computed once (step 0) then buildAndCarry preserves
+  // metadata.webAugmentation across every later client-paced step rebuild.
+  await check('buildAndCarry carries webAugmentation + run identity (shared by swarm & hyper)', () => {
+    const ctx = {
+      ontologyId: 'ontology:carry', domain: 'generic',
+      sources: [], parsed: [], taken: new Set<string>(),
+      objects: [], relationships: [], rules: [], ruleGroups: [], actions: [], events: [], processes: [],
+      model: 'm', provider: 'openrouter', userInfo: null, log: () => {},
+    } as unknown as StageContext;
+    const aug: WebAugmentation = { industry: 'i', scenario: 's', queries: ['q'], text: 'SUPPLEMENT', sources: [], at: '2020' };
+    const prev = {
+      uuid: 'UUID-prev', name: 'Prev', nameZh: '上一个', version: 3, status: 'published',
+      metadata: { createdAt: '2020-01-01T00:00:00Z', webAugmentation: aug },
+    } as unknown as Ontology;
+    const next = buildAndCarry(ctx, prev);
+    assertEq(next.uuid, 'UUID-prev', 'carries uuid');
+    assertEq(next.version, 3, 'carries version');
+    assertEq(next.status, 'published', 'carries status');
+    assertEq(next.metadata.createdAt, '2020-01-01T00:00:00Z', 'carries createdAt');
+    assert(next.metadata.webAugmentation?.text === 'SUPPLEMENT', 'carries webAugmentation across the step rebuild');
+    const fresh = buildAndCarry(ctx, { ...prev, metadata: { createdAt: 'x' } } as unknown as Ontology);
+    assert(fresh.metadata.webAugmentation === undefined, 'no webAugmentation leakage when prev had none');
+  });
+}
+
+async function sectionLogger(): Promise<void> {
+  section('9. File logger — local-tz stamp + LLM line formatting');
+
+  await check('stampParts: local date + YYYY-MM-DD HH:mm:ss.SSS ±HHMM stamp', () => {
+    const { date, stamp } = stampParts(new Date(2026, 5, 18, 9, 5, 3, 7));
+    assert(/^\d{4}-\d{2}-\d{2}$/.test(date), `date format: ${date}`);
+    assert(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} [+-]\d{4}$/.test(stamp), `stamp format: ${stamp}`);
+    assert(stamp.startsWith(date + ' '), 'stamp embeds the file date');
+  });
+
+  await check('formatLlm: ok line carries task, model, token usage, duration', () => {
+    const line = formatLlm({
+      actionName: 'ontology_extract_objects', module: 'ontology_generator',
+      provider: 'openrouter', model: 'google/gemini-2.5-flash',
+      promptTokens: 5234, completionTokens: 1203, totalTokens: 6437, durationMs: 5800, ok: true,
+    });
+    assert(line.includes('task=ontology_extract_objects'), 'has task name');
+    assert(line.includes('model=google/gemini-2.5-flash'), 'has model');
+    assert(line.includes('tokens(prompt=5234, completion=1203, total=6437)'), 'has token usage');
+    assert(line.includes('5800ms'), 'has duration');
+    assert(line.trim().endsWith('ok'), 'ends ok');
+  });
+
+  await check('formatLlm: error line carries ERROR, collapses newlines, keeps note', () => {
+    const line = formatLlm({ actionName: 't', provider: 'openai', model: 'gpt-5', ok: false, error: 'boom\nstack', note: 'will retry' });
+    assert(line.includes('ERROR: boom stack'), 'error message inlined');
+    assert(line.includes('[will retry]'), 'note present');
+    assert(!line.includes('\n'), 'single line');
+  });
+}
+
 async function main(): Promise<void> {
   console.log('test-hyper — deterministic verification suite (design §6.2)');
 
@@ -994,6 +1114,8 @@ async function main(): Promise<void> {
   await sectionSettings();
   await sectionRegistry();
   await sectionUseCases();
+  await sectionWebAugment();
+  await sectionLogger();
 
   console.log('\n== Summary ==');
   let pass = 0;

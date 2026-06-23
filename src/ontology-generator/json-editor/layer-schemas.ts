@@ -40,8 +40,14 @@ export const DATA_TYPE_ENUM = [
   'uuid', 'enum', 'reference', 'json', 'array',
 ] as const;
 export const SEVERITY_ENUM = ['info', 'warn', 'block'] as const;
-const KEY_ROLE_ENUM = ['pk', 'fk', 'none'] as const;
-const PROVENANCE_ENUM = ['extracted', 'inferred', 'merged', 'human'] as const;
+const PROPERTY_TYPE_ENUM = ['String', 'Integer', 'Float', 'Boolean', 'Date', 'Timestamp', 'List<String>'] as const;
+const OBJECT_CLASS_ENUM = ['data', 'system'] as const;
+const EXECUTOR_ENUM = ['Human', 'Agent'] as const;
+const ACTOR_ENUM = ['Human', 'Agent', 'System'] as const;
+const ENFORCEMENT_ENUM = ['mandatory', 'optional'] as const;
+const FAILURE_POLICY_ENUM = ['warn', 'block'] as const;
+const WF_STEP_TYPE_ENUM = ['manual', 'tool', 'logic'] as const;
+const PROVENANCE_ENUM = ['extracted', 'inferred', 'web_search', 'merged', 'human'] as const;
 const REVIEW_ENUM = ['pending', 'accepted', 'edited', 'merged', 'rejected'] as const;
 const RULE_KIND_ENUM = [
   'validation', 'constraint', 'derivation', 'state_transition', 'authorization', 'temporal',
@@ -59,9 +65,12 @@ const bilingual: JsonSchemaDoc = {
   additionalProperties: true,
 };
 
-/** Wrap a node schema as the array-of-nodes a layer's text holds. */
-function layerArray(idPattern: string, node: JsonSchemaDoc): JsonSchemaDoc {
-  const props = { id: { type: 'string', pattern: idPattern }, ...(node.properties ?? {}) };
+/** Wrap a node schema as the array-of-nodes a layer's text holds. The editor
+ *  shows the CLEAN sample shape, whose ids carry NO kind-prefix (objects are an
+ *  English key, rules/actions/workflows a bare slug, events have no id), so no
+ *  id pattern is enforced — `idPattern` is kept for back-compat but ignored. */
+function layerArray(_idPattern: string, node: JsonSchemaDoc): JsonSchemaDoc {
+  const props = { id: { type: 'string' } as JsonSchemaDoc, ...(node.properties ?? {}) };
   return {
     $schema: 'http://json-schema.org/draft-07/schema#',
     type: 'array',
@@ -77,24 +86,27 @@ const sharedProps: Record<string, JsonSchemaDoc> = {
 };
 
 const objectsSchema = layerArray('^objectType:', {
-  required: ['id', 'name', 'nameZh'],
+  required: ['id', 'name', 'type', 'primary_key', 'properties'],
   properties: {
     ...sharedProps,
     name: str,
     nameZh: str,
     description: str,
-    attributes: {
+    type: enumOf(OBJECT_CLASS_ENUM),
+    relationship_description: str,
+    primary_key: str,
+    properties: {
       type: 'array',
       items: {
         type: 'object',
-        required: ['name', 'type'],
+        required: ['name', 'type', 'description'],
         properties: {
           name: str,
-          type: enumOf(DATA_TYPE_ENUM),
-          keyRole: enumOf(KEY_ROLE_ENUM),
-          required: bool,
-          enumValues: strArray,
-          refObjectTypeId: str,
+          type: enumOf(PROPERTY_TYPE_ENUM),
+          description: str,
+          is_foreign_key: bool,
+          references: str,
+          provenance: enumOf(PROVENANCE_ENUM),
         },
         additionalProperties: true,
       },
@@ -103,9 +115,26 @@ const objectsSchema = layerArray('^objectType:', {
 });
 
 const rulesSchema = layerArray('^rule:', {
-  required: ['id', 'statement', 'kind', 'severity'],
+  required: [
+    'id', 'businessLogicRuleName', 'standardizedLogicRule',
+    'executor', 'enforcementLevel', 'failurePolicy',
+  ],
   properties: {
     ...sharedProps,
+    // spec-format fields
+    specificScenarioStage: str,
+    businessLogicRuleName: str,
+    applicableClient: str,
+    applicableDepartment: str,
+    submissionCriteria: str,
+    standardizedLogicRule: str,
+    relatedEntities: strArray,
+    businessBackgroundReason: str,
+    ruleSource: str,
+    executor: enumOf(EXECUTOR_ENUM),
+    enforcementLevel: enumOf(ENFORCEMENT_ENUM),
+    failurePolicy: enumOf(FAILURE_POLICY_ENUM),
+    // retained engine + bilingual structure
     title: str,
     statement: bilingual,
     formal: str,
@@ -115,14 +144,34 @@ const rulesSchema = layerArray('^rule:', {
   },
 });
 
+const ioItem: JsonSchemaDoc = {
+  type: 'object',
+  properties: { name: str, type: enumOf(PROPERTY_TYPE_ENUM), description: str, source_object: str, required: bool },
+  additionalProperties: true,
+};
 const actionsSchema = layerArray('^action:', {
-  required: ['id', 'name'],
+  required: ['id', 'name', 'object_type', 'submission_criteria', 'actor', 'action_steps'],
   properties: {
     ...sharedProps,
     name: str,
     description: str,
-    inputs: { type: 'array', items: { type: 'object', properties: { name: str, type: enumOf(DATA_TYPE_ENUM), objectTypeId: str }, additionalProperties: true } },
-    outputs: { type: 'array', items: { type: 'object', properties: { name: str, type: enumOf(DATA_TYPE_ENUM), objectTypeId: str }, additionalProperties: true } },
+    // spec-format fields
+    submission_criteria: str,
+    object_type: { enum: ['action'] },
+    category: str,
+    actor: { type: 'array', items: enumOf(ACTOR_ENUM) },
+    trigger: strArray,
+    target_objects: strArray,
+    inputs: { type: 'array', items: ioItem },
+    outputs: { type: 'array', items: ioItem },
+    action_steps: { type: 'array', items: { type: 'object', properties: { order: str, name: str, description: str, object_type: str, submission_criteria: str }, additionalProperties: true } },
+    system_prompt: str,
+    user_prompt: str,
+    typescript_code: str,
+    tool_use: strArray,
+    side_effects: { type: 'object', additionalProperties: true },
+    triggered_event: strArray,
+    // retained engine structure
     preconditions: { type: 'array', items: { type: 'object', properties: { ruleId: str, severity: enumOf(SEVERITY_ENUM) }, additionalProperties: true } },
     triggeredByEventIds: strArray,
     emitsEvents: { type: 'array' },
@@ -130,23 +179,40 @@ const actionsSchema = layerArray('^action:', {
 });
 
 const eventsSchema = layerArray('^event:', {
-  required: ['id', 'name', 'nameZh'],
+  required: ['name', 'payload'],
   properties: {
     ...sharedProps,
     name: str,
     nameZh: str,
-    payload: { type: 'array', items: { type: 'object', properties: { name: str, type: enumOf(DATA_TYPE_ENUM), objectTypeId: str }, additionalProperties: true } },
+    // spec-format payload object
+    payload: {
+      type: 'object',
+      properties: {
+        source_action: str,
+        event_data: { type: 'array', items: { type: 'object', properties: { name: str, type: enumOf(PROPERTY_TYPE_ENUM), target_object: { type: ['string', 'null'] } }, additionalProperties: true } },
+        state_mutations: { type: 'array', items: { type: 'object', properties: { target_object: str, mutation_type: str, impacted_properties: strArray }, additionalProperties: true } },
+      },
+      additionalProperties: true,
+    },
+    // retained engine structure
+    payloadFields: { type: 'array', items: { type: 'object', properties: { name: str, type: enumOf(DATA_TYPE_ENUM), objectTypeId: str }, additionalProperties: true } },
     producedByActionIds: strArray,
     consumedByActionIds: strArray,
   },
 });
 
 const processesSchema = layerArray('^process:', {
-  required: ['id'],
+  required: ['id', 'name', 'actor', 'actions'],
   properties: {
     ...sharedProps,
     name: bilingual,
     description: str,
+    // spec-format workflow fields
+    actor: { type: 'array', items: enumOf(ACTOR_ENUM) },
+    trigger: strArray,
+    actions: { type: 'array', items: { type: 'object', properties: { order: str, name: str, description: str, type: enumOf(WF_STEP_TYPE_ENUM), condition: str }, additionalProperties: true } },
+    triggered_event: strArray,
+    // retained engine structure
     actors: { type: 'array' },
     objectTypeIds: strArray,
     steps: { type: 'array' },

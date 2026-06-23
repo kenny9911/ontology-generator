@@ -76,8 +76,8 @@ export interface OntologySummary {
 
 /** Input for `run.start`: either explicit source ids or a bundled sample. */
 export type RunStartInput =
-  | { name: Bilingual; domain?: DomainKey; sourceIds: string[]; autoName?: boolean }
-  | { name: Bilingual; sampleId: string };
+  | { name: Bilingual; domain?: DomainKey; sourceIds: string[]; autoName?: boolean; webSearch?: boolean }
+  | { name: Bilingual; sampleId: string; webSearch?: boolean };
 
 /** Result of a single re-run of one extraction stage (`stage.*`). */
 export interface StageRunResult {

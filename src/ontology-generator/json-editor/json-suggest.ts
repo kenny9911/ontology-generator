@@ -26,14 +26,18 @@ const DATA_TYPES = [
 ] as const;
 const SEVERITY_LEVELS = ['info', 'warn', 'block'] as const;
 const KEY_ROLES = ['pk', 'fk', 'none'] as const;
-const PROVENANCE = ['extracted', 'inferred', 'merged', 'human'] as const;
+/** Human-facing object property types (mirror of types.ts PROPERTY_TYPES). */
+const PROPERTY_TYPES = [
+  'String', 'Integer', 'Float', 'Boolean', 'Date', 'Timestamp', 'List<String>',
+] as const;
+const PROVENANCE = ['extracted', 'inferred', 'web_search', 'merged', 'human'] as const;
 const REVIEW_STATUS = ['pending', 'accepted', 'edited', 'merged', 'rejected'] as const;
 const RULE_KINDS = [
   'validation', 'constraint', 'derivation', 'state_transition', 'authorization', 'temporal',
 ] as const;
 
 /** Exposed for the schema-drift test (Section 15). */
-export const VOCABS = { DATA_TYPES, SEVERITY_LEVELS, KEY_ROLES, PROVENANCE, REVIEW_STATUS, RULE_KINDS } as const;
+export const VOCABS = { DATA_TYPES, SEVERITY_LEVELS, KEY_ROLES, PROPERTY_TYPES, PROVENANCE, REVIEW_STATUS, RULE_KINDS } as const;
 
 // ---------------------------------------------------------------------------
 // id slugify — BYTE-IDENTICAL to api/_shared/ids.ts slugify()
@@ -251,36 +255,25 @@ export function suggestFixes(layer: unknown[], kind: LayerKind): SchemaSuggestio
       }
     }
 
-    if (kind === 'objects' && Array.isArray(node.attributes)) {
-      node.attributes.forEach((attr, ai) => {
-        if (!isPlainObject(attr)) return;
-        const aType = attr.type;
-        if (typeof aType === 'string' && !DATA_TYPES.includes(aType as (typeof DATA_TYPES)[number])) {
-          out.push(badEnumAttr(index, nodeId, ai, 'type', aType, DATA_TYPES));
+    if (kind === 'objects' && Array.isArray(node.properties)) {
+      node.properties.forEach((prop, ai) => {
+        if (!isPlainObject(prop)) return;
+        const pType = prop.type;
+        const validType =
+          typeof pType === 'string' &&
+          (PROPERTY_TYPES.includes(pType as (typeof PROPERTY_TYPES)[number]) || /^List<.+>$/.test(pType));
+        if (typeof pType === 'string' && !validType) {
+          out.push(badEnumAttr(index, nodeId, ai, 'type', pType, PROPERTY_TYPES));
         }
-        const aKey = attr.keyRole;
-        if (typeof aKey === 'string' && !KEY_ROLES.includes(aKey as (typeof KEY_ROLES)[number])) {
-          out.push(badEnumAttr(index, nodeId, ai, 'keyRole', aKey, KEY_ROLES));
-        }
-        if (aType === 'enum' && !(Array.isArray(attr.enumValues) && attr.enumValues.length > 0)) {
-          out.push({
-            kind: 'enum_without_values',
-            level: 'error',
-            index,
-            nodeId,
-            field: `attributes.${ai}.enumValues`,
-            message: `Enum attribute "${String(attr.name)}" has no enumValues.`,
-            fixable: false,
-          });
-        }
-        if ((aType === 'reference' || aKey === 'fk') && !attr.refObjectTypeId) {
+        // A foreign-key property must carry a `references` id.
+        if (prop.is_foreign_key === true && !prop.references) {
           out.push({
             kind: 'reference_without_target',
             level: 'error',
             index,
             nodeId,
-            field: `attributes.${ai}.refObjectTypeId`,
-            message: `Reference/fk attribute "${String(attr.name)}" has no refObjectTypeId.`,
+            field: `properties.${ai}.references`,
+            message: `Foreign-key property "${String(prop.name)}" has no references.`,
             fixable: false,
           });
         }
@@ -349,10 +342,10 @@ function badEnumAttr(
     level: 'error',
     index,
     nodeId,
-    field: `attributes.${ai}.${field}`,
-    message: `Attribute ${field} "${value}" is invalid; did you mean "${nearest}"?`,
+    field: `properties.${ai}.${field}`,
+    message: `Property ${field} "${value}" is invalid; did you mean "${nearest}"?`,
     fixable: true,
-    patch: { path: ['attributes', ai, field], value: nearest },
+    patch: { path: ['properties', ai, field], value: nearest },
   };
 }
 

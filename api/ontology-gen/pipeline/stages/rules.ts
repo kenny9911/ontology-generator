@@ -26,6 +26,7 @@ import type { LLMProvider } from '../../llm.js';
 import { makeId } from '../../../_shared/ids.js';
 import { buildRulesPrompt } from '../../prompts.js';
 import { ctxAgentLlm } from '../../llm-router.js';
+import { stageSystem } from '../context.js';
 import type { StageContext } from '../context.js';
 import type {
   Rule,
@@ -51,6 +52,43 @@ const RULE_KINDS: ReadonlySet<RuleKind> = new Set<RuleKind>([
 ]);
 
 const SEVERITIES: ReadonlySet<Severity> = new Set<Severity>(SEVERITY_LEVELS);
+
+// Spec-format execution semantics. Coerced from the model output; defaults are
+// derived from `severity` in buildRule when the model omits them.
+function toExecutor(v: unknown): 'Human' | 'Agent' | undefined {
+  const s = typeof v === 'string' ? v.toLowerCase() : '';
+  if (s === 'human') return 'Human';
+  if (s === 'agent') return 'Agent';
+  return undefined;
+}
+function toEnforcementLevel(v: unknown): 'mandatory' | 'optional' | undefined {
+  const s = typeof v === 'string' ? v.toLowerCase() : '';
+  return s === 'mandatory' || s === 'optional' ? s : undefined;
+}
+function toFailurePolicy(v: unknown): 'warn' | 'block' | undefined {
+  const s = typeof v === 'string' ? v.toLowerCase() : '';
+  return s === 'warn' || s === 'block' ? s : undefined;
+}
+
+/** "objectType:credit-assessment" -> "Credit_Assessment" (spec-format object id). */
+function specObjectIdOf(id: string): string {
+  const bare = id.replace(/^objectType:/, '');
+  const words = bare.replace(/([a-z0-9])([A-Z])/g, '$1 $2').split(/[^A-Za-z0-9]+/).filter(Boolean);
+  return words.map((w) => w[0]!.toUpperCase() + w.slice(1)).join('_') || bare;
+}
+
+const hasCJK = (s: unknown): boolean => typeof s === 'string' && /[一-鿿]/.test(s);
+/** Keep a single-language string only if Chinese; else the Chinese fallback. */
+const cjkOr = (s: unknown, fallback: string): string => (hasCJK(s) ? (s as string).trim() : fallback);
+/** Chinese label per rule kind (the scenario fallback when no Chinese text). */
+const KIND_ZH: Record<string, string> = {
+  validation: '数据校验',
+  constraint: '业务约束',
+  derivation: '指标推导',
+  state_transition: '状态流转',
+  authorization: '权限授权',
+  temporal: '时限控制',
+};
 
 /** A numbered sentence handed to the prompt + used to recover snippets. */
 interface NumberedSentence {
@@ -101,7 +139,7 @@ export async function extractRules(
   let raw: string;
   try {
     const messages: ChatMessage[] = [
-      { role: 'system', content: ctx.briefSeed ? `${system}\n\n${ctx.briefSeed}` : system },
+      { role: 'system', content: stageSystem(ctx, system) },
       { role: 'user', content: user },
     ];
     const llm = ctxAgentLlm(ctx, 'rules_extractor', {
@@ -262,12 +300,50 @@ function buildRule(
   const trigger = coerceTrigger(raw.trigger);
   const sources = coerceSources(raw.sources, sentenceByIdx, docName);
 
+  const executor: 'Human' | 'Agent' = toExecutor(raw.executor) ?? 'Agent';
+  const enforcementLevel: 'mandatory' | 'optional' =
+    toEnforcementLevel(raw.enforcementLevel) ?? (severity === 'block' ? 'mandatory' : 'optional');
+  const failurePolicy: 'warn' | 'block' =
+    toFailurePolicy(raw.failurePolicy) ?? (severity === 'block' ? 'block' : 'warn');
+
+  // Spec-format display fields — Chinese-first: prefer the model's value, then
+  // the Chinese side of bilingual fields, then a Chinese fallback.
+  const objNameZh = (oid: string): string => {
+    const o = ctx.objects.find((x) => x.id === oid);
+    return o?.nameZh?.trim() || o?.name || oid;
+  };
+  const relatedEntities = appliesToObjectTypeIds.map((oid) => `${objNameZh(oid)} (${specObjectIdOf(oid)})`);
+  const standardizedLogicRule = str(raw.standardizedLogicRule).trim() || zh || enRaw || formal;
+  const businessLogicRuleName = str(raw.businessLogicRuleName).trim() || str(raw.titleZh).trim() || title;
+  const specificScenarioStage =
+    cjkOr(str(raw.specificScenarioStage).trim() || trigger?.description, KIND_ZH[kind] || '业务约束');
+  const submissionCriteria = cjkOr(
+    str(raw.submissionCriteria).trim() || trigger?.description,
+    cjkOr(expression?.predicate, ''),
+  );
+  const businessBackgroundReason = str(raw.businessBackgroundReason).trim();
+  const ruleSource = str(raw.ruleSource).trim() || sources[0]?.documentName?.trim() || docName || '文档';
+  const applicableClient = str(raw.applicableClient).trim() || '通用';
+  const applicableDepartment = str(raw.applicableDepartment).trim() || 'N/A';
+
   const id = makeId('rule', title, ctx.taken);
   const uuid = `${id}#${ctx.ontologyId}`;
 
   const rule: Rule = {
     id,
     uuid,
+    specificScenarioStage,
+    businessLogicRuleName,
+    applicableClient,
+    applicableDepartment,
+    submissionCriteria,
+    standardizedLogicRule,
+    relatedEntities,
+    businessBackgroundReason,
+    ruleSource,
+    executor,
+    enforcementLevel,
+    failurePolicy,
     title,
     ...(zh ? { titleZh: str(raw.titleZh) || zh } : {}),
     statement: { en, zh: zh || en },

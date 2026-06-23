@@ -59,6 +59,8 @@ import type { StageContext } from './pipeline/context.js';
 import { advanceSwarm, seedSwarmPhases } from './pipeline/swarm/orchestrator.js';
 import { advanceHyper, seedHyperPhases } from './pipeline/hyper/orchestrator.js';
 import { runInference } from './inference/engine.js';
+import { renderWebAugment, runWebAugment } from './pipeline/web-augment.js';
+import { tavilyAvailable } from './tavily.js';
 import {
   resolveAgentLlm,
   listAssignments,
@@ -69,6 +71,7 @@ import {
 import { AGENT_REGISTRY } from './agents.js';
 import { executeLLMWithTracking } from './llm.js';
 import type { ChatMessage, ExecuteLLMOptions } from './llm.js';
+import { logEvent, logStep } from './logger.js';
 import { extractJson } from './pipeline/swarm/llm-json.js';
 import { generate } from './generators/index.js';
 import type { GeneratorTarget } from './generators/index.js';
@@ -470,8 +473,40 @@ async function contextFromOntology(
     provider,
     userInfo,
     log,
+    // Attach the cached web-search supplement (if any) so extraction stages see
+    // it; ensureWebAugmentation computes+caches it on the first step.
+    webAugment: renderWebAugment(ontology.metadata?.webAugmentation),
     agentLlm: makeAgentLlmResolver(settings, model, provider),
   };
+}
+
+/**
+ * Compute the live web-search supplement ONCE per run and cache it on
+ * `ontology.metadata.webAugmentation`, then attach the rendered block to
+ * `ctx.webAugment` for this step's extraction. No-op unless the run requested
+ * web search and a Tavily key is configured; idempotent once computed. The
+ * caller persists the mutated ontology — carryMetadata and the orchestrators'
+ * buildAndCarry both carry `webAugmentation` forward across rebuilds.
+ */
+async function ensureWebAugmentation(
+  store: OntologyStore,
+  run: OntologyRun,
+  ontology: Ontology,
+  ctx: StageContext,
+): Promise<void> {
+  if (run.webSearch !== true) return;
+  if (ontology.metadata.webAugmentation) {
+    ctx.webAugment = renderWebAugment(ontology.metadata.webAugmentation);
+    return;
+  }
+  const settings = await loadLlmSettings(store);
+  if (!tavilyAvailable(settings)) {
+    ctx.log('[web-search] enabled but no Tavily key configured (set TAVILY_API_KEY or save it in Settings) — skipping');
+    return;
+  }
+  const aug = await runWebAugment(ctx, settings);
+  ontology.metadata = { ...ontology.metadata, webAugmentation: aug };
+  ctx.webAugment = renderWebAugment(aug);
 }
 
 function collectTakenIds(ontology: Ontology, sources: SourceDocument[]): Set<string> {
@@ -501,6 +536,7 @@ function carryMetadata(next: Ontology, prev: Ontology | undefined): Ontology {
     createdAt: prev.metadata?.createdAt ?? next.metadata.createdAt,
     createdBy: prev.metadata?.createdBy ?? next.metadata.createdBy,
     history: prev.metadata?.history ?? next.metadata.history,
+    webAugmentation: prev.metadata?.webAugmentation ?? next.metadata.webAugmentation,
   };
   return next;
 }
@@ -790,6 +826,7 @@ async function buildSeededRun(
   // Uploaded corpora seed a filename-derived name; flag the run so completion
   // upgrades it to a content-descriptive title. Sample corpora keep their label.
   if (body.autoName === true) run.autoName = true;
+  if (body.webSearch === true) run.webSearch = true;
 
   return { store, run, ontology };
 }
@@ -973,6 +1010,7 @@ async function actionRunStep(req: VercelRequest, res: VercelResponse, userInfo: 
   // Rebuild the stage context from the accumulated ontology + parsed text.
   const log = (text: string) => appendLog(run, text);
   const ctx = await contextFromOntology(store, ontology, undefined, userInfo, log);
+  await ensureWebAugmentation(store, run, ontology, ctx);
 
   const result = await runStage(stage, ctx);
 
@@ -1081,6 +1119,7 @@ async function actionModeStep(
   const cursor = (await loadSwarmState(store, runId))?.cursor ?? 0;
   const log = (text: string) => appendLog(run, text);
   const ctx = await contextFromOntology(store, ontology, undefined, userInfo, log);
+  await ensureWebAugmentation(store, run, ontology, ctx);
 
   const result = isHyper
     ? await advanceHyper({ cursor, ctx, run, ontology })
@@ -1134,7 +1173,7 @@ async function actionStage(
   const options = (body.options as { model?: string; temperature?: number } | undefined) ?? {};
 
   const logLines: string[] = [];
-  const log = (text: string) => { logLines.push(text); };
+  const log = (text: string) => { logLines.push(text); logEvent('step', text); };
 
   const ctx = await contextFromOntology(store, draft, parsedRefs, userInfo, log, { model: options.model });
 
@@ -1296,7 +1335,7 @@ async function actionGenerate(req: VercelRequest, res: VercelResponse): Promise<
 
   const target = body.target;
   if (!isGeneratorTarget(target) && target !== 'all') {
-    throw new HttpError(400, `generate requires target in agent-code|prompts|manifest|all`, 'BAD_TARGET');
+    throw new HttpError(400, `generate requires target in agent-code|prompts|manifest|spec|all`, 'BAD_TARGET');
   }
 
   // Either an inline ontology or an id (+ optional version) to load.
@@ -1383,6 +1422,7 @@ async function actionLlmSettings(req: VercelRequest, res: VercelResponse): Promi
   if (typeof body.defaultProvider === 'string') input.defaultProvider = body.defaultProvider;
   if (typeof body.defaultModel === 'string') input.defaultModel = body.defaultModel;
   if (typeof body.routerEnabled === 'boolean') input.routerEnabled = body.routerEnabled;
+  if (typeof body.tavilyApiKey === 'string') input.tavilyApiKey = body.tavilyApiKey;
 
   const store = getStore();
   const saved = await saveLlmSettings(store, input);
@@ -1444,6 +1484,7 @@ const nowIso = (): string => new Date().toISOString();
 
 function appendLog(run: OntologyRun, text: string): void {
   run.log.push({ at: nowIso(), text });
+  logStep(`run=${run.id}`, text); // mirror every run-log line to the file logger
 }
 
 function collectDangling(issues: ValidationIssue[]): { from: string; field: string; missingId: string }[] {
@@ -1475,7 +1516,7 @@ function isDomainKey(v: unknown): v is DomainKey {
 }
 
 function isGeneratorTarget(v: unknown): v is GeneratorTarget {
-  return v === 'agent-code' || v === 'prompts' || v === 'manifest';
+  return v === 'agent-code' || v === 'prompts' || v === 'manifest' || v === 'spec';
 }
 
 // ===========================================================================
@@ -1550,6 +1591,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   }
 
   try {
+    logEvent('action', `${action} ${req.method ?? ''} user=${userInfo.userId}`);
     // Stage re-run actions.
     const maybeStage = STAGE_ACTIONS[action];
     if (maybeStage) {
@@ -1630,6 +1672,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     }
   } catch (err) {
     if (err instanceof HttpError) {
+      logEvent('error', `action=${action} ${err.code ?? ''} ${err.message}`);
       fail(res, err.status, err.message, err.code);
       return;
     }
@@ -1637,6 +1680,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     // on missing Supabase/Neo4j env (those paths fall back before reaching here).
     const msg = errText(err);
     const status = msg.includes('NOT_FOUND') ? 404 : 400;
+    logEvent('error', `action=${action} ${msg}`);
     fail(res, status, msg, 'HANDLER_ERROR');
   }
 }

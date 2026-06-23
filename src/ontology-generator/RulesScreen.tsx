@@ -8,12 +8,14 @@ import type { Lang } from './data';
 import type { Strings } from './i18n';
 import type { OntologyRunController } from './useOntologyRun';
 import type {
-  ObjectType,
   Rule,
   RuleGroup,
   Severity,
   SourceRef,
 } from '@/ontology/schema/types';
+import CleanNodeCard from './CleanNodeCard';
+import CleanNodeEditor from './CleanNodeEditor';
+import { toCleanNodes, fromCleanNodes } from './json-editor/clean';
 
 interface RulesScreenProps {
   t: Strings;
@@ -77,16 +79,15 @@ export default function RulesScreen({ t, lang, ctrl }: RulesScreenProps) {
 
   const [expanded, setExpanded] = useState<string | null>(rules[0]?.id ?? null);
 
-  // Resolve an ObjectType id -> a display name (bilingual when zh).
-  const objectName = useMemo(() => {
-    const byId = new Map<string, ObjectType>();
-    for (const o of ontology?.objects ?? []) byId.set(o.id, o);
-    return (id: string): string => {
-      const o = byId.get(id);
-      if (!o) return id.replace(/^objectType:/, '');
-      return lang === 'zh' && o.nameZh ? o.nameZh : o.name;
-    };
-  }, [ontology, lang]);
+  // The clean sample-shaped projection of every rule (13 spec fields + receipts),
+  // keyed by internal rule id — what the JSON editor / `generate spec` also show.
+  const cleanById = useMemo(() => {
+    const m = new Map<string, Record<string, unknown>>();
+    if (!ontology) return m;
+    const clean = toCleanNodes('rules', rules, ontology) as Record<string, unknown>[];
+    rules.forEach((r, i) => m.set(r.id, clean[i]));
+    return m;
+  }, [ontology, rules]);
 
   // Build the grouped view: each declared RuleGroup, then an implicit
   // "ungrouped" bucket for rules not referenced by any group.
@@ -210,10 +211,10 @@ export default function RulesScreen({ t, lang, ctrl }: RulesScreenProps) {
                   lang={lang}
                   ctrl={ctrl}
                   rule={r}
+                  clean={cleanById.get(r.id)}
                   index={ruleIndex}
                   open={open}
                   sev={sev}
-                  objectName={objectName}
                   onToggle={() => setExpanded(open ? null : r.id)}
                 />
               );
@@ -234,31 +235,25 @@ interface RuleCardProps {
   lang: Lang;
   ctrl: OntologyRunController;
   rule: Rule;
+  clean?: Record<string, unknown>;
   index: number;
   open: boolean;
   sev: { fg: string; bg: string; bd: string };
-  objectName: (id: string) => string;
   onToggle: () => void;
 }
 
-function RuleCard({ t, lang, ctrl, rule, index, open, sev, objectName, onToggle }: RuleCardProps) {
+function RuleCard({ t, lang, ctrl, rule, clean, index, open, sev, onToggle }: RuleCardProps) {
   const [editing, setEditing] = useState(false);
-  const [draftEn, setDraftEn] = useState(rule.statement.en);
-  const [draftZh, setDraftZh] = useState(rule.statement.zh);
 
   const accepted = rule.reviewState === 'accepted';
   const rejected = rule.reviewState === 'rejected';
 
-  function beginEdit() {
-    setDraftEn(rule.statement.en);
-    setDraftZh(rule.statement.zh);
-    setEditing(true);
-  }
-
-  function commitEdit() {
-    ctrl.editEntity('rule', rule.id, {
-      statement: { en: draftEn, zh: draftZh },
-    });
+  // Persist an inline clean-shape edit: map the edited clean rule back to the
+  // internal Rule (fromCleanNodes) and patch it through the controller.
+  function saveClean(edited: Record<string, unknown>) {
+    if (!ctrl.ontology) return;
+    const merged = fromCleanNodes('rules', [edited], ctrl.ontology)[0] as Record<string, unknown>;
+    ctrl.editEntity('rule', rule.id, merged);
     setEditing(false);
   }
 
@@ -342,12 +337,6 @@ function RuleCard({ t, lang, ctrl, rule, index, open, sev, objectName, onToggle 
             >
               {severityLabel(t, rule.severity)}
             </span>
-            {/* appliesTo object chips */}
-            {rule.appliesToObjectTypeIds.map((oid) => (
-              <span key={oid} className="tag">
-                {objectName(oid)}
-              </span>
-            ))}
             {/* review status chip (non-pending) */}
             {rule.reviewState !== 'pending' && (
               <span className="mono-cap" style={{ color: accepted ? 'var(--accent-3)' : 'var(--fg-4)' }}>
@@ -391,156 +380,73 @@ function RuleCard({ t, lang, ctrl, rule, index, open, sev, objectName, onToggle 
             </div>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
-            {/* Formal expression */}
-            <div style={{ padding: 'var(--s-5)', borderRight: '1px solid var(--line)' }}>
-              <div className="mono-cap" style={{ marginBottom: 8 }}>
-                {t.ruleFormal}
-              </div>
-              <div
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 12,
-                  lineHeight: 1.7,
-                  background: 'var(--bg)',
-                  padding: 'var(--s-4)',
-                  borderRadius: 'var(--r-2)',
-                  border: '1px solid var(--line)',
-                  color: 'var(--accent-3)',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                }}
-              >
-                {rule.formal}
-              </div>
-              {rule.expression?.predicate && (
-                <div
-                  style={{
-                    marginTop: 'var(--s-3)',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 11,
-                    lineHeight: 1.6,
-                    color: 'var(--fg-3)',
-                    wordBreak: 'break-word',
-                  }}
-                >
-                  <span className="mono-cap" style={{ color: 'var(--fg-4)' }}>
-                    {rule.expression.dialect}
-                  </span>{' '}
-                  {rule.expression.predicate}
-                </div>
+          {/* Clean sample-shaped rule view (read) or inline editor (edit).
+              statement/severity/kind/appliesTo/formal are NOT part of the clean
+              rule shape; sources are skipped (shown as Evidence below). */}
+          {clean && (
+            <div style={{ padding: 'var(--s-5)', borderBottom: '1px solid var(--line)' }}>
+              {editing ? (
+                <CleanNodeEditor node={clean} lang={lang} onSave={saveClean} onCancel={() => setEditing(false)} />
+              ) : (
+                <CleanNodeCard node={clean} lang={lang} skip={['sources']} />
               )}
-            </div>
-
-            {/* Evidence — sentence-level source citations */}
-            <div style={{ padding: 'var(--s-5)' }}>
-              <div className="mono-cap" style={{ marginBottom: 8 }}>
-                {t.ruleEvidence}
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-3)' }}>
-                {rule.sources.length === 0 && (
-                  <div className="mono-cap" style={{ color: 'var(--fg-4)' }}>
-                    {lang === 'zh' ? '暂无引用' : 'No citations'}
-                  </div>
-                )}
-                {rule.sources.map((s, i) => (
-                  <SourceCitation key={i} t={t} lang={lang} source={s} />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Edit area + review actions */}
-          {editing && (
-            <div
-              style={{
-                borderTop: '1px solid var(--line)',
-                padding: 'var(--s-5)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 'var(--s-3)',
-              }}
-            >
-              <label className="mono-cap" style={{ color: 'var(--fg-4)' }}>
-                {t.rulePlain} · EN
-              </label>
-              <textarea
-                value={draftEn}
-                onChange={(e) => setDraftEn(e.target.value)}
-                rows={2}
-                style={editFieldStyle}
-              />
-              <label className="mono-cap" style={{ color: 'var(--fg-4)' }}>
-                {t.rulePlain} · 中文
-              </label>
-              <textarea
-                value={draftZh}
-                onChange={(e) => setDraftZh(e.target.value)}
-                rows={2}
-                style={editFieldStyle}
-              />
             </div>
           )}
 
-          <div
-            style={{
-              borderTop: '1px solid var(--line)',
-              padding: 'var(--s-4) var(--s-5)',
-              display: 'flex',
-              gap: 8,
-              justifyContent: 'flex-end',
-              flexWrap: 'wrap',
-            }}
-          >
-            {editing ? (
-              <>
-                <button className="btn ghost" onClick={() => setEditing(false)}>
-                  {t.cancelEdit}
-                </button>
-                <button className="btn primary" onClick={commitEdit}>
-                  {t.saveEdit}
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  className="btn ghost"
-                  onClick={() => void ctrl.reviewOne('rule', rule.id, 'rejected')}
-                >
-                  {t.reject}
-                </button>
-                <button className="btn ghost" onClick={beginEdit}>
-                  {t.edit}
-                </button>
-                <button
-                  className={accepted ? 'btn' : 'btn primary'}
-                  onClick={() =>
-                    void ctrl.reviewOne('rule', rule.id, accepted ? 'pending' : 'accepted')
-                  }
-                >
-                  {accepted ? '✓ ' + t.accepted : t.accept}
-                </button>
-              </>
-            )}
+          {/* Evidence — sentence-level source citations */}
+          <div style={{ padding: 'var(--s-5)' }}>
+            <div className="mono-cap" style={{ marginBottom: 8 }}>
+              {t.ruleEvidence}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-3)' }}>
+              {rule.sources.length === 0 && (
+                <div className="mono-cap" style={{ color: 'var(--fg-4)' }}>
+                  {lang === 'zh' ? '暂无引用' : 'No citations'}
+                </div>
+              )}
+              {rule.sources.map((s, i) => (
+                <SourceCitation key={i} t={t} lang={lang} source={s} />
+              ))}
+            </div>
           </div>
+
+          {/* Review actions (the inline editor carries its own Save/Cancel). */}
+          {!editing && (
+            <div
+              style={{
+                borderTop: '1px solid var(--line)',
+                padding: 'var(--s-4) var(--s-5)',
+                display: 'flex',
+                gap: 8,
+                justifyContent: 'flex-end',
+                flexWrap: 'wrap',
+              }}
+            >
+              <button
+                className="btn ghost"
+                onClick={() => void ctrl.reviewOne('rule', rule.id, 'rejected')}
+              >
+                {t.reject}
+              </button>
+              <button className="btn ghost" onClick={() => setEditing(true)}>
+                {t.edit}
+              </button>
+              <button
+                className={accepted ? 'btn' : 'btn primary'}
+                onClick={() =>
+                  void ctrl.reviewOne('rule', rule.id, accepted ? 'pending' : 'accepted')
+                }
+              >
+                {accepted ? '✓ ' + t.accepted : t.accept}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-const editFieldStyle: React.CSSProperties = {
-  width: '100%',
-  resize: 'vertical',
-  background: 'var(--bg)',
-  border: '1px solid var(--line)',
-  borderRadius: 'var(--r-2)',
-  padding: 'var(--s-3)',
-  color: 'var(--fg)',
-  fontSize: 13,
-  lineHeight: 1.5,
-  fontFamily: 'inherit',
-};
 
 // ---------------------------------------------------------------------------
 // One sentence-level citation: doc name · section/page, the snippet, and the

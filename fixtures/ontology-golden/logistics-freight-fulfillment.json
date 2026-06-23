@@ -42,63 +42,47 @@
       "uuid": "10000000000000000000000000000001",
       "name": "Order",
       "nameZh": "订单",
-      "description": "A client purchase order received via the EDI 940 Warehouse Shipping Order, validated and accepted in TMS, then decomposed into one or more Consignments.",
+      "description": "通过 EDI 940 仓储发货单接收的客户订单，在 TMS 中校验并接受后，分解为一个或多个货件。",
       "descriptionZh": "通过 EDI 940 仓储发货单接收的客户订单，在 TMS 中校验并接受后，分解为一个或多个货件。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "【订单】分解为【货件】。",
+      "primary_key": "order_id",
+      "properties": [
         {
           "name": "order_id",
-          "nameZh": "订单编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "ORD-######### primary key."
+          "type": "String",
+          "description": "订单编号",
+          "nameZh": "订单编号"
         },
         {
           "name": "client_id",
-          "nameZh": "客户编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "none",
-          "description": "FK to client master."
+          "type": "String",
+          "description": "客户编号",
+          "nameZh": "客户编号"
         },
         {
           "name": "status",
-          "nameZh": "状态",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Received",
-            "Accepted",
-            "Rejected"
-          ]
+          "type": "List<String>",
+          "description": "状态",
+          "nameZh": "状态"
         },
         {
           "name": "requested_ship_date",
-          "nameZh": "请求发运日期",
-          "type": "date",
-          "required": false,
-          "keyRole": "none"
+          "type": "Date",
+          "description": "请求发运日期",
+          "nameZh": "请求发运日期"
         },
         {
           "name": "ship_to_party",
-          "nameZh": "收货方",
-          "type": "string",
-          "required": true,
-          "keyRole": "none"
+          "type": "String",
+          "description": "收货方",
+          "nameZh": "收货方"
         },
         {
           "name": "source_transaction",
-          "nameZh": "来源交易",
-          "type": "enum",
-          "required": false,
-          "keyRole": "none",
-          "enumValues": [
-            "EDI940",
-            "API",
-            "Manual"
-          ],
-          "description": "Provenance of intake."
+          "type": "List<String>",
+          "description": "来源交易",
+          "nameZh": "来源交易"
         }
       ],
       "relationshipIds": [
@@ -133,78 +117,63 @@
       "uuid": "10000000000000000000000000000002",
       "name": "Consignment",
       "nameZh": "货件",
-      "description": "The goods destined for a single ship-to party, managed in WMS; the customs sub-process and international handling are driven off this object.",
+      "description": "发往单一收货方的货物，由 WMS 管理；报关子流程与国际处理均以此对象为基础。",
       "descriptionZh": "发往单一收货方的货物，由 WMS 管理；报关子流程与国际处理均以此对象为基础。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "【订单】分解为【货件】。【运单】归集【货件】。【货件】拥有报关单【报关单】。",
+      "primary_key": "consignment_id",
+      "properties": [
         {
           "name": "consignment_id",
-          "nameZh": "货件编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "CON-######### primary key."
+          "type": "String",
+          "description": "货件编号",
+          "nameZh": "货件编号"
         },
         {
           "name": "order_id",
+          "type": "String",
+          "description": "订单编号",
           "nameZh": "订单编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:order",
-          "description": "FK to Order.orderId."
+          "is_foreign_key": true,
+          "references": "objectType:order"
         },
         {
           "name": "shipment_id",
+          "type": "String",
+          "description": "运单编号",
           "nameZh": "运单编号",
-          "type": "reference",
-          "required": false,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:shipment",
-          "description": "FK to Shipment.shipmentId; nullable until planned."
+          "is_foreign_key": true,
+          "references": "objectType:shipment"
         },
         {
           "name": "is_international",
-          "nameZh": "是否国际",
-          "type": "boolean",
-          "required": true,
-          "keyRole": "none",
-          "description": "Drives the customs sub-process."
+          "type": "Boolean",
+          "description": "是否国际",
+          "nameZh": "是否国际"
         },
         {
           "name": "declared_value_usd",
-          "nameZh": "申报价值（美元）",
-          "type": "decimal",
-          "required": false,
-          "keyRole": "none",
-          "description": "Used by Rule R8 and R19."
+          "type": "Float",
+          "description": "申报价值（美元）",
+          "nameZh": "申报价值（美元）"
         },
         {
           "name": "weight_kg",
-          "nameZh": "重量（千克）",
-          "type": "decimal",
-          "required": false,
-          "keyRole": "none"
+          "type": "Float",
+          "description": "重量（千克）",
+          "nameZh": "重量（千克）"
         },
         {
           "name": "status",
-          "nameZh": "状态",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Created",
-            "Staged",
-            "Departed",
-            "Delivered"
-          ]
+          "type": "List<String>",
+          "description": "状态",
+          "nameZh": "状态"
         },
         {
           "name": "hs_codes",
-          "nameZh": "HS编码",
-          "type": "array",
-          "required": false,
-          "keyRole": "none",
-          "description": "Harmonized System codes."
+          "type": "List<String>",
+          "description": "HS编码",
+          "nameZh": "HS编码"
         }
       ],
       "relationshipIds": [
@@ -241,81 +210,65 @@
       "uuid": "10000000000000000000000000000003",
       "name": "Shipment",
       "nameZh": "运单",
-      "description": "A freight movement in TMS that groups one or more Consignments along a Lane, is tendered to a Carrier, and is tracked from In Transit to Delivered against a committed delivery window.",
+      "description": "TMS 中的货运运输，沿某条运线归集一个或多个货件，向承运商招标，并在承诺送达窗口内从在途跟踪至已送达。",
       "descriptionZh": "TMS 中的货运运输，沿某条运线归集一个或多个货件，向承运商招标，并在承诺送达窗口内从在途跟踪至已送达。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "【运单】归集【货件】。【运单】运行于【运线】。【运单】招标给【承运商】。【运单】受约束于【服务等级协议】。【运单】拥有站点【站点】。【运单】拥有轨迹事件【轨迹事件】。【运单】拥有签收凭证【签收凭证】。",
+      "primary_key": "shipment_id",
+      "properties": [
         {
           "name": "shipment_id",
-          "nameZh": "运单编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "SHP-######### primary key."
+          "type": "String",
+          "description": "运单编号",
+          "nameZh": "运单编号"
         },
         {
           "name": "lane_id",
+          "type": "String",
+          "description": "运线编号",
           "nameZh": "运线编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:lane",
-          "description": "FK to Lane.laneId."
+          "is_foreign_key": true,
+          "references": "objectType:lane"
         },
         {
           "name": "carrier_id",
+          "type": "String",
+          "description": "承运商编号",
           "nameZh": "承运商编号",
-          "type": "reference",
-          "required": false,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:carrier",
-          "description": "FK to Carrier.carrierId; set at tender."
+          "is_foreign_key": true,
+          "references": "objectType:carrier"
         },
         {
           "name": "sla_id",
+          "type": "String",
+          "description": "SLA编号",
           "nameZh": "SLA编号",
-          "type": "reference",
-          "required": false,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:sla",
-          "description": "FK to SLA.slaId."
+          "is_foreign_key": true,
+          "references": "objectType:sla"
         },
         {
           "name": "status",
-          "nameZh": "状态",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Planned",
-            "Tendered",
-            "In Transit",
-            "Delivered",
-            "Cancelled"
-          ]
+          "type": "List<String>",
+          "description": "状态",
+          "nameZh": "状态"
         },
         {
           "name": "committed_delivery_window",
-          "nameZh": "承诺送达窗口",
-          "type": "datetime",
-          "required": false,
-          "keyRole": "none",
-          "description": "Timestamp range derived from SLA."
+          "type": "Timestamp",
+          "description": "承诺送达窗口",
+          "nameZh": "承诺送达窗口"
         },
         {
           "name": "linehaul_charge_usd",
-          "nameZh": "干线运费（美元）",
-          "type": "decimal",
-          "required": false,
-          "keyRole": "none",
-          "description": "Basis for service-failure credit (Rule R4)."
+          "type": "Float",
+          "description": "干线运费（美元）",
+          "nameZh": "干线运费（美元）"
         },
         {
           "name": "pro_number",
-          "nameZh": "承运确认号",
-          "type": "string",
-          "required": false,
-          "keyRole": "none",
-          "description": "Carrier confirmation (PRO/booking) number."
+          "type": "String",
+          "description": "承运确认号",
+          "nameZh": "承运确认号"
         }
       ],
       "relationshipIds": [
@@ -356,59 +309,49 @@
       "uuid": "10000000000000000000000000000004",
       "name": "Stop",
       "nameZh": "站点",
-      "description": "An ordered pickup or delivery location on a Shipment's route, with an appointment window against which dwell and detention are measured.",
+      "description": "运单路线上有序的提货或送货地点，带有约定时间窗口，用于衡量停留与滞留时间。",
       "descriptionZh": "运单路线上有序的提货或送货地点，带有约定时间窗口，用于衡量停留与滞留时间。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "【运单】拥有站点【站点】。",
+      "primary_key": "stop_id",
+      "properties": [
         {
           "name": "stop_id",
-          "nameZh": "站点编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "Primary key."
+          "type": "String",
+          "description": "站点编号",
+          "nameZh": "站点编号"
         },
         {
           "name": "shipment_id",
+          "type": "String",
+          "description": "运单编号",
           "nameZh": "运单编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:shipment",
-          "description": "FK to Shipment.shipmentId."
+          "is_foreign_key": true,
+          "references": "objectType:shipment"
         },
         {
           "name": "sequence",
-          "nameZh": "序号",
-          "type": "integer",
-          "required": true,
-          "keyRole": "none",
-          "description": "pickup=1, delivery=last."
+          "type": "Integer",
+          "description": "序号",
+          "nameZh": "序号"
         },
         {
           "name": "stop_type",
-          "nameZh": "类型",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Pickup",
-            "Delivery"
-          ]
+          "type": "List<String>",
+          "description": "类型",
+          "nameZh": "类型"
         },
         {
           "name": "appointment_window",
-          "nameZh": "约定窗口",
-          "type": "datetime",
-          "required": false,
-          "keyRole": "none",
-          "description": "Dwell measured against this (Rule R17)."
+          "type": "Timestamp",
+          "description": "约定窗口",
+          "nameZh": "约定窗口"
         },
         {
           "name": "actual_arrival",
-          "nameZh": "实际到达",
-          "type": "datetime",
-          "required": false,
-          "keyRole": "none"
+          "type": "Timestamp",
+          "description": "实际到达",
+          "nameZh": "实际到达"
         }
       ],
       "relationshipIds": [
@@ -443,51 +386,41 @@
       "uuid": "10000000000000000000000000000005",
       "name": "Carrier",
       "nameZh": "承运商",
-      "description": "A motor carrier identified by its SCAC code, qualified per Lane, governed by on-time performance and cargo-insurance thresholds, and the counterparty to tenders and service-failure claims.",
+      "description": "以 SCAC 代码标识的汽车承运商，按运线资格审核，受准时率与货物保险阈值约束，是招标与服务失败索赔的对手方。",
       "descriptionZh": "以 SCAC 代码标识的汽车承运商，按运线资格审核，受准时率与货物保险阈值约束，是招标与服务失败索赔的对手方。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "【运单】招标给【承运商】。【运线】批准【承运商】。【服务失败索赔】针对【承运商】。",
+      "primary_key": "carrier_id",
+      "properties": [
         {
           "name": "carrier_id",
-          "nameZh": "承运商编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "SCAC (Standard Carrier Alpha Code) primary key."
+          "type": "String",
+          "description": "承运商编号",
+          "nameZh": "承运商编号"
         },
         {
           "name": "name",
-          "nameZh": "名称",
-          "type": "string",
-          "required": true,
-          "keyRole": "none"
+          "type": "String",
+          "description": "名称",
+          "nameZh": "名称"
         },
         {
           "name": "on_time_rate_30d",
-          "nameZh": "30天准时率",
-          "type": "decimal",
-          "required": false,
-          "keyRole": "none",
-          "description": "0–1; governs performance hold (Rule R16)."
+          "type": "Float",
+          "description": "30天准时率",
+          "nameZh": "30天准时率"
         },
         {
           "name": "cargo_insurance_usd",
-          "nameZh": "货物保险额（美元）",
-          "type": "decimal",
-          "required": false,
-          "keyRole": "none",
-          "description": "Governs high-value tender (Rule R19)."
+          "type": "Float",
+          "description": "货物保险额（美元）",
+          "nameZh": "货物保险额（美元）"
         },
         {
           "name": "status",
-          "nameZh": "状态",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Active",
-            "PerformanceHold",
-            "Suspended"
-          ]
+          "type": "List<String>",
+          "description": "状态",
+          "nameZh": "状态"
         }
       ],
       "relationshipIds": [
@@ -524,50 +457,41 @@
       "uuid": "10000000000000000000000000000006",
       "name": "Lane",
       "nameZh": "运线",
-      "description": "An origin–destination corridor in TMS with a commitment tier (Guaranteed or Standard) and an approved-carrier roster that governs which Carriers may be tendered freight.",
+      "description": "TMS 中的起讫点走廊，带有承诺等级（保证或标准）与经批准的承运商名单，决定哪些承运商可被招标。",
       "descriptionZh": "TMS 中的起讫点走廊，带有承诺等级（保证或标准）与经批准的承运商名单，决定哪些承运商可被招标。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "【运单】运行于【运线】。【运线】批准【承运商】。【运线】拥有 SLA【服务等级协议】。",
+      "primary_key": "lane_id",
+      "properties": [
         {
           "name": "lane_id",
-          "nameZh": "运线编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "LN-#### primary key."
+          "type": "String",
+          "description": "运线编号",
+          "nameZh": "运线编号"
         },
         {
           "name": "origin_region",
-          "nameZh": "起始区域",
-          "type": "string",
-          "required": true,
-          "keyRole": "none"
+          "type": "String",
+          "description": "起始区域",
+          "nameZh": "起始区域"
         },
         {
           "name": "destination_region",
-          "nameZh": "目的区域",
-          "type": "string",
-          "required": true,
-          "keyRole": "none"
+          "type": "String",
+          "description": "目的区域",
+          "nameZh": "目的区域"
         },
         {
           "name": "commitment_tier",
-          "nameZh": "承诺等级",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Guaranteed",
-            "Standard"
-          ],
-          "description": "Drives credit eligibility (Rule R3)."
+          "type": "List<String>",
+          "description": "承诺等级",
+          "nameZh": "承诺等级"
         },
         {
           "name": "approved_carrier_ids",
-          "nameZh": "批准承运商",
-          "type": "array",
-          "required": false,
-          "keyRole": "none",
-          "description": "FK to Carrier.carrierId (Rule R2)."
+          "type": "List<String>",
+          "description": "批准承运商",
+          "nameZh": "批准承运商"
         }
       ],
       "relationshipIds": [
@@ -604,41 +528,37 @@
       "uuid": "10000000000000000000000000000007",
       "name": "SLA",
       "nameZh": "服务等级协议",
-      "description": "The service-level commitment attached to a Lane that defines the committed transit hours and the credit schedule against which a Shipment's delivery window is evaluated.",
+      "description": "附加于运线的服务级别承诺，定义承诺运输时长与信用减免方案，用以评估运单送达窗口。",
       "descriptionZh": "附加于运线的服务级别承诺，定义承诺运输时长与信用减免方案，用以评估运单送达窗口。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "【运单】受约束于【服务等级协议】。【运线】拥有 SLA【服务等级协议】。",
+      "primary_key": "sla_id",
+      "properties": [
         {
           "name": "sla_id",
-          "nameZh": "SLA编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "Primary key."
+          "type": "String",
+          "description": "SLA编号",
+          "nameZh": "SLA编号"
         },
         {
           "name": "lane_id",
+          "type": "String",
+          "description": "运线编号",
           "nameZh": "运线编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:lane",
-          "description": "FK to Lane.laneId."
+          "is_foreign_key": true,
+          "references": "objectType:lane"
         },
         {
           "name": "transit_hours",
-          "nameZh": "运输时长（小时）",
-          "type": "integer",
-          "required": true,
-          "keyRole": "none",
-          "description": "Committed transit time."
+          "type": "Integer",
+          "description": "运输时长（小时）",
+          "nameZh": "运输时长（小时）"
         },
         {
           "name": "credit_schedule_ref",
-          "nameZh": "信用方案引用",
-          "type": "string",
-          "required": false,
-          "keyRole": "none",
-          "description": "Reference to CSA §7.4."
+          "type": "String",
+          "description": "信用方案引用",
+          "nameZh": "信用方案引用"
         }
       ],
       "relationshipIds": [
@@ -674,75 +594,55 @@
       "uuid": "10000000000000000000000000000008",
       "name": "CustomsDeclaration",
       "nameZh": "报关单",
-      "description": "The customs filing for an international Consignment submitted to the broker via CBP-Link, carrying entry type, duties, and any export-license reference; it must be Accepted before departure.",
+      "description": "通过 CBP-Link 向报关行提交的国际货件报关申报，载有进口类型、关税及任何出口许可引用；须在发运前被接受。",
       "descriptionZh": "通过 CBP-Link 向报关行提交的国际货件报关申报，载有进口类型、关税及任何出口许可引用；须在发运前被接受。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "【货件】拥有报关单【报关单】。",
+      "primary_key": "declaration_id",
+      "properties": [
         {
           "name": "declaration_id",
-          "nameZh": "报关单编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "CD-######### primary key."
+          "type": "String",
+          "description": "报关单编号",
+          "nameZh": "报关单编号"
         },
         {
           "name": "consignment_id",
+          "type": "String",
+          "description": "货件编号",
           "nameZh": "货件编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:consignment",
-          "description": "FK to Consignment.consignmentId."
+          "is_foreign_key": true,
+          "references": "objectType:consignment"
         },
         {
           "name": "entry_type",
-          "nameZh": "进口类型",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Formal",
-            "Informal",
-            "InBond"
-          ],
-          "description": "Rule R8, E1."
+          "type": "List<String>",
+          "description": "进口类型",
+          "nameZh": "进口类型"
         },
         {
           "name": "status",
-          "nameZh": "状态",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Draft",
-            "Filed",
-            "Accepted",
-            "Held",
-            "Rejected"
-          ]
+          "type": "List<String>",
+          "description": "状态",
+          "nameZh": "状态"
         },
         {
           "name": "duties_assigned_usd",
-          "nameZh": "已核定关税（美元）",
-          "type": "decimal",
-          "required": false,
-          "keyRole": "none",
-          "description": "Set on acceptance."
+          "type": "Float",
+          "description": "已核定关税（美元）",
+          "nameZh": "已核定关税（美元）"
         },
         {
           "name": "export_license_ref",
-          "nameZh": "出口许可引用",
-          "type": "string",
-          "required": false,
-          "keyRole": "none",
-          "description": "Required for controlled goods (Rule R9)."
+          "type": "String",
+          "description": "出口许可引用",
+          "nameZh": "出口许可引用"
         },
         {
           "name": "broker_reference",
-          "nameZh": "报关行引用",
-          "type": "string",
-          "required": false,
-          "keyRole": "none"
+          "type": "String",
+          "description": "报关行引用",
+          "nameZh": "报关行引用"
         }
       ],
       "relationshipIds": [
@@ -777,55 +677,43 @@
       "uuid": "10000000000000000000000000000009",
       "name": "TrackingEvent",
       "nameZh": "轨迹事件",
-      "description": "A canonicalized shipment status record appended to a Shipment from inbound EDI 214 messages, mapping raw EDI status codes to lifecycle states and driving SLA re-evaluation.",
+      "description": "从入站 EDI 214 报文追加到运单上的规范化状态记录，将原始 EDI 状态码映射为生命周期状态并触发 SLA 重新评估。",
       "descriptionZh": "从入站 EDI 214 报文追加到运单上的规范化状态记录，将原始 EDI 状态码映射为生命周期状态并触发 SLA 重新评估。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "【运单】拥有轨迹事件【轨迹事件】。",
+      "primary_key": "event_id",
+      "properties": [
         {
           "name": "event_id",
-          "nameZh": "事件编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "Primary key."
+          "type": "String",
+          "description": "事件编号",
+          "nameZh": "事件编号"
         },
         {
           "name": "shipment_id",
+          "type": "String",
+          "description": "运单编号",
           "nameZh": "运单编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:shipment",
-          "description": "FK to Shipment.shipmentId."
+          "is_foreign_key": true,
+          "references": "objectType:shipment"
         },
         {
           "name": "edi_status_code",
-          "nameZh": "EDI状态码",
-          "type": "string",
-          "required": true,
-          "keyRole": "none",
-          "description": "Raw EDI 214 code, e.g., AF, X3, AG, D1."
+          "type": "String",
+          "description": "EDI状态码",
+          "nameZh": "EDI状态码"
         },
         {
           "name": "canonical_status",
-          "nameZh": "规范状态",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Departed",
-            "InTransit",
-            "ArrivedDelivery",
-            "Delivered",
-            "Exception"
-          ],
-          "description": "Mapped value."
+          "type": "List<String>",
+          "description": "规范状态",
+          "nameZh": "规范状态"
         },
         {
           "name": "event_timestamp",
-          "nameZh": "事件时间",
-          "type": "datetime",
-          "required": true,
-          "keyRole": "none"
+          "type": "Timestamp",
+          "description": "事件时间",
+          "nameZh": "事件时间"
         }
       ],
       "relationshipIds": [
@@ -860,48 +748,43 @@
       "uuid": "1000000000000000000000000000000a",
       "name": "ProofOfDelivery",
       "nameZh": "签收凭证",
-      "description": "The captured evidence of delivery in WMS — timestamp plus recipient signature, or a geotagged photo in lieu of signature — without which a Shipment may not be marked Delivered.",
+      "description": "WMS 中采集的送达证据——时间戳加收件人签名，或在无签名时以带地理标记的照片代替——缺此运单不得标记为已送达。",
       "descriptionZh": "WMS 中采集的送达证据——时间戳加收件人签名，或在无签名时以带地理标记的照片代替——缺此运单不得标记为已送达。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "【运单】拥有签收凭证【签收凭证】。",
+      "primary_key": "pod_id",
+      "properties": [
         {
           "name": "pod_id",
-          "nameZh": "签收编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "POD-######### primary key."
+          "type": "String",
+          "description": "签收编号",
+          "nameZh": "签收编号"
         },
         {
           "name": "shipment_id",
+          "type": "String",
+          "description": "运单编号",
           "nameZh": "运单编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:shipment",
-          "description": "FK to Shipment.shipmentId."
+          "is_foreign_key": true,
+          "references": "objectType:shipment"
         },
         {
           "name": "delivery_timestamp",
-          "nameZh": "送达时间",
-          "type": "datetime",
-          "required": true,
-          "keyRole": "none",
-          "description": "Required (Rule R12)."
+          "type": "Timestamp",
+          "description": "送达时间",
+          "nameZh": "送达时间"
         },
         {
           "name": "signature_name",
-          "nameZh": "签名",
-          "type": "string",
-          "required": false,
-          "keyRole": "none"
+          "type": "String",
+          "description": "签名",
+          "nameZh": "签名"
         },
         {
           "name": "photo_uri",
-          "nameZh": "照片地址",
-          "type": "string",
-          "required": false,
-          "keyRole": "none",
-          "description": "Required if no signature (Rule R12)."
+          "type": "String",
+          "description": "照片地址",
+          "nameZh": "照片地址"
         }
       ],
       "relationshipIds": [
@@ -936,82 +819,57 @@
       "uuid": "1000000000000000000000000000000b",
       "name": "Exception",
       "nameZh": "异常",
-      "description": "A TMS record opened automatically on an SLA breach or customs hold, classified by type and liability, that drives whether a service-failure claim is raised and is not closed until any linked claim is terminal.",
+      "description": "在 SLA 违约或海关扣留时由 TMS 自动开立的记录，按类型与责任归属分类，决定是否提起服务失败索赔，且在任何关联索赔进入终态前不得关闭。",
       "descriptionZh": "在 SLA 违约或海关扣留时由 TMS 自动开立的记录，按类型与责任归属分类，决定是否提起服务失败索赔，且在任何关联索赔进入终态前不得关闭。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "【异常】提起【服务失败索赔】。",
+      "primary_key": "exception_id",
+      "properties": [
         {
           "name": "exception_id",
-          "nameZh": "异常编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "EXC-######### primary key."
+          "type": "String",
+          "description": "异常编号",
+          "nameZh": "异常编号"
         },
         {
           "name": "shipment_id",
+          "type": "String",
+          "description": "运单编号",
           "nameZh": "运单编号",
-          "type": "reference",
-          "required": false,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:shipment",
-          "description": "FK to Shipment.shipmentId; nullable."
+          "is_foreign_key": true,
+          "references": "objectType:shipment"
         },
         {
           "name": "consignment_id",
+          "type": "String",
+          "description": "货件编号",
           "nameZh": "货件编号",
-          "type": "reference",
-          "required": false,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:consignment",
-          "description": "FK to Consignment.consignmentId; nullable."
+          "is_foreign_key": true,
+          "references": "objectType:consignment"
         },
         {
           "name": "exception_type",
-          "nameZh": "类型",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "SLA_BREACH",
-            "CUSTOMS_HOLD",
-            "DAMAGE",
-            "LOST"
-          ]
+          "type": "List<String>",
+          "description": "类型",
+          "nameZh": "类型"
         },
         {
           "name": "liability",
-          "nameZh": "责任归属",
-          "type": "enum",
-          "required": false,
-          "keyRole": "none",
-          "enumValues": [
-            "CARRIER",
-            "CUSTOMER",
-            "INTERNAL",
-            "FORCE_MAJEURE"
-          ],
-          "description": "Set at classification."
+          "type": "List<String>",
+          "description": "责任归属",
+          "nameZh": "责任归属"
         },
         {
           "name": "credit_eligible",
-          "nameZh": "可减免",
-          "type": "boolean",
-          "required": false,
-          "keyRole": "none",
-          "description": "Drives claim (Rule R14)."
+          "type": "Boolean",
+          "description": "可减免",
+          "nameZh": "可减免"
         },
         {
           "name": "status",
-          "nameZh": "状态",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Open",
-            "Classified",
-            "Resolved",
-            "Closed"
-          ]
+          "type": "List<String>",
+          "description": "状态",
+          "nameZh": "状态"
         }
       ],
       "relationshipIds": [
@@ -1046,65 +904,51 @@
       "uuid": "1000000000000000000000000000000c",
       "name": "ServiceFailureClaim",
       "nameZh": "服务失败索赔",
-      "description": "A credit claim raised against a Carrier for a service failure on a guaranteed Lane, carrying the calculated credit amount and cited CSA clause; it must be submitted within 30 days and reach a terminal state before its Exception closes.",
+      "description": "针对保证运线服务失败向承运商提起的减免索赔，载有计算的减免金额与引用的 CSA 条款；须在 30 天内提交，并在其异常关闭前进入终态。",
       "descriptionZh": "针对保证运线服务失败向承运商提起的减免索赔，载有计算的减免金额与引用的 CSA 条款；须在 30 天内提交，并在其异常关闭前进入终态。",
-      "attributes": [
+      "type": "data",
+      "relationship_description": "【异常】提起【服务失败索赔】。【服务失败索赔】针对【承运商】。",
+      "primary_key": "claim_id",
+      "properties": [
         {
           "name": "claim_id",
-          "nameZh": "索赔编号",
-          "type": "string",
-          "required": true,
-          "keyRole": "pk",
-          "description": "CLM-######### primary key."
+          "type": "String",
+          "description": "索赔编号",
+          "nameZh": "索赔编号"
         },
         {
           "name": "exception_id",
+          "type": "String",
+          "description": "异常编号",
           "nameZh": "异常编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:exception",
-          "description": "FK to Exception.exceptionId."
+          "is_foreign_key": true,
+          "references": "objectType:exception"
         },
         {
           "name": "carrier_id",
+          "type": "String",
+          "description": "承运商编号",
           "nameZh": "承运商编号",
-          "type": "reference",
-          "required": true,
-          "keyRole": "fk",
-          "refObjectTypeId": "objectType:carrier",
-          "description": "FK to Carrier.carrierId."
+          "is_foreign_key": true,
+          "references": "objectType:carrier"
         },
         {
           "name": "credit_amount_usd",
-          "nameZh": "减免金额（美元）",
-          "type": "decimal",
-          "required": false,
-          "keyRole": "none",
-          "description": "Per credit schedule (Rule R4)."
+          "type": "Float",
+          "description": "减免金额（美元）",
+          "nameZh": "减免金额（美元）"
         },
         {
           "name": "cited_clause",
-          "nameZh": "引用条款",
-          "type": "string",
-          "required": false,
-          "keyRole": "none",
-          "description": "e.g., \"CSA §7.3\"."
+          "type": "String",
+          "description": "引用条款",
+          "nameZh": "引用条款"
         },
         {
           "name": "status",
-          "nameZh": "状态",
-          "type": "enum",
-          "required": true,
-          "keyRole": "none",
-          "enumValues": [
-            "Draft",
-            "Submitted",
-            "Settled",
-            "Credited",
-            "Contested",
-            "WrittenOff"
-          ]
+          "type": "List<String>",
+          "description": "状态",
+          "nameZh": "状态"
         }
       ],
       "relationshipIds": [
@@ -1512,6 +1356,22 @@
     {
       "id": "rule:order-assigned-to-consignment",
       "uuid": "30000000000000000000000000000001",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "订单计划前须分配货件",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "在可计划运单之前，订单必须被分配至少一个货件。",
+      "relatedEntities": [
+        "订单 (Order)",
+        "货件 (Consignment)",
+        "运单 (Shipment)"
+      ],
+      "businessBackgroundReason": "Constraints that must hold before a Shipment can be planned from accepted Orders and Consignments.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Order must have a Consignment before planning",
       "titleZh": "订单计划前须分配货件",
       "statement": {
@@ -1559,6 +1419,22 @@
     {
       "id": "rule:tender-only-qualified-carrier",
       "uuid": "30000000000000000000000000000002",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "仅向运线合格承运商招标",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "运单必须招标给具备该运单运线资格的承运商；未列入该运线批准承运商名单的承运商不得在该运线被招标货物。",
+      "relatedEntities": [
+        "运单 (Shipment)",
+        "承运商 (Carrier)",
+        "运线 (Lane)"
+      ],
+      "businessBackgroundReason": "Rules governing which Carriers may be tendered freight by Lane qualification, performance, and high-value insurance.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Tender only to Lane-qualified Carrier",
       "titleZh": "仅向运线合格承运商招标",
       "statement": {
@@ -1614,6 +1490,23 @@
     {
       "id": "rule:guaranteed-lane-credit",
       "uuid": "30000000000000000000000000000003",
+      "specificScenarioStage": "指标推导",
+      "businessLogicRuleName": "保证运线超时享有减免",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "保证运线上的运单若错过其承诺送达窗口，须有资格向承运商索取服务失败减免。",
+      "relatedEntities": [
+        "运单 (Shipment)",
+        "运线 (Lane)",
+        "服务等级协议 (Sla)",
+        "承运商 (Carrier)"
+      ],
+      "businessBackgroundReason": "How a guaranteed-Lane SLA miss qualifies for, sizes, and time-bounds a service-failure credit.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Missed guaranteed Lane qualifies for credit",
       "titleZh": "保证运线超时享有减免",
       "statement": {
@@ -1653,6 +1546,21 @@
     {
       "id": "rule:credit-schedule",
       "uuid": "30000000000000000000000000000004",
+      "specificScenarioStage": "指标推导",
+      "businessLogicRuleName": "服务失败减免方案",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "保证运线的服务失败减免：延误不超过 24 小时时为干线运费的 25%，延误超过 24 小时时为干线运费的 100%。",
+      "relatedEntities": [
+        "服务失败索赔 (Service_Failure_Claim)",
+        "运单 (Shipment)"
+      ],
+      "businessBackgroundReason": "How a guaranteed-Lane SLA miss qualifies for, sizes, and time-bounds a service-failure credit.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Service-failure credit schedule",
       "titleZh": "服务失败减免方案",
       "statement": {
@@ -1693,6 +1601,21 @@
     {
       "id": "rule:claim-window-30d",
       "uuid": "30000000000000000000000000000005",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "索赔须在 30 天内提交",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "服务失败索赔必须在运单已送达事件后 30 个日历日内提交给承运商，否则索赔失效。",
+      "relatedEntities": [
+        "服务失败索赔 (Service_Failure_Claim)",
+        "运单 (Shipment)"
+      ],
+      "businessBackgroundReason": "How a guaranteed-Lane SLA miss qualifies for, sizes, and time-bounds a service-failure credit.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Claim must be submitted within 30 days",
       "titleZh": "索赔须在 30 天内提交",
       "statement": {
@@ -1730,6 +1653,21 @@
     {
       "id": "rule:international-departure-customs",
       "uuid": "30000000000000000000000000000006",
+      "specificScenarioStage": "状态流转",
+      "businessLogicRuleName": "国际货件须报关接受后方可发运",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "国际货件在其报关单状态为已接受且关税已核定之前，不得离开起运设施。",
+      "relatedEntities": [
+        "货件 (Consignment)",
+        "报关单 (Customs_Declaration)"
+      ],
+      "businessBackgroundReason": "Trade-compliance gates for international Consignments — entry type, filing lead time, export licensing, and departure clearance.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "International Consignment needs Accepted customs to depart",
       "titleZh": "国际货件须报关接受后方可发运",
       "statement": {
@@ -1784,6 +1722,21 @@
     {
       "id": "rule:customs-filing-lead-time",
       "uuid": "30000000000000000000000000000007",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "按运输方式的报关提前时限",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "报关单须在任何海运货件预定发运前至少 24 小时、任何空运货件预定发运前至少 4 小时提交。",
+      "relatedEntities": [
+        "报关单 (Customs_Declaration)",
+        "货件 (Consignment)"
+      ],
+      "businessBackgroundReason": "Trade-compliance gates for international Consignments — entry type, filing lead time, export licensing, and departure clearance.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Customs filing lead time by mode",
       "titleZh": "按运输方式的报关提前时限",
       "statement": {
@@ -1820,6 +1773,21 @@
     {
       "id": "rule:formal-entry-threshold",
       "uuid": "30000000000000000000000000000008",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "USD 2,500 及以上须正式报关",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "申报海关价值达到或超过 2,500 美元的货件必须通过持牌报关行办理正式报关；低于 2,500 美元可采用非正式报关。",
+      "relatedEntities": [
+        "货件 (Consignment)",
+        "报关单 (Customs_Declaration)"
+      ],
+      "businessBackgroundReason": "Trade-compliance gates for international Consignments — entry type, filing lead time, export licensing, and departure clearance.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Formal entry at or above USD 2,500",
       "titleZh": "USD 2,500 及以上须正式报关",
       "statement": {
@@ -1874,6 +1842,21 @@
     {
       "id": "rule:controlled-goods-license",
       "uuid": "30000000000000000000000000000009",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "管制货物须有出口许可引用",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "含有管制或两用商品的货件，在其报关单上未记录出口许可引用之前不得放行发运。",
+      "relatedEntities": [
+        "货件 (Consignment)",
+        "报关单 (Customs_Declaration)"
+      ],
+      "businessBackgroundReason": "Trade-compliance gates for international Consignments — entry type, filing lead time, export licensing, and departure clearance.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Controlled goods need export-license reference",
       "titleZh": "管制货物须有出口许可引用",
       "statement": {
@@ -1913,6 +1896,22 @@
     {
       "id": "rule:in-transit-requires-pickup-tracking",
       "uuid": "3000000000000000000000000000000a",
+      "specificScenarioStage": "状态流转",
+      "businessLogicRuleName": "在途须确认提货站点与首条轨迹",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "运单在提货站点确认且首条轨迹事件记录之前，不得标记为在途。",
+      "relatedEntities": [
+        "运单 (Shipment)",
+        "站点 (Stop)",
+        "轨迹事件 (Tracking_Event)"
+      ],
+      "businessBackgroundReason": "Mandatory status-gate controls for marking a Shipment In Transit and Delivered with valid proof of delivery.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Human",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "In Transit requires pickup Stop and first TrackingEvent",
       "titleZh": "在途须确认提货站点与首条轨迹",
       "statement": {
@@ -1954,6 +1953,21 @@
     {
       "id": "rule:delivered-requires-pod",
       "uuid": "3000000000000000000000000000000b",
+      "specificScenarioStage": "状态流转",
+      "businessLogicRuleName": "已送达须采集签收凭证",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "运单在采集签收凭证之前，不得标记为已送达。",
+      "relatedEntities": [
+        "运单 (Shipment)",
+        "签收凭证 (Proof_Of_Delivery)"
+      ],
+      "businessBackgroundReason": "Mandatory status-gate controls for marking a Shipment In Transit and Delivered with valid proof of delivery.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Delivered requires captured POD",
       "titleZh": "已送达须采集签收凭证",
       "statement": {
@@ -2008,6 +2022,20 @@
     {
       "id": "rule:pod-content",
       "uuid": "3000000000000000000000000000000c",
+      "specificScenarioStage": "数据校验",
+      "businessLogicRuleName": "签收凭证须含时间戳与签名或照片",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "签收凭证必须包含送达时间戳和收件人签名；无签名留货须采集带地理标记的照片以代替签名。",
+      "relatedEntities": [
+        "签收凭证 (Proof_Of_Delivery)"
+      ],
+      "businessBackgroundReason": "Mandatory status-gate controls for marking a Shipment In Transit and Delivered with valid proof of delivery.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "POD must include timestamp and signature or photo",
       "titleZh": "签收凭证须含时间戳与签名或照片",
       "statement": {
@@ -2058,6 +2086,22 @@
     {
       "id": "rule:exception-auto-open-15min",
       "uuid": "3000000000000000000000000000000d",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "异常须在违约后 15 分钟内开立",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "异常须在 SLA 违约或海关扣留事件后 15 分钟内自动开立。",
+      "relatedEntities": [
+        "异常 (Exception)",
+        "运单 (Shipment)",
+        "货件 (Consignment)"
+      ],
+      "businessBackgroundReason": "Lifecycle rules for opening, classifying, and closing Exceptions and their linked claims.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Exception opens within 15 minutes of breach",
       "titleZh": "异常须在违约后 15 分钟内开立",
       "statement": {
@@ -2096,6 +2140,22 @@
     {
       "id": "rule:carrier-liability-generates-claim",
       "uuid": "3000000000000000000000000000000e",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "保证运线承运商责任须生成索赔",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "在保证运线上责任归属为承运商的异常须生成服务失败索赔；责任归属为不可抗力的异常不得生成索赔。",
+      "relatedEntities": [
+        "异常 (Exception)",
+        "服务失败索赔 (Service_Failure_Claim)",
+        "运线 (Lane)"
+      ],
+      "businessBackgroundReason": "Lifecycle rules for opening, classifying, and closing Exceptions and their linked claims.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Carrier liability on guaranteed Lane generates claim",
       "titleZh": "保证运线承运商责任须生成索赔",
       "statement": {
@@ -2147,6 +2207,20 @@
     {
       "id": "rule:claim-approval-10k",
       "uuid": "3000000000000000000000000000000f",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "超过 USD 10,000 的索赔须总监审批",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "减免金额超过 10,000 美元的服务失败索赔，须在向承运商提交前获得运营总监审批。",
+      "relatedEntities": [
+        "服务失败索赔 (Service_Failure_Claim)"
+      ],
+      "businessBackgroundReason": "Monetary and temporal thresholds requiring approval or governing claim eligibility windows.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Claims over USD 10,000 need Director approval",
       "titleZh": "超过 USD 10,000 的索赔须总监审批",
       "statement": {
@@ -2195,6 +2269,22 @@
     {
       "id": "rule:carrier-performance-hold",
       "uuid": "30000000000000000000000000000010",
+      "specificScenarioStage": "状态流转",
+      "businessLogicRuleName": "准时率低于 95% 的承运商进入审查冻结",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "在保证运线上滚动 30 日准时送达率低于 95% 的承运商，须进入绩效审查冻结，在恢复之前不得被招标新的保证运线货物。",
+      "relatedEntities": [
+        "承运商 (Carrier)",
+        "运线 (Lane)",
+        "运单 (Shipment)"
+      ],
+      "businessBackgroundReason": "Rules governing which Carriers may be tendered freight by Lane qualification, performance, and high-value insurance.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Carrier below 95% on-time placed on hold",
       "titleZh": "准时率低于 95% 的承运商进入审查冻结",
       "statement": {
@@ -2246,6 +2336,21 @@
     {
       "id": "rule:detention-dwell-2h",
       "uuid": "30000000000000000000000000000011",
+      "specificScenarioStage": "业务约束",
+      "businessLogicRuleName": "滞留费仅超 2 小时停留方可索取",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "承运商仅在某站点停留超出约定时间窗口 2 小时以上时方可索取滞留费。",
+      "relatedEntities": [
+        "站点 (Stop)",
+        "承运商 (Carrier)"
+      ],
+      "businessBackgroundReason": "Monetary and temporal thresholds requiring approval or governing claim eligibility windows.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Detention claimable only beyond 2h dwell",
       "titleZh": "滞留费仅超 2 小时停留方可索取",
       "statement": {
@@ -2286,6 +2391,22 @@
     {
       "id": "rule:carmack-9-month-claim",
       "uuid": "30000000000000000000000000000012",
+      "specificScenarioStage": "时限控制",
+      "businessLogicRuleName": "损坏/灭失索赔须在 9 个月内（卡马克修正案）",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "依据卡马克修正案，损坏或灭失货件的索赔须由客户在送达日期或应送达日期起 9 个月内提出。",
+      "relatedEntities": [
+        "货件 (Consignment)",
+        "异常 (Exception)",
+        "服务失败索赔 (Service_Failure_Claim)"
+      ],
+      "businessBackgroundReason": "Monetary and temporal thresholds requiring approval or governing claim eligibility windows.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "optional",
+      "failurePolicy": "warn",
       "title": "Damage/loss claim within 9 months (Carmack)",
       "titleZh": "损坏/灭失索赔须在 9 个月内（卡马克修正案）",
       "statement": {
@@ -2323,6 +2444,22 @@
     {
       "id": "rule:high-value-insured-carrier",
       "uuid": "30000000000000000000000000000013",
+      "specificScenarioStage": "权限授权",
+      "businessLogicRuleName": "高价值运单须保险承运商与可视性",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "申报货值超过 100,000 美元的高价值运单只能招标给货物保险额至少等于申报货值的承运商，并须有双司机或在途可视性承诺。",
+      "relatedEntities": [
+        "运单 (Shipment)",
+        "承运商 (Carrier)",
+        "货件 (Consignment)"
+      ],
+      "businessBackgroundReason": "Rules governing which Carriers may be tendered freight by Lane qualification, performance, and high-value insurance.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "High-value Shipment needs insured Carrier and visibility",
       "titleZh": "高价值运单须保险承运商与可视性",
       "statement": {
@@ -2379,6 +2516,21 @@
     {
       "id": "rule:exception-close-requires-terminal-claim",
       "uuid": "30000000000000000000000000000014",
+      "specificScenarioStage": "状态流转",
+      "businessLogicRuleName": "异常仅在索赔进入终态后方可关闭",
+      "applicableClient": "通用",
+      "applicableDepartment": "N/A",
+      "submissionCriteria": "",
+      "standardizedLogicRule": "异常在其关联的服务失败索赔（若有）进入终态（已结算、已减免或已核销）之前不得关闭。",
+      "relatedEntities": [
+        "异常 (Exception)",
+        "服务失败索赔 (Service_Failure_Claim)"
+      ],
+      "businessBackgroundReason": "Lifecycle rules for opening, classifying, and closing Exceptions and their linked claims.",
+      "ruleSource": "02-business-rules-policy.md",
+      "executor": "Agent",
+      "enforcementLevel": "mandatory",
+      "failurePolicy": "block",
       "title": "Exception closes only when claim is terminal",
       "titleZh": "异常仅在索赔进入终态后方可关闭",
       "statement": {
@@ -2530,27 +2682,101 @@
       "uuid": "40000000000000000000000000000001",
       "name": "ValidateOrder",
       "nameZh": "校验订单",
-      "description": "Validate an inbound Order from EDI 940 and decompose it into per-ship-to Consignments.",
+      "description": "校验来自 EDI 940 的入站订单，并按收货方分解为货件。",
       "descriptionZh": "校验来自 EDI 940 的入站订单，并按收货方分解为货件。",
+      "submission_criteria": "1. 事件 ORDER_RECEIVED 已送达\n2. 规则「订单计划前须分配货件」已满足",
+      "object_type": "action",
+      "category": "校验订单",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "ORDER_RECEIVED"
+      ],
+      "target_objects": [
+        "Order",
+        "Consignment"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "readTheNormalizedInboundOrderFrom",
+          "description": "从 EDI 网关读取规范化的入站订单。",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "validateShipToPartyAndServiceable",
+          "description": "校验收货方与可服务目的地。",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "3",
+          "name": "onSuccessSetStatusAcceptedAnd",
+          "description": "成功则置状态为已接受，并按收货方各创建一个货件。",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "order-assigned-to-consignment",
+              "name": "订单计划前须分配货件",
+              "submission_criteria": "",
+              "description": "在可计划运单之前，订单必须被分配至少一个货件。"
+            }
+          ]
+        }
+      ],
+      "system_prompt": "作为负责「ValidateOrder」动作的自动化智能体，校验来自 EDI 940 的入站订单，并按收货方分解为货件。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（order）执行「ValidateOrder」。校验来自 EDI 940 的入站订单，并按收货方分解为货件。 产出（order、consignments）并发出相应事件。",
+      "tool_use": [
+        "Oracle OTM"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Order",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Order.status := Accepted | Rejected"
+          },
+          {
+            "object_type": "Consignment",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create Consignment records in WMS."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "ORDER_ACCEPTED",
+        "ORDER_REJECTED"
+      ],
       "inputs": [
         {
           "name": "order",
           "objectTypeId": "objectType:order",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Order.order_id"
         }
       ],
       "outputs": [
         {
           "name": "order",
           "objectTypeId": "objectType:order",
-          "required": true
+          "required": true,
+          "type": "String"
         },
         {
           "name": "consignments",
           "objectTypeId": "objectType:consignment",
           "required": true,
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String"
         }
       ],
       "steps": [
@@ -2618,11 +2844,6 @@
           "objectTypeId": "objectType:consignment"
         }
       ],
-      "actor": {
-        "role": "Order Management Specialist",
-        "roleZh": "订单管理专员",
-        "kind": "agent"
-      },
       "permissions": [
         "order:validate"
       ],
@@ -2660,41 +2881,110 @@
       ],
       "confidence": 0.94,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Order Management Specialist",
+        "roleZh": "订单管理专员",
+        "kind": "agent"
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:plan-shipment",
       "uuid": "40000000000000000000000000000002",
       "name": "PlanShipment",
       "nameZh": "计划运单",
-      "description": "Group accepted Consignments into a Shipment along an eligible Lane and resolve the applicable SLA and delivery window.",
+      "description": "将已接受的货件沿合格运线归集为运单，并解析适用的 SLA 与送达窗口。",
       "descriptionZh": "将已接受的货件沿合格运线归集为运单，并解析适用的 SLA 与送达窗口。",
+      "submission_criteria": "1. 事件 ORDER_ACCEPTED 已送达\n2. 规则「订单计划前须分配货件」已满足",
+      "object_type": "action",
+      "category": "计划运单",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "ORDER_ACCEPTED"
+      ],
+      "target_objects": [
+        "Consignment",
+        "Shipment",
+        "Stop",
+        "Sla",
+        "Lane"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "groupAcceptedConsignmentsOntoAnEligible",
+          "description": "将已接受的货件归集到合格运线上。",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "resolveTheApplicableSLAGuaranteedVs",
+          "description": "解析适用的 SLA（保证或标准）并计算承诺送达窗口。",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "3",
+          "name": "createOrderedStopRecordsPickupDelivery",
+          "description": "创建有序站点记录（提货→送货）并将运单状态置为已计划。",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "作为负责「PlanShipment」动作的自动化智能体，将已接受的货件沿合格运线归集为运单，并解析适用的 SLA 与送达窗口。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（consignments）执行「PlanShipment」。将已接受的货件沿合格运线归集为运单，并解析适用的 SLA 与送达窗口。 产出（shipment、stops、sla）并发出相应事件。",
+      "tool_use": [
+        "Oracle OTM"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Shipment",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create Shipment, Stops, and attach SLA in TMS."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "SHIPMENT_PLANNED"
+      ],
       "inputs": [
         {
           "name": "consignments",
           "objectTypeId": "objectType:consignment",
           "required": true,
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String",
+          "source_object": "Consignment.consignment_id"
         }
       ],
       "outputs": [
         {
           "name": "shipment",
           "objectTypeId": "objectType:shipment",
-          "required": true
+          "required": true,
+          "type": "String"
         },
         {
           "name": "stops",
           "objectTypeId": "objectType:stop",
           "required": true,
           "isArray": true,
-          "cardinality": "many"
+          "cardinality": "many",
+          "type": "String"
         },
         {
           "name": "sla",
           "objectTypeId": "objectType:sla",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -2760,11 +3050,6 @@
           "objectTypeId": "objectType:shipment"
         }
       ],
-      "actor": {
-        "role": "Transportation Planner",
-        "roleZh": "运输计划员",
-        "kind": "agent"
-      },
       "permissions": [
         "shipment:plan"
       ],
@@ -2804,32 +3089,124 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Transportation Planner",
+        "roleZh": "运输计划员",
+        "kind": "agent"
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:tender-shipment",
       "uuid": "40000000000000000000000000000003",
       "name": "TenderShipment",
       "nameZh": "招标运单",
-      "description": "Select a Lane-qualified Carrier and transmit an EDI 204 load tender, booking the Carrier on EDI 990 acceptance.",
+      "description": "选择具备运线资格的承运商并发送 EDI 204 装载招标，于 EDI 990 接受时订妥承运商。",
       "descriptionZh": "选择具备运线资格的承运商并发送 EDI 204 装载招标，于 EDI 990 接受时订妥承运商。",
+      "submission_criteria": "1. 事件 SHIPMENT_PLANNED 已送达\n2. 规则「仅向运线合格承运商招标」已满足\n3. 规则「准时率低于 95% 的承运商进入审查冻结」已满足\n4. 规则「高价值运单须保险承运商与可视性」已满足",
+      "object_type": "action",
+      "category": "招标运单",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "SHIPMENT_PLANNED"
+      ],
+      "target_objects": [
+        "Shipment",
+        "Carrier",
+        "Lane",
+        "Consignment"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "selectACarrierQualifiedForThe",
+          "description": "从批准承运商名单中选择具备运线资格的承运商。",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "tender-only-qualified-carrier",
+              "name": "仅向运线合格承运商招标",
+              "submission_criteria": "",
+              "description": "运单必须招标给具备该运单运线资格的承运商；未列入该运线批准承运商名单的承运商不得在该运线被招标货物。"
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "forHighValueFreightVerifyCarrier",
+          "description": "对高价值货物，核验承运商货物保险与可视性承诺。",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "high-value-insured-carrier",
+              "name": "高价值运单须保险承运商与可视性",
+              "submission_criteria": "",
+              "description": "申报货值超过 100,000 美元的高价值运单只能招标给货物保险额至少等于申报货值的承运商，并须有双司机或在途可视性承诺。"
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "transmitEDI204MotorCarrierLoad",
+          "description": "经 EDI 网关发送 EDI 204（汽车承运商装载招标）并等待 EDI 990。",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "4",
+          "name": "onAcceptanceSetStatusTenderedWith",
+          "description": "接受时置状态为已招标，记录订妥承运商与 PRO 号。",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "作为负责「TenderShipment」动作的自动化智能体，选择具备运线资格的承运商并发送 EDI 204 装载招标，于 EDI 990 接受时订妥承运商。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（shipment）执行「TenderShipment」。选择具备运线资格的承运商并发送 EDI 204 装载招标，于 EDI 990 接受时订妥承运商。 产出（shipment、carrier）并发出相应事件。",
+      "tool_use": [
+        "Cleo Integration Cloud",
+        "Transmit EDI 204 to Carrier and receive EDI 990 via EDI Gateway."
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Shipment",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Shipment.status := Tendered"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "SHIPMENT_TENDERED",
+        "TENDER_REJECTED"
+      ],
       "inputs": [
         {
           "name": "shipment",
           "objectTypeId": "objectType:shipment",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Shipment.shipment_id"
         }
       ],
       "outputs": [
         {
           "name": "shipment",
           "objectTypeId": "objectType:shipment",
-          "required": true
+          "required": true,
+          "type": "String"
         },
         {
           "name": "carrier",
           "objectTypeId": "objectType:carrier",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -2916,11 +3293,6 @@
           "objectTypeId": "objectType:shipment"
         }
       ],
-      "actor": {
-        "role": "Transportation Planner",
-        "roleZh": "运输计划员",
-        "kind": "agent"
-      },
       "permissions": [
         "shipment:tender"
       ],
@@ -2958,27 +3330,125 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Transportation Planner",
+        "roleZh": "运输计划员",
+        "kind": "agent"
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:file-customs-declaration",
       "uuid": "40000000000000000000000000000004",
       "name": "FileCustomsDeclaration",
       "nameZh": "申报报关单",
-      "description": "File a CustomsDeclaration for an international Consignment via CBP-Link and assign duties on broker acceptance.",
+      "description": "经 CBP-Link 为国际货件申报报关单，并在报关行接受时核定关税。",
       "descriptionZh": "经 CBP-Link 为国际货件申报报关单，并在报关行接受时核定关税。",
+      "submission_criteria": "1. 事件 SHIPMENT_TENDERED 已送达\n2. 规则「USD 2,500 及以上须正式报关」已满足\n3. 规则「按运输方式的报关提前时限」已满足\n4. 规则「管制货物须有出口许可引用」已满足",
+      "object_type": "action",
+      "category": "申报报关单",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "SHIPMENT_TENDERED"
+      ],
+      "target_objects": [
+        "Consignment",
+        "Customs_Declaration"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "selectEntryTypeByDeclaredValue",
+          "description": "按申报价值选择进口类型（达到或超过 2,500 美元为正式报关）。",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "formal-entry-threshold",
+              "name": "USD 2,500 及以上须正式报关",
+              "submission_criteria": "",
+              "description": "申报海关价值达到或超过 2,500 美元的货件必须通过持牌报关行办理正式报关；低于 2,500 美元可采用非正式报关。"
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "attachExportLicenseReferenceForControlled",
+          "description": "为管制或两用商品附加出口许可引用。",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "controlled-goods-license",
+              "name": "管制货物须有出口许可引用",
+              "submission_criteria": "",
+              "description": "含有管制或两用商品的货件，在其报关单上未记录出口许可引用之前不得放行发运。"
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "fileHSCodesDeclaredValueAnd",
+          "description": "在运输方式时限内经 CBP-Link 向报关行申报 HS 编码、申报价值与原产国。",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "customs-filing-lead-time",
+              "name": "按运输方式的报关提前时限",
+              "submission_criteria": "",
+              "description": "报关单须在任何海运货件预定发运前至少 24 小时、任何空运货件预定发运前至少 4 小时提交。"
+            }
+          ]
+        },
+        {
+          "order": "4",
+          "name": "onBrokerAcceptanceAssignDutiesAnd",
+          "description": "报关行接受时核定关税并置状态为已接受；扣留时置状态为扣留。",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "作为负责「FileCustomsDeclaration」动作的自动化人工操作员，经 CBP-Link 为国际货件申报报关单，并在报关行接受时核定关税。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（consignment）执行「FileCustomsDeclaration」。经 CBP-Link 为国际货件申报报关单，并在报关行接受时核定关税。 产出（declaration）并发出相应事件。",
+      "tool_use": [
+        "Descartes CBP-Link",
+        "File CustomsDeclaration to broker via CBP-Link REST API."
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Customs_Declaration",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create/update CustomsDeclaration and assign duties."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "CUSTOMS_DECLARATION_FILED",
+        "CUSTOMS_CLEARED",
+        "CUSTOMS_HELD"
+      ],
       "inputs": [
         {
           "name": "consignment",
           "objectTypeId": "objectType:consignment",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Consignment.consignment_id"
         }
       ],
       "outputs": [
         {
           "name": "declaration",
           "objectTypeId": "objectType:customs-declaration",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3068,11 +3538,6 @@
           "objectTypeId": "objectType:customs-declaration"
         }
       ],
-      "actor": {
-        "role": "Customs Compliance Analyst",
-        "roleZh": "海关合规分析师",
-        "kind": "human"
-      },
       "permissions": [
         "customs:file"
       ],
@@ -3110,24 +3575,95 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Customs Compliance Analyst",
+        "roleZh": "海关合规分析师",
+        "kind": "human"
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:pick-and-pack",
       "uuid": "40000000000000000000000000000005",
       "name": "PickAndPack",
       "nameZh": "拣货装箱",
-      "description": "Pick and pack Consignment line items in WMS, produce a packing manifest, and write dims/weights back to the Shipment.",
+      "description": "在 WMS 拣选并装箱货件明细，生成装箱清单，并将尺寸/重量回写到运单。",
       "descriptionZh": "在 WMS 拣选并装箱货件明细，生成装箱清单，并将尺寸/重量回写到运单。",
+      "submission_criteria": "1. 事件 SHIPMENT_TENDERED 已送达\n2. 事件 CUSTOMS_CLEARED 已送达",
+      "object_type": "action",
+      "category": "拣货装箱",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "SHIPMENT_TENDERED",
+        "CUSTOMS_CLEARED"
+      ],
+      "target_objects": [
+        "Consignment",
+        "Proof_Of_Delivery",
+        "Shipment"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "executeTheWMSPickTaskAgainst",
+          "description": "对照货件明细执行 WMS 拣货任务。",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "packCartonsPalletsInitializeThePacking",
+          "description": "装箱/码垛，初始化装箱清单并将货件状态置为已备货。",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "3",
+          "name": "writeWeightsAndDimensionsBackTo",
+          "description": "将重量与尺寸回写到 TMS 中的运单。",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "作为负责「PickAndPack」动作的自动化人工操作员，在 WMS 拣选并装箱货件明细，生成装箱清单，并将尺寸/重量回写到运单。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（consignment、pick_task）执行「PickAndPack」。在 WMS 拣选并装箱货件明细，生成装箱清单，并将尺寸/重量回写到运单。 产出（consignment、packing_manifest）并发出相应事件。",
+      "tool_use": [
+        "Manhattan Active WM"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Consignment",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Consignment.status := Staged"
+          },
+          {
+            "object_type": "Shipment",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Write dims/weights to Shipment via TMS↔WMS REST API."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "CONSIGNMENT_STAGED"
+      ],
       "inputs": [
         {
           "name": "consignment",
           "objectTypeId": "objectType:consignment",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Consignment.consignment_id"
         },
         {
           "name": "pick_task",
-          "type": "json",
+          "type": "String",
           "required": true,
           "description": "WMS pick task."
         }
@@ -3136,12 +3672,14 @@
         {
           "name": "consignment",
           "objectTypeId": "objectType:consignment",
-          "required": true
+          "required": true,
+          "type": "String"
         },
         {
           "name": "packing_manifest",
           "objectTypeId": "objectType:proof-of-delivery",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3200,11 +3738,6 @@
           "objectTypeId": "objectType:shipment"
         }
       ],
-      "actor": {
-        "role": "Warehouse Operator",
-        "roleZh": "仓库操作员",
-        "kind": "human"
-      },
       "permissions": [
         "consignment:pick_pack"
       ],
@@ -3246,24 +3779,98 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Warehouse Operator",
+        "roleZh": "仓库操作员",
+        "kind": "human"
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:confirm-departure",
       "uuid": "40000000000000000000000000000006",
       "name": "ConfirmDeparture",
       "nameZh": "确认发运",
-      "description": "Confirm Carrier check-in and loading at the pickup Stop, set the Shipment In Transit, and record the first TrackingEvent.",
+      "description": "确认承运商在提货站点签到与装载，将运单置为在途，并记录首条轨迹事件。",
       "descriptionZh": "确认承运商在提货站点签到与装载，将运单置为在途，并记录首条轨迹事件。",
+      "submission_criteria": "1. 事件 CONSIGNMENT_STAGED 已送达\n2. 规则「在途须确认提货站点与首条轨迹」已满足",
+      "object_type": "action",
+      "category": "确认发运",
+      "actor": [
+        "Human"
+      ],
+      "trigger": [
+        "CONSIGNMENT_STAGED"
+      ],
+      "target_objects": [
+        "Consignment",
+        "Shipment",
+        "Stop",
+        "Tracking_Event"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "dockSupervisorAuthorizesLoadingAndConfirms",
+          "description": "码头主管授权装载并确认承运商签到。",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "completeThePickupStopAndRecord",
+          "description": "完成提货站点并记录首条轨迹事件。",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "in-transit-requires-pickup-tracking",
+              "name": "在途须确认提货站点与首条轨迹",
+              "submission_criteria": "",
+              "description": "运单在提货站点确认且首条轨迹事件记录之前，不得标记为在途。"
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "setShipmentStatusInTransitEDI",
+          "description": "将运单状态置为在途；EDI 网关向上游发送 EDI 214 状态 AF。",
+          "object_type": "logic",
+          "submission_criteria": ""
+        }
+      ],
+      "system_prompt": "作为负责「ConfirmDeparture」动作的自动化人工操作员，确认承运商在提货站点签到与装载，将运单置为在途，并记录首条轨迹事件。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（consignment、carrier_checkin）执行「ConfirmDeparture」。确认承运商在提货站点签到与装载，将运单置为在途，并记录首条轨迹事件。 产出（shipment、pickup_stop、tracking_event）并发出相应事件。",
+      "tool_use": [
+        "Oracle OTM",
+        "EDI 214 status AF (Carrier Departed Pickup Location) sent upstream to client."
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Shipment",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Shipment.status := In Transit"
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "SHIPMENT_DEPARTED"
+      ],
       "inputs": [
         {
           "name": "consignment",
           "objectTypeId": "objectType:consignment",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Consignment.consignment_id"
         },
         {
           "name": "carrier_checkin",
-          "type": "json",
+          "type": "String",
           "required": true,
           "description": "Carrier check-in record."
         }
@@ -3272,17 +3879,20 @@
         {
           "name": "shipment",
           "objectTypeId": "objectType:shipment",
-          "required": true
+          "required": true,
+          "type": "String"
         },
         {
           "name": "pickup_stop",
           "objectTypeId": "objectType:stop",
-          "required": true
+          "required": true,
+          "type": "String"
         },
         {
           "name": "tracking_event",
           "objectTypeId": "objectType:tracking-event",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3346,11 +3956,6 @@
           "description": "EDI 214 status AF (Carrier Departed Pickup Location) sent upstream to client."
         }
       ],
-      "actor": {
-        "role": "Dock Supervisor",
-        "roleZh": "码头主管",
-        "kind": "human"
-      },
       "permissions": [
         "shipment:depart"
       ],
@@ -3392,24 +3997,97 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Dock Supervisor",
+        "roleZh": "码头主管",
+        "kind": "human"
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:ingest-tracking-event",
       "uuid": "40000000000000000000000000000007",
       "name": "IngestTrackingEvent",
       "nameZh": "摄取轨迹事件",
-      "description": "Ingest inbound EDI 214 status messages, append canonicalized TrackingEvents, and re-evaluate the SLA against the committed window.",
+      "description": "摄取入站 EDI 214 状态报文，追加规范化轨迹事件，并依据承诺窗口重新评估 SLA。",
       "descriptionZh": "摄取入站 EDI 214 状态报文，追加规范化轨迹事件，并依据承诺窗口重新评估 SLA。",
+      "submission_criteria": "1. 事件 TRACKING_EVENT_RECEIVED 已送达",
+      "object_type": "action",
+      "category": "摄取轨迹事件",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "TRACKING_EVENT_RECEIVED"
+      ],
+      "target_objects": [
+        "Shipment",
+        "Tracking_Event",
+        "Sla"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "mapTheCrypticEDIStatusCode",
+          "description": "将晦涩的 EDI 状态码（如 X3、AG、D1）映射为规范生命周期状态。",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "appendATrackingEventRecordTo",
+          "description": "向运单追加轨迹事件记录。",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "3",
+          "name": "reEvaluateTheSLAAgainstThe",
+          "description": "依据承诺送达窗口重新评估 SLA。",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "guaranteed-lane-credit",
+              "name": "保证运线超时享有减免",
+              "submission_criteria": "",
+              "description": "保证运线上的运单若错过其承诺送达窗口，须有资格向承运商索取服务失败减免。"
+            }
+          ]
+        }
+      ],
+      "system_prompt": "作为负责「IngestTrackingEvent」动作的自动化系统，摄取入站 EDI 214 状态报文，追加规范化轨迹事件，并依据承诺窗口重新评估 SLA。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（shipment、edi_214）执行「IngestTrackingEvent」。摄取入站 EDI 214 状态报文，追加规范化轨迹事件，并依据承诺窗口重新评估 SLA。 产出（tracking_event、shipment）并发出相应事件。",
+      "tool_use": [
+        "Cleo Integration Cloud"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Tracking_Event",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Append TrackingEvent and update Shipment status in TMS."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "SLA_BREACHED",
+        "SHIPMENT_DELIVERED"
+      ],
       "inputs": [
         {
           "name": "shipment",
           "objectTypeId": "objectType:shipment",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Shipment.shipment_id"
         },
         {
           "name": "edi_214",
-          "type": "json",
+          "type": "String",
           "required": true,
           "description": "Inbound EDI 214 status message."
         }
@@ -3418,12 +4096,14 @@
         {
           "name": "tracking_event",
           "objectTypeId": "objectType:tracking-event",
-          "required": true
+          "required": true,
+          "type": "String"
         },
         {
           "name": "shipment",
           "objectTypeId": "objectType:shipment",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3483,11 +4163,6 @@
           "objectTypeId": "objectType:tracking-event"
         }
       ],
-      "actor": {
-        "role": "EDI Gateway",
-        "roleZh": "EDI 网关",
-        "kind": "system"
-      },
       "permissions": [
         "shipment:track"
       ],
@@ -3529,32 +4204,123 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "EDI Gateway",
+        "roleZh": "EDI 网关",
+        "kind": "system"
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:capture-proof-of-delivery",
       "uuid": "40000000000000000000000000000008",
       "name": "CaptureProofOfDelivery",
       "nameZh": "采集签收凭证",
-      "description": "Capture the ProofOfDelivery at the delivery Stop and set the Shipment to Delivered.",
+      "description": "在送货站点采集签收凭证并将运单置为已送达。",
       "descriptionZh": "在送货站点采集签收凭证并将运单置为已送达。",
+      "submission_criteria": "1. 事件 POD_CAPTURED 已送达\n2. 规则「已送达须采集签收凭证」已满足\n3. 规则「签收凭证须含时间戳与签名或照片」已满足",
+      "object_type": "action",
+      "category": "采集签收凭证",
+      "actor": [
+        "System"
+      ],
+      "trigger": [
+        "POD_CAPTURED"
+      ],
+      "target_objects": [
+        "Stop",
+        "Proof_Of_Delivery",
+        "Shipment"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "captureThePODArtifactSignatureTimestamp",
+          "description": "采集签收凭证（签名加时间戳，或以带地理标记的照片代替签名）。",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "pod-content",
+              "name": "签收凭证须含时间戳与签名或照片",
+              "submission_criteria": "",
+              "description": "签收凭证必须包含送达时间戳和收件人签名；无签名留货须采集带地理标记的照片以代替签名。"
+            }
+          ]
+        },
+        {
+          "order": "2",
+          "name": "completeTheDeliveryStop",
+          "description": "完成送货站点。",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "3",
+          "name": "setShipmentStatusDeliveredRequiresA",
+          "description": "将运单状态置为已送达（须有采集的签收凭证）。",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "delivered-requires-pod",
+              "name": "已送达须采集签收凭证",
+              "submission_criteria": "",
+              "description": "运单在采集签收凭证之前，不得标记为已送达。"
+            }
+          ]
+        }
+      ],
+      "system_prompt": "作为负责「CaptureProofOfDelivery」动作的自动化系统，在送货站点采集签收凭证并将运单置为已送达。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（delivery_stop、pod）执行「CaptureProofOfDelivery」。在送货站点采集签收凭证并将运单置为已送达。 产出（shipment）并发出相应事件。",
+      "tool_use": [
+        "Manhattan Active WM"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Shipment",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Shipment.status := Delivered"
+          }
+        ],
+        "notifications": [
+          {
+            "recipient": "Warehouse Operator",
+            "channel": "InApp",
+            "condition": "",
+            "message": "ShipmentDelivered notified to EDI Gateway, client, and finance; triggers EDI 210 reconciliation.",
+            "triggered_event": ""
+          }
+        ]
+      },
+      "triggered_event": [
+        "SHIPMENT_DELIVERED"
+      ],
       "inputs": [
         {
           "name": "delivery_stop",
           "objectTypeId": "objectType:stop",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Stop.stop_id"
         },
         {
           "name": "pod",
           "objectTypeId": "objectType:proof-of-delivery",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Proof_Of_Delivery.pod_id"
         }
       ],
       "outputs": [
         {
           "name": "shipment",
           "objectTypeId": "objectType:shipment",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3621,11 +4387,6 @@
           "description": "ShipmentDelivered notified to EDI Gateway, client, and finance; triggers EDI 210 reconciliation."
         }
       ],
-      "actor": {
-        "role": "Warehouse Operator",
-        "roleZh": "仓库操作员",
-        "kind": "system"
-      },
       "permissions": [
         "shipment:deliver"
       ],
@@ -3668,38 +4429,107 @@
       ],
       "confidence": 0.93,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Warehouse Operator",
+        "roleZh": "仓库操作员",
+        "kind": "system"
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:open-exception",
       "uuid": "40000000000000000000000000000009",
       "name": "OpenException",
       "nameZh": "开立异常",
-      "description": "Open an Exception within 15 minutes of an SLA breach or customs hold, classified by type with an assigned owner.",
+      "description": "在 SLA 违约或海关扣留后 15 分钟内开立异常，按类型分类并指派负责人。",
       "descriptionZh": "在 SLA 违约或海关扣留后 15 分钟内开立异常，按类型分类并指派负责人。",
+      "submission_criteria": "1. 事件 SLA_BREACHED 已送达\n2. 事件 CUSTOMS_HELD 已送达\n3. 规则「异常须在违约后 15 分钟内开立」已满足",
+      "object_type": "action",
+      "category": "开立异常",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "SLA_BREACHED",
+        "CUSTOMS_HELD"
+      ],
+      "target_objects": [
+        "Shipment",
+        "Consignment",
+        "Exception"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeTheTriggeringEventAndLink",
+          "description": "消费触发事件并关联受影响的运单或货件。",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "createTheExceptionClassifiedByType",
+          "description": "在 15 分钟内创建按类型（SLA_BREACH、CUSTOMS_HOLD、DAMAGE、LOST）分类、带严重度与指派负责人的异常。",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "exception-auto-open-15min",
+              "name": "异常须在违约后 15 分钟内开立",
+              "submission_criteria": "",
+              "description": "异常须在 SLA 违约或海关扣留事件后 15 分钟内自动开立。"
+            }
+          ]
+        }
+      ],
+      "system_prompt": "作为负责「OpenException」动作的自动化智能体，在 SLA 违约或海关扣留后 15 分钟内开立异常，按类型分类并指派负责人。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（trigger_event、shipment、consignment）执行「OpenException」。在 SLA 违约或海关扣留后 15 分钟内开立异常，按类型分类并指派负责人。 产出（exception）并发出相应事件。",
+      "tool_use": [
+        "Oracle OTM"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Exception",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create Exception record in TMS."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "EXCEPTION_OPENED"
+      ],
       "inputs": [
         {
           "name": "trigger_event",
-          "type": "json",
+          "type": "String",
           "required": true,
           "description": "Triggering SLABreached or CustomsHeld event."
         },
         {
           "name": "shipment",
           "objectTypeId": "objectType:shipment",
-          "required": false
+          "required": false,
+          "type": "String",
+          "source_object": "Shipment.shipment_id"
         },
         {
           "name": "consignment",
           "objectTypeId": "objectType:consignment",
-          "required": false
+          "required": false,
+          "type": "String",
+          "source_object": "Consignment.consignment_id"
         }
       ],
       "outputs": [
         {
           "name": "exception",
           "objectTypeId": "objectType:exception",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3749,11 +4579,6 @@
           "objectTypeId": "objectType:exception"
         }
       ],
-      "actor": {
-        "role": "Exception Coordinator",
-        "roleZh": "异常协调员",
-        "kind": "agent"
-      },
       "permissions": [
         "exception:open"
       ],
@@ -3799,27 +4624,101 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Exception Coordinator",
+        "roleZh": "异常协调员",
+        "kind": "agent"
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:classify-exception",
       "uuid": "4000000000000000000000000000000a",
       "name": "ClassifyException",
       "nameZh": "分类异常",
-      "description": "Classify an Exception against the SLA and Lane commitment tier, setting liability and the creditEligible flag.",
+      "description": "依据 SLA 与运线承诺等级对异常分类，设定责任归属与可减免标志。",
       "descriptionZh": "依据 SLA 与运线承诺等级对异常分类，设定责任归属与可减免标志。",
+      "submission_criteria": "1. 事件 EXCEPTION_OPENED 已送达\n2. 规则「保证运线承运商责任须生成索赔」已满足",
+      "object_type": "action",
+      "category": "分类异常",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "EXCEPTION_OPENED"
+      ],
+      "target_objects": [
+        "Exception",
+        "Sla",
+        "Lane",
+        "Carrier"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "readTheExceptionAttachedSLAAnd",
+          "description": "读取异常、所附 SLA 与运线承诺等级。",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "determineWhetherTheBreachIsCarrier",
+          "description": "判定该违约在保证运线上是否归因于承运商并具备服务失败减免资格。",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "3",
+          "name": "setLiabilityCARRIERCUSTOMERINTERNALFORCE",
+          "description": "设定责任归属（CARRIER、CUSTOMER、INTERNAL、FORCE_MAJEURE）与可减免标志。",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "carrier-liability-generates-claim",
+              "name": "保证运线承运商责任须生成索赔",
+              "submission_criteria": "",
+              "description": "在保证运线上责任归属为承运商的异常须生成服务失败索赔；责任归属为不可抗力的异常不得生成索赔。"
+            }
+          ]
+        }
+      ],
+      "system_prompt": "作为负责「ClassifyException」动作的自动化智能体，依据 SLA 与运线承诺等级对异常分类，设定责任归属与可减免标志。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（exception）执行「ClassifyException」。依据 SLA 与运线承诺等级对异常分类，设定责任归属与可减免标志。 产出（exception）并发出相应事件。",
+      "tool_use": [
+        "Oracle OTM"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Exception",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Exception.liability and creditEligible set."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "EXCEPTION_CLASSIFIED"
+      ],
       "inputs": [
         {
           "name": "exception",
           "objectTypeId": "objectType:exception",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Exception.exception_id"
         }
       ],
       "outputs": [
         {
           "name": "exception",
           "objectTypeId": "objectType:exception",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -3880,11 +4779,6 @@
           "objectTypeId": "objectType:exception"
         }
       ],
-      "actor": {
-        "role": "Exception Coordinator",
-        "roleZh": "异常协调员",
-        "kind": "agent"
-      },
       "permissions": [
         "exception:classify"
       ],
@@ -3921,27 +4815,123 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Exception Coordinator",
+        "roleZh": "异常协调员",
+        "kind": "agent"
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:raise-service-failure-claim",
       "uuid": "4000000000000000000000000000000b",
       "name": "RaiseServiceFailureClaim",
       "nameZh": "提起服务失败索赔",
-      "description": "Raise a ServiceFailureClaim for a credit-eligible Exception on a guaranteed Lane, with the calculated credit and cited CSA clause, and submit it to the Carrier.",
+      "description": "为保证运线上可减免的异常提起服务失败索赔，载明计算的减免与引用的 CSA 条款，并提交给承运商。",
       "descriptionZh": "为保证运线上可减免的异常提起服务失败索赔，载明计算的减免与引用的 CSA 条款，并提交给承运商。",
+      "submission_criteria": "1. 事件 EXCEPTION_CLASSIFIED 已送达\n2. 规则「服务失败减免方案」已满足\n3. 规则「超过 USD 10,000 的索赔须总监审批」已满足\n4. 规则「索赔须在 30 天内提交」已满足",
+      "object_type": "action",
+      "category": "提起服务失败索赔",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "EXCEPTION_CLASSIFIED"
+      ],
+      "target_objects": [
+        "Exception",
+        "Service_Failure_Claim"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "readTheCreditEligibleExceptionAnd",
+          "description": "读取可减免的异常与 CSA 信用减免方案。",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "calculateTheCreditAmount25Up",
+          "description": "计算减免金额（延误不超过 24 小时为 25%，超过 24 小时为 100%）并附引用的 CSA 条款。",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "credit-schedule",
+              "name": "服务失败减免方案",
+              "submission_criteria": "",
+              "description": "保证运线的服务失败减免：延误不超过 24 小时时为干线运费的 25%，延误超过 24 小时时为干线运费的 100%。"
+            }
+          ]
+        },
+        {
+          "order": "3",
+          "name": "ifCreditExceedsUSD10000",
+          "description": "若减免超过 10,000 美元，提交前取得运营总监审批。",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "claim-approval-10k",
+              "name": "超过 USD 10,000 的索赔须总监审批",
+              "submission_criteria": "",
+              "description": "减免金额超过 10,000 美元的服务失败索赔，须在向承运商提交前获得运营总监审批。"
+            }
+          ]
+        },
+        {
+          "order": "4",
+          "name": "submitTheClaimToTheCarrier",
+          "description": "在运单已送达后 30 天内将索赔提交给承运商。",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "claim-window-30d",
+              "name": "索赔须在 30 天内提交",
+              "submission_criteria": "",
+              "description": "服务失败索赔必须在运单已送达事件后 30 个日历日内提交给承运商，否则索赔失效。"
+            }
+          ]
+        }
+      ],
+      "system_prompt": "作为负责「RaiseServiceFailureClaim」动作的自动化智能体，为保证运线上可减免的异常提起服务失败索赔，载明计算的减免与引用的 CSA 条款，并提交给承运商。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（exception）执行「RaiseServiceFailureClaim」。为保证运线上可减免的异常提起服务失败索赔，载明计算的减免与引用的 CSA 条款，并提交给承运商。 产出（claim）并发出相应事件。",
+      "tool_use": [
+        "Oracle OTM",
+        "Submit claim to Carrier via EDI Gateway."
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Service_Failure_Claim",
+            "action": "CREATE",
+            "property_impacted": [],
+            "description": "Create ServiceFailureClaim in TMS."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "CLAIM_SUBMITTED"
+      ],
       "inputs": [
         {
           "name": "exception",
           "objectTypeId": "objectType:exception",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Exception.exception_id"
         }
       ],
       "outputs": [
         {
           "name": "claim",
           "objectTypeId": "objectType:service-failure-claim",
-          "required": true
+          "required": true,
+          "type": "String"
         }
       ],
       "steps": [
@@ -4021,11 +5011,6 @@
           "description": "Submit claim to Carrier via EDI Gateway."
         }
       ],
-      "actor": {
-        "role": "Exception Coordinator",
-        "roleZh": "异常协调员",
-        "kind": "agent"
-      },
       "permissions": [
         "claim:raise"
       ],
@@ -4063,24 +5048,95 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Exception Coordinator",
+        "roleZh": "异常协调员",
+        "kind": "agent"
+      },
+      "typescript_code": ""
     },
     {
       "id": "action:resolve-exception",
       "uuid": "4000000000000000000000000000000c",
       "name": "ResolveException",
       "nameZh": "结案异常",
-      "description": "Resolve and close the Exception on the Carrier's claim disposition, settling or writing off the linked ServiceFailureClaim.",
+      "description": "依据承运商的索赔裁定结案并关闭异常，结算或核销关联的服务失败索赔。",
       "descriptionZh": "依据承运商的索赔裁定结案并关闭异常，结算或核销关联的服务失败索赔。",
+      "submission_criteria": "1. 事件 CLAIM_DISPOSITION_RECEIVED 已送达\n2. 规则「异常仅在索赔进入终态后方可关闭」已满足",
+      "object_type": "action",
+      "category": "结案异常",
+      "actor": [
+        "Agent"
+      ],
+      "trigger": [
+        "CLAIM_DISPOSITION_RECEIVED"
+      ],
+      "target_objects": [
+        "Exception",
+        "Service_Failure_Claim"
+      ],
+      "action_steps": [
+        {
+          "order": "1",
+          "name": "consumeTheCarrierSClaimDisposition",
+          "description": "消费承运商的索赔裁定（接受/减免或争议）及任何纠正措施。",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "2",
+          "name": "settleOrWriteOffTheLinked",
+          "description": "将关联的服务失败索赔结算或核销至终态。",
+          "object_type": "logic",
+          "submission_criteria": ""
+        },
+        {
+          "order": "3",
+          "name": "closeTheExceptionWithResolutionNotes",
+          "description": "以处理说明关闭异常（仅当任何关联索赔进入终态时）。",
+          "object_type": "logic",
+          "submission_criteria": "",
+          "rules": [
+            {
+              "id": "exception-close-requires-terminal-claim",
+              "name": "异常仅在索赔进入终态后方可关闭",
+              "submission_criteria": "",
+              "description": "异常在其关联的服务失败索赔（若有）进入终态（已结算、已减免或已核销）之前不得关闭。"
+            }
+          ]
+        }
+      ],
+      "system_prompt": "作为负责「ResolveException」动作的自动化智能体，依据承运商的索赔裁定结案并关闭异常，结算或核销关联的服务失败索赔。 请从本体读取所需对象，校验所有前置条件，并按顺序执行各步骤。",
+      "user_prompt": "根据输入（exception、disposition）执行「ResolveException」。依据承运商的索赔裁定结案并关闭异常，结算或核销关联的服务失败索赔。 产出（exception、claim）并发出相应事件。",
+      "tool_use": [
+        "Oracle OTM"
+      ],
+      "side_effects": {
+        "data_changes": [
+          {
+            "object_type": "Exception",
+            "action": "MODIFY",
+            "property_impacted": [],
+            "description": "Exception.status := Resolved/Closed; Claim settled or written off."
+          }
+        ],
+        "notifications": []
+      },
+      "triggered_event": [
+        "EXCEPTION_RESOLVED"
+      ],
       "inputs": [
         {
           "name": "exception",
           "objectTypeId": "objectType:exception",
-          "required": true
+          "required": true,
+          "type": "String",
+          "source_object": "Exception.exception_id"
         },
         {
           "name": "disposition",
-          "type": "json",
+          "type": "String",
           "required": true,
           "description": "Carrier claim disposition."
         }
@@ -4089,12 +5145,14 @@
         {
           "name": "exception",
           "objectTypeId": "objectType:exception",
-          "required": true
+          "required": true,
+          "type": "String"
         },
         {
           "name": "claim",
           "objectTypeId": "objectType:service-failure-claim",
-          "required": false
+          "required": false,
+          "type": "String"
         }
       ],
       "steps": [
@@ -4152,11 +5210,6 @@
           "objectTypeId": "objectType:exception"
         }
       ],
-      "actor": {
-        "role": "Exception Coordinator",
-        "roleZh": "异常协调员",
-        "kind": "agent"
-      },
       "permissions": [
         "exception:resolve"
       ],
@@ -4198,18 +5251,51 @@
       ],
       "confidence": 0.92,
       "provenance": "extracted",
-      "reviewState": "accepted"
+      "reviewState": "accepted",
+      "actorRef": {
+        "role": "Exception Coordinator",
+        "roleZh": "异常协调员",
+        "kind": "agent"
+      },
+      "typescript_code": ""
     }
   ],
   "events": [
     {
       "id": "event:order.received",
       "uuid": "50000000000000000000000000000001",
-      "name": "order.received",
+      "name": "ORDER_RECEIVED",
       "nameZh": "订单已接收",
-      "description": "An inbound EDI 940 Warehouse Shipping Order landed and was normalized into a new Order.",
+      "description": "入站 EDI 940 仓储发货单到达并被规范化为新订单。",
       "descriptionZh": "入站 EDI 940 仓储发货单到达并被规范化为新订单。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "order",
+            "type": "String",
+            "target_object": "Order"
+          },
+          {
+            "name": "client_id",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "ship_to_party",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Order",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "order",
           "type": "reference",
@@ -4255,11 +5341,38 @@
     {
       "id": "event:order.accepted",
       "uuid": "50000000000000000000000000000002",
-      "name": "order.accepted",
+      "name": "ORDER_ACCEPTED",
       "nameZh": "订单已接受",
-      "description": "An Order passed validation and was accepted, producing one or more Consignments.",
+      "description": "订单通过校验并被接受，生成一个或多个货件。",
       "descriptionZh": "订单通过校验并被接受，生成一个或多个货件。",
-      "payload": [
+      "payload": {
+        "source_action": "validateOrder",
+        "event_data": [
+          {
+            "name": "order",
+            "type": "String",
+            "target_object": "Order"
+          },
+          {
+            "name": "consignment_ids",
+            "type": "List<String>",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Order",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Consignment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "order",
           "type": "reference",
@@ -4302,11 +5415,38 @@
     {
       "id": "event:order.rejected",
       "uuid": "50000000000000000000000000000003",
-      "name": "order.rejected",
+      "name": "ORDER_REJECTED",
       "nameZh": "订单已拒绝",
-      "description": "An Order failed validation (missing ship-to or unserviceable destination) and was rejected.",
+      "description": "订单未通过校验（缺少收货方或目的地不可服务）而被拒绝。",
       "descriptionZh": "订单未通过校验（缺少收货方或目的地不可服务）而被拒绝。",
-      "payload": [
+      "payload": {
+        "source_action": "validateOrder",
+        "event_data": [
+          {
+            "name": "order",
+            "type": "String",
+            "target_object": "Order"
+          },
+          {
+            "name": "reason",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Order",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Consignment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "order",
           "type": "reference",
@@ -4339,11 +5479,38 @@
     {
       "id": "event:shipment.planned",
       "uuid": "50000000000000000000000000000004",
-      "name": "shipment.planned",
+      "name": "SHIPMENT_PLANNED",
       "nameZh": "运单已计划",
-      "description": "A Shipment was created from accepted Consignments along an eligible Lane with a resolved SLA.",
+      "description": "运单由已接受的货件沿合格运线创建，并解析出 SLA。",
       "descriptionZh": "运单由已接受的货件沿合格运线创建，并解析出 SLA。",
-      "payload": [
+      "payload": {
+        "source_action": "planShipment",
+        "event_data": [
+          {
+            "name": "shipment",
+            "type": "String",
+            "target_object": "Shipment"
+          },
+          {
+            "name": "lane_id",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "sla_id",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Shipment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "shipment",
           "type": "reference",
@@ -4390,11 +5557,38 @@
     {
       "id": "event:shipment.tendered",
       "uuid": "50000000000000000000000000000005",
-      "name": "shipment.tendered",
+      "name": "SHIPMENT_TENDERED",
       "nameZh": "运单已招标接受",
-      "description": "A Carrier accepted the load tender (EDI 990) and the Shipment booked the Carrier with a PRO number.",
+      "description": "承运商接受装载招标（EDI 990），运单订妥承运商并取得 PRO 号。",
       "descriptionZh": "承运商接受装载招标（EDI 990），运单订妥承运商并取得 PRO 号。",
-      "payload": [
+      "payload": {
+        "source_action": "tenderShipment",
+        "event_data": [
+          {
+            "name": "shipment",
+            "type": "String",
+            "target_object": "Shipment"
+          },
+          {
+            "name": "carrier_id",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "pro_number",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Shipment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "shipment",
           "type": "reference",
@@ -4442,11 +5636,38 @@
     {
       "id": "event:tender.rejected",
       "uuid": "50000000000000000000000000000006",
-      "name": "tender.rejected",
+      "name": "TENDER_REJECTED",
       "nameZh": "招标被拒",
-      "description": "A Carrier declined the tender (EDI 990 decline) or the tender timed out; the Planner re-tenders to the next-ranked Carrier.",
+      "description": "承运商拒绝招标（EDI 990 拒绝）或招标超时；计划员向下一顺位承运商重新招标。",
       "descriptionZh": "承运商拒绝招标（EDI 990 拒绝）或招标超时；计划员向下一顺位承运商重新招标。",
-      "payload": [
+      "payload": {
+        "source_action": "tenderShipment",
+        "event_data": [
+          {
+            "name": "shipment",
+            "type": "String",
+            "target_object": "Shipment"
+          },
+          {
+            "name": "carrier_id",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "reason",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Shipment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "shipment",
           "type": "reference",
@@ -4491,11 +5712,33 @@
     {
       "id": "event:customs.cleared",
       "uuid": "50000000000000000000000000000007",
-      "name": "customs.cleared",
+      "name": "CUSTOMS_CLEARED",
       "nameZh": "海关已放行",
-      "description": "The broker accepted the CustomsDeclaration and the system assigned duties.",
+      "description": "报关行接受报关单，系统核定关税。",
       "descriptionZh": "报关行接受报关单，系统核定关税。",
-      "payload": [
+      "payload": {
+        "source_action": "fileCustomsDeclaration",
+        "event_data": [
+          {
+            "name": "declaration",
+            "type": "String",
+            "target_object": "Customs_Declaration"
+          },
+          {
+            "name": "duties_assigned_usd",
+            "type": "Float",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Customs_Declaration",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "declaration",
           "type": "reference",
@@ -4537,11 +5780,33 @@
     {
       "id": "event:customs.held",
       "uuid": "50000000000000000000000000000008",
-      "name": "customs.held",
+      "name": "CUSTOMS_HELD",
       "nameZh": "海关已扣留",
-      "description": "The broker placed a hold or requested documents on a CustomsDeclaration, opening an Exception.",
+      "description": "报关行对报关单实施扣留或要求补充单据，触发异常。",
       "descriptionZh": "报关行对报关单实施扣留或要求补充单据，触发异常。",
-      "payload": [
+      "payload": {
+        "source_action": "fileCustomsDeclaration",
+        "event_data": [
+          {
+            "name": "declaration",
+            "type": "String",
+            "target_object": "Customs_Declaration"
+          },
+          {
+            "name": "hold_reason",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Customs_Declaration",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "declaration",
           "type": "reference",
@@ -4583,11 +5848,43 @@
     {
       "id": "event:consignment.staged",
       "uuid": "50000000000000000000000000000009",
-      "name": "consignment.staged",
+      "name": "CONSIGNMENT_STAGED",
       "nameZh": "货件已备货",
-      "description": "A Consignment was picked, packed, and staged in WMS with dims and weights written back to the Shipment.",
+      "description": "货件在 WMS 完成拣货、装箱与备货，尺寸与重量回写到运单。",
       "descriptionZh": "货件在 WMS 完成拣货、装箱与备货，尺寸与重量回写到运单。",
-      "payload": [
+      "payload": {
+        "source_action": "pickAndPack",
+        "event_data": [
+          {
+            "name": "consignment",
+            "type": "String",
+            "target_object": "Consignment"
+          },
+          {
+            "name": "weight_kg",
+            "type": "Float",
+            "target_object": null
+          },
+          {
+            "name": "dims",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Consignment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Shipment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "consignment",
           "type": "reference",
@@ -4634,11 +5931,33 @@
     {
       "id": "event:shipment.departed",
       "uuid": "5000000000000000000000000000000a",
-      "name": "shipment.departed",
+      "name": "SHIPMENT_DEPARTED",
       "nameZh": "运单已发运",
-      "description": "A Shipment departed the pickup Stop; status moved to In Transit and the first TrackingEvent was recorded.",
+      "description": "运单从提货站点发出；状态转为在途并记录首条轨迹事件。",
       "descriptionZh": "运单从提货站点发出；状态转为在途并记录首条轨迹事件。",
-      "payload": [
+      "payload": {
+        "source_action": "confirmDeparture",
+        "event_data": [
+          {
+            "name": "shipment",
+            "type": "String",
+            "target_object": "Shipment"
+          },
+          {
+            "name": "departure_timestamp",
+            "type": "Timestamp",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Shipment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "shipment",
           "type": "reference",
@@ -4678,11 +5997,33 @@
     {
       "id": "event:tracking.event.received",
       "uuid": "5000000000000000000000000000000b",
-      "name": "tracking.event.received",
+      "name": "TRACKING_EVENT_RECEIVED",
       "nameZh": "轨迹事件已接收",
-      "description": "An inbound EDI 214 status message was received for a Shipment.",
+      "description": "为某运单接收到入站 EDI 214 状态报文。",
       "descriptionZh": "为某运单接收到入站 EDI 214 状态报文。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "shipment",
+            "type": "String",
+            "target_object": "Shipment"
+          },
+          {
+            "name": "edi_status_code",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Shipment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "shipment",
           "type": "reference",
@@ -4722,11 +6063,38 @@
     {
       "id": "event:sla.breached",
       "uuid": "5000000000000000000000000000000c",
-      "name": "sla.breached",
+      "name": "SLA_BREACHED",
       "nameZh": "SLA 已违约",
-      "description": "Projected or actual delivery exceeded the committed delivery window, opening an Exception.",
+      "description": "预计或实际送达超出承诺送达窗口，触发异常。",
       "descriptionZh": "预计或实际送达超出承诺送达窗口，触发异常。",
-      "payload": [
+      "payload": {
+        "source_action": "ingestTrackingEvent",
+        "event_data": [
+          {
+            "name": "shipment",
+            "type": "String",
+            "target_object": "Shipment"
+          },
+          {
+            "name": "sla_id",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "delta",
+            "type": "Integer",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Tracking_Event",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "shipment",
           "type": "reference",
@@ -4774,11 +6142,43 @@
     {
       "id": "event:pod.captured",
       "uuid": "5000000000000000000000000000000d",
-      "name": "pod.captured",
+      "name": "POD_CAPTURED",
       "nameZh": "签收凭证已采集",
-      "description": "A ProofOfDelivery was captured at delivery (signature/photo + timestamp), surfaced from EDI 214 status D1.",
+      "description": "送达时采集了签收凭证（签名/照片加时间戳），由 EDI 214 状态 D1 浮现。",
       "descriptionZh": "送达时采集了签收凭证（签名/照片加时间戳），由 EDI 214 状态 D1 浮现。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "pod",
+            "type": "String",
+            "target_object": "Proof_Of_Delivery"
+          },
+          {
+            "name": "shipment",
+            "type": "String",
+            "target_object": "Shipment"
+          },
+          {
+            "name": "timestamp",
+            "type": "Timestamp",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Proof_Of_Delivery",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Shipment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "pod",
           "type": "reference",
@@ -4824,11 +6224,38 @@
     {
       "id": "event:shipment.delivered",
       "uuid": "5000000000000000000000000000000e",
-      "name": "shipment.delivered",
+      "name": "SHIPMENT_DELIVERED",
       "nameZh": "运单已送达",
-      "description": "A Shipment was set to Delivered on captured POD, closing Order to Delivery and triggering freight-invoice reconciliation.",
+      "description": "运单凭采集的签收凭证置为已送达，关闭下单到送达流程并触发运费对账。",
       "descriptionZh": "运单凭采集的签收凭证置为已送达，关闭下单到送达流程并触发运费对账。",
-      "payload": [
+      "payload": {
+        "source_action": "ingestTrackingEvent",
+        "event_data": [
+          {
+            "name": "shipment",
+            "type": "String",
+            "target_object": "Shipment"
+          },
+          {
+            "name": "pod",
+            "type": "String",
+            "target_object": "Proof_Of_Delivery"
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Tracking_Event",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          },
+          {
+            "target_object": "Shipment",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "shipment",
           "type": "reference",
@@ -4870,11 +6297,33 @@
     {
       "id": "event:exception.opened",
       "uuid": "5000000000000000000000000000000f",
-      "name": "exception.opened",
+      "name": "EXCEPTION_OPENED",
       "nameZh": "异常已开立",
-      "description": "An Exception record was created and classified by type with an assigned owner.",
+      "description": "异常记录被创建，按类型分类并指派负责人。",
       "descriptionZh": "异常记录被创建，按类型分类并指派负责人。",
-      "payload": [
+      "payload": {
+        "source_action": "openException",
+        "event_data": [
+          {
+            "name": "exception",
+            "type": "String",
+            "target_object": "Exception"
+          },
+          {
+            "name": "exception_type",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Exception",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "exception",
           "type": "reference",
@@ -4916,11 +6365,38 @@
     {
       "id": "event:exception.classified",
       "uuid": "50000000000000000000000000000010",
-      "name": "exception.classified",
+      "name": "EXCEPTION_CLASSIFIED",
       "nameZh": "异常已分类",
-      "description": "An Exception had its liability set and creditEligible flag determined against the SLA and Lane tier.",
+      "description": "异常依据 SLA 与运线等级确定了责任归属与可减免标志。",
       "descriptionZh": "异常依据 SLA 与运线等级确定了责任归属与可减免标志。",
-      "payload": [
+      "payload": {
+        "source_action": "classifyException",
+        "event_data": [
+          {
+            "name": "exception",
+            "type": "String",
+            "target_object": "Exception"
+          },
+          {
+            "name": "liability",
+            "type": "String",
+            "target_object": null
+          },
+          {
+            "name": "credit_eligible",
+            "type": "Boolean",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Exception",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "exception",
           "type": "reference",
@@ -4960,11 +6436,38 @@
     {
       "id": "event:claim.submitted",
       "uuid": "50000000000000000000000000000011",
-      "name": "claim.submitted",
+      "name": "CLAIM_SUBMITTED",
       "nameZh": "索赔已提交",
-      "description": "A ServiceFailureClaim with calculated credit and cited CSA clause was submitted to the Carrier.",
+      "description": "载有计算减免与引用 CSA 条款的服务失败索赔已提交给承运商。",
       "descriptionZh": "载有计算减免与引用 CSA 条款的服务失败索赔已提交给承运商。",
-      "payload": [
+      "payload": {
+        "source_action": "raiseServiceFailureClaim",
+        "event_data": [
+          {
+            "name": "claim",
+            "type": "String",
+            "target_object": "Service_Failure_Claim"
+          },
+          {
+            "name": "credit_amount_usd",
+            "type": "Float",
+            "target_object": null
+          },
+          {
+            "name": "cited_clause",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Service_Failure_Claim",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "claim",
           "type": "reference",
@@ -5009,11 +6512,38 @@
     {
       "id": "event:exception.resolved",
       "uuid": "50000000000000000000000000000012",
-      "name": "exception.resolved",
+      "name": "EXCEPTION_RESOLVED",
       "nameZh": "异常已结案",
-      "description": "An Exception was closed with resolution notes and a settled or written-off ServiceFailureClaim.",
+      "description": "异常以处理说明结案，关联服务失败索赔已结算或核销。",
       "descriptionZh": "异常以处理说明结案，关联服务失败索赔已结算或核销。",
-      "payload": [
+      "payload": {
+        "source_action": "resolveException",
+        "event_data": [
+          {
+            "name": "exception",
+            "type": "String",
+            "target_object": "Exception"
+          },
+          {
+            "name": "claim",
+            "type": "String",
+            "target_object": "Service_Failure_Claim"
+          },
+          {
+            "name": "disposition",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Exception",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "exception",
           "type": "reference",
@@ -5059,11 +6589,33 @@
     {
       "id": "event:customs.declaration.filed",
       "uuid": "50000000000000000000000000000013",
-      "name": "customs.declaration.filed",
+      "name": "CUSTOMS_DECLARATION_FILED",
       "nameZh": "报关单已申报",
-      "description": "A CustomsDeclaration was filed to the broker via CBP-Link, awaiting broker disposition (inferred from FileCustomsDeclaration).",
+      "description": "报关单经 CBP-Link 向报关行申报，等待报关行裁定（由报关动作推断）。",
       "descriptionZh": "报关单经 CBP-Link 向报关行申报，等待报关行裁定（由报关动作推断）。",
-      "payload": [
+      "payload": {
+        "source_action": "fileCustomsDeclaration",
+        "event_data": [
+          {
+            "name": "declaration",
+            "type": "String",
+            "target_object": "Customs_Declaration"
+          },
+          {
+            "name": "entry_type",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Customs_Declaration",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "declaration",
           "type": "reference",
@@ -5091,11 +6643,33 @@
     {
       "id": "event:claim.disposition.received",
       "uuid": "50000000000000000000000000000014",
-      "name": "claim.disposition.received",
+      "name": "CLAIM_DISPOSITION_RECEIVED",
       "nameZh": "索赔裁定已接收",
-      "description": "A Carrier returned a claim disposition — accepted/credited or contested — surfaced as ClaimSettled or ClaimContested (inferred trigger for ResolveException).",
+      "description": "承运商返回索赔裁定——接受/减免或争议——以已结算或已争议浮现（推断的结案触发）。",
       "descriptionZh": "承运商返回索赔裁定——接受/减免或争议——以已结算或已争议浮现（推断的结案触发）。",
-      "payload": [
+      "payload": {
+        "source_action": "",
+        "event_data": [
+          {
+            "name": "claim",
+            "type": "String",
+            "target_object": "Service_Failure_Claim"
+          },
+          {
+            "name": "disposition",
+            "type": "String",
+            "target_object": null
+          }
+        ],
+        "state_mutations": [
+          {
+            "target_object": "Service_Failure_Claim",
+            "mutation_type": "CREATE_OR_MODIFY",
+            "impacted_properties": []
+          }
+        ]
+      },
+      "payloadFields": [
         {
           "name": "claim",
           "type": "reference",
@@ -5130,7 +6704,87 @@
         "en": "Order to Delivery",
         "zh": "下单到送达"
       },
-      "description": "End-to-end flow from receiving a validated client Order through planning, tender, customs, warehouse outbound, transit tracking, and delivery closed on captured POD.",
+      "description": "下单到送达",
+      "actor": [
+        "Agent",
+        "Human",
+        "System"
+      ],
+      "trigger": [
+        "ORDER_RECEIVED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "validateOrder",
+          "description": "校验来自 EDI 940 的入站订单，并按收货方分解为货件。",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "planShipment",
+          "description": "将已接受的货件沿合格运线归集为运单，并解析适用的 SLA 与送达窗口。",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "3",
+          "name": "tenderShipment",
+          "description": "选择具备运线资格的承运商并发送 EDI 204 装载招标，于 EDI 990 接受时订妥承运商。",
+          "type": "tool",
+          "condition": "consignment.is_international == true"
+        },
+        {
+          "order": "4",
+          "name": "fileCustomsDeclaration",
+          "description": "经 CBP-Link 为国际货件申报报关单，并在报关行接受时核定关税。",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "5",
+          "name": "pickAndPack",
+          "description": "在 WMS 拣选并装箱货件明细，生成装箱清单，并将尺寸/重量回写到运单。",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "6",
+          "name": "confirmDeparture",
+          "description": "确认承运商在提货站点签到与装载，将运单置为在途，并记录首条轨迹事件。",
+          "type": "manual",
+          "condition": ""
+        },
+        {
+          "order": "7",
+          "name": "ingestTrackingEvent",
+          "description": "摄取入站 EDI 214 状态报文，追加规范化轨迹事件，并依据承诺窗口重新评估 SLA。",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "8",
+          "name": "captureProofOfDelivery",
+          "description": "在送货站点采集签收凭证并将运单置为已送达。",
+          "type": "tool",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "ORDER_ACCEPTED",
+        "ORDER_REJECTED",
+        "SHIPMENT_PLANNED",
+        "SHIPMENT_TENDERED",
+        "TENDER_REJECTED",
+        "CUSTOMS_DECLARATION_FILED",
+        "CUSTOMS_CLEARED",
+        "CUSTOMS_HELD",
+        "CONSIGNMENT_STAGED",
+        "SHIPMENT_DEPARTED",
+        "SLA_BREACHED",
+        "SHIPMENT_DELIVERED"
+      ],
       "actors": [
         {
           "role": "Order Management Specialist",
@@ -5330,7 +6984,28 @@
         "en": "Customs Clearance",
         "zh": "报关清关"
       },
-      "description": "Sub-process invoked when a Shipment contains an international Consignment: file the CustomsDeclaration, assess duties, and clear before warehouse outbound; runs to completion before pick-and-pack.",
+      "description": "报关清关",
+      "actor": [
+        "Human",
+        "System"
+      ],
+      "trigger": [
+        "SHIPMENT_TENDERED"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "fileCustomsDeclaration",
+          "description": "经 CBP-Link 为国际货件申报报关单，并在报关行接受时核定关税。",
+          "type": "manual",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "CUSTOMS_DECLARATION_FILED",
+        "CUSTOMS_CLEARED",
+        "CUSTOMS_HELD"
+      ],
       "actors": [
         {
           "role": "Customs Compliance Analyst",
@@ -5401,7 +7076,51 @@
         "en": "Exception to Resolution",
         "zh": "异常到结案"
       },
-      "description": "Triggered when a Shipment breaches its SLA or is held in customs: open the Exception, classify liability, raise a service-failure claim when eligible, and resolve/close on the Carrier's disposition.",
+      "description": "异常到结案",
+      "actor": [
+        "Agent",
+        "System"
+      ],
+      "trigger": [
+        "SLA_BREACHED",
+        "CUSTOMS_HELD"
+      ],
+      "actions": [
+        {
+          "order": "1",
+          "name": "openException",
+          "description": "在 SLA 违约或海关扣留后 15 分钟内开立异常，按类型分类并指派负责人。",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "2",
+          "name": "classifyException",
+          "description": "依据 SLA 与运线承诺等级对异常分类，设定责任归属与可减免标志。",
+          "type": "tool",
+          "condition": "exception.credit_eligible == true"
+        },
+        {
+          "order": "3",
+          "name": "raiseServiceFailureClaim",
+          "description": "为保证运线上可减免的异常提起服务失败索赔，载明计算的减免与引用的 CSA 条款，并提交给承运商。",
+          "type": "tool",
+          "condition": ""
+        },
+        {
+          "order": "4",
+          "name": "resolveException",
+          "description": "依据承运商的索赔裁定结案并关闭异常，结算或核销关联的服务失败索赔。",
+          "type": "tool",
+          "condition": ""
+        }
+      ],
+      "triggered_event": [
+        "EXCEPTION_OPENED",
+        "EXCEPTION_CLASSIFIED",
+        "CLAIM_SUBMITTED",
+        "EXCEPTION_RESOLVED"
+      ],
       "actors": [
         {
           "role": "Exception Coordinator",

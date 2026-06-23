@@ -26,7 +26,8 @@
 import type {
   Ontology,
   ObjectType,
-  ObjectAttribute,
+  ObjectProperty,
+  PropertyType,
   Rule,
   ActionType,
   EventType,
@@ -35,7 +36,6 @@ import type {
   SourceRef,
   SourceDocument,
   DataType,
-  KeyRole,
   ActorRef,
   WorkflowStep,
   EventField,
@@ -309,13 +309,22 @@ function toObjectType(
   knownObjectNames: Set<string>,
 ): ObjectType {
   const id = objectId(o.name);
+  const properties = o.attrs.map((a) => toProperty(a, knownObjectNames));
+  const pkAttr = o.attrs.find((a) => a.role === 'pk');
+  const primary_key = pkAttr ? pkAttr.name : `${id.replace(PREFIX.object, '').replace(/-/g, '_')}_id`;
   return {
     id,
     uuid: demoUuid(id),
     name: o.name,
     nameZh: o.zh,
     description: `${o.name} — discovered across ${o.sources} source references.`,
-    attributes: o.attrs.map((a) => toAttribute(a, knownObjectNames)),
+    type: 'data',
+    relationship_description:
+      o.relations.length > 0
+        ? o.relations.map((r) => `${o.name} ${r}`).join('; ')
+        : `${o.name} has no documented relationships to other objects.`,
+    primary_key,
+    properties,
     sources: [synthSource(primarySource, `${o.name} entity referenced across the corpus.`)],
     confidence: o.confidence,
     provenance: 'inferred',
@@ -324,28 +333,52 @@ function toObjectType(
   };
 }
 
-function toAttribute(a: OntAttr, knownObjectNames: Set<string>): ObjectAttribute {
-  const parsed = parseAttrType(a.type, knownObjectNames);
-  const keyRole: KeyRole = a.role === 'pk' ? 'pk' : a.role === 'fk' ? 'fk' : 'none';
+/** Map the internal DataType the demo parser yields to the spec PropertyType. */
+function dataTypeToPropertyType(t: DataType): PropertyType {
+  switch (t) {
+    case 'integer':
+      return 'Integer';
+    case 'decimal':
+    case 'money':
+      return 'Float';
+    case 'boolean':
+      return 'Boolean';
+    case 'date':
+      return 'Date';
+    case 'datetime':
+      return 'Timestamp';
+    case 'enum':
+    case 'array':
+      return 'List<String>';
+    default:
+      return 'String';
+  }
+}
 
-  // The validator requires a refObjectTypeId for any reference-typed OR fk
-  // attribute. Resolve it from the parsed reference target, else from the
-  // attribute name convention (e.g. `customer_id` -> Customer).
-  let refObjectTypeId: string | undefined;
+function toProperty(a: OntAttr, knownObjectNames: Set<string>): ObjectProperty {
+  const parsed = parseAttrType(a.type, knownObjectNames);
+
+  // Resolve a foreign-key target from the parsed reference, else from the
+  // attribute-name convention (e.g. `customer_id` -> Customer).
+  let references: string | undefined;
   if (parsed.refTargetName) {
-    refObjectTypeId = objectId(parsed.refTargetName);
-  } else if (keyRole === 'fk') {
-    refObjectTypeId = inferRefFromAttrName(a.name, knownObjectNames);
+    references = objectId(parsed.refTargetName);
+  } else if (a.role === 'fk') {
+    references = inferRefFromAttrName(a.name, knownObjectNames);
   }
 
-  return {
+  const prop: ObjectProperty = {
     name: a.name,
-    type: parsed.type,
-    required: a.req,
-    keyRole,
-    enumValues: parsed.enumValues,
-    refObjectTypeId,
+    type: dataTypeToPropertyType(parsed.type),
+    description: parsed.enumValues && parsed.enumValues.length > 0
+      ? `One of: ${parsed.enumValues.join(', ')}.`
+      : `${a.name}.`,
   };
+  if (references) {
+    prop.is_foreign_key = true;
+    prop.references = references;
+  }
+  return prop;
 }
 
 /** `customer_id` -> objectType:customer when "Customer" is a known object. */
@@ -450,16 +483,35 @@ function toRule(r: OntRule, objectIdByName: Map<string, string>): Rule {
   const appliesTo = r.objects
     .map((name) => objectIdByName.get(name))
     .filter((id): id is string => Boolean(id));
+  const severity = inferSeverity(r.confidence);
+  const title = r.plain.en.slice(0, 48);
+  const relatedEntities: string[] = [];
+  for (const name of r.objects) {
+    const id = objectIdByName.get(name);
+    if (id) relatedEntities.push(`${name} (${pascalCase(id.replace(PREFIX.object, ''))})`);
+  }
 
   return {
     id: `${PREFIX.rule}${slugify(r.id)}-${slugify(r.plain.en.slice(0, 24))}`,
     uuid: demoUuid('rule:' + r.id),
-    title: r.plain.en.slice(0, 48),
+    specificScenarioStage: '',
+    businessLogicRuleName: title,
+    applicableClient: '通用',
+    applicableDepartment: 'N/A',
+    submissionCriteria: '',
+    standardizedLogicRule: r.plain.en,
+    relatedEntities,
+    businessBackgroundReason: '',
+    ruleSource: r.source?.name ?? '文档',
+    executor: 'Agent',
+    enforcementLevel: severity === 'block' ? 'mandatory' : 'optional',
+    failurePolicy: severity === 'block' ? 'block' : 'warn',
+    title,
     titleZh: r.plain.zh.slice(0, 24),
     statement: { en: r.plain.en, zh: r.plain.zh },
     formal: r.formal,
     kind: inferRuleKind(r.formal),
-    severity: inferSeverity(r.confidence),
+    severity,
     appliesToObjectTypeIds: appliesTo,
     sources: [ruleSource(r)],
     confidence: r.confidence,
@@ -552,20 +604,38 @@ function buildActionsAndEvents(
 
       const actorRole = primaryActor(proc);
 
+      const evtSpec = (eid: string): string =>
+        eid.replace(/^event:/, '').replace(/[^A-Za-z0-9]+/g, '_').toUpperCase();
+      const targetSpec = objId ? pascalCase(objId.replace(PREFIX.object, '')) : undefined;
+
       actions.push({
         id: actId,
         uuid: demoUuid(actId),
-        name: pascalCase(step.en.slice(0, 40)),
+        name: camelCaseName(step.en.slice(0, 40)),
         nameZh: step.zh,
         description: step.en,
         descriptionZh: step.zh,
+        submission_criteria: '',
+        object_type: 'action',
+        category: step.zh || step.en.slice(0, 24),
+        actor: ['Agent'],
+        trigger: prevEmitId ? [evtSpec(prevEmitId)] : [],
+        target_objects: targetSpec ? [targetSpec] : [],
+        action_steps: [
+          { order: '1', name: camelCaseName(step.en.slice(0, 24)), description: step.en, object_type: 'logic', submission_criteria: '' },
+        ],
+        system_prompt: `Perform "${step.en}".`,
+        user_prompt: `Perform "${step.en}" and emit the resulting event.`,
+        tool_use: [],
+        side_effects: { data_changes: [], notifications: [] },
+        triggered_event: [evtSpec(emitId)],
         inputs,
         outputs,
         steps,
         preconditions: [],
         triggeredByEventIds: prevEmitId ? [prevEmitId] : [],
         emitsEvents: [{ eventTypeId: emitId, on: 'success' }],
-        actor: { role: actorRole, kind: 'system' },
+        actorRef: { role: actorRole, kind: 'system' },
         agent: buildAgentBinding(actId, step, objId),
         sources: [synthSource(primarySource, `Process step: ${step.en}`)],
         confidence: 0.86,
@@ -589,17 +659,30 @@ function buildActionsAndEvents(
   // Materialize one EventType per drafted event id with EXACT inverse arrays.
   for (const [evtId, draft] of eventDrafts) {
     const objId = objectIdByName.get(draft.step.obj);
-    const payload: EventField[] = objId
+    const payloadFields: EventField[] = objId
       ? [{ name: paramName(draft.step.obj), type: 'reference', objectTypeId: objId, required: true }]
       : [];
+    const targetSpec = objId ? pascalCase(objId.replace(PREFIX.object, '')) : undefined;
+    const evtSpec = evtId.replace(/^event:/, '').replace(/[^A-Za-z0-9]+/g, '_').toUpperCase();
 
     events.push({
       id: evtId,
       uuid: demoUuid(evtId),
-      name: eventName(evtId),
+      name: evtSpec,
       nameZh: `${draft.step.obj}·完成`,
       description: `${draft.step.en} — completed.`,
-      payload,
+      payload: {
+        source_action: camelCaseName(draft.step.en.slice(0, 40)),
+        event_data: payloadFields.map((f) => ({
+          name: f.name,
+          type: dataTypeToPropertyType(f.type),
+          target_object: f.objectTypeId ? pascalCase(f.objectTypeId.replace(PREFIX.object, '')) : null,
+        })),
+        state_mutations: targetSpec
+          ? [{ target_object: targetSpec, mutation_type: 'CREATE_OR_MODIFY', impacted_properties: [] }]
+          : [],
+      },
+      payloadFields,
       producedByActionIds: producedBy.get(evtId) ?? [],
       consumedByActionIds: consumedBy.get(evtId) ?? [],
       sources: [synthSource(primarySource, `Emitted after: ${draft.step.en}`)],
@@ -672,6 +755,16 @@ function toProcess(
     uuid: demoUuid('process:' + p.id),
     name: { en: p.name.en, zh: p.name.zh },
     description: p.name.en,
+    actor: ['Agent'],
+    trigger: [],
+    actions: steps.map((s, i) => ({
+      order: String(s.order),
+      name: camelCaseName(p.steps[i]?.en ?? `step ${i + 1}`),
+      description: p.steps[i]?.en ?? '',
+      type: 'logic' as const,
+      condition: '',
+    })),
+    triggered_event: [],
     actors,
     objectTypeIds,
     steps,
@@ -694,10 +787,6 @@ function paramName(objectName: string): string {
   return snakeCase(objectName) || 'item';
 }
 
-function eventName(evtId: string): string {
-  return evtId.slice(PREFIX.event.length);
-}
-
 function pascalCase(s: string): string {
   const parts = (s ?? '')
     .replace(/[^a-zA-Z0-9]+/g, ' ')
@@ -706,6 +795,12 @@ function pascalCase(s: string): string {
     .filter(Boolean);
   const joined = parts.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join('');
   return joined.length > 0 ? joined : 'Action';
+}
+
+/** camelCase function-style name (the spec-format action/workflow naming). */
+function camelCaseName(s: string): string {
+  const p = pascalCase(s);
+  return p.charAt(0).toLowerCase() + p.slice(1);
 }
 
 function snakeCase(s: string): string {
@@ -761,7 +856,7 @@ export function ontologyToDataset(o: Ontology, lang: Lang = 'en'): Dataset {
     color: obj.display?.color ?? 'accent',
     confidence: obj.confidence,
     sources: obj.sources.length,
-    attrs: obj.attributes.map(attributeToView),
+    attrs: obj.properties.map((p) => propertyToView(p, obj.primary_key)),
     relations: relsBySource.get(obj.id) ?? [],
   }));
 
@@ -821,25 +916,18 @@ export function ontologyToDataset(o: Ontology, lang: Lang = 'en'): Dataset {
   };
 }
 
-function attributeToView(a: ObjectAttribute): OntAttr {
+function propertyToView(p: ObjectProperty, primaryKey: string): OntAttr {
   return {
-    name: a.name,
-    type: viewTypeString(a),
-    role: a.keyRole === 'none' ? undefined : a.keyRole,
-    req: a.required,
+    name: p.name,
+    type: viewTypeString(p),
+    role: p.name === primaryKey ? 'pk' : p.is_foreign_key ? 'fk' : undefined,
+    req: p.name === primaryKey,
   };
 }
 
-function viewTypeString(a: ObjectAttribute): string {
-  if (a.type === 'enum' && a.enumValues && a.enumValues.length > 0) {
-    return `Enum<${a.enumValues.join('|')}>`;
+function viewTypeString(p: ObjectProperty): string {
+  if (p.is_foreign_key && p.references) {
+    return `Reference<${pascalCase(p.references.replace(PREFIX.object, ''))}>`;
   }
-  if (a.type === 'reference' && a.refObjectTypeId) {
-    return `Reference<${pascalCase(a.refObjectTypeId.replace(PREFIX.object, ''))}>`;
-  }
-  return capitalize(a.type);
-}
-
-function capitalize(s: string): string {
-  return s.length > 0 ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+  return p.type;
 }

@@ -79,7 +79,7 @@ export type KeyRole = 'pk' | 'fk' | 'none';
 export type Cardinality = 'one_to_one' | 'one_to_many' | 'many_to_one' | 'many_to_many';
 
 /** How a node entered the ontology. `inferred` nodes may have empty `sources`. */
-export type Provenance = 'extracted' | 'inferred' | 'merged' | 'human';
+export type Provenance = 'extracted' | 'inferred' | 'web_search' | 'merged' | 'human';
 
 /** Human-in-the-loop review status; gates what gets published. */
 export type ReviewStatus = 'pending' | 'accepted' | 'edited' | 'merged' | 'rejected';
@@ -201,24 +201,46 @@ interface NodeProvenance {
 // 2. ObjectType (extracted FIRST, most carefully)
 // ===========================================================================
 
-export interface ObjectAttribute {
+/**
+ * Closed, human-facing property type vocabulary (the spec format). Mapped from
+ * the internal DATA_TYPES during extraction: integer→Integer; decimal/money→
+ * Float; boolean→Boolean; date→Date; datetime→Timestamp; enum/array→List<String>;
+ * everything else (string/uuid/reference/json)→String.
+ */
+export const PROPERTY_TYPES = [
+  'String',
+  'Integer',
+  'Float',
+  'Boolean',
+  'Date',
+  'Timestamp',
+  'List<String>',
+] as const;
+export type PropertyType = (typeof PROPERTY_TYPES)[number];
+
+/**
+ * One property (field) of an ObjectType — the spec-format shape. A foreign-key
+ * property sets `is_foreign_key` + `references` (the target ObjectType.id).
+ */
+export interface ObjectProperty {
   /** Unique within its ObjectType. snake_case, e.g. "order_id". */
   name: string;
+  /** Human-facing closed-vocabulary type. */
+  type: PropertyType;
+  /** Generic description of the field (language-natural). */
+  description: string;
+  /** True when this property points at another object (a foreign key). */
+  is_foreign_key?: boolean;
+  /** Set iff `is_foreign_key` — the referenced ObjectType.id. */
+  references?: string;
+  // ---- retained bilingual / receipt extras (optional) ----
   nameZh?: string;
-  /** Closed-vocabulary type. Enums via `enumValues`, refs via `refObjectTypeId`. */
-  type: DataType;
-  required: boolean;
-  /** 'pk' | 'fk' | 'none'. Explicit (default 'none') so reviewers always see it. */
-  keyRole: KeyRole;
-  /** Present iff type === 'enum'. Allowed values, in document order. */
-  enumValues?: string[];
-  /** Present iff type === 'reference' OR keyRole === 'fk'. Target ObjectType.id. */
-  refObjectTypeId?: string;
-  description?: string;
   descriptionZh?: string;
-  /** Attribute-level citation when available. */
+  /** Property-level citation when available. */
   sources?: SourceRef[];
   confidence?: Confidence;
+  /** Origin of THIS property: extracted (document) | inferred (common-sense) | web_search. */
+  provenance?: Provenance;
 }
 
 export interface ObjectType extends NodeProvenance {
@@ -230,9 +252,21 @@ export interface ObjectType extends NodeProvenance {
   name: string;
   /** Chinese name, e.g. "订单". REQUIRED (bilingual product). */
   nameZh: string;
+  /** Description (the document's language; the UI shows descriptionZh when zh). */
   description: string;
   descriptionZh?: string;
-  attributes: ObjectAttribute[];
+  /** 'data' (a business entity) vs 'system' (an application / external system). */
+  type: 'data' | 'system';
+  /**
+   * Prose describing how this object relates to the OTHER objects — the key
+   * input for building inter-object relationships. Synthesizable from
+   * `Ontology.relationships` + FK properties when the model omits it.
+   */
+  relationship_description: string;
+  /** The primary-key property name. Defaults to `<id>_id`. */
+  primary_key: string;
+  /** The object's fields/properties (the spec-format shape). */
+  properties: ObjectProperty[];
   /**
    * Cached index of outbound Relationship ids for THIS object (UI/codegen
    * convenience). Authoritative edge list is `Ontology.relationships`.
@@ -291,6 +325,32 @@ export interface Rule extends NodeProvenance {
   /** Slug id, e.g. "rule:fulfill-after-payment". Prefix "rule:". */
   id: string;
   uuid: string;
+  // ---- spec-format fields (the published rule shape) ----
+  /** The scenario / lifecycle stage this rule applies in. */
+  specificScenarioStage: string;
+  /** Business rule name (English form; `title`/`titleZh` keep the bilingual pair). */
+  businessLogicRuleName: string;
+  /** Which client this applies to ("通用" = all clients). */
+  applicableClient: string;
+  /** Which department this applies to ("N/A" = all). */
+  applicableDepartment: string;
+  /** Preconditions for the rule to be evaluated. */
+  submissionCriteria: string;
+  /** The standardized natural-language logic (English form of `statement`). */
+  standardizedLogicRule: string;
+  /** Related objects as "Name (Id)" — display form of `appliesToObjectTypeIds`. */
+  relatedEntities: string[];
+  /** Why the rule exists (business rationale). */
+  businessBackgroundReason: string;
+  /** Where the rule came from (document name / interview / policy). */
+  ruleSource: string;
+  /** Who carries the rule out. */
+  executor: 'Human' | 'Agent';
+  /** Mandatory (must hold) vs optional (advisory). */
+  enforcementLevel: 'mandatory' | 'optional';
+  /** On violation: 'block' the gated action vs 'warn' only. */
+  failurePolicy: 'warn' | 'block';
+  // ---- retained engine + bilingual structure (receipts) ----
   /** Short handle/title for lists, bilingual. */
   title: string;
   titleZh?: string;
@@ -330,14 +390,17 @@ export interface RuleGroup {
 export interface ActionIO {
   /** snake_case local param name, e.g. "order". */
   name: string;
-  /** Set when the param IS a domain object. */
+  /** Human-facing type ("String" / "Integer" / "List<String>" / ...). */
+  type?: string;
+  /** Generic description of the parameter. */
+  description?: string;
+  /** For an object-typed param: "ObjectId.primary_key" (the spec source_object). */
+  source_object?: string;
+  required?: boolean;
+  /** Retained: the ObjectType id when this param IS a domain object. */
   objectTypeId?: string;
-  /** Set when the param is a scalar (mutually exclusive with objectTypeId). */
-  type?: DataType;
-  required: boolean;
   isArray?: boolean;
   cardinality?: 'one' | 'many';
-  description?: string;
 }
 
 export interface ActionStep {
@@ -422,30 +485,101 @@ export interface AgentBinding {
   integration?: string;
 }
 
+/** Who/what performs an action or workflow step (spec-format). */
+export type SpecActor = 'Human' | 'Agent' | 'System';
+
+/** A rule referenced inside an action step (spec-format). */
+export interface SpecActionStepRule {
+  id: string;
+  name: string;
+  submission_criteria: string;
+  description: string;
+}
+
+/** One step of an action's plan (spec-format). */
+export interface SpecActionStep {
+  order: string;
+  name: string;
+  description: string;
+  object_type: string;
+  submission_criteria: string;
+  rules?: SpecActionStepRule[];
+}
+
+export type DataChangeAction = 'CREATE' | 'MODIFY' | 'DELETE';
+
+export interface SpecDataChange {
+  object_type: string;
+  action: DataChangeAction;
+  property_impacted: string[];
+  description: string;
+}
+
+export interface SpecNotification {
+  recipient: string;
+  channel: string | string[];
+  condition: string;
+  message: string;
+  triggered_event: string;
+}
+
+export interface SpecSideEffects {
+  data_changes: SpecDataChange[];
+  notifications: SpecNotification[];
+}
+
 export interface ActionType extends NodeProvenance {
   /** Slug id, e.g. "action:fulfill-order". Prefix "action:". */
   id: string;
   uuid: string;
-  /** Imperative verb-object name, e.g. "FulfillOrder". */
+  /** camelCase function-style name, e.g. "fulfillOrder". */
   name: string;
   nameZh?: string;
   description: string;
   descriptionZh?: string;
-  /** Typed inputs/outputs referencing ObjectTypes — the action's signature. */
+  // ---- spec-format fields (the published action shape) ----
+  /** Preconditions / events that must be met before running. */
+  submission_criteria: string;
+  /** Always "action". */
+  object_type: 'action';
+  /** Short category label. */
+  category: string;
+  /** Who performs it (spec form). */
+  actor: SpecActor[];
+  /** Event names that trigger this action. */
+  trigger: string[];
+  /** Spec object ids this action reads/writes. */
+  target_objects: string[];
+  /** Ordered logic steps (spec form). */
+  action_steps: SpecActionStep[];
+  /** Agent system prompt. */
+  system_prompt: string;
+  /** Agent user prompt. */
+  user_prompt: string;
+  /** Optional generated TypeScript implementation (spec-format, default ""). */
+  typescript_code?: string;
+  /** External tools/integrations the action calls. */
+  tool_use: string[];
+  /** Data changes + notifications (spec form). */
+  side_effects: SpecSideEffects;
+  /** Event names this action emits. */
+  triggered_event: string[];
+  // ---- retained engine structure (receipts) ----
+  /** Typed inputs/outputs (enriched: type + source_object + retained objectTypeId). */
   inputs: ActionIO[];
   outputs: ActionIO[];
-  /** Ordered, human-readable execution plan — the spine of actionability. */
+  /** Ordered, human-readable execution plan. */
   steps: ActionStep[];
-  /** Rules that MUST pass before the action runs. 'block' among these abort. */
+  /** Rules that MUST pass before the action runs. */
   preconditions: PreconditionRef[];
   /** EventType ids that cause this action to run. */
   triggeredByEventIds: string[];
   /** Events this action emits (on success/failure/always). */
   emitsEvents: EmitSpec[];
-  /** Observable side-effects. */
+  /** Observable side-effects (structured). */
   sideEffects?: SideEffect[];
-  /** Who is allowed/expected to perform it. */
-  actor: ActorRef;
+  /** Who is allowed/expected to perform it (structured; `actor` is the spec form). */
+  actorRef: ActorRef;
   /** Capability strings, e.g. "order:fulfill". */
   permissions?: string[];
   /** AGENTIC binding — the callable tool contract. */
@@ -465,17 +599,43 @@ export interface EventField {
   description?: string;
 }
 
+/** One payload datum of an event (spec-format). */
+export interface SpecEventData {
+  name: string;
+  type: string;
+  /** The spec object id this datum belongs to, or null. */
+  target_object: string | null;
+}
+
+/** A state mutation an event records (spec-format). */
+export interface SpecStateMutation {
+  target_object: string;
+  mutation_type: string;
+  impacted_properties: string[];
+}
+
+/** Event payload (spec-format): the source action + data + state mutations. */
+export interface SpecEventPayload {
+  source_action: string;
+  event_data: SpecEventData[];
+  state_mutations: SpecStateMutation[];
+}
+
 export interface EventType extends NodeProvenance {
   /** Slug id in dotted form, e.g. "event:order.fulfilled". Prefix "event:". */
   id: string;
   uuid: string;
-  /** Dotted canonical name matching the id suffix, e.g. "order.fulfilled". */
+  /** Event name in UPPER_SNAKE form, e.g. "ORDER_FULFILLED". */
   name: string;
   nameZh: string;
   description?: string;
   descriptionZh?: string;
-  /** Payload shape — fields, each optionally referencing an ObjectType. */
-  payload: EventField[];
+  // ---- spec-format fields (the published event shape) ----
+  /** Payload (spec form): source action + event data + state mutations. */
+  payload: SpecEventPayload;
+  // ---- retained engine structure (receipts) ----
+  /** Payload field shapes (retained; `payload.event_data` is the spec view). */
+  payloadFields: EventField[];
   /** Action ids that emit this event (derived from Action.emitsEvents). */
   producedByActionIds: string[];
   /** Action ids triggered by this event (derived from Action.triggeredByEventIds). */
@@ -531,12 +691,32 @@ export interface OrchestrationSpec {
   onFailure?: 'halt' | 'compensate' | 'escalate';
 }
 
+/** One step of a workflow (spec-format). */
+export interface SpecWorkflowStep {
+  order: string;
+  name: string;
+  description: string;
+  type: 'manual' | 'tool' | 'logic';
+  condition: string;
+}
+
 export interface Process extends NodeProvenance {
   /** Slug id, e.g. "process:order-to-cash". Prefix "process:". */
   id: string;
   uuid: string;
+  /** Bilingual name; the spec export camelCases `name.en` (e.g. "manualEntry"). */
   name: Bilingual;
   description?: string;
+  // ---- spec-format fields (the published workflow shape) ----
+  /** Who runs the workflow (spec form). */
+  actor: SpecActor[];
+  /** Event names that start the workflow (or "SCHEDULED_SYNC"). */
+  trigger: string[];
+  /** Ordered workflow steps (spec form). */
+  actions: SpecWorkflowStep[];
+  /** Event names the workflow emits. */
+  triggered_event: string[];
+  // ---- retained engine structure (receipts) ----
   /** Actors that participate, with their kind. */
   actors: ActorRef[];
   /** ObjectType ids the process touches (denormalized for UI/summary). */
@@ -568,6 +748,27 @@ export interface VersionEntry {
   delta?: { added: number; changed: number; removed: number };
 }
 
+/**
+ * Web-search (Tavily) supplement appended to extraction context when the user
+ * enables live web search. Computed ONCE per run, cached on metadata, and
+ * injected into every stage prompt. Objects/properties derived solely from it
+ * are tagged `provenance: 'web_search'`.
+ */
+export interface WebAugmentation {
+  /** The industry/domain the planner identified from the corpus. */
+  industry: string;
+  /** The business scenario the planner identified. */
+  scenario: string;
+  /** The search queries actually run against Tavily. */
+  queries: string[];
+  /** The synthesized, density-filtered supplement text (capped). */
+  text: string;
+  /** Result provenance the user can audit (title + url). */
+  sources: { title: string; url: string }[];
+  /** ISO-8601 timestamp the augmentation was computed. */
+  at: string;
+}
+
 export interface OntologyMetadata {
   createdAt: string; // ISO-8601
   updatedAt: string; // ISO-8601
@@ -588,6 +789,9 @@ export interface OntologyMetadata {
   danglingRefs?: { from: string; field: string; missingId: string }[];
   /** Review-trail: per-stage critique notes from the extraction pass. */
   stageCritiques?: Partial<Record<Stage, string>>;
+  /** Live web-search (Tavily) supplement that augmented extraction, when enabled.
+   *  Set for any mode whose run requested web search; absent otherwise. */
+  webAugmentation?: WebAugmentation;
 
   // ---- Deep-swarm artifacts (optional; only set by the opt-in swarm mode) ----
   /** Web-augmented SME business-understanding brief that framed extraction. */
@@ -717,6 +921,10 @@ export interface OntologyRun {
    * `run.start` for uploaded corpora; cleared after the one-shot upgrade.
    */
   autoName?: boolean;
+
+  /** The user enabled live web-search augmentation (Tavily) for this run. The
+   *  pipeline computes the supplement once, then caches it on metadata. */
+  webSearch?: boolean;
 
   // ---- Deep-swarm / hyper mode (optional; absent on the fast single-pass path) ----
   /** Extraction mode. Absent or `'fast'` = the classic single-pass pipeline. */
@@ -1067,6 +1275,8 @@ export interface LlmSettings {
   defaultModel?: string;
   /** Smart per-agent router on/off. Default true. */
   routerEnabled?: boolean;
+  /** Tavily API key for live web-search augmentation. env TAVILY_API_KEY wins. */
+  tavilyApiKey?: string;
   updatedAt?: string;
 }
 
@@ -1116,7 +1326,7 @@ export interface InferenceResult {
 // 11. Generation projections (derived artifacts — NOT stored in the ontology)
 // ===========================================================================
 
-export type GeneratorTarget = 'agent-code' | 'prompts' | 'manifest';
+export type GeneratorTarget = 'agent-code' | 'prompts' | 'manifest' | 'spec';
 
 export interface GeneratedFile {
   path: string;

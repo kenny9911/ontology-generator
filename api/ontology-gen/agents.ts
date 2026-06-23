@@ -161,6 +161,18 @@ export const AGENT_REGISTRY: readonly AgentDef[] = [
     purpose: 'inference',
     group: 'inference',
   },
+
+  // --- shared (web-search augmentation, any mode) ----------------------------
+  {
+    id: 'web_search_planner',
+    label: { en: 'Web-search planner', zh: '联网搜索规划' },
+    description: {
+      en: 'Plans industry/scenario web queries and distills the results into a dense, on-topic supplement to the source documents.',
+      zh: '规划行业/业务场景的联网搜索查询，并把结果提炼为与源文档同行业、信息密集的资料补充。',
+    },
+    purpose: 'synthesis',
+    group: 'shared',
+  },
 ];
 
 const BY_ID: ReadonlyMap<string, AgentDef> = new Map(AGENT_REGISTRY.map((a) => [a.id, a]));

@@ -140,7 +140,7 @@ function discoverRoles(o: Ontology): RoleProfile[] {
   };
 
   for (const action of o.actions) {
-    const actor = action.actor;
+    const actor = action.actorRef;
     if (!actor || !actor.role) continue;
     const p = ensure(actor.role, actor.roleZh);
     p.ownedActions.push(action);

@@ -190,8 +190,15 @@ WHAT TO EXTRACT
   between people, it is an object candidate — enumerate it.
 - DO NOT create objects for: verbs/operations (those are Actions, Stage 3), events
   (Stage 4), one-off values, report names, UI labels, or section headings.
-- For each object: PascalCase singular "name" (+ "nameZh"), a one-sentence "description"
-  (+ "descriptionZh"), its ATTRIBUTES, and its RELATIONSHIPS to other objects in THIS output.
+- For each object emit: a PascalCase singular "name" (+ Chinese "nameZh"), a one-sentence
+  "description" (+ "descriptionZh"), a "type", a "relationship_description", a "primary_key",
+  its "properties", and its RELATIONSHIPS to other objects in THIS output.
+- "type" is "data" (a business entity) or "system" (an application / external system the
+  document references — a CRM, ERP, RMS, partner portal, or service the business integrates with).
+- "relationship_description" is prose stating how this object relates to the OTHER objects
+  (who owns it, what it references, what references it) — the human-readable summary of the
+  edges you emit in "relationships", and the key input for building inter-object relationships.
+- "primary_key" is the property name that uniquely identifies the object (default "<object>_id").
 
 COMMONLY MISSED — sweep for ALL of these explicitly (extractors systematically under-report them):
 - LOOKUP / REFERENCE / MASTER DATA: tiers, categories, regions, rate tables, code lists,
@@ -206,21 +213,43 @@ COMMONLY MISSED — sweep for ALL of these explicitly (extractors systematically
 - CONFIGURATION / POLICY ENTITIES: fee schedules, approval matrices, plan definitions,
   threshold tables — when the document treats configuration as managed data.
 - STATUSES WORTH MODELING: a lifecycle spelled out in prose ("draft, submitted, approved,
-  rejected") becomes an "enum" attribute with that EXACT value set on the owning object.
-- EVERY ATTRIBUTE MENTIONED ANYWHERE in the text — including ones mentioned only once,
-  in passing, or inside a rule or procedure description. Recognize the DataType:
-  money amounts (and their currency) => "money"; calendar dates => "date"; timestamps =>
-  "datetime"; identifiers/codes => "uuid" or "string" with keyRole "pk"/"fk"; enum value
-  sets spelled out in prose => "enum" with exact "enumValues"; percentages/ratios =>
-  "decimal"; yes/no facts phrased as conditions ("whether the customer has consented") =>
-  "boolean"; durations and counts => "integer" (with the constraint captured in Stage 2).
+  rejected") becomes a "List<String>" property whose description lists those EXACT values.
+- EVERY PROPERTY MENTIONED ANYWHERE in the text — including ones mentioned only once,
+  in passing, or inside a rule or procedure description. Recognize the type:
+  money amounts / percentages / ratios => "Float"; whole counts and durations => "Integer";
+  calendar dates => "Date"; timestamps => "Timestamp"; yes/no facts ("whether the customer has
+  consented") => "Boolean"; enumerated value sets or any multi-value field => "List<String>";
+  identifiers, codes, names, and free text => "String".
 
-ATTRIBUTE RULES
-- "name" in snake_case. "type" from the closed DataType vocabulary ONLY.
-- "keyRole" is "pk" (primary identifier), "fk" (points at another object), or "none".
-- If "type" is "enum", list "enumValues" exactly as written in the document.
-- If "keyRole" is "fk" OR "type" is "reference", set "refObjectTypeId" to the target object id.
-- "required": true only when the document implies the field is mandatory.
+COMMON-SENSE SUPPLEMENTATION (beyond the document — REQUIRED)
+- After sweeping the document, ALSO add the objects and properties a domain EXPERT knows
+  this kind of business always has even when the document is silent — standard master /
+  reference data, the common parties, and the obvious id / status / created_at / owner fields.
+  This fills the gaps in thin or partial documents so downstream agents are not blind.
+- Mark every such common-sense item provenance:"inferred" and give it NO "sources" (it is
+  not in the document — never fabricate a citation for it).
+- If a "WEB-SEARCH SUPPLEMENT" block appears AFTER these instructions, ADD the
+  objects/properties it lists that fit THIS industry and are missing from the document, and
+  tag EACH of them provenance:"web_search" (NO "sources"). Items taken from that block are
+  "web_search", NOT "inferred" — do not relabel them. Ignore anything off-industry.
+
+PROVENANCE (REQUIRED on every object AND every property) — route by WHERE it came from:
+- "extracted" — stated in the DOCUMENT; MUST carry >=1 "sources" entry with a verbatim
+  "snippet" (ungrounded "extracted" items are DROPPED).
+- "web_search" — taken from the WEB-SEARCH SUPPLEMENT block (when one is present), not in
+  the document; NO "sources". If an item appears in that block, it is "web_search", NEVER
+  "inferred".
+- "inferred" — YOUR OWN general knowledge, NOT in the document AND NOT in any web-search
+  block; NO "sources".
+- A property has its OWN provenance: an "extracted" object may carry "inferred"/"web_search"
+  properties, and an added object may still carry a property the document mentions.
+
+PROPERTY RULES (the "properties" array)
+- Each property MUST have "name" (snake_case), "type", "description", and "provenance".
+- "type" is ONE of: String | Integer | Float | Boolean | Date | Timestamp | List<String>.
+- A property that points at ANOTHER object is a foreign key: set "is_foreign_key": true and
+  "references" to the target object's id (e.g. "objectType:customer").
+- Name the primary key once at the object level via "primary_key" — do not tag properties.
 
 RELATIONSHIP RULES (emitted as a TOP-LEVEL "relationships" array)
 - Each relationship is a first-class edge: a verb "name" (snake_case, e.g. "places",
@@ -239,17 +268,35 @@ OUTPUT CONTRACT — return EXACTLY this shape (one JSON object):
       "nameZh": "客户",
       "description": "A party that places orders.",
       "descriptionZh": "下订单的一方。",
-      "attributes": [
-        { "name": "customer_id", "nameZh": "客户编号", "type": "uuid", "required": true,
-          "keyRole": "pk", "description": "Unique identity." },
-        { "name": "tier", "type": "enum", "required": true, "keyRole": "none",
-          "enumValues": ["Standard","Premium","Enterprise"] }
+      "type": "data",
+      "relationship_description": "A Customer places one or more Orders and holds exactly one CreditProfile.",
+      "primary_key": "customer_id",
+      "properties": [
+        { "name": "customer_id", "nameZh": "客户编号", "type": "String", "description": "Unique identity of the customer.", "provenance": "extracted" },
+        { "name": "tier", "type": "List<String>", "description": "Customer tier — one of Standard, Premium, Enterprise.", "provenance": "extracted" },
+        { "name": "created_at", "type": "Timestamp", "description": "When the customer record was created (standard audit field).", "provenance": "inferred" },
+        { "name": "account_id", "nameZh": "账户编号", "type": "String", "is_foreign_key": true,
+          "references": "objectType:account", "description": "The CRM account this customer maps to.", "provenance": "extracted" }
       ],
       "sources": [
         { "documentId": "", "documentName": "${docName}", "section": "§3.2",
           "snippet": "Each customer is assigned a tier of Standard, Premium, or Enterprise." }
       ],
       "confidence": 0.95, "provenance": "extracted", "reviewState": "pending"
+    },
+    {
+      "id": "objectType:audit_log",
+      "name": "AuditLog", "nameZh": "审计日志",
+      "description": "Standard record of who changed what and when.",
+      "descriptionZh": "记录谁在何时变更了什么的标准审计记录。",
+      "type": "data", "relationship_description": "An AuditLog references the user who made a change.",
+      "primary_key": "audit_log_id",
+      "properties": [
+        { "name": "audit_log_id", "type": "String", "description": "Identifier.", "provenance": "inferred" },
+        { "name": "changed_at", "type": "Timestamp", "description": "When the change happened.", "provenance": "inferred" }
+      ],
+      "sources": [],
+      "confidence": 0.6, "provenance": "inferred", "reviewState": "pending"
     }
   ],
   "relationships": [
@@ -270,18 +317,27 @@ NEGATIVE EXAMPLE: "Refund" is usually an action outcome / event, NOT an object �
 it as an object unless the document gives it identity and attributes of its own.
 
 ${SELF_CHECK}
-- [ ] Every attribute mentioned anywhere in the text appears on some object with a correct
-      DataType (money/date/datetime/enum/boolean recognized from prose, not defaulted).
-- [ ] Every status lifecycle spelled out in prose is an "enum" attribute with the exact values.
+- [ ] Every property mentioned anywhere in the text appears on some object with a correct
+      type (Float/Date/Timestamp/Boolean/List<String> recognized from prose, not defaulted).
+- [ ] Every status lifecycle spelled out in prose is a "List<String>" property listing the values.
+- [ ] Every object has "type", "primary_key", and "relationship_description" filled in.
+- [ ] Every foreign-key property sets "is_foreign_key" + "references" to a real object id.
 - [ ] Every party, document-as-entity, lookup table, and line item in the text was either
-      emitted or consciously rejected as a non-entity.`;
+      emitted or consciously rejected as a non-entity.
+- [ ] Every object AND every property carries "provenance"; "extracted" items have a verbatim
+      citation while "inferred"/"web_search" items carry NO "sources".
+- [ ] You ADDED the common-sense objects/properties a domain expert expects but the document
+      omitted, each tagged "inferred".`;
 
   const user = `DOCUMENT NAME: ${docName}
 
 ${fence('DOCUMENT (extract objects + relationships from THIS text only)', chunkText)}
 
 Extract ALL Object Types and the Relationships among them per the OUTPUT CONTRACT —
-sweep every section; completeness and verbatim citations are both mandatory.
+sweep every section. Completeness is mandatory; verbatim citations are mandatory for
+"extracted" items, while common-sense ("inferred") and web-search ("web_search") additions
+carry NO citation. Then ADD the common-sense objects/properties this industry always has
+but the document omitted.
 Return ONLY the JSON object.`;
 
   return { system, user };
@@ -330,6 +386,20 @@ METHOD (follow exactly — the numbered sentences ARE your sections)
    "info" (documentary / derivation).
 7. "trigger" (optional): { "description": "...", "onEventTypeId"?: "event:..." } — when the
    rule is evaluated. Omit onEventTypeId if no event is known yet.
+8. EXECUTION SEMANTICS (optional, align with "severity"):
+   - "executor": "human" | "agent" — who carries the rule out. Default "agent" unless the
+     document clearly assigns it to a person/role.
+   - "enforcementLevel": "mandatory" (must hold) | "optional" (advisory).
+   - "failurePolicy": "block" (a violation aborts the gated action) | "warn" (surfaced only).
+   Keep them consistent with severity: block => mandatory + block; warn/info => optional + warn.
+9. BUSINESS CONTEXT (extract from the document when stated; these have NO default source —
+   only the document can supply real values, so read carefully and quote-ground them):
+   - "applicableClient": the client / customer / business unit this rule applies to, IN CHINESE
+     (use "通用" only when the document says it applies to ALL clients).
+   - "applicableDepartment": the department / team responsible, IN CHINESE (use "N/A" only when
+     the document gives none).
+   - "businessBackgroundReason": WHY this rule exists — the business rationale / background,
+     IN CHINESE, when the document explains it (else "").
 
 COMMONLY MISSED — hunt for ALL of these explicitly (they hide outside the obvious "must" sentences):
 - NUMERIC THRESHOLDS buried in prose: "orders above $10,000", "no more than 3 attempts",
@@ -370,6 +440,9 @@ OUTPUT CONTRACT — return EXACTLY this shape:
         "predicate": "order.status != 'Fulfilled' || payment.amount >= invoice.total || customer.tier == 'Enterprise'",
         "bindings": [{ "var": "order", "objectTypeId": "objectType:order" }] },
       "kind": "state_transition", "severity": "block",
+      "executor": "agent", "enforcementLevel": "mandatory", "failurePolicy": "block",
+      "applicableClient": "通用", "applicableDepartment": "履约部",
+      "businessBackgroundReason": "确保收款到账后再发货，避免坏账与履约风险。",
       "appliesToObjectTypeIds": ["objectType:order","objectType:payment","objectType:customer"],
       "appliesToAttributes": ["objectType:order.status"],
       "trigger": { "description": "on Order.status transition to Fulfilled" },
@@ -450,6 +523,9 @@ WHAT TO EXTRACT
     "state_change"|"payment"|"other", "description", "objectTypeId"? }.
   - "actor": ActorRef — { "role", "roleZh"?, "kind": "human"|"agent"|"system" }.
   - "permissions"?: capability strings, e.g. "order:fulfill".
+  - "typescript_code"? (optional): when the action is a self-contained logic/tool function whose
+    implementation is fully determined by the document (e.g. an explicit formula or API call),
+    provide a concise TypeScript implementation here; otherwise omit it or use "".
   - "agent": AgentBinding — { "toolName" (snake_case, e.g. "fulfill_order"), "parameterSchema"
     (JSON-Schema object derived from inputs: { "type":"object", "properties":{...}, "required":[...] };
     a property that represents a domain object carries "$objectTypeId"), "toolDescription"
@@ -795,11 +871,11 @@ skip is an operation downstream agents can never perform. Output ONLY a single J
 listing files.
 
 WHAT TO GENERATE
-1. One TS interface per ObjectType (in "types.ts") — no object skipped: attributes -> fields.
-   Map DataType -> TS:
-   string/uuid -> string; integer -> number; decimal/money -> number; boolean -> boolean;
-   date/datetime -> string (ISO); enum -> a string-literal union of enumValues; reference/fk ->
-   the referenced interface type; json -> unknown; array -> T[].
+1. One TS interface per ObjectType (in "types.ts") — no object skipped: properties -> fields.
+   Map property type -> TS:
+   String -> string; Integer/Float -> number; Boolean -> boolean; Date/Timestamp -> string (ISO);
+   List<String> -> string[]; a foreign-key property (is_foreign_key + references) -> the
+   referenced interface type.
 2. Event payload types (in "events.ts") as a discriminated union keyed by the event "name",
    derived from each EventType.payload — every event represented.
 3. One exported async function per ActionType (in "tools.ts") — every action, none skipped:
@@ -1177,7 +1253,7 @@ export function buildLinksPrompt(args: {
 
 ${SHARED_RULES}
 
-SWEEP DISCIPLINE (be exhaustive): systematically consider PAIRS of objects from the list — for each plausible pair, ask whether the domain implies an edge between them. Enumerate candidate edges BEFORE filtering, then keep the ones that are real. An attribute with keyRole/ref pointing at another object almost always implies an edge — check every such attribute.
+SWEEP DISCIPLINE (be exhaustive): systematically consider PAIRS of objects from the list — for each plausible pair, ask whether the domain implies an edge between them. Enumerate candidate edges BEFORE filtering, then keep the ones that are real. A property with is_foreign_key/references pointing at another object almost always implies an edge — check every such property.
 
 NEGATIVE-SPACE CHECKLIST — edge types extraction most often misses; walk each category against the object set:
 - OWNERSHIP / possession: a party owns, holds, or is responsible for an asset/account/record.

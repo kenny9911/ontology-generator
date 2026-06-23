@@ -30,6 +30,7 @@ npm run preview      # serve the production build
 npm run typecheck:api  # typecheck api/ (NOT covered by `npm run build`)
 npm run test:hyper     # deterministic hyper-automation tests (tsx scripts/test-hyper.mts, no LLM)
 npm run test:editor    # deterministic JSON-editor tests (tsx scripts/test-json-editor.mts, no LLM)
+npm run test:spec      # deterministic spec-format projection tests (tsx scripts/test-spec-format.mts, no LLM)
 ```
 
 There is **no test framework and no lint script** in this repo. Verification is:
@@ -43,10 +44,22 @@ inference-use-case fixture integrity) — + `npm run test:editor`
 covering the JSON Editor's pure logic (auto-repair / string-aware adversarial
 cases / parseLayer / extract-serialize-merge round-trips / id+bilingual coercion
 / schema suggestions / candidate assembly / validateOntology integration /
-layer-schema drift). `fixtures/ontology-golden/` holds reference ontologies
-consumed by both scripts. When you finish a backend change, run
-`npm run typecheck:api` and `npm run test:hyper`; for a frontend change, run
-`npm run build` (and `npm run test:editor` when touching `src/ontology-generator/json-editor/`).
+layer-schema drift) — + `npm run test:spec` (`scripts/test-spec-format.mts`) — a
+deterministic, no-LLM suite (108 checks) covering the **spec-format output
+projection** (`api/ontology-gen/spec-format/`): it anchors the contract
+validators to the hand-authored reference samples in `fixtures/spec-samples/`,
+then asserts the projection of every golden ontology passes
+`validateSpecBundle`, carries EXACTLY the spec field keys per node, derives
+`primary_key` / FK `references` / rule `executor`/`enforcementLevel`/
+`failurePolicy` / data-vs-system class correctly, every canonical layer carries
+its spec fields, and the **descriptive fields are Chinese-first** (object
+`description`/`relationship_description`, rule scenario/criteria, action
+description/criteria/steps, event/workflow descriptions — both canonical AND the
+`generate spec` projection, no English leaks). `fixtures/ontology-golden/`
+holds reference ontologies consumed by all three scripts. When you finish a
+backend change, run `npm run typecheck:api`, `npm run test:hyper`, and
+`npm run test:spec`; for a frontend change, run `npm run build` (and
+`npm run test:editor` when touching `src/ontology-generator/json-editor/`).
 
 ## Two TypeScript build worlds — the import-suffix rule
 
@@ -306,7 +319,10 @@ via `llm.settings`; it works in demo mode too (no LLM key needed).
 `canVisit` always true, and reachable with or without a run via its own
 historical-ontology picker). Five tabs (Data Objects / Rules / Actions / Events /
 **Workflow** == `processes`) each edit one ontology layer's JSON in a single
-Monaco instance backed by five persistent models. Validation is two-tier: Monaco's
+Monaco instance backed by five persistent models. Each tab's buffer is the
+**metadata-wrapped doc** `{ metadata, <layer>: [ …nodes ] }` (processes wraps under
+`"workflows"`, matching the reference samples) — `serializeLayerDoc` builds it and
+`parseLayer` unwraps it (a bare array still parses, for back-compat). Validation is two-tier: Monaco's
 JSON language service gives inline syntax + per-layer JSON-Schema squiggles, and
 our own `validateOntology` runs over a reassembled candidate for cross-tab
 semantics — both feed one diagnostics panel with click-to-locate and one-click
@@ -331,6 +347,39 @@ library. UI strings are bilingual (en/zh) via [i18n.ts](src/ontology-generator/i
 
 ## Schema conventions (honor on both copies)
 
+- **All five layers are spec-shaped (hybrid).** Every node carries the
+  uploaded-sample fields as first-class, FOLLOWED by the retained relational
+  structure the engine needs (a "receipt", like `sources`/`uuid`). So the
+  pipeline output, review screens, JSON editor, and `generate spec` export all
+  use the sample field names, while inference / manifest generator / graph keep
+  working off the retained structure. Ids keep their kind-prefix (`objectType:` /
+  `rule:` / …) so cross-layer refs are unchanged; the spec **export** strips/recases
+  them (e.g. `objectType:customer` → `Customer`, dotted event → `UPPER_SNAKE`).
+  - **objects** — `type` ('data'|'system'), `relationship_description`,
+    `primary_key` (default `<id>_id`), `properties: ObjectProperty[]`
+    `{name,type,description,is_foreign_key?,references?}` over `PROPERTY_TYPES`
+    (`String`/`Integer`/`Float`/`Boolean`/`Date`/`Timestamp`/`List<String>`;
+    `enum`/`array`→`List<String>`). This was a clean replace — no `attributes`.
+  - **rules** — `specificScenarioStage`, `businessLogicRuleName`, `applicableClient`,
+    `applicableDepartment`, `submissionCriteria`, `standardizedLogicRule`,
+    `relatedEntities`, `businessBackgroundReason`, `ruleSource`, `executor`
+    ('Human'|'Agent'), `enforcementLevel`, `failurePolicy` + retained
+    `title`/`statement`/`severity`/`kind`/`appliesToObjectTypeIds`/…
+  - **actions** — `submission_criteria`, `object_type:'action'`, `category`,
+    `actor: SpecActor[]`, `trigger`, `target_objects`, `action_steps`,
+    `system_prompt`, `user_prompt`, `tool_use`, `side_effects`, `triggered_event`
+    + retained `inputs`/`outputs` (ActionIO enriched with `source_object`+spec
+    `type`, retaining `objectTypeId`), `steps`/`preconditions`/`emitsEvents`/
+    `triggeredByEventIds`/`agent`, and `actorRef` (the renamed structural actor).
+  - **events** — `name` (UPPER_SNAKE) + `payload` (spec object
+    `{source_action,event_data,state_mutations}`) + retained `payloadFields`
+    (EventField[]) / `producedByActionIds` / `consumedByActionIds`.
+  - **processes** (the "Workflow" layer) — `actor`, `trigger`, `actions`
+    (SpecWorkflowStep[]), `triggered_event` + retained `actors`/`steps`/`triggers`/
+    `orchestration`; `name` stays `Bilingual` (export camelCases `name.en`).
+  - Back-compat: [normalize-objects.ts](src/ontology-generator/normalize-objects.ts)
+    (`normalizeOntologyObjects`, applied at the controller's commit chokepoint)
+    converts legacy-shaped ontologies for ALL five layers, idempotently.
 - Cross-references between nodes are **always by `id`** — a stable, kind-prefixed
   slug minted by `makeId` ([api/_shared/ids.ts](api/_shared/ids.ts)). `uuid` is for
   storage/Neo4j joins only.
@@ -346,8 +395,44 @@ library. UI strings are bilingual (en/zh) via [i18n.ts](src/ontology-generator/i
 ## Generators
 
 From a published (or inline) ontology, `generate` produces deployable artifacts —
-`agent-code` | `prompts` | `manifest` | `all` — in
+`agent-code` | `prompts` | `manifest` | `spec` | `all` — in
 [api/ontology-gen/generators/](api/ontology-gen/generators/).
+
+### Spec-format output projection (`spec` target)
+
+[api/ontology-gen/spec-format/](api/ontology-gen/spec-format/) is the
+EXPORT/PRESENTATION schema — the shape the product publishes per layer, mirroring
+the hand-authored reference samples in `fixtures/spec-samples/` (objects / rules /
+actions / events / workflow). It is **deliberately distinct** from the canonical
+internal schema: it drops the internal "receipts" (`sources`/`confidence`/
+`reviewState`/`uuid`) and uses business-friendly field names + a human-facing type
+vocabulary (`String`/`Integer`/`Float`/`Boolean`/`Date`/`Timestamp`/`List<…>`).
+
+- `types.ts` — the spec-format interfaces + closed-vocab consts (a leaf, like the
+  canonical schema; pure types only).
+- `project.ts` — `ontologyToSpec(ontology)`, a **pure + deterministic** projection
+  (no LLM/IO, no `Date.now()`/`Math.random()`). Spec fields with a first-class
+  internal home pass through (`Rule.executor`, `ObjectType.objectClass`); the rest
+  are DERIVED — object `type` (data/system via a name heuristic), object
+  `relationship_description` (synthesized from `relationships` + FK attributes),
+  `primary_key` (the pk attr, else `<snake(id)>_id`), rule `enforcementLevel`/
+  `failurePolicy` (from `severity`), rule `executor` (from referencing actors).
+- `validate.ts` — two-tier contract validators (per-layer SHAPE + full-bundle
+  CROSS-REF), used by `scripts/test-spec-format.mts` and surfaced as generator
+  warnings.
+- The `spec` target serializes five per-layer JSON files via
+  [generators/spec-format.ts](api/ontology-gen/generators/spec-format.ts); it's
+  also one of the Publish-screen artifact tabs.
+
+To populate the spec-only semantic fields on LIVE runs, the canonical schema
+carries a few OPTIONAL extracted fields the projection prefers over its
+fallbacks: `ObjectType.objectClass` + `ObjectType.relationshipNote`, and
+`Rule.executor` / `enforcementLevel` / `failurePolicy` (parsed in
+[stages/objects.ts](api/ontology-gen/pipeline/stages/objects.ts) /
+[stages/rules.ts](api/ontology-gen/pipeline/stages/rules.ts), requested
+additively in [prompts.ts](api/ontology-gen/prompts.ts)). These are optional in
+both schema mirrors, so validation, the JSON editor, and existing tests are
+unaffected.
 
 ## Sample corpora
 

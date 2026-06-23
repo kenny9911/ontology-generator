@@ -35,6 +35,7 @@
 import { executeLLMWithTracking, type ExecuteLLMOptions } from '../../llm.js';
 import { buildEventsPrompt } from '../../prompts.js';
 import { ctxAgentLlm } from '../../llm-router.js';
+import { stageSystem } from '../context.js';
 import type { StageContext } from '../context.js';
 import type {
   ActionType,
@@ -42,8 +43,10 @@ import type {
   DataType,
   EventField,
   EventType,
+  SpecEventPayload,
 } from '../../../_shared/ontology-schema.js';
 import { DATA_TYPES } from '../../../_shared/ontology-schema.js';
+import { specObjectId, eventSpecName, mapDataType } from '../../spec-format/project.js';
 
 /** Inferred events never score above this (DESIGN_SPEC §3.2 / Stage-4 prompt). */
 const INFERRED_CONFIDENCE_CAP = 0.6;
@@ -134,14 +137,16 @@ export async function extractEvents(ctx: StageContext): Promise<{ events: EventT
   // 3. Build one EventType per unique id. Inverse wiring is authoritative;
   //    the model only contributes payload/description/nameZh.
   // ---------------------------------------------------------------------
+  const actionById = new Map(actions.map((a) => [a.id, a]));
   const events: EventType[] = orderedIds.map((id) => {
     const producers = producedBy.get(id) ?? [];
     const consumers = consumedBy.get(id) ?? [];
     const emitters = emitterActions.get(id) ?? [];
     const enr = enrichment.get(id);
 
-    const name = eventNameFromId(id);
-    const payload = resolvePayload(enr?.payload, emitters);
+    const name = eventSpecName(id);
+    const payloadFields = resolvePayload(enr?.payload, emitters);
+    const payload = buildSpecPayload(payloadFields, producers, emitters, actionById);
 
     // An event is GROUNDED only if the model returned a verbatim snippet for it;
     // otherwise it is a synthesized/inferred node (derived from its referencers).
@@ -153,9 +158,11 @@ export async function extractEvents(ctx: StageContext): Promise<{ events: EventT
       uuid: makeUuid(),
       name,
       nameZh: enr?.nameZh && enr.nameZh.trim().length > 0 ? enr.nameZh : name,
-      description: enr?.description,
+      // Spec-format is Chinese-first: prefer the Chinese description.
+      description: enr?.descriptionZh?.trim() || enr?.description,
       descriptionZh: enr?.descriptionZh,
       payload,
+      payloadFields,
       producedByActionIds: producers,
       consumedByActionIds: consumers,
       sources: grounded
@@ -231,7 +238,7 @@ async function enrichViaLlm(ctx: StageContext): Promise<Map<string, EventEnrichm
       // StageContext.provider is a plain string; narrow to the option's union.
       provider: llm.provider as ExecuteLLMOptions['provider'],
       messages: [
-        { role: 'system', content: ctx.briefSeed ? `${system}\n\n${ctx.briefSeed}` : system },
+        { role: 'system', content: stageSystem(ctx, system) },
         { role: 'user', content: user },
       ],
       temperature: 0.1,
@@ -325,6 +332,52 @@ function inferPayloadFromEmitters(emitters: ActionType[]): EventField[] {
   return Array.from(byName.values());
 }
 
+/** camelCase function-style name (matches the spec action naming). */
+function camelName(s: string): string {
+  const w = (s || '')
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .split(/[^A-Za-z0-9]+/)
+    .filter(Boolean);
+  if (w.length === 0) return s;
+  return w[0]!.toLowerCase() + w.slice(1).map((x) => x[0]!.toUpperCase() + x.slice(1)).join('');
+}
+
+/** Build the spec-format event payload from the structural payload fields. */
+function buildSpecPayload(
+  payloadFields: EventField[],
+  producers: string[],
+  emitters: ActionType[],
+  actionById: Map<string, ActionType>,
+): SpecEventPayload {
+  const sourceId = producers.find((aid) => actionById.has(aid));
+  const source_action = sourceId ? camelName(actionById.get(sourceId)!.name) : '';
+
+  const event_data = payloadFields.map((f) => ({
+    name: f.name,
+    type: mapDataType(f.type),
+    target_object: f.objectTypeId ? specObjectId(f.objectTypeId) : null,
+  }));
+
+  const targets: string[] = [];
+  for (const a of emitters) {
+    for (const se of a.sideEffects ?? []) {
+      if ((se.kind === 'db_write' || se.kind === 'state_change' || se.kind === 'payment') && se.objectTypeId) {
+        targets.push(specObjectId(se.objectTypeId));
+      }
+    }
+  }
+  if (targets.length === 0) {
+    for (const f of payloadFields) if (f.objectTypeId) targets.push(specObjectId(f.objectTypeId));
+  }
+  const state_mutations = Array.from(new Set(targets)).map((t) => ({
+    target_object: t,
+    mutation_type: 'CREATE_OR_MODIFY',
+    impacted_properties: [] as string[],
+  }));
+
+  return { source_action, event_data, state_mutations };
+}
+
 /** Parse + sanitize a model-provided payload array into valid EventField[]. */
 function parsePayload(raw: unknown): EventField[] | undefined {
   if (!Array.isArray(raw)) return undefined;
@@ -349,11 +402,6 @@ function parsePayload(raw: unknown): EventField[] | undefined {
 // ===========================================================================
 // Small pure helpers.
 // ===========================================================================
-
-/** The dotted event name is the id suffix after the `event:` prefix. */
-function eventNameFromId(id: string): string {
-  return id.startsWith('event:') ? id.slice('event:'.length) : id;
-}
 
 /**
  * The event `id` is reused VERBATIM from the action refs (it is already a
