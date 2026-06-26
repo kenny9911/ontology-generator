@@ -32,6 +32,7 @@ import { STAGE_ORDER } from '../_shared/ontology-schema.js';
 import type {
   ActionType,
   Bilingual,
+  DatabaseProfile,
   DomainKey,
   EventType,
   ObjectType,
@@ -77,6 +78,12 @@ import { generate } from './generators/index.js';
 import type { GeneratorTarget } from './generators/index.js';
 import { importOntology } from './neo4j/import.js';
 import { neo4jEnabled, neo4jHealthy } from './neo4j/driver.js';
+import { parseDdl } from './db/parse/ddl.js';
+import { parseInfoSchemaJson } from './db/parse/info-schema-json.js';
+import { textualizeSchema, SCHEMA_DOC_ID, SCHEMA_DOC_NAME } from './db/textualize.js';
+import type { DbModel } from './db/types.js';
+import { introspect } from './db/introspect/information-schema.js';
+import type { DbConnection } from './db/introspect/information-schema.js';
 
 // Sample corpora are read from disk (bundled fixtures). Node builtins only.
 import { promises as fs } from 'fs';
@@ -456,7 +463,7 @@ async function contextFromOntology(
   const model = overrides?.model || defaultModel();
   const provider = overrides?.provider || defaultProvider();
 
-  return {
+  const ctx: StageContext = {
     ontologyId: ontology.id,
     domain: ontology.domain,
     sources,
@@ -478,6 +485,14 @@ async function contextFromOntology(
     webAugment: renderWebAugment(ontology.metadata?.webAugmentation),
     agentLlm: makeAgentLlmResolver(settings, model, provider),
   };
+
+  // Database input kind: attach the stashed DbModel so the objects/rules stages
+  // take the deterministic seed path. Absent for document runs (ctx.dbModel stays
+  // undefined), so the classic pipeline is byte-identical.
+  const dbModel = await loadStashedDbModel(store, dbModelRef(ontology.id));
+  if (dbModel) ctx.dbModel = dbModel;
+
+  return ctx;
 }
 
 /**
@@ -629,6 +644,162 @@ async function actionParse(req: VercelRequest, res: VercelResponse): Promise<voi
 }
 
 // ===========================================================================
+// Action: db.upload / db.preview — ingest a database SCHEMA (M0) from an
+// uploaded pg_dump/mysqldump DDL or an information_schema JSON export. Both
+// build a dialect-neutral DbModel; db.upload persists the citable schema
+// evidence + stashes the model for run.start, db.preview only renders it for
+// audit. Live introspection (pg/mysql2) is a later milestone. No credentials
+// are ever involved — these consume uploaded artifacts only.
+// ===========================================================================
+
+/** Parse a db.upload/db.preview body into a DbModel; throws HttpError on bad input. */
+function parseDbUploadBody(body: Record<string, unknown>): { model: DbModel } {
+  const dialect = body.dialect === 'mysql' ? 'mysql' : 'postgres';
+  const format = body.format === 'information_schema_json' ? 'information_schema_json' : 'ddl';
+  const defaultSchema = typeof body.defaultSchema === 'string' ? body.defaultSchema : undefined;
+
+  const texts: string[] = [];
+  const rawFiles = Array.isArray(body.files) ? (body.files as UploadFile[]) : [];
+  for (const f of rawFiles) {
+    if (!f) continue;
+    const t =
+      typeof f.text === 'string'
+        ? f.text
+        : typeof f.contentBase64 === 'string'
+          ? Buffer.from(f.contentBase64, 'base64').toString('utf8')
+          : '';
+    if (t.trim()) texts.push(t);
+  }
+  if (texts.length === 0 && typeof body.content === 'string' && body.content.trim()) {
+    texts.push(body.content);
+  }
+  if (texts.length === 0) throw new HttpError(400, 'db.upload requires files[] or content', 'NO_CONTENT');
+
+  let model: DbModel;
+  try {
+    model =
+      format === 'information_schema_json'
+        ? parseInfoSchemaJson(JSON.parse(texts[0]!), { dialect, defaultSchema })
+        : parseDdl(texts.join('\n\n'), { dialect, defaultSchema });
+  } catch (err) {
+    throw new HttpError(400, `failed to parse ${format}: ${errText(err)}`, 'DB_PARSE_FAILED');
+  }
+  if (model.tables.length === 0) throw new HttpError(400, 'no tables found in the uploaded schema', 'DB_EMPTY');
+  return { model };
+}
+
+/** Audit-only summary of a DbModel (no credentials). Shapes a DatabaseProfile. */
+function dbProfile(model: DbModel): DatabaseProfile {
+  return {
+    dialect: model.dialect,
+    sourceKind: model.sourceKind,
+    schemas: model.schemas,
+    counts: {
+      tables: model.tables.length,
+      views: model.views.length,
+      foreignKeys: model.tables.reduce((n, t) => n + t.foreignKeys.length, 0),
+      constraints: model.tables.reduce((n, t) => n + t.checks.length + t.uniques.length, 0),
+    },
+    connectedAt: nowIso(),
+  };
+}
+
+/** Merge several DbModels (multi-file upload) into one, de-duping tables by schema.name. */
+function mergeDbModels(models: DbModel[]): DbModel {
+  if (models.length === 1) return models[0]!;
+  const byKey = new Map<string, DbModel['tables'][number]>();
+  for (const m of models) for (const t of m.tables) byKey.set(`${t.schema}.${t.name}`, t);
+  return {
+    dialect: models[0]!.dialect,
+    sourceKind: models[0]!.sourceKind,
+    schemas: Array.from(new Set(models.flatMap((m) => m.schemas))),
+    tables: Array.from(byKey.values()),
+    views: models.flatMap((m) => m.views),
+  };
+}
+
+/**
+ * Persist a parsed DbModel as the citable schema evidence (a ParsedSource) +
+ * stash the model keyed by the parsedRef, and respond with the run.start handle.
+ * SHARED by db.upload (parsed from artifacts) and db.introspect (read live), so
+ * both ingestion paths produce identical persisted state.
+ */
+async function persistDbModelAndRespond(res: VercelResponse, store: OntologyStore, model: DbModel): Promise<void> {
+  const text = textualizeSchema(model);
+  const ref = `parsed_db_${newUuid()}`;
+  const source: SourceDocument = { id: SCHEMA_DOC_ID, uuid: newUuid(), name: SCHEMA_DOC_NAME, kind: 'db', parsedRef: ref };
+  await store.putParsed({ ref, documentId: SCHEMA_DOC_ID, text });
+  await store.putParsed({ ref: dbModelUploadRef(ref), documentId: SCHEMA_DOC_ID, text: JSON.stringify(model) });
+  ok(res, { sources: [source], parsedRefs: [ref], preview: text, databaseProfile: dbProfile(model) });
+}
+
+async function actionDbUpload(req: VercelRequest, res: VercelResponse): Promise<void> {
+  const store = getStore();
+  const { model } = parseDbUploadBody(bodyObject(req));
+  await persistDbModelAndRespond(res, store, model);
+}
+
+/** Parse a db.introspect body into a transient DbConnection; throws HttpError on bad input. */
+function parseDbConnectionBody(body: Record<string, unknown>): DbConnection {
+  const dialect = body.dialect === 'mysql' ? 'mysql' : 'postgres';
+  const host = typeof body.host === 'string' ? body.host.trim() : '';
+  const database = typeof body.database === 'string' ? body.database.trim() : '';
+  const user = typeof body.user === 'string' ? body.user.trim() : '';
+  if (!host) throw new HttpError(400, 'db.introspect requires host', 'NO_HOST');
+  if (!database) throw new HttpError(400, 'db.introspect requires database', 'NO_DATABASE');
+  if (!user) throw new HttpError(400, 'db.introspect requires user', 'NO_USER');
+  const portRaw = body.port;
+  const port =
+    typeof portRaw === 'number' ? portRaw : typeof portRaw === 'string' && portRaw.trim() ? Number(portRaw) : undefined;
+  const schemas = Array.isArray(body.schemas)
+    ? (body.schemas as unknown[]).filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
+    : typeof body.schema === 'string' && body.schema.trim()
+      ? [body.schema.trim()]
+      : undefined;
+  return {
+    dialect,
+    host,
+    port: Number.isFinite(port as number) ? (port as number) : undefined,
+    database,
+    user,
+    password: typeof body.password === 'string' ? body.password : undefined,
+    ssl: body.ssl === true || body.ssl === 'true',
+    schemas,
+  };
+}
+
+/** Sanitize a driver error so a connection-failure message never leaks credentials. */
+function sanitizeDbError(err: unknown): string {
+  const msg = err instanceof Error ? err.message : String(err);
+  return msg
+    .replace(/(postgres(?:ql)?|mysql):\/\/[^\s]*/gi, '$1://[redacted]')
+    .replace(/password=[^\s&;]*/gi, 'password=[redacted]')
+    .slice(0, 200);
+}
+
+async function actionDbIntrospect(req: VercelRequest, res: VercelResponse): Promise<void> {
+  const store = getStore();
+  const conn = parseDbConnectionBody(bodyObject(req));
+  let model: DbModel;
+  try {
+    // The connection (with its password) is used for THIS call only and then
+    // discarded — never persisted, never logged, never sent to an LLM.
+    model = await introspect(conn);
+  } catch (err) {
+    throw new HttpError(400, `database introspection failed: ${sanitizeDbError(err)}`, 'DB_CONNECT_FAILED');
+  }
+  if (model.tables.length === 0) {
+    throw new HttpError(400, 'no tables found in the selected schema(s)', 'DB_EMPTY');
+  }
+  await persistDbModelAndRespond(res, store, model);
+}
+
+async function actionDbPreview(req: VercelRequest, res: VercelResponse): Promise<void> {
+  const { model } = parseDbUploadBody(bodyObject(req));
+  ok(res, { preview: textualizeSchema(model), databaseProfile: dbProfile(model), tableCount: model.tables.length });
+}
+
+// ===========================================================================
 // Action: samples — list the bundled sample corpora (10 DomainKeys + generic).
 // ===========================================================================
 
@@ -727,6 +898,27 @@ async function loadSwarmState(store: OntologyStore, runId: string): Promise<{ cu
   }
 }
 
+// ---------------------------------------------------------------------------
+// Database-ingestion working state — the parsed DbModel is stashed like the
+// partial ontology / swarm cursor (a ParsedSource-shaped row, text = JSON) so it
+// persists across requests on every store backend. Two keys: one scoped to the
+// upload's parsedRef (handed to run.start), one scoped to the ontology id
+// (loaded into ctx.dbModel by every later stage context).
+// ---------------------------------------------------------------------------
+
+const dbModelUploadRef = (parsedRef: string): string => `db_model_upload:${parsedRef}`;
+const dbModelRef = (ontologyId: string): string => `db_model:${ontologyId}`;
+
+async function loadStashedDbModel(store: OntologyStore, ref: string): Promise<DbModel | null> {
+  const stash = await store.getParsed(ref);
+  if (!stash) return null;
+  try {
+    return JSON.parse(stash.text) as DbModel;
+  } catch {
+    return null;
+  }
+}
+
 // ===========================================================================
 // Action: run.start — seed an OntologyRun + a draft Ontology from sources or a
 // sample corpus.
@@ -753,6 +945,10 @@ async function buildSeededRun(
 
   // Resolve sources: either a bundled sampleId, or already-uploaded sourceIds.
   const sources: SourceDocument[] = [];
+  // Database run (inputKind='database'): the sources are db.upload evidence docs,
+  // and we collect their stashed DbModel(s) to re-stash under the new ontology id.
+  const wantDb = body.inputKind === 'database';
+  const dbModels: DbModel[] = [];
 
   const sampleId = typeof body.sampleId === 'string' ? body.sampleId : undefined;
   if (sampleId) {
@@ -780,6 +976,15 @@ async function buildSeededRun(
     for (const sid of sourceIds) {
       const p = await store.getParsed(sid);
       if (!p) continue;
+      if (wantDb) {
+        // Database input: one schema-evidence source (kind 'db'); collect the
+        // stashed DbModel so it can be re-stashed under the new ontology id below.
+        const docId = taken.has(SCHEMA_DOC_ID) ? makeId('document', SCHEMA_DOC_ID, taken) : (taken.add(SCHEMA_DOC_ID), SCHEMA_DOC_ID);
+        sources.push({ id: docId, uuid: newUuid(), name: SCHEMA_DOC_NAME, kind: 'db', parsedRef: p.ref });
+        const m = await loadStashedDbModel(store, dbModelUploadRef(p.ref));
+        if (m) dbModels.push(m);
+        continue;
+      }
       const docId = taken.has(p.documentId) ? makeId('document', p.documentId, taken) : (taken.add(p.documentId), p.documentId);
       sources.push({
         id: docId,
@@ -821,12 +1026,30 @@ async function buildSeededRun(
   ontology.name = name.en;
   ontology.nameZh = name.zh;
 
+  // Database input: stash the (merged) DbModel under the new ontology id so every
+  // later stage context attaches it, and record the audit-only DatabaseProfile.
+  if (wantDb && dbModels.length > 0) {
+    const model = mergeDbModels(dbModels);
+    await store.putParsed({ ref: dbModelRef(ontology.id), documentId: ontology.id, text: JSON.stringify(model) });
+    ontology.metadata = { ...ontology.metadata, databaseProfile: dbProfile(model) };
+    if (name.en === 'Untitled Ontology') {
+      ontology.name = `Database: ${model.schemas.join(', ') || model.dialect}`;
+      ontology.nameZh = `数据库本体（${model.schemas.join('、') || model.dialect}）`;
+    }
+  }
+
   const runId = `run_${newUuid()}`;
   const run = freshRun(runId, ontologyId);
   // Uploaded corpora seed a filename-derived name; flag the run so completion
   // upgrades it to a content-descriptive title. Sample corpora keep their label.
   if (body.autoName === true) run.autoName = true;
   if (body.webSearch === true) run.webSearch = true;
+  // A database run takes the deterministic seed path; flag autoName so its title
+  // is upgraded from the placeholder once objects are discovered.
+  if (wantDb) {
+    run.inputKind = 'database';
+    run.autoName = true;
+  }
 
   return { store, run, ontology };
 }
@@ -1605,6 +1828,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         return;
       case 'parse':
         await actionParse(req, res);
+        return;
+      case 'db.upload':
+        await actionDbUpload(req, res);
+        return;
+      case 'db.preview':
+        await actionDbPreview(req, res);
+        return;
+      case 'db.introspect':
+        await actionDbIntrospect(req, res);
         return;
       case 'samples':
         await actionSamples(req, res);

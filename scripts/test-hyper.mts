@@ -844,10 +844,10 @@ async function sectionRegistry(): Promise<void> {
     );
   });
 
-  await check('AGENT_REGISTRY has exactly 15 entries with unique ids', () => {
-    assertEq(AGENT_REGISTRY.length, 15, 'registry size');
+  await check('AGENT_REGISTRY has exactly 16 entries with unique ids', () => {
+    assertEq(AGENT_REGISTRY.length, 16, 'registry size');
     const ids = new Set(AGENT_REGISTRY.map((a) => a.id));
-    assertEq(ids.size, 15, 'unique ids');
+    assertEq(ids.size, 16, 'unique ids');
   });
 
   await check('every registry entry has non-empty bilingual labels (en + zh)', () => {

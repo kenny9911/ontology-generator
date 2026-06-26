@@ -30,6 +30,7 @@ import type {
   SourceDocument,
   Stage,
 } from '../../_shared/ontology-schema.js';
+import type { DbModel } from '../db/types.js';
 
 /**
  * The shared mutable context handed to each pure stage function. A stage reads
@@ -96,6 +97,14 @@ export interface StageContext {
    *  When absent, callers fall back to ctx.model/ctx.provider — behavior is then
    *  byte-identical to the pre-router pipeline. */
   agentLlm?: (agentId: string, opts?: { inputChars?: number; needsWeb?: boolean }) => { provider: string; model: string };
+
+  /**
+   * OPTIONAL database model (the `database` input kind). When present, the
+   * objects/rules stages take the deterministic seed path (db/seed-*.ts) instead
+   * of LLM discovery; absent on document runs, so the pipeline is byte-identical.
+   * Backend-only IR — NOT in the schema mirror (it never enters the ontology JSON).
+   */
+  dbModel?: DbModel;
 }
 
 /**

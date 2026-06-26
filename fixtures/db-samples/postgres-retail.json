@@ -1,0 +1,84 @@
+{
+  "dialect": "postgres",
+  "sourceKind": "upload",
+  "schemas": ["public"],
+  "views": [],
+  "tables": [
+    {
+      "schema": "public",
+      "name": "customers",
+      "comment": "Registered buyers",
+      "primaryKey": ["customer_id"],
+      "columns": [
+        { "name": "customer_id", "sqlType": "bigint", "nullable": false, "comment": "Surrogate key" },
+        { "name": "email", "sqlType": "varchar(255)", "nullable": false },
+        { "name": "full_name", "sqlType": "varchar(120)", "nullable": true },
+        { "name": "created_at", "sqlType": "timestamptz", "nullable": false, "default": "now()" }
+      ],
+      "uniques": [{ "name": "uq_customers_email", "columns": ["email"] }],
+      "checks": [],
+      "foreignKeys": []
+    },
+    {
+      "schema": "public",
+      "name": "products",
+      "comment": "Catalog items",
+      "primaryKey": ["product_id"],
+      "columns": [
+        { "name": "product_id", "sqlType": "bigint", "nullable": false },
+        { "name": "sku", "sqlType": "varchar(40)", "nullable": false },
+        { "name": "name", "sqlType": "varchar(200)", "nullable": true },
+        { "name": "price", "sqlType": "numeric(12,2)", "nullable": false },
+        { "name": "status", "sqlType": "varchar(20)", "nullable": false, "enumValues": ["active", "discontinued"] }
+      ],
+      "uniques": [{ "name": "uq_products_sku", "columns": ["sku"] }],
+      "checks": [
+        { "name": "ck_products_price", "expression": "price >= 0", "columns": ["price"] },
+        { "name": "ck_products_status", "expression": "status IN ('active','discontinued')", "columns": ["status"] }
+      ],
+      "foreignKeys": []
+    },
+    {
+      "schema": "public",
+      "name": "orders",
+      "comment": "Customer order headers",
+      "primaryKey": ["order_id"],
+      "columns": [
+        { "name": "order_id", "sqlType": "bigint", "nullable": false },
+        { "name": "customer_id", "sqlType": "bigint", "nullable": false },
+        { "name": "order_no", "sqlType": "varchar(40)", "nullable": false },
+        { "name": "status", "sqlType": "varchar(20)", "nullable": false, "enumValues": ["pending", "paid", "shipped", "cancelled"] },
+        { "name": "total_amount", "sqlType": "numeric(12,2)", "nullable": false }
+      ],
+      "uniques": [{ "name": "uq_orders_customer_no", "columns": ["customer_id", "order_no"] }],
+      "checks": [
+        { "name": "ck_orders_status", "expression": "status IN ('pending','paid','shipped','cancelled')", "columns": ["status"] },
+        { "name": "ck_orders_total", "expression": "total_amount >= 0", "columns": ["total_amount"] }
+      ],
+      "foreignKeys": [
+        { "name": "fk_orders_customer", "columns": ["customer_id"], "refSchema": "public", "refTable": "customers", "refColumns": ["customer_id"], "onDelete": "RESTRICT" }
+      ]
+    },
+    {
+      "schema": "public",
+      "name": "order_items",
+      "comment": "Line items per order",
+      "primaryKey": ["order_item_id"],
+      "columns": [
+        { "name": "order_item_id", "sqlType": "bigint", "nullable": false },
+        { "name": "order_id", "sqlType": "bigint", "nullable": false },
+        { "name": "product_id", "sqlType": "bigint", "nullable": false },
+        { "name": "quantity", "sqlType": "integer", "nullable": false },
+        { "name": "unit_price", "sqlType": "numeric(12,2)", "nullable": false }
+      ],
+      "uniques": [{ "name": "uq_order_items_order_product", "columns": ["order_id", "product_id"] }],
+      "checks": [
+        { "name": "ck_order_items_qty", "expression": "quantity > 0", "columns": ["quantity"] }
+      ],
+      "foreignKeys": [
+        { "name": "fk_items_order", "columns": ["order_id"], "refSchema": "public", "refTable": "orders", "refColumns": ["order_id"], "onDelete": "CASCADE" },
+        { "name": "fk_items_product", "columns": ["product_id"], "refSchema": "public", "refTable": "products", "refColumns": ["product_id"], "onDelete": "RESTRICT" }
+      ]
+    }
+  ]
+}

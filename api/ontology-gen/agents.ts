@@ -85,6 +85,16 @@ export const AGENT_REGISTRY: readonly AgentDef[] = [
     purpose: 'classification',
     group: 'shared',
   },
+  {
+    id: 'schema_interpreter',
+    label: { en: 'Schema interpreter', zh: '库表语义增强' },
+    description: {
+      en: 'Adds bilingual names, descriptions and data/system classification to database-derived objects, without inventing or dropping tables.',
+      zh: '为从数据库结构生成的对象补全中英文名称、描述与数据/系统分类，且不新增或删除表。',
+    },
+    purpose: 'enrichment',
+    group: 'shared',
+  },
 
   // --- swarm (deep-swarm mode) ----------------------------------------------
   {

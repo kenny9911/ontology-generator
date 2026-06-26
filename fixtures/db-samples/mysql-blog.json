@@ -1,0 +1,62 @@
+{
+  "dialect": "mysql",
+  "sourceKind": "upload",
+  "schemas": ["blog"],
+  "views": [],
+  "tables": [
+    {
+      "schema": "blog",
+      "name": "users",
+      "comment": "Blog accounts",
+      "primaryKey": ["id"],
+      "columns": [
+        { "name": "id", "sqlType": "bigint", "nullable": false },
+        { "name": "email", "sqlType": "varchar(255)", "nullable": false },
+        { "name": "role", "sqlType": "enum('admin','author','reader')", "nullable": false, "enumValues": ["admin", "author", "reader"] },
+        { "name": "is_active", "sqlType": "tinyint(1)", "nullable": false, "default": "1" },
+        { "name": "created_at", "sqlType": "datetime", "nullable": false }
+      ],
+      "uniques": [{ "name": "uq_users_email", "columns": ["email"] }],
+      "checks": [],
+      "foreignKeys": []
+    },
+    {
+      "schema": "blog",
+      "name": "posts",
+      "comment": "Authored posts",
+      "primaryKey": ["id"],
+      "columns": [
+        { "name": "id", "sqlType": "bigint", "nullable": false },
+        { "name": "author_id", "sqlType": "bigint", "nullable": false },
+        { "name": "title", "sqlType": "varchar(200)", "nullable": false },
+        { "name": "status", "sqlType": "enum('draft','published','archived')", "nullable": false, "enumValues": ["draft", "published", "archived"] },
+        { "name": "view_count", "sqlType": "int", "nullable": false, "default": "0" },
+        { "name": "published_at", "sqlType": "datetime", "nullable": true }
+      ],
+      "uniques": [{ "name": "uq_posts_author_title", "columns": ["author_id", "title"] }],
+      "checks": [],
+      "foreignKeys": [
+        { "name": "fk_posts_author", "columns": ["author_id"], "refSchema": "blog", "refTable": "users", "refColumns": ["id"], "onDelete": "CASCADE" }
+      ]
+    },
+    {
+      "schema": "blog",
+      "name": "comments",
+      "comment": "Reader comments on posts",
+      "primaryKey": ["id"],
+      "columns": [
+        { "name": "id", "sqlType": "bigint", "nullable": false },
+        { "name": "post_id", "sqlType": "bigint", "nullable": false },
+        { "name": "user_id", "sqlType": "bigint", "nullable": true },
+        { "name": "body", "sqlType": "text", "nullable": false },
+        { "name": "created_at", "sqlType": "datetime", "nullable": false }
+      ],
+      "uniques": [],
+      "checks": [],
+      "foreignKeys": [
+        { "name": "fk_comments_post", "columns": ["post_id"], "refSchema": "blog", "refTable": "posts", "refColumns": ["id"], "onDelete": "CASCADE" },
+        { "name": "fk_comments_user", "columns": ["user_id"], "refSchema": "blog", "refTable": "users", "refColumns": ["id"], "onDelete": "SET NULL" }
+      ]
+    }
+  ]
+}

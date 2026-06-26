@@ -40,6 +40,7 @@ import type {
   AgentDef,
   AgentModelAssignment,
   LlmSettings,
+  DatabaseProfile,
 } from '@/ontology/schema/types';
 import type { ValidationIssue } from '@/ontology/schema/validate';
 
@@ -76,8 +77,34 @@ export interface OntologySummary {
 
 /** Input for `run.start`: either explicit source ids or a bundled sample. */
 export type RunStartInput =
-  | { name: Bilingual; domain?: DomainKey; sourceIds: string[]; autoName?: boolean; webSearch?: boolean }
+  | { name: Bilingual; domain?: DomainKey; sourceIds: string[]; autoName?: boolean; webSearch?: boolean; inputKind?: 'document' | 'database' }
   | { name: Bilingual; sampleId: string; webSearch?: boolean };
+
+/** One DDL / information_schema file handed to `db.upload` / `db.preview`. */
+export interface DbUploadFile {
+  name: string;
+  /** Decoded text (DDL or JSON). Preferred for the text artifacts DB ingestion takes. */
+  text?: string;
+  contentBase64?: string;
+}
+
+/** Input for `db.upload` / `db.preview`. */
+export interface DbIngestInput {
+  dialect: 'postgres' | 'mysql';
+  format: 'ddl' | 'information_schema_json';
+  files?: DbUploadFile[];
+  /** Inline DDL/JSON (the paste flow), as an alternative to `files`. */
+  content?: string;
+  defaultSchema?: string;
+}
+
+/** `db.upload` result: the schema-evidence source + the audit profile + a preview. */
+export interface DbUploadResult {
+  sources: SourceDocument[];
+  parsedRefs: string[];
+  preview: string;
+  databaseProfile: DatabaseProfile;
+}
 
 /** Result of a single re-run of one extraction stage (`stage.*`). */
 export interface StageRunResult {
@@ -264,6 +291,56 @@ export async function parseDoc(sourceIds: string[]): Promise<ParsedSource[]> {
 export async function listSamples(): Promise<SampleCorpus[]> {
   const res = await request<{ samples: SampleCorpus[] }>('samples');
   return res.samples;
+}
+
+// ===========================================================================
+// 1b. Database ingestion — db.upload / db.preview (M0: schema only)
+// ===========================================================================
+
+/**
+ * `POST ?action=db.upload` — ingest a database SCHEMA from an uploaded
+ * pg_dump/mysqldump DDL or an information_schema JSON export. Persists the
+ * citable schema evidence + the parsed model, and returns the `parsedRefs` to
+ * hand to `run.start` (with `inputKind:'database'`), plus a preview + audit
+ * profile. No credentials are involved — uploaded artifacts only.
+ */
+export function dbUpload(input: DbIngestInput): Promise<DbUploadResult> {
+  return jsonRequest<DbUploadResult>('db.upload', 'POST', input);
+}
+
+/** `POST ?action=db.preview` — render the schema evidence for audit WITHOUT
+ *  persisting (so the user can see exactly what will be sent before running). */
+export function dbPreview(
+  input: DbIngestInput,
+): Promise<{ preview: string; databaseProfile: DatabaseProfile; tableCount: number }> {
+  return jsonRequest<{ preview: string; databaseProfile: DatabaseProfile; tableCount: number }>(
+    'db.preview',
+    'POST',
+    input,
+  );
+}
+
+/** Read-only connection details for `db.introspect` (live path). The password is
+ *  used for ONE server-side connection and never persisted, logged, or sent to an LLM. */
+export interface DbConnectInput {
+  dialect: 'postgres' | 'mysql';
+  host: string;
+  port?: number;
+  database: string;
+  user: string;
+  password?: string;
+  ssl?: boolean;
+  /** Optional single schema to restrict to (default: all non-system schemas / the db). */
+  schema?: string;
+}
+
+/**
+ * `POST ?action=db.introspect` — connect READ-ONLY to a live database, read its
+ * schema (catalog metadata only — never row data), and return the same handle as
+ * `db.upload` (`parsedRefs` to hand to `run.start` + preview + audit profile).
+ */
+export function dbIntrospect(input: DbConnectInput): Promise<DbUploadResult> {
+  return jsonRequest<DbUploadResult>('db.introspect', 'POST', input);
 }
 
 // ===========================================================================
