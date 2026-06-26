@@ -220,12 +220,14 @@ function priorLayerReady(prior: Stage, ctx: StageContext): boolean {
       // Treat as ready once objects exist (its stage had its turn).
       return ctx.objects.length > 0;
     case 'actions':
-      // Events/processes chain actions; actions must exist before them.
-      return ctx.actions.length > 0;
+      // Events/processes chain actions; actions must exist before them — EXCEPT a
+      // database run (M0 = schema only) legitimately produces no actions, where the
+      // object vocabulary is a sufficient prerequisite.
+      return ctx.dbModel ? ctx.objects.length > 0 : ctx.actions.length > 0;
     case 'events':
       // Processes reference events on edges; events may be empty (ready once
-      // actions ran, since events are derived from actions).
-      return ctx.actions.length > 0;
+      // actions ran, since events are derived from actions). DB runs: objects suffice.
+      return ctx.dbModel ? ctx.objects.length > 0 : ctx.actions.length > 0;
     case 'processes':
       return true;
     default:

@@ -28,6 +28,7 @@ import { buildRulesPrompt } from '../../prompts.js';
 import { ctxAgentLlm } from '../../llm-router.js';
 import { stageSystem } from '../context.js';
 import type { StageContext } from '../context.js';
+import { seedRules } from '../../db/seed-rules.js';
 import type {
   Rule,
   RuleExpression,
@@ -112,6 +113,16 @@ interface NumberedSentence {
 export async function extractRules(
   ctx: StageContext,
 ): Promise<{ rules: Rule[]; ruleGroups: RuleGroup[] }> {
+  // Database input kind: constraint rules (CHECK / multi-col UNIQUE) come
+  // DETERMINISTICALLY from the schema, attached to the seeded objects. Each
+  // cites the verbatim constraint line in the schema evidence, so the
+  // orchestrator grounds + validates them like any extracted rule.
+  if (ctx.dbModel) {
+    const rules = seedRules(ctx.dbModel, ctx.objects, ctx.taken, ctx.ontologyId);
+    ctx.log(`[rules] db seed: ${rules.length} constraint rules`);
+    return { rules, ruleGroups: [] };
+  }
+
   // 1. Number every sentence across the parsed sources (rules cite by idx).
   const sentences = numberSentences(ctx);
   if (sentences.length === 0) {

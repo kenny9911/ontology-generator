@@ -18,7 +18,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { DomainKey } from '@/ontology/schema/types';
 import type { Lang } from './data';
 import type { Strings } from './i18n';
-import type { OntologyRunController } from './useOntologyRun';
+import type { OntologyRunController, DbStartInput, DbConnectInput } from './useOntologyRun';
 
 interface InputScreenProps {
   t: Strings;
@@ -72,6 +72,14 @@ function humanSize(bytes: number): string {
   return `${bytes} B`;
 }
 
+/** Shared styles for the database connection form fields. */
+const dbFieldStyle: React.CSSProperties = {
+  width: '100%', fontFamily: 'var(--font-mono)', fontSize: 12, background: 'var(--bg-2)',
+  color: 'var(--fg)', border: '1px solid var(--line)', borderRadius: 'var(--r-2)',
+  padding: '6px 8px', boxSizing: 'border-box',
+};
+const dbLabelStyle: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4 };
+
 export default function InputScreen({ t, lang, ctrl }: InputScreenProps) {
   const [tab, setTab] = useState<SourceTab>('docs');
   const [inferenceDepth, setInferenceDepth] = useState(2);
@@ -93,6 +101,22 @@ export default function InputScreen({ t, lang, ctrl }: InputScreenProps) {
   const [extractMode, setExtractMode] = useState<'fast' | 'swarm' | 'hyper'>('fast');
   // Live web-search augmentation (Tavily). Off by default; applies to every mode.
   const [webSearch, setWebSearch] = useState(false);
+
+  // ---- database ingestion (M0: schema only) -------------------------------
+  const [dbDialect, setDbDialect] = useState<'postgres' | 'mysql'>('postgres');
+  const [dbFormat, setDbFormat] = useState<'ddl' | 'information_schema_json'>('ddl');
+  const [dbContent, setDbContent] = useState('');
+  const [dbFiles, setDbFiles] = useState<File[]>([]);
+  const [dbPreviewText, setDbPreviewText] = useState<string | null>(null);
+  const [dbProfile, setDbProfile] = useState<
+    { tableCount: number; foreignKeys: number; constraints: number; schemas: string[] } | null
+  >(null);
+  const [dbPending, setDbPending] = useState<'preview' | 'generate' | null>(null);
+  const dbFileInputRef = useRef<HTMLInputElement | null>(null);
+  // Live-connect sub-mode (vs. upload/paste) + connection form + introspect result.
+  const [dbMode, setDbMode] = useState<'upload' | 'connect'>('upload');
+  const [dbConn, setDbConn] = useState({ host: '', port: '', database: '', user: '', password: '', schema: '', ssl: false });
+  const [dbConnRefs, setDbConnRefs] = useState<string[] | null>(null);
 
   const running = ctrl.running;
 
@@ -191,6 +215,107 @@ export default function InputScreen({ t, lang, ctrl }: InputScreenProps) {
     // startDemo is synchronous; the container advances on the next render.
     setPending(null);
   }, [running, ctrl]);
+
+  // ---- database start paths ------------------------------------------------
+
+  const dbInput = useCallback(
+    (): DbStartInput => ({
+      dialect: dbDialect,
+      format: dbFormat,
+      files: dbFiles.length > 0 ? dbFiles : undefined,
+      content: dbContent.trim() ? dbContent : undefined,
+    }),
+    [dbDialect, dbFormat, dbFiles, dbContent],
+  );
+
+  const hasDbInput = dbFiles.length > 0 || dbContent.trim().length > 0;
+
+  const doDbPreview = useCallback(async () => {
+    if (!hasDbInput || running) return;
+    setDbPending('preview');
+    setDbPreviewText(null);
+    setDbProfile(null);
+    try {
+      const res = await ctrl.previewDatabase(dbInput());
+      setDbPreviewText(res.preview);
+      setDbProfile({
+        tableCount: res.tableCount,
+        foreignKeys: res.databaseProfile.counts.foreignKeys,
+        constraints: res.databaseProfile.counts.constraints,
+        schemas: res.databaseProfile.schemas,
+      });
+    } catch {
+      /* ctrl.error surfaced inline below */
+    } finally {
+      setDbPending(null);
+    }
+  }, [hasDbInput, running, ctrl, dbInput]);
+
+  const doDbGenerate = useCallback(async () => {
+    if (!hasDbInput || running) return;
+    setDbPending('generate');
+    try {
+      await ctrl.startDatabase(dbInput());
+      // On success the container advances to `discover` (mode flips to 'live').
+    } catch {
+      /* ctrl.error surfaced inline below */
+    } finally {
+      setDbPending(null);
+    }
+  }, [hasDbInput, running, ctrl, dbInput]);
+
+  // ---- live database connection (introspection) ----------------------------
+
+  const dbConnInput = useCallback(
+    (): DbConnectInput => ({
+      dialect: dbDialect,
+      host: dbConn.host.trim(),
+      port: dbConn.port.trim() ? Number(dbConn.port) : undefined,
+      database: dbConn.database.trim(),
+      user: dbConn.user.trim(),
+      password: dbConn.password || undefined,
+      ssl: dbConn.ssl,
+      schema: dbConn.schema.trim() || undefined,
+    }),
+    [dbDialect, dbConn],
+  );
+
+  const canConnect = !!dbConn.host.trim() && !!dbConn.database.trim() && !!dbConn.user.trim() && !running;
+
+  const doDbConnect = useCallback(async () => {
+    if (!canConnect) return;
+    setDbPending('preview');
+    setDbPreviewText(null);
+    setDbProfile(null);
+    setDbConnRefs(null);
+    try {
+      const res = await ctrl.introspectDatabase(dbConnInput());
+      setDbPreviewText(res.preview);
+      setDbProfile({
+        tableCount: res.databaseProfile.counts.tables,
+        foreignKeys: res.databaseProfile.counts.foreignKeys,
+        constraints: res.databaseProfile.counts.constraints,
+        schemas: res.databaseProfile.schemas,
+      });
+      setDbConnRefs(res.parsedRefs);
+    } catch {
+      /* ctrl.error surfaced inline below */
+    } finally {
+      setDbPending(null);
+    }
+  }, [canConnect, ctrl, dbConnInput]);
+
+  const doDbConnectGenerate = useCallback(async () => {
+    if (!dbConnRefs || dbConnRefs.length === 0 || running) return;
+    setDbPending('generate');
+    try {
+      await ctrl.startDatabaseFromRefs(dbConnRefs, dbProfile?.schemas ?? []);
+    } catch {
+      /* ctrl.error surfaced inline below */
+    } finally {
+      setDbPending(null);
+    }
+  }, [dbConnRefs, running, ctrl, dbProfile]);
 
   const canGenerate = files.length > 0 && !running;
 
@@ -364,21 +489,138 @@ export default function InputScreen({ t, lang, ctrl }: InputScreenProps) {
           </>
         )}
         {tab === 'db' && (
-          <div className="card" style={{ padding: 'var(--s-5)' }}>
-            <div className="mono-cap" style={{ marginBottom: 'var(--s-3)' }}>{lang === 'zh' ? '已连接的数据源' : 'Connected datasources'}</div>
-            <div style={{
-              padding: 'var(--s-5)',
-              textAlign: 'center',
-              color: 'var(--fg-4)',
-              fontSize: 13,
-              border: '1px dashed var(--line)',
-              borderRadius: 'var(--r-2)',
-            }}>
-              {lang === 'zh' ? '数据库直连即将上线 —— 当前请上传文档或选择示例语料。' : 'Live database connectors coming soon — upload documents or pick a sample for now.'}
+          <div className="card" style={{ padding: 'var(--s-5)', display: 'flex', flexDirection: 'column', gap: 'var(--s-4)' }}>
+            <div className="mono-cap">{lang === 'zh' ? '从数据库结构生成（仅表结构）' : 'Generate from database schema (schema only)'}</div>
+
+            {/* sub-mode: connect live OR upload/paste artifacts */}
+            <div className="mode-toggle">
+              <button type="button" className={`opt ${dbMode === 'connect' ? 'on' : ''}`} aria-pressed={dbMode === 'connect'} onClick={() => { setDbMode('connect'); setDbPreviewText(null); setDbProfile(null); }}>
+                <strong>{lang === 'zh' ? '直连数据库' : 'Connect'}</strong>
+                <span className="mono-cap">{lang === 'zh' ? '只读拉取 schema' : 'read schema live'}</span>
+              </button>
+              <button type="button" className={`opt ${dbMode === 'upload' ? 'on' : ''}`} aria-pressed={dbMode === 'upload'} onClick={() => { setDbMode('upload'); setDbPreviewText(null); setDbProfile(null); setDbConnRefs(null); }}>
+                <strong>{lang === 'zh' ? '上传 / 粘贴' : 'Upload / Paste'}</strong>
+                <span className="mono-cap">{lang === 'zh' ? 'DDL 或 JSON' : 'DDL or JSON'}</span>
+              </button>
             </div>
-            <button type="button" className="btn ghost" style={{ marginTop: 'var(--s-3)', justifyContent: 'center', width: '100%' }} disabled>
-              + {lang === 'zh' ? '添加数据库连接' : 'Add connection'}
-            </button>
+
+            {/* dialect (shared) */}
+            <div>
+              <div className="mono-cap" style={{ marginBottom: 4 }}>{lang === 'zh' ? '数据库' : 'Dialect'}</div>
+              <div className="mode-toggle">
+                {(['postgres', 'mysql'] as const).map((d) => (
+                  <button key={d} type="button" className={`opt ${dbDialect === d ? 'on' : ''}`} aria-pressed={dbDialect === d} onClick={() => setDbDialect(d)}>
+                    <strong>{d === 'postgres' ? 'PostgreSQL' : 'MySQL'}</strong>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {dbMode === 'connect' && (
+              <>
+                <p style={{ fontSize: 12, color: 'var(--fg-3)', lineHeight: 1.5, margin: 0 }}>
+                  {lang === 'zh'
+                    ? '只读连接你的数据库，仅读取表结构等元数据（不读取任何行数据）。凭据仅用于本次连接，绝不保存、记录或发送给模型。建议使用只读账号。'
+                    : 'Connects read-only and reads schema metadata only (never row data). Credentials are used for this one connection and are never stored, logged, or sent to a model. A read-only account is recommended.'}
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--s-3)' }}>
+                  <label style={dbLabelStyle}><span className="mono-cap">Host</span>
+                    <input value={dbConn.host} onChange={(e) => setDbConn((c) => ({ ...c, host: e.target.value }))} placeholder="db.example.com" style={dbFieldStyle} />
+                  </label>
+                  <label style={dbLabelStyle}><span className="mono-cap">Port</span>
+                    <input value={dbConn.port} onChange={(e) => setDbConn((c) => ({ ...c, port: e.target.value }))} placeholder={dbDialect === 'mysql' ? '3306' : '5432'} style={dbFieldStyle} />
+                  </label>
+                </div>
+                <label style={dbLabelStyle}><span className="mono-cap">{lang === 'zh' ? '数据库名' : 'Database'}</span>
+                  <input value={dbConn.database} onChange={(e) => setDbConn((c) => ({ ...c, database: e.target.value }))} placeholder="mydb" style={dbFieldStyle} />
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s-3)' }}>
+                  <label style={dbLabelStyle}><span className="mono-cap">{lang === 'zh' ? '用户名' : 'User'}</span>
+                    <input value={dbConn.user} onChange={(e) => setDbConn((c) => ({ ...c, user: e.target.value }))} autoComplete="off" placeholder="readonly_user" style={dbFieldStyle} />
+                  </label>
+                  <label style={dbLabelStyle}><span className="mono-cap">{lang === 'zh' ? '密码' : 'Password'}</span>
+                    <input type="password" value={dbConn.password} onChange={(e) => setDbConn((c) => ({ ...c, password: e.target.value }))} autoComplete="new-password" style={dbFieldStyle} />
+                  </label>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--s-3)', alignItems: 'end' }}>
+                  <label style={dbLabelStyle}><span className="mono-cap">{lang === 'zh' ? 'Schema（可选）' : 'Schema (optional)'}</span>
+                    <input value={dbConn.schema} onChange={(e) => setDbConn((c) => ({ ...c, schema: e.target.value }))} placeholder={dbDialect === 'mysql' ? (dbConn.database || 'database') : 'public'} style={dbFieldStyle} />
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--fg-2)', paddingBottom: 6 }}>
+                    <input type="checkbox" checked={dbConn.ssl} onChange={(e) => setDbConn((c) => ({ ...c, ssl: e.target.checked }))} style={{ accentColor: 'var(--accent)' }} />
+                    SSL/TLS
+                  </label>
+                </div>
+                <div style={{ display: 'flex', gap: 'var(--s-3)' }}>
+                  <button type="button" className="btn ghost" onClick={() => void doDbConnect()} disabled={!canConnect} style={{ opacity: canConnect ? 1 : 0.5 }}>
+                    {dbPending === 'preview' ? (lang === 'zh' ? '连接中…' : 'Connecting…') : (lang === 'zh' ? '连接并预览' : 'Connect & preview')}
+                  </button>
+                  <button type="button" className="btn ai" onClick={() => void doDbConnectGenerate()} disabled={!dbConnRefs || dbConnRefs.length === 0 || running} style={{ flex: 1, justifyContent: 'center', opacity: dbConnRefs && dbConnRefs.length > 0 && !running ? 1 : 0.5 }}>
+                    <Sparkle />
+                    {dbPending === 'generate' ? (lang === 'zh' ? '生成中…' : 'Generating…') : (lang === 'zh' ? '生成本体' : 'Generate ontology')}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {dbMode === 'upload' && (
+              <>
+                <div>
+                  <div className="mono-cap" style={{ marginBottom: 4 }}>{lang === 'zh' ? '格式' : 'Format'}</div>
+                  <div className="mode-toggle">
+                    {([['ddl', lang === 'zh' ? 'DDL 导出' : 'DDL dump'], ['information_schema_json', 'information_schema JSON']] as const).map(([f, label]) => (
+                      <button key={f} type="button" className={`opt ${dbFormat === f ? 'on' : ''}`} aria-pressed={dbFormat === f} onClick={() => setDbFormat(f)}>
+                        <strong>{label}</strong>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 'var(--s-2)', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <input ref={dbFileInputRef} type="file" accept=".sql,.json,.txt" multiple onChange={(e) => { if (e.target.files?.length) setDbFiles(Array.from(e.target.files)); e.target.value = ''; }} style={{ display: 'none' }} />
+                  <button type="button" className="btn ghost" style={{ padding: '6px 12px', fontSize: 13 }} onClick={() => dbFileInputRef.current?.click()} disabled={running}>
+                    {lang === 'zh' ? '选择 .sql / .json 文件' : 'Choose .sql / .json file'}
+                  </button>
+                  {dbFiles.length > 0 && (
+                    <span className="mono-cap" style={{ color: 'var(--fg-3)' }}>
+                      {dbFiles.map((f) => f.name).join(', ')}
+                      <button type="button" onClick={() => setDbFiles([])} style={{ background: 'none', border: 'none', color: 'var(--fg-4)', cursor: 'pointer', marginLeft: 6 }}>×</button>
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <div className="mono-cap" style={{ marginBottom: 4 }}>{lang === 'zh' ? '或粘贴 DDL / JSON' : 'Or paste DDL / JSON'}</div>
+                  <textarea value={dbContent} onChange={(e) => setDbContent(e.target.value)} placeholder={'CREATE TABLE orders (\n  order_id bigint PRIMARY KEY,\n  ...\n);'} spellCheck={false} style={{ width: '100%', minHeight: 110, resize: 'vertical', fontFamily: 'var(--font-mono)', fontSize: 12, background: 'var(--bg-2)', color: 'var(--fg)', border: '1px solid var(--line)', borderRadius: 'var(--r-2)', padding: 'var(--s-3)' }} />
+                </div>
+                <div style={{ display: 'flex', gap: 'var(--s-3)' }}>
+                  <button type="button" className="btn ghost" onClick={() => void doDbPreview()} disabled={!hasDbInput || running} style={{ opacity: !hasDbInput || running ? 0.5 : 1 }}>
+                    {dbPending === 'preview' ? (lang === 'zh' ? '解析中…' : 'Parsing…') : (lang === 'zh' ? '预览结构' : 'Preview schema')}
+                  </button>
+                  <button type="button" className="btn ai" onClick={() => void doDbGenerate()} disabled={!hasDbInput || running} style={{ flex: 1, justifyContent: 'center', opacity: !hasDbInput || running ? 0.5 : 1 }}>
+                    <Sparkle />
+                    {dbPending === 'generate' ? (lang === 'zh' ? '生成中…' : 'Generating…') : (lang === 'zh' ? '生成本体' : 'Generate ontology')}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {ctrl.error && (
+              <div style={{ fontSize: 12, color: 'var(--accent-2)' }}>{ctrl.error}</div>
+            )}
+
+            {/* preview (shared) */}
+            {dbProfile && (
+              <div style={{ display: 'flex', gap: 'var(--s-4)', flexWrap: 'wrap', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg-3)' }}>
+                <span>{lang === 'zh' ? '表' : 'tables'}: <b style={{ color: 'var(--fg)' }}>{dbProfile.tableCount}</b></span>
+                <span>{lang === 'zh' ? '外键' : 'FKs'}: <b style={{ color: 'var(--fg)' }}>{dbProfile.foreignKeys}</b></span>
+                <span>{lang === 'zh' ? '约束' : 'constraints'}: <b style={{ color: 'var(--fg)' }}>{dbProfile.constraints}</b></span>
+                <span>schema: <b style={{ color: 'var(--fg)' }}>{dbProfile.schemas.join(', ') || '—'}</b></span>
+              </div>
+            )}
+            {dbPreviewText && (
+              <pre className="scroll" style={{ maxHeight: 260, overflow: 'auto', margin: 0, padding: 'var(--s-3)', background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 'var(--r-2)', fontSize: 11, lineHeight: 1.5, whiteSpace: 'pre' }}>
+                {dbPreviewText}
+              </pre>
+            )}
           </div>
         )}
         {tab === 'apps' && (

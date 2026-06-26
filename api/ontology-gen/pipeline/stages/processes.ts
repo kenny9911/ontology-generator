@@ -69,6 +69,12 @@ const ACTOR_KINDS: ReadonlyArray<ActorRef['kind']> = ['human', 'agent', 'system'
 export async function extractProcesses(
   ctx: StageContext,
 ): Promise<{ processes: Process[] }> {
+  // Database input (M0 = schema only): processes come from log / process mining,
+  // which M2 will add here. No log evidence yet -> no processes.
+  if (ctx.dbModel) {
+    ctx.log('[processes] db run: no log evidence in M0 — no processes.');
+    return { processes: [] };
+  }
   // Nothing to chain without actions — synthesize nothing.
   if (!Array.isArray(ctx.actions) || ctx.actions.length === 0) {
     ctx.log('processes: no actions to chain; skipping');

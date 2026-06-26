@@ -769,6 +769,20 @@ export interface WebAugmentation {
   at: string;
 }
 
+/**
+ * Summary of the database an ontology was ingested from (the `database` input
+ * kind). Rides on OntologyMetadata like the swarm/hyper artifacts, and records
+ * THAT an ingestion happened plus its shape — NEVER credentials.
+ */
+export interface DatabaseProfile {
+  dialect: 'postgres' | 'mysql';
+  sourceKind: 'live' | 'upload';
+  schemas: string[];
+  counts: { tables: number; views: number; foreignKeys: number; constraints: number };
+  /** ISO-8601 timestamp of ingestion. No credentials are ever stored. */
+  connectedAt: string;
+}
+
 export interface OntologyMetadata {
   createdAt: string; // ISO-8601
   updatedAt: string; // ISO-8601
@@ -812,6 +826,10 @@ export interface OntologyMetadata {
   documentCoverageHistory?: DocumentCoverageEval[];
   /** Hyper run provenance. */
   hyper?: { passes: number; coverageTarget: number; remediationRounds: number; web: boolean };
+
+  // ---- Database-ingestion artifact (optional; only set by the `database` input kind) ----
+  /** Summary of the database this ontology was ingested from. NO credentials, ever. */
+  databaseProfile?: DatabaseProfile;
 }
 
 /**
@@ -929,6 +947,9 @@ export interface OntologyRun {
   // ---- Deep-swarm / hyper mode (optional; absent on the fast single-pass path) ----
   /** Extraction mode. Absent or `'fast'` = the classic single-pass pipeline. */
   mode?: 'fast' | 'swarm' | 'hyper';
+  /** Input source kind. Absent or `'document'` = uploaded docs / sample corpus;
+   *  `'database'` = ingested from a system's database (see DatabaseProfile). */
+  inputKind?: 'document' | 'database';
   /** Current high-level swarm/hyper phase (mode === 'swarm' | 'hyper'). null before/after. */
   currentPhase?: RunPhase | null;
   /** One entry per SWARM_PHASE_ORDER (swarm) / HYPER_PHASE_ORDER (hyper) phase. */

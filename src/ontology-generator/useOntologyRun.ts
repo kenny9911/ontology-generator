@@ -44,6 +44,7 @@ import type {
   FollowUpQuestion,
   TerminologyExtraction,
   DocumentCoverageEval,
+  DatabaseProfile,
 } from '@/ontology/schema/types';
 import { STAGE_ORDER } from '@/ontology/schema/types';
 
@@ -51,7 +52,11 @@ import { DATASETS } from './data';
 import { datasetToOntology } from './adapters';
 import { normalizeOntologyObjects } from './normalize-objects';
 import * as api from './api';
-import type { RunStartInput, SampleCorpus, OntologySummary } from './api';
+import type { RunStartInput, SampleCorpus, OntologySummary, DbConnectInput } from './api';
+
+// Re-exported so screens (locked to the {t, lang, ctrl} contract) can type the
+// Database connect form without importing the api module directly.
+export type { DbConnectInput } from './api';
 
 // ===========================================================================
 // Public controller contract (THE FIXED FRONTEND CONTRACT — implemented EXACTLY).
@@ -89,6 +94,22 @@ export interface OntologyRunController {
   startSwarm: (input: { files?: File[]; sample?: DomainKey; webSearch?: boolean }) => Promise<void>;
   /** Hyper-automation: start a full-coverage run from uploaded files OR a sample corpus. */
   startHyper: (input: { files?: File[]; sample?: DomainKey; webSearch?: boolean }) => Promise<void>;
+  /** Database ingestion (M0 = schema): render the citable schema evidence for
+   *  audit WITHOUT persisting — shown before "Generate". */
+  previewDatabase: (
+    input: DbStartInput,
+  ) => Promise<{ preview: string; databaseProfile: DatabaseProfile; tableCount: number }>;
+  /** Database ingestion: ingest the schema (DDL / information_schema export or
+   *  pasted DDL) and start a LIVE run (run.start with inputKind='database'). */
+  startDatabase: (input: DbStartInput) => Promise<void>;
+  /** Database ingestion (live): connect READ-ONLY to a running database and read
+   *  its schema. Returns the preview + audit profile + the parsedRefs to start
+   *  from. Credentials are used for one server-side connection and discarded. */
+  introspectDatabase: (
+    input: DbConnectInput,
+  ) => Promise<{ preview: string; databaseProfile: DatabaseProfile; parsedRefs: string[] }>;
+  /** Start a LIVE database run from parsedRefs already produced by upload/introspect. */
+  startDatabaseFromRefs: (parsedRefs: string[], schemas: string[]) => Promise<void>;
   listSamples: () => Promise<{ domain: DomainKey; title: string; docCount: number }[]>;
 
   // ---- discover ----
@@ -210,6 +231,32 @@ function demoGenerate(o: Ontology): GeneratedBundle[] {
 function errMessage(cause: unknown): string {
   if (cause instanceof Error) return cause.message;
   return typeof cause === 'string' ? cause : 'Unexpected error';
+}
+
+/** What the Database input card collects (M0: schema via upload or paste). */
+export interface DbStartInput {
+  dialect: 'postgres' | 'mysql';
+  format: 'ddl' | 'information_schema_json';
+  /** Uploaded .sql / .json artifacts (read as text). */
+  files?: File[];
+  /** Pasted DDL / JSON, as an alternative to `files`. */
+  content?: string;
+  defaultSchema?: string;
+}
+
+/** Read any uploaded File artifacts to text and shape the api.dbUpload/dbPreview input. */
+async function toDbIngestInput(input: DbStartInput): Promise<api.DbIngestInput> {
+  const files =
+    input.files && input.files.length > 0
+      ? await Promise.all(input.files.map(async (f) => ({ name: f.name, text: await f.text() })))
+      : undefined;
+  return {
+    dialect: input.dialect,
+    format: input.format,
+    files,
+    content: input.content,
+    defaultSchema: input.defaultSchema,
+  };
 }
 
 /**
@@ -432,6 +479,79 @@ export function useOntologyRun(): OntologyRunController {
       }
       const { ontology: o, run: r } = await api.startHyperRun(runInput);
       setMode('hyper');
+      commitOntology(o);
+      setRun(r);
+    } catch (cause) {
+      setError(errMessage(cause));
+      throw cause instanceof Error ? cause : new Error(errMessage(cause));
+    } finally {
+      setRunning(false);
+    }
+  }, []);
+
+  const previewDatabase = useCallback(async (input: DbStartInput) => {
+    setError(null);
+    try {
+      return await api.dbPreview(await toDbIngestInput(input));
+    } catch (cause) {
+      setError(errMessage(cause));
+      throw cause;
+    }
+  }, []);
+
+  const introspectDatabase = useCallback(async (input: DbConnectInput) => {
+    setError(null);
+    try {
+      const res = await api.dbIntrospect(input);
+      return { preview: res.preview, databaseProfile: res.databaseProfile, parsedRefs: res.parsedRefs };
+    } catch (cause) {
+      setError(errMessage(cause));
+      throw cause;
+    }
+  }, []);
+
+  const startDatabaseFromRefs = useCallback(async (parsedRefs: string[], schemas: string[]) => {
+    if (parsedRefs.length === 0) return;
+    setError(null);
+    setRunning(true);
+    setGenerated(null);
+    try {
+      const label = schemas.join(', ') || 'database';
+      const runInput: RunStartInput = {
+        name: { en: `Database: ${label}`, zh: `数据库本体（${label}）` },
+        sourceIds: parsedRefs,
+        autoName: true,
+        inputKind: 'database',
+      };
+      const { ontology: o, run: r } = await api.runStart(runInput);
+      setMode('live');
+      commitOntology(o);
+      setRun(r);
+    } catch (cause) {
+      setError(errMessage(cause));
+      throw cause instanceof Error ? cause : new Error(errMessage(cause));
+    } finally {
+      setRunning(false);
+    }
+  }, []);
+
+  const startDatabase = useCallback(async (input: DbStartInput) => {
+    setError(null);
+    setRunning(true);
+    setGenerated(null);
+    try {
+      const up = await api.dbUpload(await toDbIngestInput(input));
+      const schemas = up.databaseProfile.schemas.join(', ') || up.databaseProfile.dialect;
+      // A database run is a LIVE run with inputKind='database' — run.step drives
+      // the (deterministic seed) stages exactly like an uploaded-doc run.
+      const runInput: RunStartInput = {
+        name: { en: `Database: ${schemas}`, zh: `数据库本体（${schemas}）` },
+        sourceIds: up.parsedRefs,
+        autoName: true,
+        inputKind: 'database',
+      };
+      const { ontology: o, run: r } = await api.runStart(runInput);
+      setMode('live');
       commitOntology(o);
       setRun(r);
     } catch (cause) {
@@ -864,6 +984,10 @@ export function useOntologyRun(): OntologyRunController {
       startSample,
       startSwarm,
       startHyper,
+      previewDatabase,
+      startDatabase,
+      introspectDatabase,
+      startDatabaseFromRefs,
       listSamples,
       step,
       setReview,
@@ -899,6 +1023,10 @@ export function useOntologyRun(): OntologyRunController {
       startSample,
       startSwarm,
       startHyper,
+      previewDatabase,
+      startDatabase,
+      introspectDatabase,
+      startDatabaseFromRefs,
       listSamples,
       step,
       setReview,

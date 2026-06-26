@@ -62,6 +62,9 @@ import type {
   SpecSideEffects,
 } from '../../../_shared/ontology-schema.js';
 import { specObjectId, eventSpecName, mapDataType } from '../../spec-format/project.js';
+import { sqlTypeToPropertyType, tableObjectId } from '../../db/seed-objects.js';
+import { routineHeaderSnippet, SCHEMA_DOC_ID, SCHEMA_DOC_NAME } from '../../db/textualize.js';
+import type { DbModel } from '../../db/types.js';
 
 // ---------------------------------------------------------------------------
 // Local constants / small lookups
@@ -507,6 +510,12 @@ function coerceSources(v: unknown, docName: string): SourceRef[] {
  * applied LATER by the orchestrator.
  */
 export async function extractActions(ctx: StageContext): Promise<{ actions: ActionType[] }> {
+  // Database input: actions come DETERMINISTICALLY from stored procedures /
+  // functions (M1) — params -> inputs/outputs, body DML -> side-effects, the
+  // routine becomes a callable `function` tool. Empty when there are no routines.
+  if (ctx.dbModel) {
+    return { actions: buildDbActions(ctx) };
+  }
   const chunkText = buildChunkText(ctx);
   if (!chunkText.trim()) {
     ctx.log('[actions] no parsed text to extract from; skipping.');
@@ -773,4 +782,118 @@ function attachActionSpecFields(a: ActionType, ctx: StageContext): void {
   a.side_effects = sideEffects;
   a.triggered_event = uniqStr(a.emitsEvents.map((e) => eventSpecName(e.eventTypeId)));
   if (typeof a.typescript_code !== 'string') a.typescript_code = '';
+}
+
+// ---------------------------------------------------------------------------
+// Database input (M1): stored procedures / functions -> ActionTypes.
+// DETERMINISTIC — params become inputs/outputs, the routine becomes a callable
+// `function` tool (integration = schema.name), and INSERT/UPDATE/DELETE in the
+// body become structured side-effects against the seeded objects. Reuses
+// attachActionSpecFields so the spec-format fields are filled identically to the
+// document path. (Business descriptions / steps are a later LLM enrichment.)
+// ---------------------------------------------------------------------------
+
+/** snake/cryptic routine name -> camelCase action name. */
+function camelCaseName(s: string): string {
+  const parts = s.replace(/[^A-Za-z0-9]+/g, ' ').trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return 'dbAction';
+  return parts[0]!.toLowerCase() + parts.slice(1).map((p) => p[0]!.toUpperCase() + p.slice(1).toLowerCase()).join('');
+}
+
+/** Resolve a raw `[schema.]table` reference from a routine body to a seeded object id. */
+function resolveDbTableObjId(raw: string, model: DbModel, objectIds: Set<string>): string | undefined {
+  const parts = raw.replace(/["`]/g, '').split('.');
+  const tbl = parts[parts.length - 1]!;
+  const sch = parts.length >= 2 ? parts[parts.length - 2] : undefined;
+  for (const t of model.tables) {
+    if (t.name === tbl && (!sch || t.schema === sch)) {
+      const id = tableObjectId(t.schema, t.name);
+      if (objectIds.has(id)) return id;
+    }
+  }
+  return undefined;
+}
+
+/** Structured side-effects mined from a routine body's DML (INSERT/UPDATE/DELETE). */
+function dmlSideEffects(body: string, model: DbModel, objectIds: Set<string>): SideEffect[] {
+  const out: SideEffect[] = [];
+  const seen = new Set<string>();
+  const add = (kind: SideEffect['kind'], rawTable: string): void => {
+    const oid = resolveDbTableObjId(rawTable, model, objectIds);
+    if (!oid) return;
+    const key = `${kind}:${oid}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push({ kind, objectTypeId: oid, description: kind === 'db_write' ? `Inserts ${rawTable}` : `Modifies ${rawTable}` });
+  };
+  for (const m of body.matchAll(/\binsert\s+into\s+([A-Za-z0-9_."`]+)/gi)) add('db_write', m[1]!);
+  for (const m of body.matchAll(/\bupdate\s+([A-Za-z0-9_."`]+)\s+set\b/gi)) add('state_change', m[1]!);
+  for (const m of body.matchAll(/\bdelete\s+from\s+([A-Za-z0-9_."`]+)/gi)) add('state_change', m[1]!);
+  return out;
+}
+
+/** Build ActionTypes from a DbModel's stored routines (deterministic, no LLM). */
+function buildDbActions(ctx: StageContext): ActionType[] {
+  const model = ctx.dbModel;
+  const routines = model?.routines ?? [];
+  if (!model || routines.length === 0) {
+    ctx.log('[actions] db run: no stored routines — no actions.');
+    return [];
+  }
+  const objectIds = new Set(ctx.objects.map((o) => o.id));
+  const actions: ActionType[] = [];
+  for (const routine of routines) {
+    const id = makeId('action', routine.name, ctx.taken);
+    const inputs: ActionIO[] = routine.params
+      .filter((p) => (p.mode ?? 'IN') !== 'OUT')
+      .map((p) => ({ name: p.name, type: sqlTypeToPropertyType(p.sqlType), description: '' }));
+    const outputs: ActionIO[] = routine.params
+      .filter((p) => p.mode === 'OUT' || p.mode === 'INOUT')
+      .map((p) => ({ name: p.name, type: sqlTypeToPropertyType(p.sqlType), description: '' }));
+    if (routine.kind === 'function' && routine.returns) {
+      outputs.push({ name: 'result', type: sqlTypeToPropertyType(routine.returns), description: '' });
+    }
+    const description = routine.comment?.trim() || `Stored ${routine.kind} ${routine.schema}.${routine.name}.`;
+
+    // toolName: snake_case, deduped globally via ctx.taken (mirrors coerceAgent).
+    let toolName = toSnakeCase(routine.name) || 'db_routine';
+    if (ctx.taken.has(`tool:${toolName}`)) {
+      let n = 2;
+      while (ctx.taken.has(`tool:${toolName}_${n}`)) n += 1;
+      toolName = `${toolName}_${n}`;
+    }
+    ctx.taken.add(`tool:${toolName}`);
+    const agent: AgentBinding = {
+      toolName,
+      parameterSchema: deriveParameterSchema(inputs),
+      toolDescription: description,
+      execution: 'function',
+      integration: `${routine.schema}.${routine.name}`,
+    };
+
+    const sideEffects = dmlSideEffects(routine.definition ?? '', model, objectIds);
+    const action = {
+      id,
+      uuid: randomUUID(),
+      name: camelCaseName(routine.name),
+      description,
+      inputs,
+      outputs,
+      steps: [] as ActionStep[],
+      preconditions: [] as PreconditionRef[],
+      triggeredByEventIds: [] as string[],
+      emitsEvents: [] as EmitSpec[],
+      actorRef: { role: 'System', kind: 'system' } as ActorRef,
+      agent,
+      sources: [{ documentId: SCHEMA_DOC_ID, documentName: SCHEMA_DOC_NAME, snippet: routineHeaderSnippet(routine) }],
+      confidence: 0.9,
+      provenance: 'extracted' as const,
+      reviewState: 'pending' as const,
+    } as ActionType;
+    if (sideEffects.length > 0) action.sideEffects = sideEffects;
+    attachActionSpecFields(action, ctx);
+    actions.push(action);
+  }
+  ctx.log(`[actions] db seed: ${actions.length} action(s) from stored routines`);
+  return actions;
 }

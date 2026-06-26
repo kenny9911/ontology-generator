@@ -43,6 +43,8 @@ import { buildObjectsPrompt } from '../../prompts.js';
 import { ctxAgentLlm } from '../../llm-router.js';
 import { stageSystem } from '../context.js';
 import type { StageContext } from '../context.js';
+import { seedObjects } from '../../db/seed-objects.js';
+import { enrichObjects } from '../../db/enrich.js';
 
 // ---------------------------------------------------------------------------
 //  Loose shapes the model returns (parsed JSON is untrusted — narrow defensively).
@@ -338,6 +340,18 @@ function mapProperties(rawProps: unknown): ObjectProperty[] {
 export async function extractObjects(
   ctx: StageContext,
 ): Promise<{ objects: ObjectType[]; relationships: Relationship[] }> {
+  // Database input kind: take the DETERMINISTIC seed path (tables -> objects,
+  // columns -> properties, FKs -> relationships) instead of LLM discovery, then
+  // enrich semantics in place by id. Every seeded citation points into the
+  // textualized schema evidence (db/textualize.ts), so the orchestrator grounds,
+  // scores and validates this layer exactly as it does the document path.
+  if (ctx.dbModel) {
+    const { objects, relationships } = seedObjects(ctx.dbModel, ctx.taken);
+    await enrichObjects(ctx, objects);
+    ctx.log(`[objects] db seed: ${objects.length} objects, ${relationships.length} relationships`);
+    return { objects, relationships };
+  }
+
   const docNameById = new Map<string, string>();
   for (const doc of ctx.sources) docNameById.set(doc.id, doc.name);
 

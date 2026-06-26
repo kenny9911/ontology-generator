@@ -47,6 +47,10 @@ import type {
 } from '../../../_shared/ontology-schema.js';
 import { DATA_TYPES } from '../../../_shared/ontology-schema.js';
 import { specObjectId, eventSpecName, mapDataType } from '../../spec-format/project.js';
+import { makeId } from '../../../_shared/ids.js';
+import { tableObjectId } from '../../db/seed-objects.js';
+import { triggerHeaderSnippet, SCHEMA_DOC_ID, SCHEMA_DOC_NAME } from '../../db/textualize.js';
+import type { DbModel } from '../../db/types.js';
 
 /** Inferred events never score above this (DESIGN_SPEC §3.2 / Stage-4 prompt). */
 const INFERRED_CONFIDENCE_CAP = 0.6;
@@ -74,6 +78,12 @@ interface EventEnrichment {
  * LLM call. Returns only the `events` layer; the orchestrator merges it back.
  */
 export async function extractEvents(ctx: StageContext): Promise<{ events: EventType[] }> {
+  // Database input: events come DETERMINISTICALLY from triggers (M1) — each
+  // (table, operation) pair becomes a state-change EventType. Empty when there
+  // are no triggers. (Audit-log-derived events are M2.)
+  if (ctx.dbModel) {
+    return { events: buildDbEvents(ctx) };
+  }
   const actions = ctx.actions;
 
   // ---------------------------------------------------------------------
@@ -430,6 +440,70 @@ function makeUuid(): string {
 
 function uniqueIds(ids: string[]): string[] {
   return Array.from(new Set(ids.filter(Boolean)));
+}
+
+// ---------------------------------------------------------------------------
+// Database input (M1): triggers -> EventTypes. DETERMINISTIC — each unique
+// (table, operation) pair across all triggers becomes one state-change event
+// (ORDERS_INSERTED, ...), with a payload state-mutation on the affected object.
+// Cites the trigger signature in the schema evidence so it grounds. Action
+// linkage (producedByActionIds) is left to the orchestrator's inverse pass.
+// ---------------------------------------------------------------------------
+
+function buildDbEvents(ctx: StageContext): EventType[] {
+  const model: DbModel | undefined = ctx.dbModel;
+  const triggers = model?.triggers ?? [];
+  if (!model || triggers.length === 0) {
+    ctx.log('[events] db run: no triggers — no events.');
+    return [];
+  }
+  const objById = new Map(ctx.objects.map((o) => [o.id, o]));
+
+  // Unique (table-object, operation) pairs, each with a citing trigger snippet.
+  const pairs = new Map<string, { objId: string; op: 'INSERT' | 'UPDATE' | 'DELETE'; snippet: string }>();
+  for (const tr of triggers) {
+    const objId = tableObjectId(tr.schema, tr.table);
+    if (!objById.has(objId)) continue;
+    for (const op of tr.events) {
+      const key = `${objId}|${op}`;
+      if (!pairs.has(key)) pairs.set(key, { objId, op, snippet: triggerHeaderSnippet(tr) });
+    }
+  }
+
+  const events: EventType[] = [];
+  for (const { objId, op, snippet } of pairs.values()) {
+    const obj = objById.get(objId)!;
+    const past = op === 'INSERT' ? 'INSERTED' : op === 'UPDATE' ? 'UPDATED' : 'DELETED';
+    const base = obj.name.replace(/([a-z0-9])([A-Z])/g, '$1_$2').replace(/[^A-Za-z0-9]+/g, '_').toUpperCase();
+    const id = makeId('event', `${obj.name}.${past.toLowerCase()}`, ctx.taken);
+    const specObj = specObjectId(objId);
+    const pk = obj.primary_key;
+    const payloadFields: EventField[] = [
+      { name: pk, type: 'reference', objectTypeId: objId, required: true, description: `Affected ${obj.name} record` },
+    ];
+    const payload: SpecEventPayload = {
+      source_action: '',
+      event_data: [{ name: pk, type: 'String', target_object: specObj }],
+      state_mutations: [{ target_object: specObj, mutation_type: op, impacted_properties: [] }],
+    };
+    events.push({
+      id,
+      uuid: makeUuid(),
+      name: `${base}_${past}`,
+      nameZh: `${base}_${past}`,
+      description: `${op} on ${obj.name} (database trigger).`,
+      payload,
+      payloadFields,
+      producedByActionIds: [],
+      consumedByActionIds: [],
+      sources: [{ documentId: SCHEMA_DOC_ID, documentName: SCHEMA_DOC_NAME, snippet }],
+      confidence: 0.9,
+      provenance: 'extracted',
+      reviewState: 'pending',
+    });
+  }
+  ctx.log(`[events] db seed: ${events.length} event(s) from triggers`);
+  return events;
 }
 
 function clampConfidence(value: number | undefined, fallback: Confidence, max: number): Confidence {
